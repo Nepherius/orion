@@ -1,0 +1,90 @@
+stages:
+  - lint
+  - build
+
+variables:
+  RUST_VERSION: "latest"
+  NODE_VERSION: "20"
+
+# Lint TypeScript and JavaScript
+lint:typescript:
+  stage: lint
+  image: node:20
+  script:
+    - npm install
+    - npm run lint
+    - npm run format:check
+  allow_failure: false
+
+# Lint Rust
+lint:rust:
+  stage: lint
+  image: rust:latest
+  before_script:
+    - apt-get update && apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev librsvg2-dev
+  script:
+    - cd src-tauri
+    - rustup component add clippy
+    - cargo clippy --manifest-path Cargo.toml -- -D warnings
+    - rustup component add rustfmt
+    - cargo fmt --manifest-path Cargo.toml -- --check
+  allow_failure: false
+
+# Build for Linux
+build:linux:
+  stage: build
+  image: node:20
+  before_script:
+    - apt-get update
+    - apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev librsvg2-dev
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - source $HOME/.cargo/env
+  script:
+    - npm install
+    - npm run tauri:build
+  artifacts:
+    paths:
+      - src-tauri/target/release/bundle/
+    expire_in: 30 days
+  cache:
+    paths:
+      - node_modules/
+      - src-tauri/target/
+      - ~/.cargo/
+
+# Build for Windows (when tagged)
+build:windows:
+  stage: build
+  image: mcr.microsoft.com/windows/servercore:ltsc2022
+  script:
+    - npm install
+    - npm run tauri:build
+  artifacts:
+    paths:
+      - src-tauri/target/release/bundle/
+    expire_in: 30 days
+  only:
+    - tags
+  cache:
+    paths:
+      - node_modules/
+      - src-tauri/target/
+
+# Build for macOS (requires macOS runner - configure in GitLab)
+build:macos:
+  stage: build
+  tags:
+    - macos
+  script:
+    - npm install
+    - npm run tauri:build
+  artifacts:
+    paths:
+      - src-tauri/target/release/bundle/
+    expire_in: 30 days
+  only:
+    - tags
+  cache:
+    paths:
+      - node_modules/
+      - src-tauri/target/

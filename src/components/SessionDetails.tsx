@@ -1,0 +1,259 @@
+import { useState } from 'react';
+import { useHuntStore } from '../store';
+import { Plus, Trash2, TrendingUp, TrendingDown, Award, Zap } from 'lucide-react';
+import { format } from 'date-fns';
+import { AddLootModal } from './AddLootModal';
+import { AddGlobalModal } from './AddGlobalModal';
+import { CostsPanel } from './CostsPanel';
+
+interface SessionDetailsProps {
+  sessionId: string;
+}
+
+export function SessionDetails({ sessionId }: SessionDetailsProps) {
+  const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
+  const removeLoot = useHuntStore((state) => state.removeLoot);
+  const [showAddLoot, setShowAddLoot] = useState(false);
+  const [showAddGlobal, setShowAddGlobal] = useState(false);
+
+  if (!session) {
+    return <div className="card p-6">Session not found</div>;
+  }
+
+  const profit = session.stats.totalLoot - session.stats.totalCost;
+
+  return (
+    <div className="space-y-6">
+      {/* Session Overview Card */}
+      <div className="card p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">{session.name}</h2>
+            <div className="flex items-center gap-4 text-sm text-gray-400">
+              <span>Creature: {session.creature}</span>
+              <span>•</span>
+              <span>Weapon: {session.weapon}</span>
+              {session.armor && (
+                <>
+                  <span>•</span>
+                  <span>Armor: {session.armor}</span>
+                </>
+              )}
+            </div>
+            <div className="text-sm text-gray-400 mt-1">Location: {session.location}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-400">Started</div>
+            <div className="font-medium">{format(session.startTime, 'PPpp')}</div>
+            {session.endTime && (
+              <>
+                <div className="text-sm text-gray-400 mt-2">Ended</div>
+                <div className="font-medium">{format(session.endTime, 'PPpp')}</div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-4 gap-4 mt-6">
+          <div className="bg-gray-700 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">Total Loot</div>
+            <div className="text-2xl font-bold text-green-400">
+              {session.stats.totalLoot.toFixed(2)} PED
+            </div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">Total Cost</div>
+            <div className="text-2xl font-bold text-red-400">
+              {session.stats.totalCost.toFixed(2)} PED
+            </div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">Profit/Loss</div>
+            <div
+              className={`text-2xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
+            >
+              {profit >= 0 ? '+' : ''}
+              {profit.toFixed(2)} PED
+            </div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">Returns</div>
+            <div
+              className={`text-2xl font-bold flex items-center gap-2 ${
+                session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+              }`}
+            >
+              {session.stats.returns >= 100 ? (
+                <TrendingUp className="w-5 h-5" />
+              ) : (
+                <TrendingDown className="w-5 h-5" />
+              )}
+              {session.stats.returns.toFixed(1)}%
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Stats */}
+        <div className="grid grid-cols-4 gap-4 mt-4">
+          <div className="bg-gray-700 rounded-lg p-3 text-center">
+            <div className="text-xs text-gray-400">Loot Events</div>
+            <div className="text-lg font-semibold">{session.stats.lootEvents}</div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-3 text-center">
+            <div className="text-xs text-gray-400">Globals</div>
+            <div className="text-lg font-semibold text-yellow-400">{session.stats.globals}</div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-3 text-center">
+            <div className="text-xs text-gray-400">HoFs</div>
+            <div className="text-lg font-semibold text-purple-400">{session.stats.hofs}</div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-3 text-center">
+            <div className="text-xs text-gray-400">Duration</div>
+            <div className="text-lg font-semibold">
+              {Math.floor(session.stats.duration / 3600)}h{' '}
+              {Math.floor((session.stats.duration % 3600) / 60)}m
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Costs Panel */}
+      <CostsPanel session={session} />
+
+      {/* Loot Table */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold">Loot</h3>
+          <button
+            onClick={() => setShowAddLoot(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Loot
+          </button>
+        </div>
+
+        {session.loot.length === 0 ? (
+          <p className="text-center text-gray-400 py-8">No loot recorded yet</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-700">
+                  <th className="text-left py-2 px-3">Time</th>
+                  <th className="text-left py-2 px-3">Item</th>
+                  <th className="text-right py-2 px-3">Qty</th>
+                  <th className="text-right py-2 px-3">TT Value</th>
+                  <th className="text-right py-2 px-3">Markup</th>
+                  <th className="text-right py-2 px-3">Total Value</th>
+                  <th className="text-right py-2 px-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {session.loot.map((item) => (
+                  <tr key={item.id} className="border-b border-gray-800 hover:bg-gray-700">
+                    <td className="py-2 px-3 text-sm text-gray-400">
+                      {format(item.timestamp, 'HH:mm:ss')}
+                    </td>
+                    <td className="py-2 px-3 font-medium">{item.name}</td>
+                    <td className="py-2 px-3 text-right">{item.quantity}</td>
+                    <td className="py-2 px-3 text-right">{item.value.toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right">{item.markup}%</td>
+                    <td className="py-2 px-3 text-right font-semibold text-green-400">
+                      {item.totalValue.toFixed(2)} PED
+                    </td>
+                    <td className="py-2 px-3 text-right">
+                      <button
+                        onClick={() => removeLoot(sessionId, item.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Globals & HoFs */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <Award className="w-5 h-5 text-yellow-400" />
+            Globals & HoFs
+          </h3>
+          <button
+            onClick={() => setShowAddGlobal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4" />
+            Add Global
+          </button>
+        </div>
+
+        {session.globals.length === 0 ? (
+          <p className="text-center text-gray-400 py-8">No globals recorded yet</p>
+        ) : (
+          <div className="space-y-2">
+            {session.globals.map((global) => (
+              <div
+                key={global.id}
+                className={`p-3 rounded-lg flex items-center justify-between ${
+                  global.isHoF
+                    ? 'bg-purple-900 border border-purple-600'
+                    : 'bg-yellow-900 border border-yellow-600'
+                }`}
+              >
+                <div>
+                  <span className="font-medium">{global.creature}</span>
+                  <span className="text-sm text-gray-300 ml-2">
+                    {format(global.timestamp, 'MMM dd, HH:mm')}
+                  </span>
+                </div>
+                <div className="font-bold text-lg">
+                  {global.value.toFixed(2)} PED
+                  {global.isHoF && <span className="ml-2 text-sm">🏆 HoF</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Skills */}
+      {session.skills.length > 0 && (
+        <div className="card p-6">
+          <h3 className="text-xl font-bold mb-4">Skill Gains</h3>
+          <div className="space-y-2">
+            {session.skills.map((skill) => (
+              <div
+                key={skill.id}
+                className="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
+              >
+                <span className="font-medium">{skill.skillName}</span>
+                <span className="text-green-400">+{skill.gainAmount.toFixed(4)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Notes */}
+      {session.notes && (
+        <div className="card p-6">
+          <h3 className="text-xl font-bold mb-4">Notes</h3>
+          <p className="text-gray-300 whitespace-pre-wrap">{session.notes}</p>
+        </div>
+      )}
+
+      {showAddLoot && <AddLootModal sessionId={sessionId} onClose={() => setShowAddLoot(false)} />}
+      {showAddGlobal && (
+        <AddGlobalModal sessionId={sessionId} onClose={() => setShowAddGlobal(false)} />
+      )}
+    </div>
+  );
+}

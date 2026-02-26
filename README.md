@@ -1,93 +1,216 @@
-# orion
+# Orion Hunt Tracker 🎯
 
+A modern **desktop application** for tracking Entropia Universe hunting sessions. Built with **Tauri** (Rust + React), Orion automatically monitors your chat log to detect globals, HoFs, and loot in real-time.
 
+**Key Features:**
 
-## Getting started
+- 🔥 **Automatic loot detection** from chat log
+- 📊 **Real-time monitoring** with file watching
+- 💎 **Tiny file size** (~5-10 MB vs 120+ MB Electron apps)
+- ⚡ **Fast & efficient** - Native performance with Rust backend
+- 💾 **Local-first** - All data stays on your machine
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Inspired by **Entropia Tally**, **Artemis**, and **LootNanny**.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## Add your files
+## ✨ Features
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+### 🎯 Automatic Chat Log Parsing
 
+- **Real-time monitoring** of Entropia Universe chat.log
+- **Automatic detection** of globals and Hall of Fame events
+- **Multi-language support** (English, Romanian, etc.)
+- **File watching** - Monitors log changes automatically
+- **Player filtering** - Track only your own loot
+
+### 🎮 Session Management
+
+- Create and manage multiple hunting sessions
+- Track active, paused, and completed sessions
+- Real-time session statistics
+- Session notes and details
+
+### 💎 Loot Tracking
+
+- Add loot items with TT value and markup
+- Track quantity and total value
+- Quick loot entry with customizable defaults
+- Item database for frequently looted items
+
+### 📊 Statistics & Analytics
+
+- Real-time returns calculation
+- Total loot vs. cost tracking
+- Profit/loss monitoring
+- Session duration tracking
+- Loot events counter
+
+### 🏆 Globals & HoFs
+
+- Record global drops
+- Track Hall of Fame (HoF) events
+- Visual distinction between globals and HoFs
+
+### 💰 Cost Management
+
+- Ammo cost tracking
+- Repair cost tracking
+- Armor decay costs
+- Healing costs
+- Other miscellaneous costs
+
+### 📦 Item Database
+
+- Create item templates with default values
+- Quick-add frequently looted items
+- Categorize items (loot, weapon, armor, tool, other)
+- Default markup management
+
+### ⚙️ Settings
+
+- Customizable default markup
+- Player name configuration
+- **Rust** 1.77.2+ ([install from rustup.rs](https://rustup.rs/))
+- **Node.js** 18+ and npm/yarn
+- **Linux/Windows/macOS** supported
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://gitlab.com/Nepherius/orion.git
+cd orion
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/Nepherius/orion.git
-git branch -M main
-git push -uf origin main
+
+2. Install dependencies:
+
+```bash
+npm install
 ```
 
-## Integrate with your tools
+3. Run in development mode:
 
-* [Set up project integrations](https://gitlab.com/Nepherius/orion/-/settings/integrations)
+```bash
+npm run tauri:dev
+```
 
-## Collaborate with your team
+4. Build for production:
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+```bash
+npm run tauri:build
+```
 
-## Test and Deploy
+The built executable will be in `src-tauri/target/release/`
 
-Use the built-in continuous integration in GitLab.
+### First Run Setup
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+1. **Launch Orion** - Double-click the executable
+2. **Create a hunting session** - Click "New Session"
+3. **Select your chat log**:
+   - Windows: `C:\Users\<YourName>\Documents\Entropia Universe\chat.log`
+   - Linux: `~/.wine/drive_c/users/<YourName>/Documents/Entropia Universe/chat.log`
+4. **Start monitoring** - Click "Start Monitoring"
+5. **Hunt!** - Globals and HoFs will be automatically detected and added to your active session
 
-***
+```bash
+npm run build
+# or
+yarn build
+```
 
-# Editing this README
+The built files will be in the `dist` folder, ready to deploy.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## 📖 Usage
 
-## Suggestions for a good README
+### Creating a Hunt Session
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+1. Click "New Session" in the Sessions panel
+2. Fill in session details (creature, weapon, armor, location)
+3. Click "Create Session" to start tracking
 
-## Name
-Choose a self-explaining name for your project.
+### Adding Loot
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+1. Select an active or completed session
+2. In the Session Details view, click "Add Loot"
+3. Enter item name, quantity, TT value, and markup
+4. Click "Add Loot" to record
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### Recording Globals & HoFs
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+1. In Session Details, click "Add Global"
+2. Enter creature name and loot value
+3. Check "This is a Hall of Fame (HoF)" if applicable
+4. Click "Add Global"
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Managing Costs
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+1. In Session Details, find the Costs panel
+2. Click "Edit" to modify costs
+3. Enter ammo, repair, armor decay, healing, and other costs
+4. Click "Save" to update
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Using Item Database
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+1. Navigate to the Database tab
+2. Click "Add Item Template"
+3. Create templates for frequently looted items with default values
+4. Use these templates for quick loot entry
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+## Tauri 2\*\* - Rust-powered desktop framework
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+- **Rust** - Backend for file operations and parsing
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **Tailwind CSS** - Styling
+- **Zustand** - State management with local persistence
+- **Notify** - File system watching
+- **Regex** - Chat log parsingities
+- \*\*� Future Enhancements
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+- [x] Automatic chat log parsing
+- [x] Real-time file watching
+- [x] Global and HoF detection
+- [ ] Team/shared loot detection
+- [ ] Skills & attributes parsing from chat
+- [ ] Analytics dashboard with charts
+- [ ] Export to Excel/CSV
+- [ ] Import from Entropia Tally
+- [ ] Overlay mode for in-game use
+- [ ] Auto-updater
+- [ ] macOS build testing
+- [ ] Light theme
+- [ ] Multi-session comparison
+- [ ] Light theme
+- [ ] Mobile responsive design improvements
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+## 🤝 Contributing
 
-## License
-For open source projects, say how it is licensed.
+Contributions are welcome! Feel free to:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🙏 Acknowledgments
+
+- Inspired by [Entropia Tally](https://github.com/EntropiaTally/entropia-tally-app/)
+- Inspired by [Artemis](https://www.thedeltaproject.net/artemis) by Project Delta
+- Inspired by [LootNanny](https://lootnanny.com/)
+
+## ⚠️ Disclaimer
+
+This is an independent project and is **not affiliated with MindArk PE AB or Entropia Universe**. All trademarks are property of their respective owners.
+
+## 📧 Contact
+
+For issues, questions, or suggestions, please use the GitLab issue tracker.
