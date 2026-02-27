@@ -1,111 +1,189 @@
-import { useState } from 'react';
-import { useHuntStore } from '../../store';
 import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
 import { ItemTemplate } from '../../types';
+import { useItemDatabaseModel } from '../../hooks/useItemDatabaseModel';
+import { ConfirmModal } from '../common/ConfirmModal';
+import { useItemBrowser } from '../../hooks/useItemBrowser';
 
 export function ItemDatabase() {
-  const { itemDatabase, addItemTemplate, updateItemTemplate, deleteItemTemplate } = useHuntStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<ItemTemplate | null>(null);
+  const {
+    searchQuery,
+    setSearchQuery,
+    showAddModal,
+    setShowAddModal,
+    editingItem,
+    setEditingItem,
+    filteredItems,
+    requestDelete,
+    confirmDelete,
+    deleteConfirmId,
+    setDeleteConfirmId,
+    handleAddSave,
+    handleEditSave,
+  } = useItemDatabaseModel();
 
-  const filteredItems = itemDatabase.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { items: entropyItems, getTTValue, getCategory, loading: entropyLoading } = useItemBrowser();
+  const [entropyMarkups, setEntropyMarkups] = useState<{ [key: number]: number }>({});
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this item?')) {
-      deleteItemTemplate(id);
-    }
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+  };
+
+  // Filter Entropia items based on search
+  const filteredEntropyItems = searchQuery 
+    ? entropyItems.filter((item) =>
+        item.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.Properties?.Type?.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 10) // Limit to 10 results
+    : [];
+
+  const handleSaveCustom = (item: any) => {
+    const markupValue = entropyMarkups[item.Id] || 100;
+    handleAddSave({
+      name: item.Name,
+      category: getCategory(item),
+      defaultTTValue: getTTValue(item),
+      defaultMarkup: markupValue,
+      description: `Item ID: ${item.Id}, Type: ${item.Properties?.Type || 'Unknown'}`,
+    });
+    // Clear the markup after saving
+    setEntropyMarkups((prev) => {
+      const newMarkups = { ...prev };
+      delete newMarkups[item.Id];
+      return newMarkups;
+    });
   };
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Item Database</h2>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Item Template
-        </button>
-      </div>
+    <div className="space-y-6">
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="btn-primary flex items-center gap-2"
+      >
+        <Plus className="w-4 h-4" />
+        Add Item Template
+      </button>
 
       {/* Search */}
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Search items..."
+          placeholder="Search local items or Entropia database..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="input w-full pl-10"
         />
       </div>
 
-      {/* Items Table */}
-      {filteredItems.length === 0 ? (
-        <p className="text-center text-gray-400 py-8">
-          {searchQuery
-            ? 'No items found'
-            : 'No items in database. Add item templates to quickly add loot with default values.'}
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-700">
-                <th className="text-left py-2 px-3">Item Name</th>
-                <th className="text-left py-2 px-3">Category</th>
-                <th className="text-right py-2 px-3">Default TT Value</th>
-                <th className="text-right py-2 px-3">Default Markup</th>
-                <th className="text-left py-2 px-3">Description</th>
-                <th className="text-right py-2 px-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item) => (
-                <tr key={item.id} className="border-b border-gray-800 hover:bg-gray-700">
-                  <td className="py-2 px-3 font-medium">{item.name}</td>
-                  <td className="py-2 px-3">
-                    <span className="px-2 py-1 text-xs rounded bg-gray-600">{item.category}</span>
-                  </td>
-                  <td className="py-2 px-3 text-right">{item.defaultTTValue.toFixed(2)} PED</td>
-                  <td className="py-2 px-3 text-right">{item.defaultMarkup}%</td>
-                  <td className="py-2 px-3 text-sm text-gray-400">{item.description || '-'}</td>
-                  <td className="py-2 px-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => setEditingItem(item)}
-                        className="text-primary-400 hover:text-primary-300"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+      {/* Local Items Table */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Your Items</h3>
+        {filteredItems.length === 0 && !searchQuery ? (
+          <p className="text-center text-gray-400 py-8">
+            No items in database. Add item templates to quickly add loot with default values.
+          </p>
+        ) : filteredItems.length === 0 ? (
+          <p className="text-center text-gray-400 py-4 text-sm">No matching items</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-700">
+                  <th className="text-left py-2 px-3">Item Name</th>
+                  <th className="text-left py-2 px-3">Category</th>
+                  <th className="text-right py-2 px-3">Default TT Value</th>
+                  <th className="text-right py-2 px-3">Default Markup</th>
+                  <th className="text-left py-2 px-3">Description</th>
+                  <th className="text-right py-2 px-3">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredItems.map((item) => (
+                  <tr key={item.id} className="border-b border-gray-800 hover:bg-gray-700">
+                    <td className="py-2 px-3 font-medium">{item.name}</td>
+                    <td className="py-2 px-3">
+                      <span className="px-2 py-1 text-xs rounded bg-gray-600">{item.category}</span>
+                    </td>
+                    <td className="py-2 px-3 text-right">{item.defaultTTValue.toFixed(2)} PED</td>
+                    <td className="py-2 px-3 text-right">{item.defaultMarkup}%</td>
+                    <td className="py-2 px-3 text-sm text-gray-400">{item.description || '-'}</td>
+                    <td className="py-2 px-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setEditingItem(item)}
+                          className="text-primary-400 hover:text-primary-300"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => requestDelete(item.id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Entropia Database Results */}
+      {searchQuery && filteredEntropyItems.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-3">Entropia Database</h3>
+          <div className="space-y-2">
+            {filteredEntropyItems.map((item) => (
+              <div
+                key={item.Id}
+                className="border border-gray-700 rounded p-4 bg-gray-800 hover:bg-gray-700 transition"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h4 className="font-medium">{item.Name}</h4>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Type: {item.Properties?.Type || 'Unknown'} • TT: {getTTValue(item).toFixed(2)} PED
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-400">Markup %:</label>
+                      <input
+                        type="number"
+                        min="100"
+                        step="1"
+                        value={entropyMarkups[item.Id] || 100}
+                        onChange={(e) =>
+                          setEntropyMarkups((prev) => ({
+                            ...prev,
+                            [item.Id]: Number(e.target.value),
+                          }))
+                        }
+                        className="input w-16 text-sm"
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleSaveCustom(item)}
+                      className="btn-primary text-sm"
+                    >
+                      Save Custom
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {showAddModal && (
         <ItemModal
           onClose={() => setShowAddModal(false)}
-          onSave={(data) => {
-            addItemTemplate(data);
-            setShowAddModal(false);
-          }}
+          onSave={handleAddSave}
         />
       )}
 
@@ -113,12 +191,20 @@ export function ItemDatabase() {
         <ItemModal
           item={editingItem}
           onClose={() => setEditingItem(null)}
-          onSave={(data) => {
-            updateItemTemplate(editingItem.id, data);
-            setEditingItem(null);
-          }}
+          onSave={(data) => handleEditSave(editingItem.id, data)}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirmId !== null}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        variant="danger"
+        title="Delete Item?"
+        message="Are you sure you want to delete this item template?"
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }
@@ -134,7 +220,7 @@ function ItemModal({ item, onClose, onSave }: ItemModalProps) {
     name: item?.name || '',
     category: item?.category || ('loot' as const),
     defaultTTValue: item?.defaultTTValue || 0,
-    defaultMarkup: item?.defaultMarkup || 105,
+    defaultMarkup: item?.defaultMarkup || 100,
     description: item?.description || '',
   });
 

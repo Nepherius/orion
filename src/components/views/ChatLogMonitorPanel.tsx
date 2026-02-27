@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { FileText, Play, Square, AlertCircle, CheckCircle } from 'lucide-react';
 import { useHuntStore } from '../../store';
+import { AlertModal } from '../common/AlertModal';
 
 /**
  * UI Panel for Chat Log Monitor controls
@@ -12,6 +13,7 @@ export function ChatLogMonitorPanel() {
   const [watchedPath, setWatchedPath] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'watching' | 'error'>('idle');
   const [showStopConfirm, setShowStopConfirm] = useState(false);
+  const [showSessionActiveAlert, setShowSessionActiveAlert] = useState(false);
 
   const settings = useHuntStore((state) => state.settings);
   const activeSession = useHuntStore((state) => state.getActiveSession());
@@ -53,7 +55,7 @@ export function ChatLogMonitorPanel() {
   const stopWatching = async () => {
     // Prevent stopping monitoring during an active session
     if (activeSession && activeSession.status === 'active') {
-      alert('Cannot stop monitoring during an active session. Please pause or end the session first.');
+      setShowSessionActiveAlert(true);
       return;
     }
 
@@ -184,6 +186,15 @@ export function ChatLogMonitorPanel() {
           </div>
         </div>
       )}
+
+      <AlertModal
+        isOpen={showSessionActiveAlert}
+        onClose={() => setShowSessionActiveAlert(false)}
+        variant="warning"
+        title="Cannot Stop Monitoring"
+        message="Cannot stop monitoring during an active session."
+        detail="Please pause or end the session first before stopping the file monitor."
+      />
     </div>
   );
 }

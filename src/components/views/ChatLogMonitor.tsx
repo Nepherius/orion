@@ -57,9 +57,21 @@ export function ChatLogMonitor() {
   const [listenerReady, setListenerReady] = useState(false);
   // Track processed event timestamps to avoid duplicates - use ref since we don't need re-renders
   const processedEventsRef = useRef<Set<string>>(new Set());
+  const detectionInProgress = useRef(false);
 
-  const settings = useHuntStore((state) => state.settings);
+  // Use more specific selectors to ensure proper reactivity
+  const avatarName = useHuntStore((state) => state.settings.avatarName);
+  const chatLogPath = useHuntStore((state) => state.settings.chatLogPath);
+  const autoStartSession = useHuntStore((state) => state.settings.autoStartSession);
+  const updateSettings = useHuntStore((state) => state.updateSettings);
   const activeSession = useHuntStore((state) => state.getActiveSession());
+
+  console.log('[ChatLogMonitor] Component render:', {
+    avatarName,
+    chatLogPath,
+    autoStartSession,
+    listenerReady
+  });
 
   const getIsWatching = async () => {
     try {
@@ -71,8 +83,31 @@ export function ChatLogMonitor() {
     }
   };
 
+  const detectAndSetChatLogPath = async () => {
+    if (detectionInProgress.current) {
+      console.log('[ChatLogMonitor] Detection already in progress, skipping...');
+      return;
+    }
+    
+    detectionInProgress.current = true;
+    try {
+      console.log('[ChatLogMonitor] Attempting to detect chat log path...');
+      const detected: string | null = await invoke('detect_chat_log_path');
+      if (detected) {
+        console.log('[ChatLogMonitor] Chat log detected:', detected);
+        updateSettings({ chatLogPath: detected });
+      } else {
+        console.log('[ChatLogMonitor] No chat log path detected');
+      }
+    } catch (error) {
+      console.error('[ChatLogMonitor] Error detecting chat log:', error);
+    } finally {
+      detectionInProgress.current = false;
+    }
+  };
+
   const startWatching = async () => {
-    const pathToWatch = settings.chatLogPath;
+    const pathToWatch = chatLogPath;
     console.log('[ChatLogMonitor] startWatching called. pathToWatch:', pathToWatch);
     if (!pathToWatch) {
       console.warn('[ChatLogMonitor] No path to watch, returning');
@@ -82,7 +117,7 @@ export function ChatLogMonitor() {
     try {
       console.log('[ChatLogMonitor] Invoking start_watching_file with path:', pathToWatch);
       await invoke('start_watching_file', { path: pathToWatch });
-      console.log('[ChatLogMonitor] ✅ start_watching_file succeeded');
+      console.log('[ChatLogMonitor] start_watching_file succeeded');
     } catch (error) {
       console.error('Error starting watch:', error);
     }
@@ -92,11 +127,39 @@ export function ChatLogMonitor() {
     try {
       console.log('[ChatLogMonitor] stopWatching called');
       await invoke('stop_watching_file');
-      console.log('[ChatLogMonitor] ✅ stop_watching_file succeeded');
+      console.log('[ChatLogMonitor] stop_watching_file succeeded');
     } catch (error) {
       console.error('[ChatLogMonitor] Error stopping watch:', error);
     }
   };
+
+  // Auto-detect chat log path when avatar name is set but chat log path is empty
+  // Wait for listener to be ready before attempting detection
+  useEffect(() => {
+    console.log('[ChatLogMonitor] ==== Detection Effect Fired ====');
+    console.log('[ChatLogMonitor] Detection effect check:', {
+      avatarName,
+      avatarNameLength: avatarName?.length,
+      avatarNameTruthy: !!avatarName,
+      chatLogPath,
+      chatLogPathLength: chatLogPath?.length,
+      chatLogPathFalsy: !chatLogPath,
+      listenerReady,
+      detectionInProgress: detectionInProgress.current
+    });
+    
+    if (avatarName && !chatLogPath && listenerReady && !detectionInProgress.current) {
+      console.log('[ChatLogMonitor] All conditions met - starting detection...');
+      detectAndSetChatLogPath();
+    } else {
+      console.log('[ChatLogMonitor] Conditions NOT met:');
+      if (!avatarName) console.log('   - No avatar name');
+      if (chatLogPath) console.log('   - Chat log path already set:', chatLogPath);
+      if (!listenerReady) console.log('   - Listener not ready yet');
+      if (detectionInProgress.current) console.log('   - Detection already in progress');
+    }
+    console.log('[ChatLogMonitor] ==== Detection Effect Complete ====');
+  }, [avatarName, chatLogPath, listenerReady]);
 
   // Auto-start monitoring based on settings and session status
   // IMPORTANT: Only runs after event listener is ready to avoid race condition
@@ -104,29 +167,40 @@ export function ChatLogMonitor() {
     console.log('[ChatLogMonitor] Auto-start effect triggered');
     console.log('[ChatLogMonitor] - listenerReady:', listenerReady);
     console.log('[ChatLogMonitor] - activeSession:', activeSession?.id, 'status:', activeSession?.status);
-    console.log('[ChatLogMonitor] - chatLogPath:', settings.chatLogPath);
-    console.log('[ChatLogMonitor] - autoStartSession:', settings.autoStartSession);
+    console.log('[ChatLogMonitor] - chatLogPath:', chatLogPath);
+    console.log('[ChatLogMonitor] - autoStartSession:', autoStartSession);
     
     if (!listenerReady) {
-      console.log('[ChatLogMonitor] ⏳ Waiting for event listener to be ready...');
+      console.log('[ChatLogMonitor] Waiting for event listener to be ready...');
       return;
     }
     
-    if (!settings.chatLogPath) {
-      console.log('[ChatLogMonitor] ❌ No chat log path set');
+    if (!chatLogPath) {
+      console.log('[ChatLogMonitor] No chat log path set');
       return;
     }
 
     const ensureWatching = async () => {
       const watching = await getIsWatching();
+      const currentActiveLoadout = useHuntStore.getState().getActiveLoadout();
 
-      if (settings.autoStartSession) {
+      if (autoStartSession) {
+        // Check if there's an active loadout before auto-starting
+        if (!currentActiveLoadout) {
+          console.log('[ChatLogMonitor] Auto-start disabled: No active loadout set');
+          if (watching) {
+            console.log('[ChatLogMonitor] Stopping watcher due to missing loadout');
+            stopWatching();
+          }
+          return;
+        }
+        
         // Always watch when auto-start is enabled
         if (!watching) {
-          console.log('[ChatLogMonitor] ✅ Auto-start enabled, starting watcher');
+          console.log('[ChatLogMonitor] Auto-start enabled, starting watcher');
           startWatching();
         } else {
-          console.log('[ChatLogMonitor] ℹ️ Auto-start enabled, watcher already running');
+          console.log('[ChatLogMonitor] Auto-start enabled, watcher already running');
         }
         return;
       }
@@ -134,18 +208,18 @@ export function ChatLogMonitor() {
       // Auto-start disabled: only watch while an active session is running
       if (activeSession && activeSession.status === 'active') {
         if (!watching) {
-          console.log('[ChatLogMonitor] ✅ Active session detected, starting watcher');
+          console.log('[ChatLogMonitor] Active session detected, starting watcher');
           // Reset processed event timestamps for new session
           processedEventsRef.current = new Set();
           startWatching();
         } else {
-          console.log('[ChatLogMonitor] ℹ️ Active session detected, watcher already running');
+          console.log('[ChatLogMonitor] Active session detected, watcher already running');
         }
       } else if (watching) {
-        console.log('[ChatLogMonitor] ⏹️ No active session and auto-start disabled, stopping watcher');
+        console.log('[ChatLogMonitor] No active session and auto-start disabled, stopping watcher');
         stopWatching();
       } else {
-        console.log('[ChatLogMonitor] ℹ️ No active session and watcher is already stopped');
+        console.log('[ChatLogMonitor] No active session and watcher is already stopped');
       }
     };
 
@@ -154,24 +228,24 @@ export function ChatLogMonitor() {
     listenerReady,
     activeSession?.id,
     activeSession?.status,
-    settings.chatLogPath,
-    settings.autoStartSession,
+    chatLogPath,
+    autoStartSession,
   ]);
 
   // Setup event listener on mount FIRST - before any auto-start can happen
   useEffect(() => {
-    console.log('[ChatLogMonitor] 🎧 Setting up event listener on mount');
+    console.log('[ChatLogMonitor] Setting up event listener on mount');
     let unlistenFn: UnlistenFn | null = null;
     let isMounted = true;
 
     const setupListener = async () => {
       try {
-        console.log('[ChatLogMonitor] 🔧 Starting setupListener...');
+        console.log('[ChatLogMonitor] Starting setupListener...');
         
         // Listen for file updates - await to ensure it's registered before we continue
-        console.log('[ChatLogMonitor] 📡 Registering event listener for chat-log-updated...');
+        console.log('[ChatLogMonitor] Registering event listener for chat-log-updated...');
         unlistenFn = await listen<string>('chat-log-updated', async (event) => {
-          console.log('[ChatLogMonitor] ===== 🔔 RECEIVED chat-log-updated EVENT =====');
+          console.log('[ChatLogMonitor] RECEIVED chat-log-updated EVENT');
       try {
         const content = event.payload;
         console.debug('[ChatLogMonitor] File updated, parsing content... Length:', content.length);
@@ -197,12 +271,19 @@ export function ChatLogMonitor() {
           const hasSystemPickup = events.some((e) => !e.player || e.player.trim() === '');
           if (hasSystemPickup || damageEvents.length > 0) {
             const activeLoadout = useHuntStore.getState().getActiveLoadout();
+            
+            // Cancel auto-start if no active loadout is set
+            if (!activeLoadout) {
+              console.warn('[ChatLogMonitor] Auto-start cancelled: No active loadout set. User must create and activate a loadout first.');
+              return;
+            }
+            
             const storeActions = useHuntStore.getState();
             console.debug('[ChatLogMonitor] No active session — creating auto session to capture events');
             storeActions.createSession({
               name: 'Auto Session (Chat Monitor)',
-              weapon: activeLoadout?.name || 'No Loadout',
-              loadoutId: activeLoadout?.id,
+              weapon: activeLoadout.name || 'No Loadout',
+              loadoutId: activeLoadout.id,
               armor: '',
               location: 'Auto',
               startTime: Date.now(),
@@ -233,6 +314,7 @@ export function ChatLogMonitor() {
           // Get the last few events (avoid duplicates)
           const recentEvents = events.slice(-10);
           const storeActions = useHuntStore.getState();
+          const storeState = useHuntStore.getState();
 
           recentEvents.forEach((evt) => {
             // Determine if this is a system pickup (no player) or a global (has player)
@@ -241,12 +323,19 @@ export function ChatLogMonitor() {
             if (isSystemPickup) {
               // System pickups should be added as loot items
               console.debug('[ChatLogMonitor] Adding system pickup:', evt.creature, evt.value);
+              
+              // Check if item exists in database and use its markup
+              const customItem = storeState.itemDatabase.find(
+                (item) => item.name.toLowerCase() === evt.creature.toLowerCase()
+              );
+              const markup = customItem?.defaultMarkup || storeSettings.defaultMarkup || 100;
+              
               storeActions.addLoot(activeSession.id, {
                 name: evt.creature,
                 quantity: 1,
                 value: evt.value,
-                markup: storeSettings.defaultMarkup || 100,
-                totalValue: evt.value * ((storeSettings.defaultMarkup || 100) / 100),
+                markup: markup,
+                totalValue: evt.value * (markup / 100),
               });
             } else if (storeSettings.avatarName && evt.player.includes(storeSettings.avatarName)) {
               // Only add globals if avatar name is set AND it matches the player
@@ -346,35 +435,35 @@ export function ChatLogMonitor() {
 
         // Check again if component is still mounted before updating state
         if (!isMounted) {
-          console.log('[ChatLogMonitor] ⚠️ Component unmounted before setState, cleaning up listener');
+          console.log('[ChatLogMonitor] Component unmounted before setState, cleaning up listener');
           if (unlistenFn) unlistenFn();
           return;
         }
 
-        console.log('[ChatLogMonitor] ✅ Event listener registered successfully');
-        console.log('[ChatLogMonitor] 🎯 Setting listenerReady to true');
+        console.log('[ChatLogMonitor] Event listener registered successfully');
+        console.log('[ChatLogMonitor] Setting listenerReady to true');
         setListenerReady(true);
-        console.log('[ChatLogMonitor] 🎯 listenerReady state updated');
+        console.log('[ChatLogMonitor] listenerReady state updated');
       } catch (error) {
-        console.error('[ChatLogMonitor] ❌ Failed to setup event listener:', error);
-        console.error('[ChatLogMonitor] ❌ Error details:', JSON.stringify(error, null, 2));
+        console.error('[ChatLogMonitor] Failed to setup event listener:', error);
+        console.error('[ChatLogMonitor] Error details:', JSON.stringify(error, null, 2));
       }
     };
 
-    console.log('[ChatLogMonitor] 🚀 Calling setupListener()...');
+    console.log('[ChatLogMonitor] Calling setupListener()...');
     setupListener();
-    console.log('[ChatLogMonitor] 🚀 setupListener() called (async, will complete later)');
+    console.log('[ChatLogMonitor] setupListener() called (async, will complete later)');
 
 
     return () => {
-      console.log('[ChatLogMonitor] 🧹 Cleaning up event listener');
+      console.log('[ChatLogMonitor] Cleaning up event listener');
       isMounted = false;
       if (unlistenFn) {
-        console.log('[ChatLogMonitor] 🧹 Calling unlisten function');
+        console.log('[ChatLogMonitor] Calling unlisten function');
         unlistenFn();
       }
       setListenerReady(false);
-      console.log('[ChatLogMonitor] 🧹 Cleanup complete');
+      console.log('[ChatLogMonitor] Cleanup complete');
     };
   }, []); // Empty dependency array - set up listener only once on mount
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHuntStore } from '../../store';
 import { X } from 'lucide-react';
 
@@ -10,12 +10,29 @@ interface AddLootModalProps {
 export function AddLootModal({ sessionId, onClose }: AddLootModalProps) {
   const addLoot = useHuntStore((state) => state.addLoot);
   const settings = useHuntStore((state) => state.settings);
+  const itemDatabase = useHuntStore((state) => state.itemDatabase);
   const [formData, setFormData] = useState({
     name: '',
     quantity: 1,
     value: 0,
     markup: settings.defaultMarkup,
   });
+
+  // Auto-fill TT value and markup when item name matches database
+  useEffect(() => {
+    if (formData.name.trim()) {
+      const matchedItem = itemDatabase.find(
+        (item) => item.name.toLowerCase() === formData.name.toLowerCase()
+      );
+      if (matchedItem) {
+        setFormData((prev) => ({
+          ...prev,
+          value: matchedItem.defaultTTValue,
+          markup: matchedItem.defaultMarkup,
+        }));
+      }
+    }
+  }, [formData.name, itemDatabase]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

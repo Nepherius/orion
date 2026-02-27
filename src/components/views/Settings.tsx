@@ -1,53 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useHuntStore } from '../../store';
-import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-dialog';
 import { FolderOpen, User, FileText, Palette, Sliders } from 'lucide-react';
+import { useSettingsModel } from '../../hooks/useSettingsModel';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 export function Settings() {
-  const { settings, updateSettings } = useHuntStore();
-  const [chatLogPath, setChatLogPath] = useState(settings.chatLogPath || '');
-  const [detectedPath, setDetectedPath] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Try to detect chat log on mount
-    detectChatLog();
-  }, []);
-
-  const detectChatLog = async () => {
-    try {
-      const detected: string | null = await invoke('detect_chat_log_path');
-      if (detected) {
-        setDetectedPath(detected);
-        if (!chatLogPath) {
-          setChatLogPath(detected);
-          updateSettings({ chatLogPath: detected });
-        }
-      }
-    } catch (error) {
-      console.error('Error detecting chat log:', error);
-    }
-  };
-
-  const handleBrowse = async () => {
-    try {
-      const selected = await open({
-        multiple: false,
-        filters: [
-          {
-            name: 'Log Files',
-            extensions: ['log', 'txt'],
-          },
-        ],
-      });
-      if (selected) {
-        setChatLogPath(selected as string);
-        updateSettings({ chatLogPath: selected as string });
-      }
-    } catch (error) {
-      console.error('Error selecting file:', error);
-    }
-  };
+  const {
+    settings,
+    updateSettings,
+    chatLogPath,
+    detectedPath,
+    handleBrowse,
+    handleChatLogPathChange,
+    requestClearData,
+    confirmClearData,
+    showClearDataConfirm,
+    setShowClearDataConfirm,
+  } = useSettingsModel();
 
   const SettingSection = ({ icon: Icon, title, description, children }: { icon: React.ElementType; title: string; description: string; children: React.ReactNode }) => (
     <div className="card p-5">
@@ -93,8 +60,7 @@ export function Settings() {
               type="text"
               value={chatLogPath}
               onChange={(e) => {
-                setChatLogPath(e.target.value);
-                updateSettings({ chatLogPath: e.target.value });
+                handleChatLogPathChange(e.target.value);
               }}
               placeholder="Automatic detection"
               className="input flex-1"
@@ -197,12 +163,7 @@ export function Settings() {
       <div className="card p-5 border border-red-900 bg-red-950 bg-opacity-20">
         <h3 className="font-semibold text-red-400 mb-3">Danger Zone</h3>
         <button
-          onClick={() => {
-            if (confirm('Are you sure you want to clear all data? This cannot be undone!')) {
-              localStorage.clear();
-              window.location.reload();
-            }
-          }}
+          onClick={requestClearData}
           className="btn-danger w-full"
         >
           Clear All Data
@@ -211,6 +172,18 @@ export function Settings() {
           This will permanently delete all sessions, loot data, and settings.
         </p>
       </div>
+
+      <ConfirmModal
+        isOpen={showClearDataConfirm}
+        onClose={() => setShowClearDataConfirm(false)}
+        onConfirm={confirmClearData}
+        variant="danger"
+        title="Clear All Data?"
+        message="Are you sure you want to clear all data? This action cannot be undone!"
+        detail="All sessions, loot, loadouts, and settings will be permanently deleted."
+        confirmText="Clear All Data"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

@@ -12,7 +12,9 @@ export function WelcomeModal({ onComplete }: WelcomeModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (characterName.trim()) {
+      console.log('[WelcomeModal] Setting avatar name to:', characterName.trim());
       updateSettings({ avatarName: characterName.trim() });
+      console.log('[WelcomeModal] Avatar name updated, calling onComplete');
       onComplete?.();
     }
   };

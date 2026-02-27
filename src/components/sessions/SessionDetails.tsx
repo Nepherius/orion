@@ -6,6 +6,7 @@ import { AddLootModal } from '../loot/AddLootModal';
 import { AddGlobalModal } from '../loot/AddGlobalModal';
 import { EditSessionModal } from './EditSessionModal';
 import { CostsPanel } from './CostsPanel';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface SessionDetailsProps {
   sessionId: string;
@@ -21,6 +22,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
   const [showAddLoot, setShowAddLoot] = useState(false);
   const [showAddGlobal, setShowAddGlobal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!session) {
     return <div className="card p-6">Session not found</div>;
@@ -28,10 +30,13 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
 
   const profit = session.stats.totalLoot - session.stats.totalCost;
 
-  const handleDelete = () => {
-    if (confirm(`Are you sure you want to delete "${session.name}"? This action cannot be undone.`)) {
-      deleteSession(sessionId);
-    }
+  const handleDeleteRequest = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    deleteSession(sessionId);
+    setShowDeleteConfirm(false);
   };
 
   const handleResume = () => {
@@ -105,7 +110,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
                 Edit
               </button>
               <button
-                onClick={handleDelete}
+                onClick={handleDeleteRequest}
                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
                 title="Delete Session"
               >
@@ -327,6 +332,18 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
         <AddGlobalModal sessionId={sessionId} onClose={() => setShowAddGlobal(false)} />
       )}
       {showEditModal && <EditSessionModal sessionId={sessionId} onClose={() => setShowEditModal(false)} />}
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        variant="danger"
+        title="Delete Session?"
+        message={`Are you sure you want to delete "${session.name}"?`}
+        detail="This action cannot be undone. All loot, costs, and session data will be permanently deleted."
+        confirmText="Delete Session"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

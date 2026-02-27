@@ -30,12 +30,6 @@ export function LoadoutDetailsPanel({
     );
   }
 
-  const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this loadout?')) {
-      onDelete(loadout.id);
-    }
-  };
-
   return (
     <div className="col-span-3 bg-gray-800 rounded-lg overflow-hidden" style={{ minHeight: 'calc(100vh - 200px)' }}>
       {/* Header */}
@@ -94,7 +88,7 @@ export function LoadoutDetailsPanel({
           Duplicate
         </button>
         <button
-          onClick={handleDelete}
+          onClick={() => onDelete(loadout.id)}
           className="btn-danger w-full flex items-center justify-center gap-2"
         >
           <Trash2 className="w-4 h-4" />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useHuntStore } from '../../store';
 import { Plus, Search, Circle, CheckCircle, Clock } from 'lucide-react';
 import { NewSessionModal } from './NewSessionModal';
+import { AlertModal } from '../common/AlertModal';
 import { format } from 'date-fns';
 
 interface SessionListProps {
@@ -15,7 +16,9 @@ type SortOption = 'newest' | 'oldest' | 'profit' | 'returns';
 
 export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDashboard }: SessionListProps) {
   const sessions = useHuntStore((state) => state.sessions);
+  const activeLoadout = useHuntStore((state) => state.getActiveLoadout());
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showLoadoutError, setShowLoadoutError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -138,7 +141,13 @@ export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDa
 
       {/* New Session Button */}
       <button
-        onClick={() => setShowNewModal(true)}
+        onClick={() => {
+          if (activeLoadout) {
+            setShowNewModal(true);
+          } else {
+            setShowLoadoutError(true);
+          }
+        }}
         className="btn-primary w-full mb-4 flex items-center justify-center gap-2"
       >
         <Plus className="w-4 h-4" />
@@ -213,6 +222,15 @@ export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDa
           onSessionCreated={onNavigateToDashboard}
         />
       )}
+
+      <AlertModal
+        isOpen={showLoadoutError}
+        onClose={() => setShowLoadoutError(false)}
+        variant="warning"
+        title="No Active Loadout"
+        message="You need to create and activate a loadout before starting a new session."
+        detail="Go to the Loadouts tab to create your first loadout, then mark it as active."
+      />
     </div>
   );
 }

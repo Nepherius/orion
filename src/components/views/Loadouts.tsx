@@ -1,73 +1,39 @@
-import { useState } from 'react';
-import { useHuntStore } from '../../store';
 import { NewLoadoutModal } from '../loadouts/NewLoadoutModal';
 import { LoadoutList } from '../loadouts/LoadoutList';
 import { LoadoutTable } from '../loadouts/LoadoutTable';
 import { LoadoutDetailsPanel } from '../loadouts/LoadoutDetailsPanel';
-import { Loadout } from '../../types';
-
-type StatusFilter = 'all' | 'active' | 'favorites';
-type SortOption = 'name-az' | 'name-za' | 'cost' | 'dpp';
+import { useLoadoutsModel } from '../../hooks/useLoadoutsModel';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 export function Loadouts() {
-  const loadouts = useHuntStore((state) => state.loadouts);
   const {
-    deleteLoadout,
+    loadouts,
+    filteredLoadouts,
+    selectedLoadout,
+    selectedLoadoutId,
+    setSelectedLoadoutId,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    sortBy,
+    setSortBy,
+    activeCount,
+    favoriteCount,
+    showNewModal,
+    setShowNewModal,
+    editLoadout,
+    setEditLoadout,
+    handleEdit,
+    handleNewLoadout,
+    requestDelete,
+    confirmDelete,
+    deleteConfirmId,
+    setDeleteConfirmId,
     duplicateLoadout,
     toggleLoadoutFavorite,
     setActiveLoadout,
-  } = useHuntStore();
-
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [editLoadout, setEditLoadout] = useState<Loadout | null>(null);
-  const [selectedLoadoutId, setSelectedLoadoutId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('name-az');
-
-  const selectedLoadout = loadouts.find((l) => l.id === selectedLoadoutId);
-
-  // Filter loadouts
-  let filteredLoadouts = loadouts.filter(
-    (loadout) =>
-      loadout.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loadout.weapon?.Name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (statusFilter === 'active') {
-    filteredLoadouts = filteredLoadouts.filter((l) => l.status === 'active');
-  } else if (statusFilter === 'favorites') {
-    filteredLoadouts = filteredLoadouts.filter((l) => l.favorite);
-  }
-
-  // Sort loadouts
-  filteredLoadouts = [...filteredLoadouts].sort((a, b) => {
-    switch (sortBy) {
-      case 'name-az':
-        return a.name.localeCompare(b.name);
-      case 'name-za':
-        return b.name.localeCompare(a.name);
-      case 'cost':
-        return a.costPerShot - b.costPerShot;
-      case 'dpp':
-        return b.dpp - a.dpp;
-      default:
-        return 0;
-    }
-  });
-
-  const activeCount = loadouts.filter((l) => l.status === 'active').length;
-  const favoriteCount = loadouts.filter((l) => l.favorite).length;
-
-  const handleEdit = (loadout: Loadout) => {
-    setEditLoadout(loadout);
-    setShowNewModal(true);
-  };
-
-  const handleNewLoadout = () => {
-    setEditLoadout(null);
-    setShowNewModal(true);
-  };
+  } = useLoadoutsModel();
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -95,12 +61,7 @@ export function Loadouts() {
         onSetActive={setActiveLoadout}
         onEdit={handleEdit}
         onDuplicate={duplicateLoadout}
-        onDelete={(id) => {
-          deleteLoadout(id);
-          if (selectedLoadoutId === id) {
-            setSelectedLoadoutId(null);
-          }
-        }}
+        onDelete={requestDelete}
         onToggleFavorite={toggleLoadoutFavorite}
       />
 
@@ -110,9 +71,20 @@ export function Loadouts() {
             setShowNewModal(false);
             setEditLoadout(null);
           }}
-          editLoadout={editLoadout}
+          editLoadout={editLoadout || undefined}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirmId !== null}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        variant="danger"
+        title="Delete Loadout?"
+        message="Are you sure you want to delete this loadout?"
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }
