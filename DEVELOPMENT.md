@@ -1,4 +1,4 @@
-# Orion Hunt Tracker - Development Guide
+# Orion Loot Tracker - Development Guide
 
 ## Project Overview
 
@@ -85,7 +85,7 @@ Reusable item templates for quick loot entry:
 
 User preferences:
 
-- playerName
+- avatarName
 - defaultMarkup
 - autoSave, overlayEnabled
 - theme

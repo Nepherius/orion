@@ -1,27 +1,135 @@
+import { useState, useEffect } from 'react';
 import { useHuntStore } from '../store';
+import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
+import { FolderOpen, User, FileText, Palette, Sliders } from 'lucide-react';
 
 export function Settings() {
   const { settings, updateSettings } = useHuntStore();
+  const [chatLogPath, setChatLogPath] = useState(settings.chatLogPath || '');
+  const [detectedPath, setDetectedPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Try to detect chat log on mount
+    detectChatLog();
+  }, []);
+
+  const detectChatLog = async () => {
+    try {
+      const detected: string | null = await invoke('detect_chat_log_path');
+      if (detected) {
+        setDetectedPath(detected);
+        if (!chatLogPath) {
+          setChatLogPath(detected);
+          updateSettings({ chatLogPath: detected });
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting chat log:', error);
+    }
+  };
+
+  const handleBrowse = async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [
+          {
+            name: 'Log Files',
+            extensions: ['log', 'txt'],
+          },
+        ],
+      });
+      if (selected) {
+        setChatLogPath(selected as string);
+        updateSettings({ chatLogPath: selected as string });
+      }
+    } catch (error) {
+      console.error('Error selecting file:', error);
+    }
+  };
+
+  const SettingSection = ({ icon: Icon, title, description, children }: { icon: React.ElementType; title: string; description: string; children: React.ReactNode }) => (
+    <div className="card p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <Icon className="w-5 h-5 text-primary-500" />
+        <div>
+          <h3 className="font-semibold text-white">{title}</h3>
+          <p className="text-xs text-gray-400">{description}</p>
+        </div>
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
 
   return (
-    <div className="card p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Settings</h2>
+    <div className="max-w-4xl mx-auto space-y-6 pb-6">
+      <div>
+        <h2 className="text-3xl font-bold mb-2">Settings</h2>
+        <p className="text-gray-400">Configure your hunt tracking preferences</p>
+      </div>
 
-      <div className="space-y-6">
+      {/* Profile Section */}
+      <SettingSection icon={User} title="Profile" description="Your avatar information">
         <div>
-          <label className="label">Player Name</label>
+          <label className="label">Avatar Name</label>
           <input
             type="text"
-            value={settings.playerName}
-            onChange={(e) => updateSettings({ playerName: e.target.value })}
-            placeholder="Your player name"
+            value={settings.avatarName}
+            onChange={(e) => updateSettings({ avatarName: e.target.value })}
+            placeholder="Enter your character name"
             className="input w-full"
           />
-          <p className="text-xs text-gray-400 mt-1">
-            Your Entropia Universe player name (optional)
-          </p>
+          <p className="text-xs text-gray-400 mt-1">Used for automatic player filtering in chat logs</p>
         </div>
+      </SettingSection>
 
+      {/* Log File Section */}
+      <SettingSection icon={FileText} title="Log File" description="Entropia Universe chat log configuration">
+        <div>
+          <label className="label">Chat Log Path</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={chatLogPath}
+              onChange={(e) => {
+                setChatLogPath(e.target.value);
+                updateSettings({ chatLogPath: e.target.value });
+              }}
+              placeholder="Automatic detection"
+              className="input flex-1"
+            />
+            <button onClick={handleBrowse} className="btn-secondary flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" />
+              Browse
+            </button>
+          </div>
+          {detectedPath && (
+            <div className="mt-3 p-2 bg-gray-700 rounded">
+              <p className="text-xs text-gray-400 mb-1">Default Location:</p>
+              <p className="text-xs text-gray-300 font-mono break-all">{detectedPath}</p>
+            </div>
+          )}
+        </div>
+      </SettingSection>
+
+      {/* Theme Section */}
+      <SettingSection icon={Palette} title="Theme" description="Display preferences">
+        <div>
+          <label className="label">Color Scheme</label>
+          <select
+            value={settings.theme}
+            onChange={(e) => updateSettings({ theme: e.target.value as 'light' | 'dark' })}
+            className="input w-full"
+          >
+            <option value="dark">Dark</option>
+            <option value="light">Light (Coming Soon)</option>
+          </select>
+        </div>
+      </SettingSection>
+
+      {/* Miscellaneous Section */}
+      <SettingSection icon={Sliders} title="Miscellaneous" description="Additional options">
         <div>
           <label className="label">Default Markup %</label>
           <input
@@ -32,86 +140,76 @@ export function Settings() {
             onChange={(e) => updateSettings({ defaultMarkup: Number(e.target.value) })}
             className="input w-full"
           />
-          <p className="text-xs text-gray-400 mt-1">
-            Default markup percentage for new loot items (100% = TT value)
-          </p>
+          <p className="text-xs text-gray-400 mt-1">Default markup for new loot items (100% = TT value)</p>
         </div>
 
-        <div>
-          <label className="label">Theme</label>
-          <select
-            value={settings.theme}
-            onChange={(e) => updateSettings({ theme: e.target.value as 'light' | 'dark' })}
-            className="input w-full"
-          >
-            <option value="dark">Dark</option>
-            <option value="light">Light (Coming Soon)</option>
-          </select>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="autoSave"
-            checked={settings.autoSave}
-            onChange={(e) => updateSettings({ autoSave: e.target.checked })}
-            className="w-4 h-4"
-          />
-          <label htmlFor="autoSave" className="text-sm text-gray-300">
-            Auto-save data automatically
-          </label>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="overlayEnabled"
-            checked={settings.overlayEnabled}
-            onChange={(e) => updateSettings({ overlayEnabled: e.target.checked })}
-            className="w-4 h-4"
-          />
-          <label htmlFor="overlayEnabled" className="text-sm text-gray-300">
-            Enable overlay mode (Coming Soon)
-          </label>
-        </div>
-
-        <div className="border-t border-gray-700 pt-6">
-          <h3 className="text-lg font-semibold mb-4">About</h3>
-          <div className="space-y-2 text-sm text-gray-300">
-            <p>
-              <strong>Orion Hunt Tracker</strong> - Version 0.1.0
-            </p>
-            <p>
-              A modern hunt tracking application for Entropia Universe, inspired by Entropia Tally
-              and Artemis.
-            </p>
-            <p className="text-gray-400">
-              Track your hunting sessions, loot, costs, globals, and statistics. All data is stored
-              locally in your browser.
-            </p>
-            <p className="text-xs text-gray-500 mt-4">
-              Not affiliated with MindArk PE AB or Entropia Universe.
-            </p>
+        <div className="border-t border-gray-600 pt-3">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="autoSave"
+              checked={settings.autoSave}
+              onChange={(e) => updateSettings({ autoSave: e.target.checked })}
+              className="w-4 h-4"
+            />
+            <label htmlFor="autoSave" className="text-sm text-gray-300">
+              Auto-save data automatically
+            </label>
           </div>
         </div>
 
-        <div className="border-t border-gray-700 pt-6">
-          <h3 className="text-lg font-semibold mb-4 text-red-400">Danger Zone</h3>
-          <button
-            onClick={() => {
-              if (confirm('Are you sure you want to clear all data? This cannot be undone!')) {
-                localStorage.clear();
-                window.location.reload();
-              }
-            }}
-            className="btn-danger"
-          >
-            Clear All Data
-          </button>
-          <p className="text-xs text-gray-400 mt-2">
-            This will permanently delete all sessions, loot data, and settings.
+        <div>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="overlayEnabled"
+              checked={settings.overlayEnabled}
+              onChange={(e) => updateSettings({ overlayEnabled: e.target.checked })}
+              className="w-4 h-4"
+            />
+            <label htmlFor="overlayEnabled" className="text-sm text-gray-300">
+              Enable overlay mode (Coming Soon)
+            </label>
+          </div>
+        </div>
+      </SettingSection>
+
+      {/* About Section */}
+      <div className="card p-5">
+        <h3 className="font-semibold text-white mb-3">About</h3>
+        <div className="space-y-2 text-sm text-gray-300">
+          <p>
+            <strong>Orion Loot Tracker</strong> - Version 0.1.0
+          </p>
+          <p>
+            A modern hunt tracking application for Entropia Universe, inspired by Entropia Tally and Artemis.
+          </p>
+          <p className="text-gray-400">
+            Track your hunting sessions, loot, costs, globals, and statistics. All data is stored locally.
+          </p>
+          <p className="text-xs text-gray-500">
+            Not affiliated with MindArk PE AB or Entropia Universe.
           </p>
         </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="card p-5 border border-red-900 bg-red-950 bg-opacity-20">
+        <h3 className="font-semibold text-red-400 mb-3">Danger Zone</h3>
+        <button
+          onClick={() => {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone!')) {
+              localStorage.clear();
+              window.location.reload();
+            }
+          }}
+          className="btn-danger w-full"
+        >
+          Clear All Data
+        </button>
+        <p className="text-xs text-gray-400 mt-2">
+          This will permanently delete all sessions, loot data, and settings.
+        </p>
       </div>
     </div>
   );

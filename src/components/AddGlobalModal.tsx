@@ -11,7 +11,7 @@ export function AddGlobalModal({ sessionId, onClose }: AddGlobalModalProps) {
   const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
   const addGlobal = useHuntStore((state) => state.addGlobal);
   const [formData, setFormData] = useState({
-    creature: session?.creature || '',
+    creature: '',
     value: 0,
     isHoF: false,
   });

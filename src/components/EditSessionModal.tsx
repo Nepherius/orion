@@ -2,37 +2,38 @@ import { useState } from 'react';
 import { useHuntStore } from '../store';
 import { X } from 'lucide-react';
 
-interface NewSessionModalProps {
+interface EditSessionModalProps {
+  sessionId: string;
   onClose: () => void;
 }
 
-export function NewSessionModal({ onClose }: NewSessionModalProps) {
-  const createSession = useHuntStore((state) => state.createSession);
+export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) {
+  const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
+  const updateSession = useHuntStore((state) => state.updateSession);
   const loadouts = useHuntStore((state) => state.loadouts);
-  const activeLoadout = useHuntStore((state) => state.getActiveLoadout());
-  
+
+  // Find loadout by weapon name (if it matches a loadout name)
+  const sessionLoadout = loadouts.find(l => l.name === session?.weapon);
+
   const [formData, setFormData] = useState({
-    name: '',
-    loadoutId: activeLoadout?.id || '',
-    armor: '',
-    location: '',
-    notes: '',
+    name: session?.name || '',
+    loadoutId: sessionLoadout?.id || '',
+    weapon: session?.weapon || '',
+    armor: session?.armor || '',
+    location: session?.location || '',
+    notes: session?.notes || '',
   });
+
+  if (!session) {
+    return null;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const selectedLoadout = loadouts.find(l => l.id === formData.loadoutId);
-    createSession({
+    updateSession(sessionId, {
       ...formData,
-      weapon: selectedLoadout?.name || 'No Loadout',
-      startTime: Date.now(),
-      status: 'active',
-      ammoCost: 0,
-      repairCost: 0,
-      armorDecay: 0,
-      healingCost: 0,
-      otherCosts: 0,
-      notes: formData.notes,
+      weapon: selectedLoadout?.name || formData.weapon || 'No Loadout',
     });
     onClose();
   };
@@ -41,7 +42,7 @@ export function NewSessionModal({ onClose }: NewSessionModalProps) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">New Hunt Session</h2>
+          <h2 className="text-xl font-bold">Edit Hunt Session</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
@@ -61,14 +62,13 @@ export function NewSessionModal({ onClose }: NewSessionModalProps) {
           </div>
 
           <div>
-            <label className="label">Loadout *</label>
+            <label className="label">Loadout</label>
             <select
-              required
               value={formData.loadoutId}
               onChange={(e) => setFormData({ ...formData, loadoutId: e.target.value })}
               className="input w-full"
             >
-              <option value="">Select a loadout</option>
+              <option value="">Keep current: {formData.weapon}</option>
               {loadouts.map((loadout) => (
                 <option key={loadout.id} value={loadout.id}>
                   {loadout.name} {loadout.status === 'active' ? '(Active)' : ''}
@@ -111,7 +111,7 @@ export function NewSessionModal({ onClose }: NewSessionModalProps) {
 
           <div className="flex gap-3 pt-4">
             <button type="submit" className="btn-primary flex-1">
-              Create Session
+              Save Changes
             </button>
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancel

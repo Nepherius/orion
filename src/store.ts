@@ -8,12 +8,14 @@ import {
   ItemTemplate,
   AppSettings,
   SessionStats,
+  Loadout,
 } from './types';
 
 interface HuntStore {
   sessions: HuntSession[];
   activeSessionId: string | null;
   itemDatabase: ItemTemplate[];
+  loadouts: Loadout[];
   settings: AppSettings;
 
   // Session actions
@@ -24,6 +26,7 @@ interface HuntStore {
   deleteSession: (id: string) => void;
   startSession: (id: string) => void;
   pauseSession: (id: string) => void;
+  resumeSession: (id: string) => void;
   endSession: (id: string) => void;
 
   // Loot actions
@@ -41,6 +44,15 @@ interface HuntStore {
   addItemTemplate: (item: Omit<ItemTemplate, 'id'>) => void;
   updateItemTemplate: (id: string, updates: Partial<ItemTemplate>) => void;
   deleteItemTemplate: (id: string) => void;
+
+  // Loadout actions
+  createLoadout: (loadout: Omit<Loadout, 'id'>) => void;
+  updateLoadout: (id: string, updates: Partial<Loadout>) => void;
+  deleteLoadout: (id: string) => void;
+  duplicateLoadout: (id: string) => void;
+  toggleLoadoutFavorite: (id: string) => void;
+  setActiveLoadout: (id: string) => void;
+  getActiveLoadout: () => Loadout | null;
 
   // Settings actions
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -84,12 +96,15 @@ export const useHuntStore = create<HuntStore>()(
       sessions: [],
       activeSessionId: null,
       itemDatabase: [],
+      loadouts: [],
       settings: {
-        playerName: '',
-        defaultMarkup: 105,
+        avatarName: '',
+        defaultMarkup: 100,
         autoSave: true,
         overlayEnabled: false,
         theme: 'dark',
+        chatLogPath: '',
+        autoStartSession: true,
       },
 
       createSession: (sessionData) => {
@@ -110,7 +125,17 @@ export const useHuntStore = create<HuntStore>()(
             duration: 0,
           },
         };
-        set((state) => ({ sessions: [newSession, ...state.sessions] }));
+        set((state) => {
+          // If new session should start immediately, pause existing active session(s)
+          if (newSession.status === 'active') {
+            const sessions = state.sessions.map((s) =>
+              s.status === 'active' ? { ...s, status: 'paused' as const } : s
+            );
+            return { sessions: [newSession, ...sessions], activeSessionId: newSession.id };
+          }
+
+          return { sessions: [newSession, ...state.sessions] };
+        });
       },
 
       updateSession: (id, updates) => {
@@ -152,6 +177,23 @@ export const useHuntStore = create<HuntStore>()(
 
       pauseSession: (id) => {
         get().updateSession(id, { status: 'paused' });
+      },
+
+      resumeSession: (id) => {
+        set((state) => {
+          // Pause any active session
+          const sessions = state.sessions.map((s) =>
+            s.status === 'active' ? { ...s, status: 'paused' as const } : s
+          );
+
+          // Resume the selected session
+          return {
+            sessions: sessions.map((s) =>
+              s.id === id ? { ...s, status: 'active' as const } : s
+            ),
+            activeSessionId: id,
+          };
+        });
       },
 
       endSession: (id) => {
@@ -269,6 +311,68 @@ export const useHuntStore = create<HuntStore>()(
         }));
       },
 
+      // Loadout actions
+      createLoadout: (loadoutData) => {
+        const newLoadout: Loadout = {
+          ...loadoutData,
+          id: generateId(),
+        };
+        set((state) => ({
+          loadouts: [newLoadout, ...state.loadouts],
+        }));
+      },
+
+      updateLoadout: (id, updates) => {
+        set((state) => ({
+          loadouts: state.loadouts.map((loadout) =>
+            loadout.id === id ? { ...loadout, ...updates } : loadout
+          ),
+        }));
+      },
+
+      deleteLoadout: (id) => {
+        set((state) => ({
+          loadouts: state.loadouts.filter((loadout) => loadout.id !== id),
+        }));
+      },
+
+      duplicateLoadout: (id) => {
+        const loadout = get().loadouts.find((l) => l.id === id);
+        if (loadout) {
+          const duplicate: Loadout = {
+            ...loadout,
+            id: generateId(),
+            name: `${loadout.name} (Copy)`,
+            status: 'inactive',
+          };
+          set((state) => ({
+            loadouts: [duplicate, ...state.loadouts],
+          }));
+        }
+      },
+
+      toggleLoadoutFavorite: (id) => {
+        set((state) => ({
+          loadouts: state.loadouts.map((loadout) =>
+            loadout.id === id ? { ...loadout, favorite: !loadout.favorite } : loadout
+          ),
+        }));
+      },
+
+      setActiveLoadout: (id) => {
+        set((state) => ({
+          loadouts: state.loadouts.map((loadout) => ({
+            ...loadout,
+            status: loadout.id === id ? 'active' : 'inactive',
+          })),
+        }));
+      },
+
+      getActiveLoadout: () => {
+        const state = get();
+        return state.loadouts.find((l) => l.status === 'active') || null;
+      },
+
       updateSettings: (updates) => {
         set((state) => ({
           settings: { ...state.settings, ...updates },
@@ -298,7 +402,7 @@ export const useHuntStore = create<HuntStore>()(
       },
     }),
     {
-      name: 'orion-hunt-tracker',
+      name: 'orion-loot-tracker',
     }
   )
 );

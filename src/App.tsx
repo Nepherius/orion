@@ -1,38 +1,79 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHuntStore } from './store';
 import { SessionList } from './components/SessionList';
 import { SessionDetails } from './components/SessionDetails';
 import { ActiveSessionPanel } from './components/ActiveSessionPanel';
+import { ActiveSessionSidebar } from './components/ActiveSessionSidebar';
 import { ItemDatabase } from './components/ItemDatabase';
 import { Settings } from './components/Settings';
 import { ChatLogMonitor } from './components/ChatLogMonitor';
-import { Target, Database, Settings as SettingsIcon, BarChart3 } from 'lucide-react';
+import { WelcomeModal } from './components/WelcomeModal';
+import { Dashboard } from './components/Dashboard';
+import { Loot } from './components/Loot';
+import { Loadouts } from './components/Loadouts';
+import { Database, Settings as SettingsIcon, BarChart3, Activity, Package, Crosshair } from 'lucide-react';
 
-type View = 'sessions' | 'database' | 'analytics' | 'settings';
+type View = 'dashboard' | 'loot' | 'sessions' | 'loadouts' | 'database' | 'analytics' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('sessions');
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const activeSession = useHuntStore((state) => state.getActiveSession());
+  const avatarName = useHuntStore((state) => state.settings.avatarName);
+  const [showWelcome, setShowWelcome] = useState(!avatarName);
+
+  // Redirect to sessions view if trying to view Dashboard/Loot without an active session
+  useEffect(() => {
+    if (!activeSession && (currentView === 'dashboard' || currentView === 'loot')) {
+      setCurrentView('sessions');
+    }
+  }, [activeSession, currentView]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      {showWelcome && <WelcomeModal onComplete={() => setShowWelcome(false)} />}
+
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Target className="w-8 h-8 text-primary-500" />
-            <h1 className="text-2xl font-bold">ORION</h1>
-            <span className="text-sm text-gray-400">Hunt Tracker</span>
+            <img src="/icon.png" alt="Orion" className="w-8 h-8" />
+            <h1 className="text-2xl font-bold">Orion</h1>
+            <span className="text-sm text-gray-400">Entropia Universe Loot Tracker</span>
           </div>
 
           {/* Navigation */}
           <nav className="flex gap-2">
+            {activeSession && (
+              <>
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className={`btn ${currentView === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  <Activity className="w-4 h-4 inline mr-2" />
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => setCurrentView('loot')}
+                  className={`btn ${currentView === 'loot' ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  <Package className="w-4 h-4 inline mr-2" />
+                  Loot
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => setCurrentView('loadouts')}
+              className={`btn ${currentView === 'loadouts' ? 'btn-primary' : 'btn-secondary'}`}
+            >
+              <Crosshair className="w-4 h-4 inline mr-2" />
+              Loadouts
+            </button>
             <button
               onClick={() => setCurrentView('sessions')}
               className={`btn ${currentView === 'sessions' ? 'btn-primary' : 'btn-secondary'}`}
             >
-              <Target className="w-4 h-4 inline mr-2" />
+              <img src="/icon.png" alt="Orion" className="w-4 h-4 inline mr-2 object-contain" />
               Sessions
             </button>
             <button
@@ -71,25 +112,36 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
+        {currentView === 'dashboard' && <Dashboard />}
+
+        {currentView === 'loot' && <Loot />}
+
+        {currentView === 'loadouts' && <Loadouts />}
+
         {currentView === 'sessions' && (
           <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-4 space-y-6">
+            <div className="col-span-3 space-y-6">
               <SessionList
                 selectedSessionId={selectedSessionId}
                 onSelectSession={setSelectedSessionId}
               />
               <ChatLogMonitor />
             </div>
-            <div className="col-span-8">
+            <div className={activeSession ? "col-span-6" : "col-span-9"}>
               {selectedSessionId ? (
                 <SessionDetails sessionId={selectedSessionId} />
               ) : (
                 <div className="card p-8 text-center text-gray-400">
-                  <Target className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <img src="/icon.png" alt="Orion" className="w-16 h-16 mx-auto mb-4 opacity-50 object-contain" />
                   <p>Select a session to view details</p>
                 </div>
               )}
             </div>
+            {activeSession && (
+              <div className="col-span-3">
+                <ActiveSessionSidebar />
+              </div>
+            )}
           </div>
         )}
 
@@ -108,7 +160,7 @@ function App() {
       {/* Footer */}
       <footer className="bg-gray-800 border-t border-gray-700 px-6 py-4 mt-12">
         <div className="max-w-7xl mx-auto text-center text-sm text-gray-400">
-          <p>Orion Hunt Tracker v0.1.0 - Track your Entropia Universe hunting sessions</p>
+          <p>Orion Loot Tracker v0.1.0 - Track your Entropia Universe hunting sessions</p>
           <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
         </div>
       </footer>

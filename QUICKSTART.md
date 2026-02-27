@@ -1,4 +1,4 @@
-# Quick Start Guide - Orion Hunt Tracker
+# Quick Start Guide - Orion Loot Tracker
 
 ## Getting the App Running (5 minutes)
 

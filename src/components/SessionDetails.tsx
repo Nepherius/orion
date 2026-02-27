@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useHuntStore } from '../store';
-import { Plus, Trash2, TrendingUp, TrendingDown, Award, Zap } from 'lucide-react';
+import { Plus, Trash2, TrendingUp, TrendingDown, Award, Zap, Play, Pause, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AddLootModal } from './AddLootModal';
 import { AddGlobalModal } from './AddGlobalModal';
+import { EditSessionModal } from './EditSessionModal';
 import { CostsPanel } from './CostsPanel';
 
 interface SessionDetailsProps {
@@ -13,14 +14,32 @@ interface SessionDetailsProps {
 export function SessionDetails({ sessionId }: SessionDetailsProps) {
   const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
   const removeLoot = useHuntStore((state) => state.removeLoot);
+  const deleteSession = useHuntStore((state) => state.deleteSession);
+  const resumeSession = useHuntStore((state) => state.resumeSession);
+  const pauseSession = useHuntStore((state) => state.pauseSession);
   const [showAddLoot, setShowAddLoot] = useState(false);
   const [showAddGlobal, setShowAddGlobal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   if (!session) {
     return <div className="card p-6">Session not found</div>;
   }
 
   const profit = session.stats.totalLoot - session.stats.totalCost;
+
+  const handleDelete = () => {
+    if (confirm(`Are you sure you want to delete "${session.name}"? This action cannot be undone.`)) {
+      deleteSession(sessionId);
+    }
+  };
+
+  const handleResume = () => {
+    resumeSession(sessionId);
+  };
+
+  const handlePause = () => {
+    pauseSession(sessionId);
+  };
 
   return (
     <div className="space-y-6">
@@ -30,8 +49,6 @@ export function SessionDetails({ sessionId }: SessionDetailsProps) {
           <div>
             <h2 className="text-2xl font-bold mb-2">{session.name}</h2>
             <div className="flex items-center gap-4 text-sm text-gray-400">
-              <span>Creature: {session.creature}</span>
-              <span>•</span>
               <span>Weapon: {session.weapon}</span>
               {session.armor && (
                 <>
@@ -39,18 +56,71 @@ export function SessionDetails({ sessionId }: SessionDetailsProps) {
                   <span>Armor: {session.armor}</span>
                 </>
               )}
+              {session.location && (
+                <>
+                  <span>•</span>
+                  <span>Location: {session.location}</span>
+                </>
+              )}
             </div>
-            <div className="text-sm text-gray-400 mt-1">Location: {session.location}</div>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-400">Started</div>
-            <div className="font-medium">{format(session.startTime, 'PPpp')}</div>
-            {session.endTime && (
-              <>
-                <div className="text-sm text-gray-400 mt-2">Ended</div>
-                <div className="font-medium">{format(session.endTime, 'PPpp')}</div>
-              </>
-            )}
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              {session.status === 'completed' ? (
+                <button
+                  onClick={handleResume}
+                  className="btn-primary flex items-center gap-2 text-sm"
+                  title="Resume Session"
+                >
+                  <Play className="w-4 h-4" />
+                  Resume
+                </button>
+              ) : session.status === 'active' ? (
+                <button
+                  onClick={handlePause}
+                  className="btn-secondary flex items-center gap-2 text-sm"
+                  title="Pause Session"
+                >
+                  <Pause className="w-4 h-4" />
+                  Pause
+                </button>
+              ) : (
+                <button
+                  onClick={handleResume}
+                  className="btn-primary flex items-center gap-2 text-sm"
+                  title="Resume Session"
+                >
+                  <Play className="w-4 h-4" />
+                  Resume
+                </button>
+              )}
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="btn-secondary flex items-center gap-2 text-sm"
+                title="Edit Session"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
+                title="Delete Session"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+            <div className="text-right text-sm">
+              <div className="text-xs text-gray-400">Started</div>
+              <div className="font-medium text-gray-300">{format(session.startTime, 'PPpp')}</div>
+              {session.endTime && (
+                <>
+                  <div className="text-xs text-gray-400 mt-1">Ended</div>
+                  <div className="font-medium text-gray-300">{format(session.endTime, 'PPpp')}</div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -254,6 +324,7 @@ export function SessionDetails({ sessionId }: SessionDetailsProps) {
       {showAddGlobal && (
         <AddGlobalModal sessionId={sessionId} onClose={() => setShowAddGlobal(false)} />
       )}
+      {showEditModal && <EditSessionModal sessionId={sessionId} onClose={() => setShowEditModal(false)} />}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-// Data models for the hunt tracker
+// Data models for the Loot Tracker
 
 export interface LootItem {
   id: string;
@@ -44,10 +44,9 @@ export interface HuntSession {
   status: 'active' | 'paused' | 'completed';
 
   // Hunting details
-  creature: string;
   weapon: string;
   armor?: string;
-  location: string;
+  location?: string;
 
   // Session data
   loot: LootItem[];
@@ -76,9 +75,54 @@ export interface ItemTemplate {
 }
 
 export interface AppSettings {
-  playerName: string;
+  avatarName: string;
   defaultMarkup: number;
   autoSave: boolean;
   overlayEnabled: boolean;
   theme: 'light' | 'dark';
+  chatLogPath?: string;
+  autoStartSession?: boolean;
+}
+
+// Equipment and Loadout types
+export interface EquipmentItem {
+  Id: number;
+  ItemId: number;
+  Name: string;
+  Properties: any;
+}
+
+export interface LoadoutEnhancers {
+  dmg: number;
+  acc: number;
+  rng: number;
+  eco: number;
+}
+
+export interface Loadout {
+  id: string;
+  name: string;
+  status: 'active' | 'inactive';
+  favorite: boolean;
+  weapon?: EquipmentItem;
+  amplifier?: EquipmentItem;
+  scope?: EquipmentItem;
+  sight?: EquipmentItem;
+  sight2?: EquipmentItem;
+  absorber?: EquipmentItem;
+  enhancers: LoadoutEnhancers;
+  hitProfession: number;
+  dmgProfession: number;
+  // Calculated stats
+  costPerShot: number;
+  dpp: number;
+  totalDamage: number;
+  range: number;
+  criticalChance: number;
+  hitRate: number;
+  effectiveDamage: number;
+  efficiency: number;
+  decay: number;
+  ammoBurn: number;
+  totalUses: number | null;
 }
