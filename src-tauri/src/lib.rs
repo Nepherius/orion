@@ -2,12 +2,14 @@ mod chat_parser;
 mod file_watcher;
 mod language_patterns;
 
-use chat_parser::{ChatLogParser, LootEvent, DamageEvent, CombatEvent, HealingEvent, DamageTakenEvent, SkillGain};
+use chat_parser::{
+    ChatLogParser, CombatEvent, DamageEvent, DamageTakenEvent, HealingEvent, LootEvent, SkillGain,
+};
 use file_watcher::FileWatcher;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::{Arc, Mutex};
-use tauri::{State, Manager};
-use serde::{Serialize, Deserialize};
+use tauri::{Manager, State};
 
 use rusqlite::{params, Connection};
 use serde_json::json;
@@ -70,15 +72,21 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
         );
 
         CREATE INDEX IF NOT EXISTS idx_events_session_ts ON combat_events(session_id, ts);
-        COMMIT;"
+        COMMIT;",
     )
 }
 
 // Tauri commands
 #[tauri::command]
 fn parse_chat_log(content: String, state: State<AppState>) -> Result<ParseResult, String> {
-    let (loot_events, damage_events, combat_events, healing_events, damage_taken_events, skill_gains) = 
-        state.parser.parse_file_with_damage(&content);
+    let (
+        loot_events,
+        damage_events,
+        combat_events,
+        healing_events,
+        damage_taken_events,
+        skill_gains,
+    ) = state.parser.parse_file_with_damage(&content);
     Ok(ParseResult {
         loot_events,
         damage_events,
@@ -144,9 +152,15 @@ fn read_chat_log_tail(path: String, lines: usize) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn start_watching_file(path: String, state: State<AppState>, app_handle: tauri::AppHandle) -> Result<(), String> {
+fn start_watching_file(
+    path: String,
+    state: State<AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
     let watcher = state.watcher.lock().unwrap();
-    watcher.watch_file(&path, app_handle).map_err(|e| e.to_string())
+    watcher
+        .watch_file(&path, app_handle)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -165,7 +179,9 @@ fn is_watching(state: State<AppState>) -> Result<bool, String> {
 #[tauri::command]
 fn get_watched_path(state: State<AppState>) -> Result<Option<String>, String> {
     let watcher = state.watcher.lock().unwrap();
-    Ok(watcher.current_path().map(|p| p.to_string_lossy().to_string()))
+    Ok(watcher
+        .current_path()
+        .map(|p| p.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
@@ -186,6 +202,7 @@ fn db_add_session(
     Ok(conn.last_insert_rowid())
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 fn db_add_event(
     session_id: i64,
@@ -237,7 +254,10 @@ fn db_get_sessions(state: State<AppState>) -> Result<serde_json::Value, String> 
 }
 
 #[tauri::command]
-fn db_get_session_events(session_id: i64, state: State<AppState>) -> Result<serde_json::Value, String> {
+fn db_get_session_events(
+    session_id: i64,
+    state: State<AppState>,
+) -> Result<serde_json::Value, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT id, ts, type, actor, target, weapon, amount, qty, value, is_crit, raw_line FROM combat_events WHERE session_id = ?1 ORDER BY ts ASC")
@@ -270,8 +290,10 @@ fn db_get_session_events(session_id: i64, state: State<AppState>) -> Result<serd
 #[tauri::command]
 fn detect_chat_log_path() -> Result<Option<String>, String> {
     // Try common Entropia Universe chat.log locations
-    let home = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")).ok();
-    
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .ok();
+
     if let Some(home_dir) = home {
         // Windows: C:\Users\[Name]\Documents\Entropia Universe\chat.log
         let windows_path = PathBuf::from(&home_dir)
@@ -283,9 +305,7 @@ fn detect_chat_log_path() -> Result<Option<String>, String> {
         }
 
         // Alternative: Documents only
-        let alt_path = PathBuf::from(&home_dir)
-            .join("Documents")
-            .join("chat.log");
+        let alt_path = PathBuf::from(&home_dir).join("Documents").join("chat.log");
         if alt_path.exists() {
             return Ok(Some(alt_path.to_string_lossy().to_string()));
         }
@@ -297,19 +317,19 @@ fn detect_chat_log_path() -> Result<Option<String>, String> {
 #[tauri::command]
 async fn show_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
     use tauri::Manager;
-    
+
     // Check if overlay window already exists
     if let Some(window) = app_handle.get_webview_window("overlay") {
         window.show().map_err(|e| e.to_string())?;
         window.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
     }
-    
+
     // Create new overlay window
     let _overlay_window = tauri::WebviewWindowBuilder::new(
         &app_handle,
         "overlay",
-        tauri::WebviewUrl::App("index.html#/overlay".into())
+        tauri::WebviewUrl::App("index.html#/overlay".into()),
     )
     .title("ORION Overlay")
     .inner_size(600.0, 56.0)
@@ -320,24 +340,24 @@ async fn show_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
     .transparent(true)
     .build()
     .map_err(|e| e.to_string())?;
-    
+
     Ok(())
 }
 
 #[tauri::command]
 async fn hide_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
     use tauri::Manager;
-    
+
     if let Some(window) = app_handle.get_webview_window("overlay") {
         window.hide().map_err(|e| e.to_string())?;
     }
-    
+
     Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-        tauri::Builder::default()
+    tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
@@ -369,22 +389,21 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-                parse_chat_log,
-                read_chat_log,
-                read_chat_log_tail,
-                start_watching_file,
-                stop_watching_file,
-                is_watching,
-                get_watched_path,
-                detect_chat_log_path,
-                db_add_session,
-                db_add_event,
-                db_get_sessions,
-                db_get_session_events,
-                show_overlay,
-                hide_overlay,
+            parse_chat_log,
+            read_chat_log,
+            read_chat_log_tail,
+            start_watching_file,
+            stop_watching_file,
+            is_watching,
+            get_watched_path,
+            detect_chat_log_path,
+            db_add_session,
+            db_add_event,
+            db_get_sessions,
+            db_get_session_events,
+            show_overlay,
+            hide_overlay,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ItemTemplate } from '../../types';
 import { useItemDatabaseModel } from '../../hooks/useItemDatabaseModel';
 import { ConfirmModal } from '../common/ConfirmModal';
-import { useItemBrowser } from '../../hooks/useItemBrowser';
+import { useItemBrowser, EntropyItem } from '../../hooks/useItemBrowser';
 
 export function ItemDatabase() {
   const {
@@ -22,7 +22,12 @@ export function ItemDatabase() {
     handleEditSave,
   } = useItemDatabaseModel();
 
-  const { items: entropyItems, getTTValue, getCategory, loading: entropyLoading } = useItemBrowser();
+  const {
+    items: entropyItems,
+    getTTValue,
+    getCategory,
+    loading: _entropyLoading,
+  } = useItemBrowser();
   const [entropyMarkups, setEntropyMarkups] = useState<{ [key: number]: number }>({});
 
   const handleSearchChange = (value: string) => {
@@ -30,14 +35,17 @@ export function ItemDatabase() {
   };
 
   // Filter Entropia items based on search
-  const filteredEntropyItems = searchQuery 
-    ? entropyItems.filter((item) =>
-        item.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.Properties?.Type?.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 10) // Limit to 10 results
+  const filteredEntropyItems = searchQuery
+    ? entropyItems
+        .filter(
+          (item) =>
+            item.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.Properties?.Type?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .slice(0, 10) // Limit to 10 results
     : [];
 
-  const handleSaveCustom = (item: any) => {
+  const handleSaveCustom = (item: EntropyItem) => {
     const markupValue = entropyMarkups[item.Id] || 100;
     handleAddSave({
       name: item.Name,
@@ -56,10 +64,7 @@ export function ItemDatabase() {
 
   return (
     <div className="space-y-6">
-      <button
-        onClick={() => setShowAddModal(true)}
-        className="btn-primary flex items-center gap-2"
-      >
+      <button onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-2">
         <Plus className="w-4 h-4" />
         Add Item Template
       </button>
@@ -146,7 +151,8 @@ export function ItemDatabase() {
                   <div className="flex-1">
                     <h4 className="font-medium">{item.Name}</h4>
                     <p className="text-xs text-gray-400 mt-1">
-                      Type: {item.Properties?.Type || 'Unknown'} • TT: {getTTValue(item).toFixed(2)} PED
+                      Type: {item.Properties?.Type || 'Unknown'} • TT: {getTTValue(item).toFixed(2)}{' '}
+                      PED
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -166,10 +172,7 @@ export function ItemDatabase() {
                         className="input w-16 text-sm"
                       />
                     </div>
-                    <button
-                      onClick={() => handleSaveCustom(item)}
-                      className="btn-primary text-sm"
-                    >
+                    <button onClick={() => handleSaveCustom(item)} className="btn-primary text-sm">
                       Save Custom
                     </button>
                   </div>
@@ -180,12 +183,7 @@ export function ItemDatabase() {
         </div>
       )}
 
-      {showAddModal && (
-        <ItemModal
-          onClose={() => setShowAddModal(false)}
-          onSave={handleAddSave}
-        />
-      )}
+      {showAddModal && <ItemModal onClose={() => setShowAddModal(false)} onSave={handleAddSave} />}
 
       {editingItem && (
         <ItemModal

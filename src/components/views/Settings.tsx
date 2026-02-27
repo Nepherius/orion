@@ -16,7 +16,17 @@ export function Settings() {
     setShowClearDataConfirm,
   } = useSettingsModel();
 
-  const SettingSection = ({ icon: Icon, title, description, children }: { icon: React.ElementType; title: string; description: string; children: React.ReactNode }) => (
+  const SettingSection = ({
+    icon: Icon,
+    title,
+    description,
+    children,
+  }: {
+    icon: React.ElementType;
+    title: string;
+    description: string;
+    children: React.ReactNode;
+  }) => (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-4">
         <Icon className="w-5 h-5 text-primary-500" />
@@ -47,12 +57,18 @@ export function Settings() {
             placeholder="Enter your character name"
             className="input w-full"
           />
-          <p className="text-xs text-gray-400 mt-1">Used for automatic player filtering in chat logs</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Used for automatic player filtering in chat logs
+          </p>
         </div>
       </SettingSection>
 
       {/* Log File Section */}
-      <SettingSection icon={FileText} title="Log File" description="Entropia Universe chat log configuration">
+      <SettingSection
+        icon={FileText}
+        title="Log File"
+        description="Entropia Universe chat log configuration"
+      >
         <div>
           <label className="label">Chat Log Path</label>
           <div className="flex gap-2">
@@ -106,7 +122,9 @@ export function Settings() {
             onChange={(e) => updateSettings({ defaultMarkup: Number(e.target.value) })}
             className="input w-full"
           />
-          <p className="text-xs text-gray-400 mt-1">Default markup for new loot items (100% = TT value)</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Default markup for new loot items (100% = TT value)
+          </p>
         </div>
 
         <div className="border-t border-gray-600 pt-3">
@@ -151,10 +169,12 @@ export function Settings() {
             <strong>Orion Loot Tracker</strong> - Version 0.1.0
           </p>
           <p>
-            A modern hunt tracking application for Entropia Universe, inspired by Entropia Tally and Artemis.
+            A modern hunt tracking application for Entropia Universe, inspired by Entropia Tally and
+            Artemis.
           </p>
           <p className="text-gray-400">
-            Track your hunting sessions, loot, costs, globals, and statistics. All data is stored locally.
+            Track your hunting sessions, loot, costs, globals, and statistics. All data is stored
+            locally.
           </p>
           <p className="text-xs text-gray-500">
             Not affiliated with MindArk PE AB or Entropia Universe.
@@ -165,10 +185,7 @@ export function Settings() {
       {/* Danger Zone */}
       <div className="card p-5 border border-red-900 bg-red-950 bg-opacity-20">
         <h3 className="font-semibold text-red-400 mb-3">Danger Zone</h3>
-        <button
-          onClick={requestClearData}
-          className="btn-danger w-full"
-        >
+        <button onClick={requestClearData} className="btn-danger w-full">
           Clear All Data
         </button>
         <p className="text-xs text-gray-400 mt-2">

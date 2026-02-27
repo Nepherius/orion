@@ -13,8 +13,7 @@ export function useItemDatabaseModel() {
     const query = searchQuery.toLowerCase();
     return itemDatabase.filter(
       (item) =>
-        item.name.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query)
+        item.name.toLowerCase().includes(query) || item.category.toLowerCase().includes(query)
     );
   }, [itemDatabase, searchQuery]);
 

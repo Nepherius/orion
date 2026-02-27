@@ -10,7 +10,11 @@ interface ActiveSessionPanelProps {
   onSessionResumed?: () => void;
 }
 
-export function ActiveSessionPanel({ session, onSessionEnded, onSessionResumed }: ActiveSessionPanelProps) {
+export function ActiveSessionPanel({
+  session,
+  onSessionEnded,
+  onSessionResumed,
+}: ActiveSessionPanelProps) {
   const { pauseSession, endSession, startSession } = useHuntStore();
 
   const handleShowOverlay = async () => {

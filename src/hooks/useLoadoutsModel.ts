@@ -7,12 +7,8 @@ export type SortOption = 'name-az' | 'name-za' | 'cost' | 'dpp';
 
 export function useLoadoutsModel() {
   const loadouts = useHuntStore((state) => state.loadouts);
-  const {
-    deleteLoadout,
-    duplicateLoadout,
-    toggleLoadoutFavorite,
-    setActiveLoadout,
-  } = useHuntStore();
+  const { deleteLoadout, duplicateLoadout, toggleLoadoutFavorite, setActiveLoadout } =
+    useHuntStore();
 
   const [showNewModal, setShowNewModal] = useState(false);
   const [editLoadout, setEditLoadout] = useState<Loadout | null>(null);
@@ -61,10 +57,7 @@ export function useLoadoutsModel() {
     () => loadouts.filter((l) => l.status === 'active').length,
     [loadouts]
   );
-  const favoriteCount = useMemo(
-    () => loadouts.filter((l) => l.favorite).length,
-    [loadouts]
-  );
+  const favoriteCount = useMemo(() => loadouts.filter((l) => l.favorite).length, [loadouts]);
 
   const handleEdit = (loadout: Loadout) => {
     setEditLoadout(loadout);

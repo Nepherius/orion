@@ -19,11 +19,22 @@ export function Loot() {
 
   // Calculate session grade
   const returns = activeSession.stats.returns;
-  const grade = returns >= 100 ? 'A' : returns >= 90 ? 'B' : returns >= 80 ? 'C' : returns >= 70 ? 'D' : 'F';
-  const gradeColor = returns >= 100 ? 'text-green-400' : returns >= 90 ? 'text-blue-400' : returns >= 80 ? 'text-yellow-400' : 'text-red-400';
+  const grade =
+    returns >= 100 ? 'A' : returns >= 90 ? 'B' : returns >= 80 ? 'C' : returns >= 70 ? 'D' : 'F';
+  const gradeColor =
+    returns >= 100
+      ? 'text-green-400'
+      : returns >= 90
+        ? 'text-blue-400'
+        : returns >= 80
+          ? 'text-yellow-400'
+          : 'text-red-400';
 
   // Group loot items by name and sum quantities
-  const lootMap = new Map<string, { name: string; quantity: number; value: number; markup: number; totalValue: number }>();
+  const lootMap = new Map<
+    string,
+    { name: string; quantity: number; value: number; markup: number; totalValue: number }
+  >();
   activeSession.loot.forEach((item) => {
     const existing = lootMap.get(item.name);
     if (existing) {
@@ -44,7 +55,7 @@ export function Loot() {
   const groupedLoot = Array.from(lootMap.values());
 
   // Filter and sort
-  let filteredLoot = groupedLoot.filter((item) =>
+  const filteredLoot = groupedLoot.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -64,7 +75,10 @@ export function Loot() {
   // Calculate stats
   const totalTTValue = activeSession.stats.totalLoot;
   const totalMarkup = filteredLoot.reduce((sum, item) => sum + (item.totalValue - item.value), 0);
-  const avgMarkup = filteredLoot.length > 0 ? filteredLoot.reduce((sum, item) => sum + item.markup, 0) / filteredLoot.length : 100;
+  const avgMarkup =
+    filteredLoot.length > 0
+      ? filteredLoot.reduce((sum, item) => sum + item.markup, 0) / filteredLoot.length
+      : 100;
   const uniqueItems = filteredLoot.length;
   const pedPerItem = uniqueItems > 0 ? totalTTValue / uniqueItems : 0;
 
@@ -93,22 +107,39 @@ export function Loot() {
           <div className="text-xs text-gray-400 uppercase mb-4">VALUE</div>
           <div className="flex items-center gap-2 mb-2">
             <div className="text-2xl font-bold">
-              TT {totalTTValue.toFixed(2)} • <span className="text-green-400">{totalMarkup.toFixed(2)}</span>
+              TT {totalTTValue.toFixed(2)} •{' '}
+              <span className="text-green-400">{totalMarkup.toFixed(2)}</span>
             </div>
           </div>
           <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
             <div
               className="absolute top-0 left-0 h-full bg-blue-500"
-              style={{ width: `${totalTTValue > 0 ? (totalTTValue / (totalTTValue + totalMarkup)) * 100 : 50}%` }}
+              style={{
+                width: `${totalTTValue > 0 ? (totalTTValue / (totalTTValue + totalMarkup)) * 100 : 50}%`,
+              }}
             />
             <div
               className="absolute top-0 right-0 h-full bg-green-500"
-              style={{ width: `${totalTTValue > 0 ? (totalMarkup / (totalTTValue + totalMarkup)) * 100 : 50}%` }}
+              style={{
+                width: `${totalTTValue > 0 ? (totalMarkup / (totalTTValue + totalMarkup)) * 100 : 50}%`,
+              }}
             />
           </div>
           <div className="flex items-center justify-between mt-2 text-xs">
-            <span className="text-blue-400">● TT Value ({totalTTValue > 0 ? ((totalTTValue / (totalTTValue + totalMarkup)) * 100).toFixed(1) : '50.0'}%)</span>
-            <span className="text-green-400">● Markup ({totalTTValue > 0 ? ((totalMarkup / (totalTTValue + totalMarkup)) * 100).toFixed(1) : '50.0'}%)</span>
+            <span className="text-blue-400">
+              ● TT Value (
+              {totalTTValue > 0
+                ? ((totalTTValue / (totalTTValue + totalMarkup)) * 100).toFixed(1)
+                : '50.0'}
+              %)
+            </span>
+            <span className="text-green-400">
+              ● Markup (
+              {totalTTValue > 0
+                ? ((totalMarkup / (totalTTValue + totalMarkup)) * 100).toFixed(1)
+                : '50.0'}
+              %)
+            </span>
           </div>
         </div>
 
@@ -180,7 +211,7 @@ export function Loot() {
             <div className="flex gap-2">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'value' | 'qty' | 'name')}
                 className="input"
               >
                 <option value="value">⬇ Value</option>
@@ -227,10 +258,7 @@ export function Loot() {
                   const share = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
                   const isMaterial = item.name.includes('Oil') || item.name.includes('Shrapnel');
                   return (
-                    <tr
-                      key={idx}
-                      className="border-b border-gray-800 hover:bg-gray-700"
-                    >
+                    <tr key={idx} className="border-b border-gray-800 hover:bg-gray-700">
                       <td className="py-2 px-3">
                         <div className="font-medium">{item.value.toFixed(2)}</div>
                         <div className="text-xs text-gray-400">{item.totalValue.toFixed(2)}</div>
@@ -240,7 +268,9 @@ export function Loot() {
                       <td className="py-2 px-3 text-right">
                         {isMaterial && <span className="text-blue-400">Materials</span>}
                       </td>
-                      <td className="py-2 px-3 text-right">{(item.value / item.quantity).toFixed(4)} PED</td>
+                      <td className="py-2 px-3 text-right">
+                        {(item.value / item.quantity).toFixed(4)} PED
+                      </td>
                       <td className="py-2 px-3 text-right">{share.toFixed(1)}%</td>
                       <td className="py-2 px-3 text-right">
                         <button className="text-blue-400 hover:text-blue-300">
@@ -277,7 +307,10 @@ export function Loot() {
             {topItems.map((item, idx) => {
               const share = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
               return (
-                <div key={idx} className="flex items-center justify-between p-2 bg-gray-700 rounded">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2 bg-gray-700 rounded"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 flex items-center justify-center bg-gray-600 rounded font-bold text-sm">
                       #{idx + 1}

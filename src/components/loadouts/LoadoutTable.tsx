@@ -70,12 +70,16 @@ export function LoadoutTable({
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-gray-400">{loadout.weapon?.Name || 'No weapon'}</div>
+                          <div className="text-sm text-gray-400">
+                            {loadout.weapon?.Name || 'No weapon'}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="p-4 text-right">
-                      <div className="text-blue-400 font-mono">{loadout.costPerShot.toFixed(4)} PED</div>
+                      <div className="text-blue-400 font-mono">
+                        {loadout.costPerShot.toFixed(4)} PED
+                      </div>
                       <div className="text-xs text-gray-500">PEC</div>
                     </td>
                     <td className="p-4 text-right">

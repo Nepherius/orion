@@ -21,7 +21,10 @@ export function LoadoutDetailsPanel({
 }: LoadoutDetailsPanelProps) {
   if (!loadout) {
     return (
-      <div className="col-span-3 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center" style={{ minHeight: 'calc(100vh - 200px)' }}>
+      <div
+        className="col-span-3 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center"
+        style={{ minHeight: 'calc(100vh - 200px)' }}
+      >
         <div className="text-center text-gray-400">
           <Circle className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p>Select a loadout to view details</p>
@@ -31,7 +34,10 @@ export function LoadoutDetailsPanel({
   }
 
   return (
-    <div className="col-span-3 bg-gray-800 rounded-lg overflow-hidden" style={{ minHeight: 'calc(100vh - 200px)' }}>
+    <div
+      className="col-span-3 bg-gray-800 rounded-lg overflow-hidden"
+      style={{ minHeight: 'calc(100vh - 200px)' }}
+    >
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
         <h3 className="text-xl font-bold mb-1">{loadout.name}</h3>

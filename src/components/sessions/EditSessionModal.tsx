@@ -13,7 +13,7 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
   const loadouts = useHuntStore((state) => state.loadouts);
 
   // Find loadout by weapon name (if it matches a loadout name)
-  const sessionLoadout = loadouts.find(l => l.name === session?.weapon);
+  const sessionLoadout = loadouts.find((l) => l.name === session?.weapon);
 
   const [formData, setFormData] = useState({
     name: session?.name || '',
@@ -30,7 +30,7 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const selectedLoadout = loadouts.find(l => l.id === formData.loadoutId);
+    const selectedLoadout = loadouts.find((l) => l.id === formData.loadoutId);
     updateSession(sessionId, {
       ...formData,
       weapon: selectedLoadout?.name || formData.weapon || 'No Loadout',

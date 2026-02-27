@@ -52,9 +52,10 @@ export function useItemBrowser() {
       setFilteredItems(items);
     } else {
       setFilteredItems(
-        items.filter((item) =>
-          item.Name.toLowerCase().includes(query) ||
-          item.Properties?.Type?.toLowerCase().includes(query)
+        items.filter(
+          (item) =>
+            item.Name.toLowerCase().includes(query) ||
+            item.Properties?.Type?.toLowerCase().includes(query)
         )
       );
     }
@@ -69,7 +70,8 @@ export function useItemBrowser() {
     if (type.includes('weapon')) return 'weapon';
     if (type.includes('armor') || type.includes('suit')) return 'armor';
     if (type.includes('tool')) return 'tool';
-    if (type.includes('material') || type.includes('residue') || type.includes('ore')) return 'loot';
+    if (type.includes('material') || type.includes('residue') || type.includes('ore'))
+      return 'loot';
     return 'other';
   };
 

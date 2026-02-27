@@ -25,7 +25,18 @@ interface HuntStore {
 
   // Session actions
   createSession: (
-    session: Omit<HuntSession, 'id' | 'stats' | 'loot' | 'skills' | 'globals' | 'damageEvents' | 'combatEvents' | 'healingEvents' | 'damageTakenEvents'>
+    session: Omit<
+      HuntSession,
+      | 'id'
+      | 'stats'
+      | 'loot'
+      | 'skills'
+      | 'globals'
+      | 'damageEvents'
+      | 'combatEvents'
+      | 'healingEvents'
+      | 'damageTakenEvents'
+    >
   ) => void;
   updateSession: (id: string, updates: Partial<HuntSession>) => void;
   deleteSession: (id: string) => void;
@@ -44,10 +55,13 @@ interface HuntStore {
 
   // Global actions
   addGlobal: (sessionId: string, global: Omit<Global, 'id' | 'timestamp'>) => void;
-  
+
   // Combat event actions
   addDamageEvent: (sessionId: string, damage: number, isCritical?: boolean) => void;
-  addCombatEvent: (sessionId: string, eventType: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit') => void;
+  addCombatEvent: (
+    sessionId: string,
+    eventType: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit'
+  ) => void;
   addHealingEvent: (sessionId: string, amount: number) => void;
   addDamageTakenEvent: (sessionId: string, damage: number, isCritical?: boolean) => void;
 
@@ -87,7 +101,8 @@ const calculateStats = (session: HuntSession): SessionStats => {
 
   const now = Date.now();
   const basePausedMs = session.totalPausedMs || 0;
-  const activePauseMs = session.status === 'paused' && session.pausedAt ? now - session.pausedAt : 0;
+  const activePauseMs =
+    session.status === 'paused' && session.pausedAt ? now - session.pausedAt : 0;
   const totalPausedMs = basePausedMs + activePauseMs;
   const rawDuration = session.endTime
     ? session.endTime - session.startTime
@@ -375,8 +390,6 @@ export const useHuntStore = create<HuntStore>()(
           timestamp: Date.now(),
           isCritical,
         };
-        
-        console.debug('Adding damage event:', damage, 'critical:', isCritical, 'to session:', sessionId);
 
         set((state) => {
           const session = state.sessions.find((s) => s.id === sessionId);
@@ -392,7 +405,6 @@ export const useHuntStore = create<HuntStore>()(
 
           // Calculate cost for this shot
           const shotCost = loadout?.costPerShot || 0;
-          console.debug('Loadout found:', loadout?.name, 'Cost per shot:', shotCost);
 
           return {
             sessions: state.sessions.map((s) => {
@@ -403,7 +415,6 @@ export const useHuntStore = create<HuntStore>()(
                   ammoCost: s.ammoCost + shotCost,
                 };
                 updated.stats = calculateStats(updated);
-                console.debug('Updated session stats:', updated.stats.shotsFired, 'shots,', updated.stats.damageDealt, 'damage');
                 return updated;
               }
               return s;
@@ -447,7 +458,7 @@ export const useHuntStore = create<HuntStore>()(
               const updated = {
                 ...s,
                 healingEvents: [...(s.healingEvents || []), newHealingEvent],
-                healingCost: s.healingCost + (amount * 0.01), // Rough estimate: 1 PEC per heal point
+                healingCost: s.healingCost + amount * 0.01, // Rough estimate: 1 PEC per heal point
               };
               updated.stats = calculateStats(updated);
               return updated;
@@ -472,7 +483,7 @@ export const useHuntStore = create<HuntStore>()(
                 ...s,
                 damageTakenEvents: [...(s.damageTakenEvents || []), newDamageTakenEvent],
                 // Optionally estimate armor decay cost
-                armorDecay: s.armorDecay + (damage * 0.005), // Rough estimate
+                armorDecay: s.armorDecay + damage * 0.005, // Rough estimate
               };
               updated.stats = calculateStats(updated);
               return updated;
@@ -610,17 +621,12 @@ export const useHuntStore = create<HuntStore>()(
         // Recalculate all loadout stats when store is loaded
         if (state?.loadouts) {
           state.loadouts = state.loadouts.map((loadout) => {
-            const stats = calculateLoadoutStats(
-              loadout.weapon,
-              loadout.amplifier,
-              loadout.scope,
-              {
-                dmg: loadout.enhancers?.dmg || 0,
-                acc: loadout.enhancers?.acc || 0,
-                rng: loadout.enhancers?.rng || 0,
-                eco: loadout.enhancers?.eco || 0,
-              }
-            );
+            const stats = calculateLoadoutStats(loadout.weapon, loadout.amplifier, loadout.scope, {
+              dmg: loadout.enhancers?.dmg || 0,
+              acc: loadout.enhancers?.acc || 0,
+              rng: loadout.enhancers?.rng || 0,
+              eco: loadout.enhancers?.eco || 0,
+            });
             return {
               ...loadout,
               costPerShot: stats.costPerShot,

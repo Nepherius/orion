@@ -128,11 +128,32 @@ export interface AppSettings {
 }
 
 // Equipment and Loadout types
+export interface EquipmentEconomy {
+  Decay?: number;
+  AmmoBurn?: number;
+  Efficiency?: number;
+  MaxTT?: number;
+  Value?: number;
+}
+
+export interface EquipmentDamage {
+  Penetration?: number;
+}
+
+export interface EquipmentProperties {
+  Type?: string;
+  Weight?: number;
+  Economy?: EquipmentEconomy;
+  Damage?: EquipmentDamage;
+  Range?: number;
+  [key: string]: unknown;
+}
+
 export interface EquipmentItem {
   Id: number;
   ItemId: number;
   Name: string;
-  Properties: any;
+  Properties: EquipmentProperties;
 }
 
 export interface LoadoutEnhancers {

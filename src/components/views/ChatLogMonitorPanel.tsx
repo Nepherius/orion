@@ -132,9 +132,9 @@ export function ChatLogMonitorPanel() {
 
         {/* Start/Stop Button */}
         {!isWatching ? (
-          <button 
-            onClick={startWatching} 
-            className="btn-primary w-full" 
+          <button
+            onClick={startWatching}
+            className="btn-primary w-full"
             disabled={activeSession !== null || (!watchedPath && !settings.chatLogPath)}
           >
             <Play className="w-4 h-4 inline mr-2" />
@@ -164,8 +164,8 @@ export function ChatLogMonitorPanel() {
           <div className="bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-bold mb-2">Disable Auto-Start?</h3>
             <p className="text-sm text-gray-300 mb-4">
-              Auto-start is enabled. Stopping the file monitor will disable auto-start.
-              Do you want to continue?
+              Auto-start is enabled. Stopping the file monitor will disable auto-start. Do you want
+              to continue?
             </p>
             <div className="flex gap-3">
               <button
@@ -175,11 +175,7 @@ export function ChatLogMonitorPanel() {
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={confirmStopWatching}
-                className="btn-danger flex-1"
-              >
+              <button type="button" onClick={confirmStopWatching} className="btn-danger flex-1">
                 Stop & Disable
               </button>
             </div>

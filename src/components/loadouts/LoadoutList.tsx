@@ -27,7 +27,10 @@ export function LoadoutList({
   totalCount,
 }: LoadoutListProps) {
   return (
-    <div className="col-span-3 bg-gray-800 rounded-lg p-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+    <div
+      className="col-span-3 bg-gray-800 rounded-lg p-4 flex flex-col"
+      style={{ maxHeight: 'calc(100vh - 200px)' }}
+    >
       {/* Search */}
       <div className="relative mb-3">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -47,7 +50,9 @@ export function LoadoutList({
           <button
             onClick={() => onStatusFilterChange('all')}
             className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
-              statusFilter === 'all' ? 'bg-primary-900 text-primary-300' : 'text-gray-400 hover:bg-gray-700'
+              statusFilter === 'all'
+                ? 'bg-primary-900 text-primary-300'
+                : 'text-gray-400 hover:bg-gray-700'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -59,7 +64,9 @@ export function LoadoutList({
           <button
             onClick={() => onStatusFilterChange('active')}
             className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
-              statusFilter === 'active' ? 'bg-primary-900 text-primary-300' : 'text-gray-400 hover:bg-gray-700'
+              statusFilter === 'active'
+                ? 'bg-primary-900 text-primary-300'
+                : 'text-gray-400 hover:bg-gray-700'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -71,7 +78,9 @@ export function LoadoutList({
           <button
             onClick={() => onStatusFilterChange('favorites')}
             className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
-              statusFilter === 'favorites' ? 'bg-primary-900 text-primary-300' : 'text-gray-400 hover:bg-gray-700'
+              statusFilter === 'favorites'
+                ? 'bg-primary-900 text-primary-300'
+                : 'text-gray-400 hover:bg-gray-700'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -86,7 +95,11 @@ export function LoadoutList({
       {/* Sort By */}
       <div className="mb-4">
         <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Sort By</div>
-        <select value={sortBy} onChange={(e) => onSortChange(e.target.value as SortOption)} className="input w-full text-sm">
+        <select
+          value={sortBy}
+          onChange={(e) => onSortChange(e.target.value as SortOption)}
+          className="input w-full text-sm"
+        >
           <option value="name-az">Name A-Z</option>
           <option value="name-za">Name Z-A</option>
           <option value="cost">Lowest Cost</option>

@@ -35,8 +35,12 @@ export function ConfirmModal({
       <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`${variant === 'danger' ? 'bg-red-500/10' : 'bg-yellow-500/10'} p-2 rounded-lg`}>
-              <AlertTriangle className={`w-6 h-6 ${variant === 'danger' ? 'text-red-500' : 'text-yellow-500'}`} />
+            <div
+              className={`${variant === 'danger' ? 'bg-red-500/10' : 'bg-yellow-500/10'} p-2 rounded-lg`}
+            >
+              <AlertTriangle
+                className={`w-6 h-6 ${variant === 'danger' ? 'text-red-500' : 'text-yellow-500'}`}
+              />
             </div>
             <h2 className="text-xl font-bold">{title}</h2>
           </div>
@@ -44,18 +48,13 @@ export function ConfirmModal({
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <p className="text-gray-300 mb-4">{message}</p>
-        
-        {detail && (
-          <p className="text-sm text-gray-400 mb-6">{detail}</p>
-        )}
-        
+
+        {detail && <p className="text-sm text-gray-400 mb-6">{detail}</p>}
+
         <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="btn-secondary flex-1"
-          >
+          <button onClick={onClose} className="btn-secondary flex-1">
             {cancelText}
           </button>
           <button

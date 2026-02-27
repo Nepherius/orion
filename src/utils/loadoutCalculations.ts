@@ -30,7 +30,7 @@ export function calculateLoadoutStats(
 
   const ammoBurn = weapon?.Properties?.Economy?.AmmoBurn || 0;
   // Decay is in PEC, AmmoBurn needs /100 to get PEC, then total /100 to get PED
-  const costPerShot = (totalDecay + (ammoBurn / 100)) / 100;
+  const costPerShot = (totalDecay + ammoBurn / 100) / 100;
 
   const weaponDamage = weapon?.Properties?.Damage?.Penetration || 0;
   const totalDamage = weaponDamage * (1 + enhancers.dmg * 0.01);
@@ -59,7 +59,11 @@ export function calculateLoadoutStats(
 /**
  * Filter equipment items by search query
  */
-export function filterEquipmentItems(items: EquipmentItem[], search: string, limit: number = 10): EquipmentItem[] {
+export function filterEquipmentItems(
+  items: EquipmentItem[],
+  search: string,
+  limit: number = 10
+): EquipmentItem[] {
   if (!search) return items.slice(0, limit);
   return items
     .filter((item) => item.Name.toLowerCase().includes(search.toLowerCase()))

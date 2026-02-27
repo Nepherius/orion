@@ -56,30 +56,44 @@ export function ActiveSessionSidebar() {
             {activeSession.globals.length === 0 ? (
               <p className="text-center text-gray-500 text-sm italic py-4">No globals yet</p>
             ) : (
-              activeSession.globals.slice().reverse().map((global) => {
-                const isRare = global.creature.startsWith('Rare:');
-                const badgeColor = isRare ? 'bg-blue-900 text-blue-300' : (global.isHoF ? 'bg-purple-900 text-purple-300' : '');
-                const valueColor = isRare ? 'text-blue-400' : (global.isHoF ? 'text-purple-400' : 'text-yellow-400');
-                
-                return (
-                  <div key={global.id} className="text-sm space-y-1 pb-2 border-b border-gray-700 last:border-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500">
-                        {format(global.timestamp, 'yyyy-MM-dd HH:mm:ss')}
-                      </span>
-                      <span className={`font-semibold ${valueColor}`}>
-                        {global.value.toFixed(2)} PED
-                      </span>
+              activeSession.globals
+                .slice()
+                .reverse()
+                .map((global) => {
+                  const isRare = global.creature.startsWith('Rare:');
+                  const badgeColor = isRare
+                    ? 'bg-blue-900 text-blue-300'
+                    : global.isHoF
+                      ? 'bg-purple-900 text-purple-300'
+                      : '';
+                  const valueColor = isRare
+                    ? 'text-blue-400'
+                    : global.isHoF
+                      ? 'text-purple-400'
+                      : 'text-yellow-400';
+
+                  return (
+                    <div
+                      key={global.id}
+                      className="text-sm space-y-1 pb-2 border-b border-gray-700 last:border-0"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">
+                          {format(global.timestamp, 'yyyy-MM-dd HH:mm:ss')}
+                        </span>
+                        <span className={`font-semibold ${valueColor}`}>
+                          {global.value.toFixed(2)} PED
+                        </span>
+                      </div>
+                      <div className="text-white">{global.creature}</div>
+                      {(global.isHoF || isRare) && (
+                        <span className={`text-xs px-2 py-0.5 rounded ${badgeColor}`}>
+                          {isRare ? 'RARE' : 'HoF'}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-white">{global.creature}</div>
-                    {(global.isHoF || isRare) && (
-                      <span className={`text-xs px-2 py-0.5 rounded ${badgeColor}`}>
-                        {isRare ? 'RARE' : 'HoF'}
-                      </span>
-                    )}
-                  </div>
-                );
-              })
+                  );
+                })
             )}
           </div>
         </div>

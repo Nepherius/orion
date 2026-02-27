@@ -11,10 +11,16 @@ import { WelcomeModal } from './components/views/WelcomeModal';
 import { Dashboard } from './components/views/Dashboard';
 import { Loot } from './components/loot/Loot';
 import { Loadouts } from './components/views/Loadouts';
-import { Database, Settings as SettingsIcon, BarChart3, Activity, Package, Crosshair } from 'lucide-react';
+import {
+  Database,
+  Settings as SettingsIcon,
+  BarChart3,
+  Activity,
+  Package,
+  Crosshair,
+} from 'lucide-react';
 
 type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analytics' | 'settings';
-
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('sessions');
@@ -63,7 +69,7 @@ function App() {
               <img src="/icon.png" alt="Orion" className="w-4 h-4 inline mr-2 object-contain" />
               Sessions
             </button>
-                        <button
+            <button
               onClick={() => setCurrentView('loadouts')}
               className={`btn ${currentView === 'loadouts' ? 'btn-primary' : 'btn-secondary'}`}
             >
@@ -109,7 +115,7 @@ function App() {
             />
           </div>
         </div>
-      )}    
+      )}
 
       {/* Chat Log Monitor - Always mounted to track events */}
       <div className="hidden">
@@ -140,7 +146,11 @@ function App() {
                 />
               ) : (
                 <div className="card p-8 text-center text-gray-400">
-                  <img src="/icon.png" alt="Orion" className="w-16 h-16 mx-auto mb-4 opacity-50 object-contain" />
+                  <img
+                    src="/icon.png"
+                    alt="Orion"
+                    className="w-16 h-16 mx-auto mb-4 opacity-50 object-contain"
+                  />
                   <p>Select a session to view details</p>
                 </div>
               )}

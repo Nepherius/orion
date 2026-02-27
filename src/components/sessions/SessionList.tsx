@@ -14,7 +14,11 @@ interface SessionListProps {
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
 type SortOption = 'newest' | 'oldest' | 'profit' | 'returns';
 
-export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDashboard }: SessionListProps) {
+export function SessionList({
+  selectedSessionId,
+  onSelectSession,
+  onNavigateToDashboard,
+}: SessionListProps) {
   const sessions = useHuntStore((state) => state.sessions);
   const activeLoadout = useHuntStore((state) => state.getActiveLoadout());
   const [showNewModal, setShowNewModal] = useState(false);
@@ -42,7 +46,7 @@ export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDa
       case 'oldest':
         return a.startTime - b.startTime;
       case 'profit':
-        return (b.stats.totalLoot - b.stats.totalCost) - (a.stats.totalLoot - a.stats.totalCost);
+        return b.stats.totalLoot - b.stats.totalCost - (a.stats.totalLoot - a.stats.totalCost);
       case 'returns':
         return b.stats.returns - a.stats.returns;
       default:
@@ -62,7 +66,10 @@ export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDa
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 250px)' }}>
+    <div
+      className="bg-gray-800 rounded-lg p-4 flex flex-col"
+      style={{ maxHeight: 'calc(100vh - 250px)' }}
+    >
       {/* Search */}
       <div className="relative mb-3">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -185,8 +192,11 @@ export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDa
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className={`text-sm font-semibold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {profit >= 0 ? '+' : ''}{profit.toFixed(3)} PED
+                    <div
+                      className={`text-sm font-semibold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                    >
+                      {profit >= 0 ? '+' : ''}
+                      {profit.toFixed(3)} PED
                     </div>
                     <div className="text-xs text-gray-400">PROFIT</div>
                   </div>
@@ -204,7 +214,9 @@ export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDa
                     {session.status}
                   </span>
                   <div className="text-right">
-                    <div className={`text-sm font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}>
+                    <div
+                      className={`text-sm font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
+                    >
                       {session.stats.returns.toFixed(3)}%
                     </div>
                     <div className="text-xs text-gray-400">TT%</div>

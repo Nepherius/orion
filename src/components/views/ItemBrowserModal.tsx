@@ -10,7 +10,8 @@ interface ItemBrowserModalProps {
 }
 
 export function ItemBrowserModal({ isOpen, onClose, onAddItem }: ItemBrowserModalProps) {
-  const { items, searchQuery, setSearchQuery, loading, error, getTTValue, getCategory } = useItemBrowser();
+  const { items, searchQuery, setSearchQuery, loading, error, getTTValue, getCategory } =
+    useItemBrowser();
   const [selectedItem, setSelectedItem] = useState<EntropyItem | null>(null);
   const [defaultMarkup, setDefaultMarkup] = useState(100);
 
@@ -83,12 +84,11 @@ export function ItemBrowserModal({ isOpen, onClose, onAddItem }: ItemBrowserModa
                     <div>
                       <div className="font-medium">{item.Name}</div>
                       <div className="text-xs text-gray-400">
-                        Type: {item.Properties?.Type || 'Unknown'} | TT: {getTTValue(item).toFixed(2)} PED
+                        Type: {item.Properties?.Type || 'Unknown'} | TT:{' '}
+                        {getTTValue(item).toFixed(2)} PED
                       </div>
                     </div>
-                    <div className="text-xs bg-gray-800 rounded px-2 py-1">
-                      {getCategory(item)}
-                    </div>
+                    <div className="text-xs bg-gray-800 rounded px-2 py-1">{getCategory(item)}</div>
                   </div>
                 </button>
               ))}
@@ -106,13 +106,16 @@ export function ItemBrowserModal({ isOpen, onClose, onAddItem }: ItemBrowserModa
                   <span className="text-gray-400">ID:</span> {selectedItem.Id}
                 </div>
                 <div>
-                  <span className="text-gray-400">Type:</span> {selectedItem.Properties?.Type || 'Unknown'}
+                  <span className="text-gray-400">Type:</span>{' '}
+                  {selectedItem.Properties?.Type || 'Unknown'}
                 </div>
                 <div>
-                  <span className="text-gray-400">TT Value:</span> {getTTValue(selectedItem).toFixed(2)} PED
+                  <span className="text-gray-400">TT Value:</span>{' '}
+                  {getTTValue(selectedItem).toFixed(2)} PED
                 </div>
                 <div>
-                  <span className="text-gray-400">Weight:</span> {selectedItem.Properties?.Weight ?? 'N/A'} kg
+                  <span className="text-gray-400">Weight:</span>{' '}
+                  {selectedItem.Properties?.Weight ?? 'N/A'} kg
                 </div>
               </div>
 

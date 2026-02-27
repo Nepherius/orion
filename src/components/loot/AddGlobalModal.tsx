@@ -8,7 +8,6 @@ interface AddGlobalModalProps {
 }
 
 export function AddGlobalModal({ sessionId, onClose }: AddGlobalModalProps) {
-  const _session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
   const addGlobal = useHuntStore((state) => state.addGlobal);
   const [formData, setFormData] = useState({
     creature: '',

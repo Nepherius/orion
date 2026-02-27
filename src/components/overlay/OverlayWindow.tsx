@@ -59,9 +59,7 @@ export function OverlayWindow() {
         </div>
 
         {/* Orion Logo */}
-        <div className="font-bold text-primary-400 text-sm tracking-widest">
-          ORION
-        </div>
+        <div className="font-bold text-primary-400 text-sm tracking-widest">ORION</div>
 
         <div className="h-8 w-px bg-gray-700"></div>
 
@@ -103,7 +101,8 @@ export function OverlayWindow() {
         <div className="flex flex-col items-center leading-tight">
           <span className="text-gray-400 text-xs text-center">Profit</span>
           <span className={`font-bold text-sm ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
-            {isProfitable ? '+' : ''}{profit.toFixed(2)} PED
+            {isProfitable ? '+' : ''}
+            {profit.toFixed(2)} PED
           </span>
         </div>
 
@@ -113,12 +112,13 @@ export function OverlayWindow() {
         <div className="flex flex-col items-center leading-tight">
           <span className="text-gray-400 text-xs text-center">Returns</span>
           <div className="flex items-center gap-1">
-            <span className={`font-bold text-sm ${returnsPositive ? 'text-green-400' : 'text-red-400'}`}>
-              {returnsPositive ? '+' : ''}{(returns - 100).toFixed(1)}%
+            <span
+              className={`font-bold text-sm ${returnsPositive ? 'text-green-400' : 'text-red-400'}`}
+            >
+              {returnsPositive ? '+' : ''}
+              {(returns - 100).toFixed(1)}%
             </span>
-            <span className="text-gray-500 text-xs">
-              ({returns.toFixed(1)}%)
-            </span>
+            <span className="text-gray-500 text-xs">({returns.toFixed(1)}%)</span>
           </div>
         </div>
 

@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useHuntStore } from '../../store';
-import { Plus, Trash2, TrendingUp, TrendingDown, Award, Zap, Play, Pause, Edit2 } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  TrendingUp,
+  TrendingDown,
+  Award,
+  Zap,
+  Play,
+  Pause,
+  Edit2,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { AddLootModal } from '../loot/AddLootModal';
 import { AddGlobalModal } from '../loot/AddGlobalModal';
@@ -331,7 +341,9 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
       {showAddGlobal && (
         <AddGlobalModal sessionId={sessionId} onClose={() => setShowAddGlobal(false)} />
       )}
-      {showEditModal && <EditSessionModal sessionId={sessionId} onClose={() => setShowEditModal(false)} />}
+      {showEditModal && (
+        <EditSessionModal sessionId={sessionId} onClose={() => setShowEditModal(false)} />
+      )}
 
       <ConfirmModal
         isOpen={showDeleteConfirm}

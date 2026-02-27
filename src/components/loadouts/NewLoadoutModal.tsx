@@ -65,11 +65,17 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
         <div className="p-4 space-y-4">
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={onClose} className="btn-secondary flex items-center justify-center gap-2">
+            <button
+              onClick={onClose}
+              className="btn-secondary flex items-center justify-center gap-2"
+            >
               <X className="w-4 h-4" />
               Cancel
             </button>
-            <button onClick={handleSaveAndClose} className="btn-primary flex items-center justify-center gap-2">
+            <button
+              onClick={handleSaveAndClose}
+              className="btn-primary flex items-center justify-center gap-2"
+            >
               <span>💾</span>
               Save
             </button>
@@ -79,7 +85,9 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-700 rounded-lg p-3 text-center">
               <div className="text-xs text-gray-400 uppercase mb-1">Cost/Shot</div>
-              <div className="text-2xl font-bold text-blue-400">{stats.costPerShot.toFixed(4)} <span className="text-xs">PED</span></div>
+              <div className="text-2xl font-bold text-blue-400">
+                {stats.costPerShot.toFixed(4)} <span className="text-xs">PED</span>
+              </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-3 text-center">
               <div className="text-xs text-gray-400 uppercase mb-1">DPP</div>

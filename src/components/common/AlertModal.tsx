@@ -63,17 +63,12 @@ export function AlertModal({
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <p className="text-gray-300 mb-4">{message}</p>
-        
-        {detail && (
-          <p className="text-sm text-gray-400 mb-6">{detail}</p>
-        )}
-        
-        <button
-          onClick={onClose}
-          className="btn-primary w-full"
-        >
+
+        {detail && <p className="text-sm text-gray-400 mb-6">{detail}</p>}
+
+        <button onClick={onClose} className="btn-primary w-full">
           {confirmText}
         </button>
       </div>

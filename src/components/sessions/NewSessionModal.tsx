@@ -11,7 +11,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
   const createSession = useHuntStore((state) => state.createSession);
   const loadouts = useHuntStore((state) => state.loadouts);
   const activeLoadout = useHuntStore((state) => state.getActiveLoadout());
-  
+
   const [formData, setFormData] = useState({
     name: '',
     loadoutId: activeLoadout?.id || '',
@@ -22,7 +22,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const selectedLoadout = loadouts.find(l => l.id === formData.loadoutId);
+    const selectedLoadout = loadouts.find((l) => l.id === formData.loadoutId);
     createSession({
       ...formData,
       weapon: selectedLoadout?.name || 'No Loadout',
