@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { emit, listen } from '@tauri-apps/api/event';
 import {
   HuntSession,
   LootItem,
@@ -142,7 +143,6 @@ export const useHuntStore = create<HuntStore>()(
         avatarName: '',
         defaultMarkup: 100,
         autoSave: true,
-        overlayEnabled: false,
         theme: 'dark',
         chatLogPath: '',
         autoStartSession: true,
@@ -245,6 +245,10 @@ export const useHuntStore = create<HuntStore>()(
       pauseSession: (id) => {
         const now = Date.now();
         get().updateSession(id, { status: 'paused', pausedAt: now });
+        // Emit event to sync across windows
+        emit('session-paused', { sessionId: id, pausedAt: now }).catch(() => {
+          // Silently fail if emit is not available (dev environment)
+        });
       },
 
       resumeSession: (id) => {
@@ -269,6 +273,10 @@ export const useHuntStore = create<HuntStore>()(
             ),
             activeSessionId: id,
           };
+        });
+        // Emit event to sync across windows
+        emit('session-resumed', { sessionId: id }).catch(() => {
+          // Silently fail if emit is not available (dev environment)
         });
       },
 
@@ -647,3 +655,47 @@ export const useHuntStore = create<HuntStore>()(
     }
   )
 );
+
+// Setup event listeners for cross-window synchronization
+export async function setupStoreSync() {
+  // Listen for pause events from other windows
+  listen('session-paused', (event: any) => {
+    const { sessionId, pausedAt } = event.payload;
+    const state = useHuntStore.getState();
+    const session = state.sessions.find((s) => s.id === sessionId);
+    if (session && session.status !== 'paused') {
+      useHuntStore.setState((prevState) => ({
+        sessions: prevState.sessions.map((s) =>
+          s.id === sessionId ? { ...s, status: 'paused', pausedAt } : s
+        ),
+      }));
+    }
+  }).catch(() => {
+    // Silently fail if listen is not available (dev environment)
+  });
+
+  // Listen for resume events from other windows
+  listen('session-resumed', (event: any) => {
+    const { sessionId } = event.payload;
+    const state = useHuntStore.getState();
+    const session = state.sessions.find((s) => s.id === sessionId);
+    if (session && session.status !== 'active') {
+      const now = Date.now();
+      useHuntStore.setState((prevState) => ({
+        sessions: prevState.sessions.map((s) =>
+          s.id === sessionId
+            ? {
+                ...s,
+                status: 'active',
+                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                pausedAt: undefined,
+              }
+            : s
+        ),
+      }));
+    }
+  }).catch(() => {
+    // Silently fail if listen is not available (dev environment)
+  });
+}
+

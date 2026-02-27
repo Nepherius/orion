@@ -121,7 +121,6 @@ export interface AppSettings {
   avatarName: string;
   defaultMarkup: number;
   autoSave: boolean;
-  overlayEnabled: boolean;
   theme: 'light' | 'dark';
   chatLogPath?: string;
   autoStartSession?: boolean;

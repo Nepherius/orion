@@ -141,24 +141,6 @@ export function Settings() {
             </label>
           </div>
         </div>
-
-        <div>
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="overlayEnabled"
-              checked={settings.overlayEnabled}
-              onChange={(e) => updateSettings({ overlayEnabled: e.target.checked })}
-              className="w-4 h-4"
-            />
-            <label htmlFor="overlayEnabled" className="text-sm text-gray-300">
-              Enable session overlay
-            </label>
-          </div>
-          <p className="text-xs text-gray-400 mt-1 ml-7">
-            Show a draggable overlay with session stats during hunts
-          </p>
-        </div>
       </SettingSection>
 
       {/* About Section */}

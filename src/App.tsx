@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useHuntStore } from './store';
+import { useState, useEffect } from 'react';
+import { useHuntStore, setupStoreSync } from './store';
 import { SessionList } from './components/sessions/SessionList';
 import { SessionDetails } from './components/sessions/SessionDetails';
 import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
@@ -17,7 +17,7 @@ import {
   BarChart3,
   Activity,
   Package,
-  Swords
+  Sword,
 } from 'lucide-react';
 
 type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analytics' | 'settings';
@@ -28,6 +28,11 @@ function App() {
   const activeSession = useHuntStore((state) => state.getActiveSession());
   const avatarName = useHuntStore((state) => state.settings.avatarName);
   const [showWelcome, setShowWelcome] = useState(!avatarName);
+
+  // Setup cross-window sync on mount
+  useEffect(() => {
+    setupStoreSync();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -72,7 +77,7 @@ function App() {
               onClick={() => setCurrentView('loadouts')}
               className={`btn ${currentView === 'loadouts' ? 'btn-primary' : 'btn-secondary'}`}
             >
-              <Swords className="w-4 h-4 inline mr-2" />
+              <Sword className="w-4 h-4 inline mr-2" />
               Loadouts
             </button>
             <button

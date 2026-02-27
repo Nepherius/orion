@@ -332,7 +332,7 @@ async fn show_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
         tauri::WebviewUrl::App("index.html#/overlay".into()),
     )
     .title("ORION Overlay")
-    .inner_size(600.0, 56.0)
+    .inner_size(750.0, 56.0)
     .position(20.0, 20.0)
     .decorations(false)
     .resizable(true)
@@ -385,6 +385,19 @@ pub fn run() {
                 watcher: Arc::new(Mutex::new(FileWatcher::new())),
                 db: Arc::new(Mutex::new(conn)),
             });
+
+            // Close overlay when main window closes
+            let app_handle = app.handle().clone();
+            if let Some(main_window) = app.get_webview_window("main") {
+                main_window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { .. } = event {
+                        // Close overlay window if it exists
+                        if let Some(overlay) = app_handle.get_webview_window("overlay") {
+                            let _ = overlay.close();
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })

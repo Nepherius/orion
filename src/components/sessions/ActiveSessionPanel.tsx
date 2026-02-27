@@ -15,7 +15,7 @@ export function ActiveSessionPanel({
   onSessionEnded,
   onSessionResumed,
 }: ActiveSessionPanelProps) {
-  const { pauseSession, endSession, startSession } = useHuntStore();
+  const { pauseSession, resumeSession, endSession } = useHuntStore();
 
   const handleShowOverlay = async () => {
     try {
@@ -87,13 +87,13 @@ export function ActiveSessionPanel({
         ) : (
           <button
             onClick={() => {
-              startSession(session.id);
+              resumeSession(session.id);
               onSessionResumed?.();
             }}
             className="btn-primary flex flex-1 items-center justify-center gap-2 px-8 py-1 text-sm"
           >
             <Play className="w-4 h-4" />
-            Start
+            Resume
           </button>
         )}
         <button
@@ -101,7 +101,7 @@ export function ActiveSessionPanel({
           className="btn-danger flex flex-1 items-center justify-center gap-2 px-8 py-1 text-sm"
         >
           <StopCircle className="w-4 h-4" />
-          End Session
+          Stop
         </button>
         <button
           onClick={handleShowOverlay}

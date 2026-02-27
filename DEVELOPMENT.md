@@ -87,7 +87,7 @@ User preferences:
 
 - avatarName
 - defaultMarkup
-- autoSave, overlayEnabled
+- autoSave
 - theme
 
 ## State Management

@@ -1,13 +1,19 @@
-import { useHuntStore } from '../../store';
+import { useHuntStore, setupStoreSync } from '../../store';
 import { LiveTimer } from '../layout/LiveTimer';
 import { Play, Pause, GripVertical, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
+import { useEffect } from 'react';
 
 export function OverlayWindow() {
   const activeSession = useHuntStore((state) => state.getActiveSession());
   const pauseSession = useHuntStore((state) => state.pauseSession);
   const resumeSession = useHuntStore((state) => state.resumeSession);
+
+  // Setup cross-window sync on mount
+  useEffect(() => {
+    setupStoreSync();
+  }, []);
 
   const handleTogglePause = () => {
     if (!activeSession) return;
@@ -71,18 +77,18 @@ export function OverlayWindow() {
         <div
           data-tauri-drag-region
           onMouseDown={handleStartDrag}
-          className="cursor-move flex items-center justify-center hover:bg-gray-800 rounded p-1 transition-colors"
+          className="cursor-move flex items-center justify-center hover:bg-gray-800 rounded p-1 transition-colors shrink-0"
         >
           <GripVertical className="w-4 h-4 text-gray-500" />
         </div>
 
         {/* Orion Logo */}
-        <div className="font-bold text-primary-400 text-sm tracking-widest">ORION</div>
+        <div className="font-bold text-primary-400 text-sm tracking-widest shrink-0">ORION</div>
 
-        <div className="h-8 w-px bg-gray-700"></div>
+        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
 
         {/* Timer */}
-        <div className="flex flex-col items-center leading-tight">
+        <div className="flex flex-col items-center leading-tight shrink-0">
           <span className="text-gray-400 text-xs">Time</span>
           <LiveTimer
             startTime={activeSession.startTime}
@@ -93,43 +99,43 @@ export function OverlayWindow() {
           />
         </div>
 
-        <div className="h-8 w-px bg-gray-700"></div>
+        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
 
-        {/* Loadout */}
-        <div className="flex flex-col items-center min-w-0 leading-tight">
+        {/* Loadout - Double size */}
+        <div className="flex flex-col items-center leading-tight flex-[2] min-w-0">
           <span className="text-gray-400 text-xs whitespace-nowrap text-center">Loadout</span>
-          <span className="font-medium text-sm truncate text-center" title={loadoutName}>
+          <span className="font-medium text-sm truncate text-center w-full" title={loadoutName}>
             {loadoutName}
           </span>
         </div>
 
-        <div className="h-8 w-px bg-gray-700"></div>
+        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
 
         {/* Loot Value */}
-        <div className="flex flex-col items-center leading-tight">
-          <span className="text-gray-400 text-xs text-center">Loot</span>
-          <span className="font-bold text-green-400 text-sm">
+        <div className="flex flex-col items-center leading-tight flex-1">
+          <span className="text-gray-400 text-xs text-center whitespace-nowrap">Loot</span>
+          <span className="font-bold text-green-400 text-sm whitespace-nowrap">
             {activeSession.stats.totalLoot.toFixed(2)} PED
           </span>
         </div>
 
-        <div className="h-8 w-px bg-gray-700"></div>
+        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
 
         {/* Profit */}
-        <div className="flex flex-col items-center leading-tight">
-          <span className="text-gray-400 text-xs text-center">Profit</span>
-          <span className={`font-bold text-sm ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
+        <div className="flex flex-col items-center leading-tight flex-1">
+          <span className="text-gray-400 text-xs text-center whitespace-nowrap">Profit</span>
+          <span className={`font-bold text-sm whitespace-nowrap ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
             {isProfitable ? '+' : ''}
             {profit.toFixed(2)} PED
           </span>
         </div>
 
-        <div className="h-8 w-px bg-gray-700"></div>
+        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
 
         {/* Returns */}
-        <div className="flex flex-col items-center leading-tight">
-          <span className="text-gray-400 text-xs text-center">Returns</span>
-          <div className="flex items-center gap-1">
+        <div className="flex flex-col items-center leading-tight flex-1">
+          <span className="text-gray-400 text-xs text-center whitespace-nowrap">Returns</span>
+          <div className="flex items-center gap-1 whitespace-nowrap">
             <span
               className={`font-bold text-sm ${returnsPositive ? 'text-green-400' : 'text-red-400'}`}
             >
@@ -140,13 +146,12 @@ export function OverlayWindow() {
           </div>
         </div>
 
-        {/* Spacer */}
-        <div className="w-1"></div>
+        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
 
         {/* Pause/Resume Button */}
         <button
           onClick={handleTogglePause}
-          className={`p-2 rounded-lg transition-colors ${
+          className={`p-2 rounded-lg transition-colors shrink-0 ${
             activeSession.status === 'active'
               ? 'text-orange-400 hover:bg-orange-500/20'
               : 'text-green-400 hover:bg-green-500/20'
