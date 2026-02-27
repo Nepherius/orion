@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useHuntStore } from '../../store';
 import {
   Plus,
@@ -10,6 +11,8 @@ import {
   Play,
   Pause,
   Edit2,
+  List,
+  Layers,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AddLootModal } from '../loot/AddLootModal';
@@ -23,6 +26,15 @@ interface SessionDetailsProps {
   onSessionResumed?: () => void;
 }
 
+interface GroupedLootItem {
+  name: string;
+  quantity: number;
+  value: number;
+  markup: number;
+  totalValue: number;
+  count: number;
+}
+
 export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsProps) {
   const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
   const removeLoot = useHuntStore((state) => state.removeLoot);
@@ -33,6 +45,27 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
   const [showAddGlobal, setShowAddGlobal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLootExpanded, setIsLootExpanded] = useState(false);
+  const [groupedLoot, setGroupedLoot] = useState<GroupedLootItem[]>([]);
+
+  useEffect(() => {
+    if (!session) return;
+    
+    const loadGroupedLoot = async () => {
+      try {
+        const result = await invoke<GroupedLootItem[]>('db_get_session_loot_grouped', {
+          session_uuid: session.id,
+        });
+        setGroupedLoot(result);
+      } catch (error) {
+        console.error('Failed to load grouped loot:', error);
+      }
+    };
+
+    if (!isLootExpanded && session.loot.length > 0) {
+      loadGroupedLoot();
+    }
+  }, [isLootExpanded, session]);
 
   if (!session) {
     return <div className="card p-6">Session not found</div>;
@@ -212,18 +245,39 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold">Loot</h3>
-          <button
-            onClick={() => setShowAddLoot(true)}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Loot
-          </button>
+          <div className="flex items-center gap-2">
+            {session.loot.length > 0 && (
+              <button
+                onClick={() => setIsLootExpanded(!isLootExpanded)}
+                className="btn-secondary flex items-center gap-2 text-sm"
+                title={isLootExpanded ? 'Stack items' : 'Show detailed list'}
+              >
+                {isLootExpanded ? (
+                  <>
+                    <Layers className="w-4 h-4" />
+                    Stack
+                  </>
+                ) : (
+                  <>
+                    <List className="w-4 h-4" />
+                    Expand
+                  </>
+                )}
+              </button>
+            )}
+            <button
+              onClick={() => setShowAddLoot(true)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Loot
+            </button>
+          </div>
         </div>
 
         {session.loot.length === 0 ? (
           <p className="text-center text-gray-400 py-8">No loot recorded yet</p>
-        ) : (
+        ) : isLootExpanded ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -257,6 +311,37 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-700">
+                  <th className="text-left py-2 px-3">Item</th>
+                  <th className="text-right py-2 px-3">Qty</th>
+                  <th className="text-right py-2 px-3">TT Value</th>
+                  <th className="text-right py-2 px-3">Avg Markup</th>
+                  <th className="text-right py-2 px-3">Total Value</th>
+                  <th className="text-right py-2 px-3">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedLoot.map((stackedItem) => (
+                  <tr key={stackedItem.name} className="border-b border-gray-800 hover:bg-gray-700">
+                    <td className="py-2 px-3 font-medium">{stackedItem.name}</td>
+                    <td className="py-2 px-3 text-right">{stackedItem.quantity}</td>
+                    <td className="py-2 px-3 text-right">{stackedItem.value.toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right">{stackedItem.markup.toFixed(1)}%</td>
+                    <td className="py-2 px-3 text-right font-semibold text-green-400">
+                      {stackedItem.totalValue.toFixed(2)} PED
+                    </td>
+                    <td className="py-2 px-3 text-right text-sm text-gray-400">
+                      {stackedItem.count}x
                     </td>
                   </tr>
                 ))}

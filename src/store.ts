@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { invoke } from '@tauri-apps/api/core';
 import { emit, listen, type Event } from '@tauri-apps/api/event';
 import {
   HuntSession,
@@ -90,6 +90,19 @@ interface HuntStore {
 
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
 
+const ensureSingleLoadoutActive = (loadouts: Loadout[]): Loadout[] => {
+  if (loadouts.length !== 1) {
+    return loadouts;
+  }
+
+  const [onlyLoadout] = loadouts;
+  if (onlyLoadout.status === 'active') {
+    return loadouts;
+  }
+
+  return [{ ...onlyLoadout, status: 'active' }];
+};
+
 let syncInitialized = false;
 let isApplyingRemoteSync = false;
 const storeSyncSourceId = `store-${Math.random().toString(36).slice(2)}`;
@@ -128,18 +141,17 @@ const calculateStats = (session: HuntSession): SessionStats => {
   const regularHits = session.damageEvents?.filter((e) => !e.isCritical).length || 0;
   const totalHits = criticalHits + regularHits;
 
-  // Shots fired = combat events that actually registered (hits/crits) or were avoided (dodges/evades), not misses
   const shotsFiredCount = totalHits + dodges + evades;
 
   return {
-    kills: 0, // Will be tracked separately
+    kills: 0,
     lootEvents: session.loot.length,
     globals: session.globals.filter((g) => !g.isHoF).length,
     hofs: session.globals.filter((g) => g.isHoF).length,
     totalLoot,
     totalCost,
     returns,
-    duration: Math.floor(duration / 1000), // Convert to seconds
+    duration: Math.floor(duration / 1000),
     shotsFired: shotsFiredCount,
     damageDealt: session.damageEvents?.reduce((sum, evt) => sum + evt.damage, 0) || 0,
     damageTaken: session.damageTakenEvents?.reduce((sum, evt) => sum + evt.damage, 0) || 0,
@@ -153,25 +165,128 @@ const calculateStats = (session: HuntSession): SessionStats => {
   };
 };
 
-export const useHuntStore = create<HuntStore>()(
-  persist(
-    (set, get) => ({
+const defaultSettings: AppSettings = {
+  avatarName: '',
+  defaultMarkup: 100,
+  autoSave: true,
+  theme: 'dark',
+  chatLogPath: '',
+  autoStartSession: true,
+  overlayX: 20,
+  overlayY: 20,
+  overlayWidth: 750,
+  overlayHeight: 56,
+};
+
+const safeInvoke = async <T = unknown>(command: string, args?: Record<string, unknown>) => {
+  try {
+    return (await invoke(command, args)) as T;
+  } catch {
+    return null;
+  }
+};
+
+const saveJsonSetting = async (key: string, value: unknown) => {
+  await safeInvoke('db_set_setting', {
+    key,
+    value: JSON.stringify(value),
+  });
+};
+
+const loadJsonSetting = async <T>(key: string): Promise<T | null> => {
+  const raw = await safeInvoke<string | null>('db_get_setting', { key });
+  if (!raw) {
+    return null;
+  }
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+};
+
+const persistSessionToDb = async (session: HuntSession) => {
+  await safeInvoke('db_create_session', {
+    uuid: session.id,
+    name: session.name,
+    weapon: session.weapon,
+    armor: session.armor ?? null,
+    location: session.location ?? null,
+    startTime: session.startTime,
+    start_time: session.startTime,
+    status: session.status,
+    loadoutId: session.loadoutId ?? null,
+    loadout_id: session.loadoutId ?? null,
+    notes: session.notes,
+    ammoCost: session.ammoCost,
+    ammo_cost: session.ammoCost,
+    repairCost: session.repairCost,
+    repair_cost: session.repairCost,
+    armorDecay: session.armorDecay,
+    armor_decay: session.armorDecay,
+    healingCost: session.healingCost,
+    healing_cost: session.healingCost,
+    otherCosts: session.otherCosts,
+    other_costs: session.otherCosts,
+  });
+};
+
+const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
+  await safeInvoke('db_update_session', {
+    uuid: id,
+    name: updates.name,
+    weapon: updates.weapon,
+    armor: updates.armor,
+    location: updates.location,
+    end_time: updates.endTime,
+    status: updates.status,
+    paused_at: updates.pausedAt,
+    total_paused_ms: updates.totalPausedMs,
+    loadout_id: updates.loadoutId,
+    notes: updates.notes,
+    ammo_cost: updates.ammoCost,
+    repair_cost: updates.repairCost,
+    armor_decay: updates.armorDecay,
+    healing_cost: updates.healingCost,
+    other_costs: updates.otherCosts,
+  });
+};
+
+const hydrateSessionEvents = async (session: HuntSession): Promise<HuntSession> => {
+  const [loot, skills, globals, damageEvents, combatEvents, healingEvents, damageTakenEvents, stats] =
+    await Promise.all([
+      safeInvoke<LootItem[]>('db_get_session_loot', { session_uuid: session.id }),
+      safeInvoke<SkillGain[]>('db_get_session_skills', { session_uuid: session.id }),
+      safeInvoke<Global[]>('db_get_session_globals', { session_uuid: session.id }),
+      safeInvoke<DamageEvent[]>('db_get_session_damage_events', { session_uuid: session.id }),
+      safeInvoke<CombatEvent[]>('db_get_session_combat_events', { session_uuid: session.id }),
+      safeInvoke<HealingEvent[]>('db_get_session_healing_events', { session_uuid: session.id }),
+      safeInvoke<DamageTakenEvent[]>('db_get_session_damage_taken_events', {
+        session_uuid: session.id,
+      }),
+      safeInvoke<SessionStats>('db_get_session_stats', { session_uuid: session.id }),
+    ]);
+
+  const hydrated: HuntSession = {
+    ...session,
+    loot: loot ?? [],
+    skills: skills ?? [],
+    globals: globals ?? [],
+    damageEvents: damageEvents ?? [],
+    combatEvents: combatEvents ?? [],
+    healingEvents: healingEvents ?? [],
+    damageTakenEvents: damageTakenEvents ?? [],
+    stats: stats ?? session.stats,
+  };
+  return hydrated;
+};
+
+export const useHuntStore = create<HuntStore>()((set, get) => ({
       sessions: [],
       activeSessionId: null,
       itemDatabase: [],
       loadouts: [],
-      settings: {
-        avatarName: '',
-        defaultMarkup: 100,
-        autoSave: true,
-        theme: 'dark',
-        chatLogPath: '',
-        autoStartSession: true,
-        overlayX: 20,
-        overlayY: 20,
-        overlayWidth: 750,
-        overlayHeight: 56,
-      },
+      settings: defaultSettings,
 
       createSession: (sessionData) => {
         const newSession: HuntSession = {
@@ -219,6 +334,11 @@ export const useHuntStore = create<HuntStore>()(
 
           return { sessions: [newSession, ...state.sessions] };
         });
+
+        void persistSessionToDb(newSession);
+        if (newSession.status === 'active') {
+          void saveJsonSetting('activeSessionId', newSession.id);
+        }
       },
 
       updateSession: (id, updates) => {
@@ -232,6 +352,8 @@ export const useHuntStore = create<HuntStore>()(
             return session;
           }),
         }));
+
+        void updateSessionInDb(id, updates);
       },
 
       deleteSession: (id) => {
@@ -239,11 +361,16 @@ export const useHuntStore = create<HuntStore>()(
           sessions: state.sessions.filter((s) => s.id !== id),
           activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
         }));
+
+        void safeInvoke('db_delete_session', { uuid: id });
+        if (get().activeSessionId === null) {
+          void saveJsonSetting('activeSessionId', null);
+        }
       },
 
       startSession: (id) => {
+        const now = Date.now();
         set((state) => {
-          const now = Date.now();
           // Pause any active session
           const sessions = state.sessions.map((s) =>
             s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
@@ -265,6 +392,16 @@ export const useHuntStore = create<HuntStore>()(
             activeSessionId: id,
           };
         });
+        const currentlyActive = get().sessions.find((s) => s.id === id);
+        if (currentlyActive) {
+          void updateSessionInDb(id, {
+            status: 'active',
+            startTime: now,
+            pausedAt: undefined,
+            totalPausedMs: 0,
+          });
+        }
+        void saveJsonSetting('activeSessionId', id);
       },
 
       pauseSession: (id) => {
@@ -273,8 +410,8 @@ export const useHuntStore = create<HuntStore>()(
       },
 
       resumeSession: (id) => {
+        const now = Date.now();
         set((state) => {
-          const now = Date.now();
           // Pause any active session
           const sessions = state.sessions.map((s) =>
             s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
@@ -295,11 +432,20 @@ export const useHuntStore = create<HuntStore>()(
             activeSessionId: id,
           };
         });
+        const resumed = get().sessions.find((s) => s.id === id);
+        if (resumed) {
+          void updateSessionInDb(id, {
+            status: 'active',
+            pausedAt: undefined,
+            totalPausedMs: resumed.totalPausedMs,
+          });
+        }
+        void saveJsonSetting('activeSessionId', id);
       },
 
       endSession: (id) => {
+        const now = Date.now();
         set((state) => {
-          const now = Date.now();
           return {
             sessions: state.sessions.map((s) =>
               s.id === id
@@ -315,6 +461,18 @@ export const useHuntStore = create<HuntStore>()(
             activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
           };
         });
+        const ended = get().sessions.find((s) => s.id === id);
+        if (ended) {
+          void updateSessionInDb(id, {
+            status: 'completed',
+            endTime: now,
+            totalPausedMs: ended.totalPausedMs,
+            pausedAt: undefined,
+          });
+        }
+        if (get().activeSessionId === null) {
+          void saveJsonSetting('activeSessionId', null);
+        }
       },
 
       addLoot: (sessionId, lootData) => {
@@ -335,6 +493,17 @@ export const useHuntStore = create<HuntStore>()(
             return session;
           }),
         }));
+
+        void safeInvoke('db_add_loot', {
+          uuid: newLoot.id,
+          session_uuid: sessionId,
+          name: newLoot.name,
+          quantity: newLoot.quantity,
+          value: newLoot.value,
+          markup: newLoot.markup,
+          total_value: newLoot.totalValue,
+          timestamp: newLoot.timestamp,
+        });
       },
 
       updateLoot: (sessionId, lootId, updates) => {
@@ -359,6 +528,15 @@ export const useHuntStore = create<HuntStore>()(
             return session;
           }),
         }));
+
+        void safeInvoke('db_update_loot', {
+          uuid: lootId,
+          name: updates.name,
+          quantity: updates.quantity,
+          value: updates.value,
+          markup: updates.markup,
+          total_value: updates.totalValue,
+        });
       },
 
       removeLoot: (sessionId, lootId) => {
@@ -375,6 +553,8 @@ export const useHuntStore = create<HuntStore>()(
             return session;
           }),
         }));
+
+        void safeInvoke('db_delete_loot', { uuid: lootId });
       },
 
       addSkillGain: (sessionId, skillData) => {
@@ -386,6 +566,14 @@ export const useHuntStore = create<HuntStore>()(
 
         get().updateSession(sessionId, {
           skills: [...(get().sessions.find((s) => s.id === sessionId)?.skills || []), newSkill],
+        });
+
+        void safeInvoke('db_add_skill', {
+          uuid: newSkill.id,
+          session_uuid: sessionId,
+          skill_name: newSkill.skillName,
+          gain_amount: newSkill.gainAmount,
+          timestamp: newSkill.timestamp,
         });
       },
 
@@ -406,6 +594,15 @@ export const useHuntStore = create<HuntStore>()(
             return session;
           }),
         }));
+
+        void safeInvoke('db_add_global', {
+          uuid: newGlobal.id,
+          session_uuid: sessionId,
+          creature: newGlobal.creature,
+          value: newGlobal.value,
+          is_hof: newGlobal.isHoF,
+          timestamp: newGlobal.timestamp,
+        });
       },
 
       addDamageEvent: (sessionId, damage, isCritical = false) => {
@@ -429,6 +626,14 @@ export const useHuntStore = create<HuntStore>()(
             return s;
           }),
         }));
+
+        void safeInvoke('db_add_damage_event', {
+          uuid: newDamageEvent.id,
+          session_uuid: sessionId,
+          damage: newDamageEvent.damage,
+          is_critical: newDamageEvent.isCritical,
+          timestamp: newDamageEvent.timestamp,
+        });
       },
 
       addCombatEvent: (sessionId, eventType) => {
@@ -475,6 +680,13 @@ export const useHuntStore = create<HuntStore>()(
             }),
           };
         });
+
+        void safeInvoke('db_add_combat_event', {
+          uuid: newCombatEvent.id,
+          session_uuid: sessionId,
+          event_type: newCombatEvent.type,
+          timestamp: newCombatEvent.timestamp,
+        });
       },
 
       addHealingEvent: (sessionId, amount) => {
@@ -497,6 +709,13 @@ export const useHuntStore = create<HuntStore>()(
             return s;
           }),
         }));
+
+        void safeInvoke('db_add_healing_event', {
+          uuid: newHealingEvent.id,
+          session_uuid: sessionId,
+          amount: newHealingEvent.amount,
+          timestamp: newHealingEvent.timestamp,
+        });
       },
 
       addDamageTakenEvent: (sessionId, damage, isCritical = false) => {
@@ -520,6 +739,14 @@ export const useHuntStore = create<HuntStore>()(
             return s;
           }),
         }));
+
+        void safeInvoke('db_add_damage_taken_event', {
+          uuid: newDamageTakenEvent.id,
+          session_uuid: sessionId,
+          damage: newDamageTakenEvent.damage,
+          is_critical: newDamageTakenEvent.isCritical,
+          timestamp: newDamageTakenEvent.timestamp,
+        });
       },
 
       addItemTemplate: (itemData) => {
@@ -527,20 +754,32 @@ export const useHuntStore = create<HuntStore>()(
           ...itemData,
           id: generateId(),
         };
-        set((state) => ({ itemDatabase: [...state.itemDatabase, newItem] }));
+        set((state) => {
+          const itemDatabase = [...state.itemDatabase, newItem];
+          void saveJsonSetting('itemDatabase', itemDatabase);
+          return { itemDatabase };
+        });
       },
 
       updateItemTemplate: (id, updates) => {
         set((state) => ({
-          itemDatabase: state.itemDatabase.map((item) =>
-            item.id === id ? { ...item, ...updates } : item
-          ),
+          itemDatabase: (() => {
+            const itemDatabase = state.itemDatabase.map((item) =>
+              item.id === id ? { ...item, ...updates } : item
+            );
+            void saveJsonSetting('itemDatabase', itemDatabase);
+            return itemDatabase;
+          })(),
         }));
       },
 
       deleteItemTemplate: (id) => {
         set((state) => ({
-          itemDatabase: state.itemDatabase.filter((item) => item.id !== id),
+          itemDatabase: (() => {
+            const itemDatabase = state.itemDatabase.filter((item) => item.id !== id);
+            void saveJsonSetting('itemDatabase', itemDatabase);
+            return itemDatabase;
+          })(),
         }));
       },
 
@@ -550,22 +789,34 @@ export const useHuntStore = create<HuntStore>()(
           ...loadoutData,
           id: generateId(),
         };
-        set((state) => ({
-          loadouts: [newLoadout, ...state.loadouts],
-        }));
+        set((state) => {
+          const loadouts = ensureSingleLoadoutActive([newLoadout, ...state.loadouts]);
+          void saveJsonSetting('loadouts', loadouts);
+          return { loadouts };
+        });
       },
 
       updateLoadout: (id, updates) => {
         set((state) => ({
-          loadouts: state.loadouts.map((loadout) =>
-            loadout.id === id ? { ...loadout, ...updates } : loadout
-          ),
+          loadouts: (() => {
+            const loadouts = state.loadouts.map((loadout) =>
+              loadout.id === id ? { ...loadout, ...updates } : loadout
+            );
+            void saveJsonSetting('loadouts', loadouts);
+            return loadouts;
+          })(),
         }));
       },
 
       deleteLoadout: (id) => {
         set((state) => ({
-          loadouts: state.loadouts.filter((loadout) => loadout.id !== id),
+          loadouts: (() => {
+            const loadouts = ensureSingleLoadoutActive(
+              state.loadouts.filter((loadout) => loadout.id !== id)
+            );
+            void saveJsonSetting('loadouts', loadouts);
+            return loadouts;
+          })(),
         }));
       },
 
@@ -578,26 +829,36 @@ export const useHuntStore = create<HuntStore>()(
             name: `${loadout.name} (Copy)`,
             status: 'inactive',
           };
-          set((state) => ({
-            loadouts: [duplicate, ...state.loadouts],
-          }));
+          set((state) => {
+            const loadouts = [duplicate, ...state.loadouts];
+            void saveJsonSetting('loadouts', loadouts);
+            return { loadouts };
+          });
         }
       },
 
       toggleLoadoutFavorite: (id) => {
         set((state) => ({
-          loadouts: state.loadouts.map((loadout) =>
-            loadout.id === id ? { ...loadout, favorite: !loadout.favorite } : loadout
-          ),
+          loadouts: (() => {
+            const loadouts = state.loadouts.map((loadout) =>
+              loadout.id === id ? { ...loadout, favorite: !loadout.favorite } : loadout
+            );
+            void saveJsonSetting('loadouts', loadouts);
+            return loadouts;
+          })(),
         }));
       },
 
       setActiveLoadout: (id) => {
         set((state) => ({
-          loadouts: state.loadouts.map((loadout) => ({
-            ...loadout,
-            status: loadout.id === id ? 'active' : 'inactive',
-          })),
+          loadouts: (() => {
+            const loadouts = state.loadouts.map((loadout) => ({
+              ...loadout,
+              status: (loadout.id === id ? 'active' : 'inactive') as 'active' | 'inactive',
+            }));
+            void saveJsonSetting('loadouts', loadouts);
+            return loadouts;
+          })(),
         }));
       },
 
@@ -608,7 +869,11 @@ export const useHuntStore = create<HuntStore>()(
 
       updateSettings: (updates) => {
         set((state) => ({
-          settings: { ...state.settings, ...updates },
+          settings: (() => {
+            const settings = { ...state.settings, ...updates };
+            void saveJsonSetting('settings', settings);
+            return settings;
+          })(),
         }));
       },
 
@@ -643,39 +908,112 @@ export const useHuntStore = create<HuntStore>()(
         }
         return calculateStats(session);
       },
-    }),
-    {
-      name: 'orion-loot-tracker',
-      onRehydrateStorage: () => (state) => {
-        // Recalculate all loadout stats when store is loaded
-        if (state?.loadouts) {
-          state.loadouts = state.loadouts.map((loadout) => {
-            const stats = calculateLoadoutStats(loadout.weapon, loadout.amplifier, loadout.scope, {
-              dmg: loadout.enhancers?.dmg || 0,
-              acc: loadout.enhancers?.acc || 0,
-              rng: loadout.enhancers?.rng || 0,
-              eco: loadout.enhancers?.eco || 0,
-            });
-            return {
-              ...loadout,
-              costPerShot: stats.costPerShot,
-              dpp: stats.dpp,
-              totalDamage: stats.totalDamage,
-              range: stats.range,
-              criticalChance: stats.criticalChance,
-              hitRate: stats.hitRate,
-              effectiveDamage: stats.effectiveDamage,
-              efficiency: stats.efficiency,
-              decay: stats.decay,
-              ammoBurn: stats.ammoBurn,
-              totalUses: stats.totalUses,
-            };
-          });
-        }
-      },
-    }
-  )
+    })
 );
+
+let dbStoreInitialized = false;
+
+export async function initializeStoreFromDb() {
+  if (dbStoreInitialized) {
+    return;
+  }
+  dbStoreInitialized = true;
+
+  const [sessionRows, storedSettings, storedLoadouts, storedItemDatabase, storedActiveSessionId] =
+    await Promise.all([
+      safeInvoke<Array<Partial<HuntSession>>>('db_get_all_sessions_summary'),
+      loadJsonSetting<AppSettings>('settings'),
+      loadJsonSetting<Loadout[]>('loadouts'),
+      loadJsonSetting<ItemTemplate[]>('itemDatabase'),
+      loadJsonSetting<string | null>('activeSessionId'),
+    ]);
+
+  const sessions = await Promise.all(
+    (sessionRows ?? []).map(async (row) => {
+      const session: HuntSession = {
+        id: String(row.id ?? ''),
+        name: row.name ?? 'Session',
+        startTime: Number(row.startTime ?? Date.now()),
+        endTime: row.endTime ? Number(row.endTime) : undefined,
+        status: (row.status as HuntSession['status']) ?? 'completed',
+        pausedAt: row.pausedAt ? Number(row.pausedAt) : undefined,
+        totalPausedMs: row.totalPausedMs ? Number(row.totalPausedMs) : 0,
+        weapon: row.weapon ?? '',
+        armor: row.armor,
+        location: row.location,
+        loot: [],
+        skills: [],
+        globals: [],
+        damageEvents: [],
+        combatEvents: [],
+        healingEvents: [],
+        damageTakenEvents: [],
+        notes: row.notes ?? '',
+        loadoutId: row.loadoutId,
+        ammoCost: Number(row.ammoCost ?? 0),
+        repairCost: Number(row.repairCost ?? 0),
+        armorDecay: Number(row.armorDecay ?? 0),
+        healingCost: Number(row.healingCost ?? 0),
+        otherCosts: Number(row.otherCosts ?? 0),
+        stats: {
+          kills: 0,
+          lootEvents: 0,
+          globals: 0,
+          hofs: 0,
+          totalLoot: 0,
+          totalCost: 0,
+          returns: 0,
+          duration: 0,
+          shotsFired: 0,
+          damageDealt: 0,
+          damageTaken: 0,
+          healsUsed: 0,
+          totalHealing: 0,
+          misses: 0,
+          dodges: 0,
+          evades: 0,
+          criticalHits: 0,
+          hits: 0,
+        },
+      };
+      return hydrateSessionEvents(session);
+    })
+  );
+
+  const hydratedLoadouts = (storedLoadouts ?? []).map((loadout) => {
+    const stats = calculateLoadoutStats(loadout.weapon, loadout.amplifier, loadout.scope, {
+      dmg: loadout.enhancers?.dmg || 0,
+      acc: loadout.enhancers?.acc || 0,
+      rng: loadout.enhancers?.rng || 0,
+      eco: loadout.enhancers?.eco || 0,
+    });
+    return {
+      ...loadout,
+      costPerShot: stats.costPerShot,
+      dpp: stats.dpp,
+      totalDamage: stats.totalDamage,
+      range: stats.range,
+      criticalChance: stats.criticalChance,
+      hitRate: stats.hitRate,
+      effectiveDamage: stats.effectiveDamage,
+      efficiency: stats.efficiency,
+      decay: stats.decay,
+      ammoBurn: stats.ammoBurn,
+      totalUses: stats.totalUses,
+    };
+  });
+
+  const normalizedHydratedLoadouts = ensureSingleLoadoutActive(hydratedLoadouts);
+
+  useHuntStore.setState((prev) => ({
+    ...prev,
+    sessions,
+    activeSessionId: storedActiveSessionId ?? sessions.find((s) => s.status === 'active')?.id ?? null,
+    settings: storedSettings ?? defaultSettings,
+    loadouts: normalizedHydratedLoadouts,
+    itemDatabase: storedItemDatabase ?? [],
+  }));
+}
 
 // Setup event listeners for cross-window synchronization
 export async function setupStoreSync() {
@@ -720,12 +1058,14 @@ export async function setupStoreSync() {
       return;
     }
 
+    const normalizedLoadouts = ensureSingleLoadoutActive(payload.loadouts);
+
     isApplyingRemoteSync = true;
     useHuntStore.setState((prevState) => ({
       ...prevState,
       sessions: payload.sessions,
       activeSessionId: payload.activeSessionId,
-      loadouts: payload.loadouts,
+      loadouts: normalizedLoadouts,
     }));
     isApplyingRemoteSync = false;
   }).catch(() => {

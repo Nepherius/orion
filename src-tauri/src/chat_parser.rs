@@ -278,18 +278,36 @@ impl ChatLogParser {
             line.chars().take(19).collect::<String>()
         };
 
-        // Pattern: You have gained X SkillName
-        if line.contains("You have gained") {
-            let re = regex::Regex::new(r"You have gained ([\d.]+) (.+)").ok()?;
-            let caps = re.captures(line)?;
-            let gain: f64 = caps.get(1)?.as_str().parse().ok()?;
-            let skill_name = caps.get(2)?.as_str().trim().to_string();
+        if !line.contains("You have gained") {
+            return None;
+        }
 
-            return Some(SkillGain {
-                timestamp,
-                skill_name,
-                gain,
-            });
+        // Try pattern 1: "You have gained X experience in your SkillName skill"
+        if line.contains("experience in your") {
+            let re = regex::Regex::new(r"You have gained ([\d.]+) experience in your (.+?) skill").ok()?;
+            if let Some(caps) = re.captures(line) {
+                let gain: f64 = caps.get(1)?.as_str().parse().ok()?;
+                let skill_name = caps.get(2)?.as_str().trim().to_string();
+
+                return Some(SkillGain {
+                    timestamp,
+                    skill_name,
+                    gain,
+                });
+            }
+        } else {
+            // Try pattern 2: "You have gained X SkillName" (without "experience in your")
+            let re = regex::Regex::new(r"You have gained ([\d.]+) (.+)").ok()?;
+            if let Some(caps) = re.captures(line) {
+                let gain: f64 = caps.get(1)?.as_str().parse().ok()?;
+                let skill_name = caps.get(2)?.as_str().trim().to_string();
+
+                return Some(SkillGain {
+                    timestamp,
+                    skill_name,
+                    gain,
+                });
+            }
         }
 
         None
@@ -579,26 +597,39 @@ mod tests {
     #[test]
     fn test_parse_skill_gain() {
         let parser = ChatLogParser::new();
-        let line = "2026-02-27 10:15:30 [System] [] You have gained 0.3438 Courage";
+        let line = "2026-02-27 10:15:30 [System] [] You have gained 0.3438 Bravado";
 
         let result = parser.parse_skill_gain(line);
         assert!(result.is_some());
 
         let event = result.unwrap();
         assert_eq!(event.gain, 0.3438);
-        assert_eq!(event.skill_name, "Courage");
+        assert_eq!(event.skill_name, "Bravado");
     }
 
     #[test]
-    fn test_parse_skill_gain_multi_word() {
+    fn test_parse_skill_gain_with_experience() {
         let parser = ChatLogParser::new();
-        let line = "2026-02-27 10:15:30 [System] [] You have gained 0.1234 Rifle (Dmg)";
+        let line = "2026-02-26 19:26:03 [System] [] You have gained 0.6742 experience in your Rifle skill";
 
         let result = parser.parse_skill_gain(line);
         assert!(result.is_some());
 
         let event = result.unwrap();
-        assert_eq!(event.gain, 0.1234);
-        assert_eq!(event.skill_name, "Rifle (Dmg)");
+        assert_eq!(event.gain, 0.6742);
+        assert_eq!(event.skill_name, "Rifle");
+    }
+
+    #[test]
+    fn test_parse_skill_gain_multi_word() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-26 19:27:39 [System] [] You have gained 0.5023 experience in your Laser Weaponry Technology skill";
+
+        let result = parser.parse_skill_gain(line);
+        assert!(result.is_some());
+
+        let event = result.unwrap();
+        assert_eq!(event.gain, 0.5023);
+        assert_eq!(event.skill_name, "Laser Weaponry Technology");
     }
 }

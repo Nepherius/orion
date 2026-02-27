@@ -1,0 +1,915 @@
+use rusqlite::{params, Connection};
+use rusqlite::OptionalExtension;
+use serde_json::{json, Value as JsonValue};
+use std::sync::{Arc, Mutex};
+use tauri::State;
+
+pub struct DbState {
+    pub db: Arc<Mutex<Connection>>,
+}
+
+// ========== SESSIONS ==========
+
+#[tauri::command]
+pub fn db_create_session(
+    uuid: String,
+    name: String,
+    weapon: String,
+    armor: Option<String>,
+    location: Option<String>,
+    start_time: i64,
+    status: String,
+    loadout_id: Option<String>,
+    notes: String,
+    ammo_cost: f64,
+    repair_cost: f64,
+    armor_decay: f64,
+    healing_cost: f64,
+    other_costs: f64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO sessions (uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+        params![uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_update_session(
+    uuid: String,
+    name: Option<String>,
+    weapon: Option<String>,
+    armor: Option<String>,
+    location: Option<String>,
+    end_time: Option<i64>,
+    status: Option<String>,
+    paused_at: Option<i64>,
+    total_paused_ms: Option<i64>,
+    loadout_id: Option<String>,
+    notes: Option<String>,
+    ammo_cost: Option<f64>,
+    repair_cost: Option<f64>,
+    armor_decay: Option<f64>,
+    healing_cost: Option<f64>,
+    other_costs: Option<f64>,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    
+    // Build dynamic update query
+    let mut updates = Vec::new();
+    let mut values: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    
+    if let Some(v) = name { updates.push("name = ?"); values.push(Box::new(v)); }
+    if let Some(v) = weapon { updates.push("weapon = ?"); values.push(Box::new(v)); }
+    if let Some(v) = armor { updates.push("armor = ?"); values.push(Box::new(v)); }
+    if let Some(v) = location { updates.push("location = ?"); values.push(Box::new(v)); }
+    if let Some(v) = end_time { updates.push("end_time = ?"); values.push(Box::new(v)); }
+    if let Some(v) = status { updates.push("status = ?"); values.push(Box::new(v)); }
+    if let Some(v) = paused_at { updates.push("paused_at = ?"); values.push(Box::new(v)); }
+    if let Some(v) = total_paused_ms { updates.push("total_paused_ms = ?"); values.push(Box::new(v)); }
+    if let Some(v) = loadout_id { updates.push("loadout_id = ?"); values.push(Box::new(v)); }
+    if let Some(v) = notes { updates.push("notes = ?"); values.push(Box::new(v)); }
+    if let Some(v) = ammo_cost { updates.push("ammo_cost = ?"); values.push(Box::new(v)); }
+    if let Some(v) = repair_cost { updates.push("repair_cost = ?"); values.push(Box::new(v)); }
+    if let Some(v) = armor_decay { updates.push("armor_decay = ?"); values.push(Box::new(v)); }
+    if let Some(v) = healing_cost { updates.push("healing_cost = ?"); values.push(Box::new(v)); }
+    if let Some(v) = other_costs { updates.push("other_costs = ?"); values.push(Box::new(v)); }
+    
+    if updates.is_empty() {
+        return Ok(());
+    }
+    
+    values.push(Box::new(uuid.clone()));
+    let query = format!("UPDATE sessions SET {} WHERE uuid = ?", updates.join(", "));
+    
+    conn.execute(
+        &query,
+        rusqlite::params_from_iter(values.iter().map(|v| v.as_ref())),
+    )
+    .map_err(|e| e.to_string())?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_delete_session(uuid: String, state: State<'_, DbState>) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute("DELETE FROM sessions WHERE uuid = ?1", params![uuid])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs FROM sessions ORDER BY start_time DESC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "name": row.get::<_, String>(1)?,
+                "weapon": row.get::<_, String>(2)?,
+                "armor": row.get::<_, Option<String>>(3)?,
+                "location": row.get::<_, Option<String>>(4)?,
+                "startTime": row.get::<_, i64>(5)?,
+                "endTime": row.get::<_, Option<i64>>(6)?,
+                "status": row.get::<_, String>(7)?,
+                "pausedAt": row.get::<_, Option<i64>>(8)?,
+                "totalPausedMs": row.get::<_, Option<i64>>(9)?,
+                "loadoutId": row.get::<_, Option<String>>(10)?,
+                "notes": row.get::<_, String>(11)?,
+                "ammoCost": row.get::<_, f64>(12)?,
+                "repairCost": row.get::<_, f64>(13)?,
+                "armorDecay": row.get::<_, f64>(14)?,
+                "healingCost": row.get::<_, f64>(15)?,
+                "otherCosts": row.get::<_, f64>(16)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut sessions = Vec::new();
+    for row in rows {
+        sessions.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(sessions))
+}
+
+// ========== LOOT ITEMS ==========
+
+#[tauri::command]
+pub fn db_add_loot(
+    uuid: String,
+    session_uuid: String,
+    name: String,
+    quantity: i64,
+    value: f64,
+    markup: f64,
+    total_value: f64,
+    timestamp: i64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO loot_items (uuid, session_uuid, name, quantity, value, markup, total_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![uuid, session_uuid, name, quantity, value, markup, total_value, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_update_loot(
+    uuid: String,
+    name: Option<String>,
+    quantity: Option<i64>,
+    value: Option<f64>,
+    markup: Option<f64>,
+    total_value: Option<f64>,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    
+    let mut updates = Vec::new();
+    let mut values: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    
+    if let Some(v) = name { updates.push("name = ?"); values.push(Box::new(v)); }
+    if let Some(v) = quantity { updates.push("quantity = ?"); values.push(Box::new(v)); }
+    if let Some(v) = value { updates.push("value = ?"); values.push(Box::new(v)); }
+    if let Some(v) = markup { updates.push("markup = ?"); values.push(Box::new(v)); }
+    if let Some(v) = total_value { updates.push("total_value = ?"); values.push(Box::new(v)); }
+    
+    if updates.is_empty() {
+        return Ok(());
+    }
+    
+    values.push(Box::new(uuid.clone()));
+    let query = format!("UPDATE loot_items SET {} WHERE uuid = ?", updates.join(", "));
+    
+    conn.execute(
+        &query,
+        rusqlite::params_from_iter(values.iter().map(|v| v.as_ref())),
+    )
+    .map_err(|e| e.to_string())?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_delete_loot(uuid: String, state: State<'_, DbState>) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute("DELETE FROM loot_items WHERE uuid = ?1", params![uuid])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_session_loot(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, name, quantity, value, markup, total_value, timestamp FROM loot_items WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "name": row.get::<_, String>(1)?,
+                "quantity": row.get::<_, i64>(2)?,
+                "value": row.get::<_, f64>(3)?,
+                "markup": row.get::<_, f64>(4)?,
+                "totalValue": row.get::<_, f64>(5)?,
+                "timestamp": row.get::<_, i64>(6)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut items = Vec::new();
+    for row in rows {
+        items.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(items))
+}
+
+#[tauri::command]
+pub fn db_get_session_loot_grouped(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT name, SUM(quantity) as quantity, SUM(value) as value, AVG(markup) as markup, SUM(total_value) as total_value, COUNT(*) as count FROM loot_items WHERE session_uuid = ?1 GROUP BY name ORDER BY SUM(total_value) DESC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "name": row.get::<_, String>(0)?,
+                "quantity": row.get::<_, i64>(1)?,
+                "value": row.get::<_, f64>(2)?,
+                "markup": row.get::<_, f64>(3)?,
+                "totalValue": row.get::<_, f64>(4)?,
+                "count": row.get::<_, i64>(5)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut items = Vec::new();
+    for row in rows {
+        items.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(items))
+}
+
+#[tauri::command]
+pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+
+    // Get basic session info for cost calculations
+    let (ammo_cost, repair_cost, armor_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time): (f64, f64, f64, f64, f64, String, Option<i64>, Option<i64>, i64, Option<i64>) = conn
+        .query_row(
+            "SELECT ammoCost, repairCost, armorDecay, healingCost, otherCosts, status, pausedAt, totalPausedMs, startTime, endTime FROM sessions WHERE uuid = ?1",
+            [&session_uuid],
+            |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                    row.get(7)?,
+                    row.get(8)?,
+                    row.get(9)?,
+                ))
+            },
+        )
+        .map_err(|e| e.to_string())?;
+
+    // Calculate totals and counts from aggregations
+    let total_loot: f64 = conn
+        .query_row(
+            "SELECT COALESCE(SUM(total_value), 0) FROM loot_items WHERE session_uuid = ?1",
+            [&session_uuid],
+            |row| row.get(0),
+        )
+        .unwrap_or(0.0);
+
+    let loot_events: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM loot_items WHERE session_uuid = ?1",
+            [&session_uuid],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+
+    let mut stmt = conn
+        .prepare("SELECT COALESCE(SUM(CASE WHEN isHoF = 0 THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN isHoF = 1 THEN 1 ELSE 0 END), 0) FROM globals WHERE session_uuid = ?1")
+        .map_err(|e| e.to_string())?;
+    let (globals, hofs): (i64, i64) = stmt
+        .query_row([&session_uuid], |row| Ok((row.get(0)?, row.get(1)?)))
+        .unwrap_or((0, 0));
+
+    let damage_dealt: f64 = conn
+        .query_row(
+            "SELECT COALESCE(SUM(damage), 0) FROM damage_events WHERE session_uuid = ?1",
+            [&session_uuid],
+            |row| row.get(0),
+        )
+        .unwrap_or(0.0);
+
+    let mut stmt = conn
+        .prepare("SELECT COALESCE(SUM(CASE WHEN isCritical = 1 THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN isCritical = 0 THEN 1 ELSE 0 END), 0) FROM damage_events WHERE session_uuid = ?1")
+        .map_err(|e| e.to_string())?;
+    let (critical_hits, hits): (i64, i64) = stmt
+        .query_row([&session_uuid], |row| Ok((row.get(0)?, row.get(1)?)))
+        .unwrap_or((0, 0));
+
+    let mut stmt = conn
+        .prepare("SELECT COALESCE(SUM(CASE WHEN type = 'miss' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'dodge' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'evade' THEN 1 ELSE 0 END), 0) FROM combat_events WHERE session_uuid = ?1")
+        .map_err(|e| e.to_string())?;
+    let (misses, dodges, evades): (i64, i64, i64) = stmt
+        .query_row([&session_uuid], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .unwrap_or((0, 0, 0));
+
+    let heals_used: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM healing_events WHERE session_uuid = ?1",
+            [&session_uuid],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+
+    let total_healing: f64 = conn
+        .query_row(
+            "SELECT COALESCE(SUM(amount), 0) FROM healing_events WHERE session_uuid = ?1",
+            [&session_uuid],
+            |row| row.get(0),
+        )
+        .unwrap_or(0.0);
+
+    let damage_taken: f64 = conn
+        .query_row(
+            "SELECT COALESCE(SUM(damage), 0) FROM damage_taken_events WHERE session_uuid = ?1",
+            [&session_uuid],
+            |row| row.get(0),
+        )
+        .unwrap_or(0.0);
+
+    // Calculate duration
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64;
+    let base_paused_ms = total_paused_ms.unwrap_or(0);
+    let active_pause_ms = if status == "paused" && paused_at.is_some() {
+        now - paused_at.unwrap()
+    } else {
+        0
+    };
+    let total_paused = base_paused_ms + active_pause_ms;
+    let raw_duration = if let Some(end) = end_time {
+        end - start_time
+    } else {
+        now - start_time
+    };
+    let duration_seconds = (std::cmp::max(0, raw_duration - total_paused) / 1000) as i64;
+
+    let total_cost = ammo_cost + repair_cost + armor_decay + healing_cost + other_costs;
+    let returns = if total_cost > 0.0 {
+        (total_loot / total_cost) * 100.0
+    } else {
+        0.0
+    };
+
+    Ok(json!({
+        "kills": 0,
+        "lootEvents": loot_events,
+        "globals": globals,
+        "hofs": hofs,
+        "totalLoot": total_loot,
+        "totalCost": total_cost,
+        "returns": returns,
+        "duration": duration_seconds,
+        "shotsFired": hits + critical_hits + dodges + evades,
+        "damageDealt": damage_dealt,
+        "damageTaken": damage_taken,
+        "healsUsed": heals_used,
+        "totalHealing": total_healing,
+        "misses": misses,
+        "dodges": dodges,
+        "evades": evades,
+        "criticalHits": critical_hits,
+        "hits": hits,
+    }))
+}
+
+#[tauri::command]
+pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, name, weapon, armor, location, status, startTime, endTime, totalPausedMs, pausedAt, ammoCost, repairCost, armorDecay, healingCost, otherCosts, notes, loadoutId FROM sessions ORDER BY startTime DESC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "name": row.get::<_, String>(1)?,
+                "weapon": row.get::<_, String>(2)?,
+                "armor": row.get::<_, Option<String>>(3)?,
+                "location": row.get::<_, Option<String>>(4)?,
+                "status": row.get::<_, String>(5)?,
+                "startTime": row.get::<_, i64>(6)?,
+                "endTime": row.get::<_, Option<i64>>(7)?,
+                "totalPausedMs": row.get::<_, Option<i64>>(8)?,
+                "pausedAt": row.get::<_, Option<i64>>(9)?,
+                "ammoCost": row.get::<_, f64>(10)?,
+                "repairCost": row.get::<_, f64>(11)?,
+                "armorDecay": row.get::<_, f64>(12)?,
+                "healingCost": row.get::<_, f64>(13)?,
+                "otherCosts": row.get::<_, f64>(14)?,
+                "notes": row.get::<_, String>(15)?,
+                "loadoutId": row.get::<_, Option<String>>(16)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut sessions = Vec::new();
+    for row in rows {
+        sessions.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(sessions))
+}
+
+// ========== SKILL GAINS ==========
+
+#[tauri::command]
+pub fn db_add_skill(
+    uuid: String,
+    session_uuid: String,
+    skill_name: String,
+    gain_amount: f64,
+    timestamp: i64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO skill_gains (uuid, session_uuid, skill_name, gain_amount, timestamp) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![uuid, session_uuid, skill_name, gain_amount, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_session_skills(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, skill_name, gain_amount, timestamp FROM skill_gains WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "skillName": row.get::<_, String>(1)?,
+                "gainAmount": row.get::<_, f64>(2)?,
+                "timestamp": row.get::<_, i64>(3)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut skills = Vec::new();
+    for row in rows {
+        skills.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(skills))
+}
+
+// ========== GLOBALS ==========
+
+#[tauri::command]
+pub fn db_add_global(
+    uuid: String,
+    session_uuid: String,
+    creature: String,
+    value: f64,
+    is_hof: bool,
+    timestamp: i64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO globals (uuid, session_uuid, creature, value, is_hof, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![uuid, session_uuid, creature, value, if is_hof { 1 } else { 0 }, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_session_globals(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, creature, value, is_hof, timestamp FROM globals WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "creature": row.get::<_, String>(1)?,
+                "value": row.get::<_, f64>(2)?,
+                "isHoF": row.get::<_, i64>(3)? != 0,
+                "timestamp": row.get::<_, i64>(4)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut globals = Vec::new();
+    for row in rows {
+        globals.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(globals))
+}
+
+// ========== DAMAGE EVENTS ==========
+
+#[tauri::command]
+pub fn db_add_damage_event(
+    uuid: String,
+    session_uuid: String,
+    damage: f64,
+    is_critical: bool,
+    timestamp: i64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO damage_events (uuid, session_uuid, damage, is_critical, timestamp) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![uuid, session_uuid, damage, if is_critical { 1 } else { 0 }, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_session_damage_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, damage, is_critical, timestamp FROM damage_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "damage": row.get::<_, f64>(1)?,
+                "isCritical": row.get::<_, i64>(2)? != 0,
+                "timestamp": row.get::<_, i64>(3)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut events = Vec::new();
+    for row in rows {
+        events.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(events))
+}
+
+// ========== COMBAT EVENTS ==========
+
+#[tauri::command]
+pub fn db_add_combat_event(
+    uuid: String,
+    session_uuid: String,
+    event_type: String,
+    timestamp: i64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO combat_events (uuid, session_uuid, type, timestamp) VALUES (?1, ?2, ?3, ?4)",
+        params![uuid, session_uuid, event_type, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_session_combat_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, type, timestamp FROM combat_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "type": row.get::<_, String>(1)?,
+                "timestamp": row.get::<_, i64>(2)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut events = Vec::new();
+    for row in rows {
+        events.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(events))
+}
+
+// ========== HEALING EVENTS ==========
+
+#[tauri::command]
+pub fn db_add_healing_event(
+    uuid: String,
+    session_uuid: String,
+    amount: f64,
+    timestamp: i64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO healing_events (uuid, session_uuid, amount, timestamp) VALUES (?1, ?2, ?3, ?4)",
+        params![uuid, session_uuid, amount, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_session_healing_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, amount, timestamp FROM healing_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "amount": row.get::<_, f64>(1)?,
+                "timestamp": row.get::<_, i64>(2)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut events = Vec::new();
+    for row in rows {
+        events.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(events))
+}
+
+// ========== DAMAGE TAKEN EVENTS ==========
+
+#[tauri::command]
+pub fn db_add_damage_taken_event(
+    uuid: String,
+    session_uuid: String,
+    damage: f64,
+    is_critical: bool,
+    timestamp: i64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO damage_taken_events (uuid, session_uuid, damage, is_critical, timestamp) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![uuid, session_uuid, damage, if is_critical { 1 } else { 0 }, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_session_damage_taken_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, damage, is_critical, timestamp FROM damage_taken_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "damage": row.get::<_, f64>(1)?,
+                "isCritical": row.get::<_, i64>(2)? != 0,
+                "timestamp": row.get::<_, i64>(3)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut events = Vec::new();
+    for row in rows {
+        events.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(events))
+}
+
+// ========== LOADOUTS ==========
+
+#[allow(clippy::too_many_arguments)]
+#[tauri::command]
+pub fn db_create_loadout(
+    uuid: String,
+    name: String,
+    weapon: Option<String>,
+    weapon_tt: f64,
+    amp: Option<String>,
+    amp_tt: f64,
+    sight: Option<String>,
+    sight_tt: f64,
+    scope: Option<String>,
+    scope_tt: f64,
+    armor_head: Option<String>,
+    armor_head_tt: f64,
+    armor_upper: Option<String>,
+    armor_upper_tt: f64,
+    armor_lower: Option<String>,
+    armor_lower_tt: f64,
+    armor_arms: Option<String>,
+    armor_arms_tt: f64,
+    armor_hands: Option<String>,
+    armor_hands_tt: f64,
+    armor_feet: Option<String>,
+    armor_feet_tt: f64,
+    enhancers: Option<String>,
+    notes: Option<String>,
+    is_favorite: bool,
+    is_active: bool,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO loadouts (uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor_head, armor_head_tt, armor_upper, armor_upper_tt, armor_lower, armor_lower_tt, armor_arms, armor_arms_tt, armor_hands, armor_hands_tt, armor_feet, armor_feet_tt, enhancers, notes, is_favorite, is_active) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)",
+        params![uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor_head, armor_head_tt, armor_upper, armor_upper_tt, armor_lower, armor_lower_tt, armor_arms, armor_arms_tt, armor_hands, armor_hands_tt, armor_feet, armor_feet_tt, enhancers, notes, if is_favorite { 1 } else { 0 }, if is_active { 1 } else { 0 }],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_delete_loadout(uuid: String, state: State<'_, DbState>) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute("DELETE FROM loadouts WHERE uuid = ?1", params![uuid])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_all_loadouts(state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor_head, armor_head_tt, armor_upper, armor_upper_tt, armor_lower, armor_lower_tt, armor_arms, armor_arms_tt, armor_hands, armor_hands_tt, armor_feet, armor_feet_tt, enhancers, notes, is_favorite, is_active FROM loadouts")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "name": row.get::<_, String>(1)?,
+                "weapon": row.get::<_, Option<String>>(2)?,
+                "weaponTT": row.get::<_, f64>(3)?,
+                "amp": row.get::<_, Option<String>>(4)?,
+                "ampTT": row.get::<_, f64>(5)?,
+                "sight": row.get::<_, Option<String>>(6)?,
+                "sightTT": row.get::<_, f64>(7)?,
+                "scope": row.get::<_, Option<String>>(8)?,
+                "scopeTT": row.get::<_, f64>(9)?,
+                "armorHead": row.get::<_, Option<String>>(10)?,
+                "armorHeadTT": row.get::<_, f64>(11)?,
+                "armorUpper": row.get::<_, Option<String>>(12)?,
+                "armorUpperTT": row.get::<_, f64>(13)?,
+                "armorLower": row.get::<_, Option<String>>(14)?,
+                "armorLowerTT": row.get::<_, f64>(15)?,
+                "armorArms": row.get::<_, Option<String>>(16)?,
+                "armorArmsTT": row.get::<_, f64>(17)?,
+                "armorHands": row.get::<_, Option<String>>(18)?,
+                "armorHandsTT": row.get::<_, f64>(19)?,
+                "armorFeet": row.get::<_, Option<String>>(20)?,
+                "armorFeetTT": row.get::<_, f64>(21)?,
+                "enhancers": row.get::<_, Option<String>>(22)?,
+                "notes": row.get::<_, Option<String>>(23)?,
+                "isFavorite": row.get::<_, i64>(24)? != 0,
+                "isActive": row.get::<_, i64>(25)? != 0,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut loadouts = Vec::new();
+    for row in rows {
+        loadouts.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(loadouts))
+}
+
+// ========== ITEM TEMPLATES ==========
+
+#[tauri::command]
+pub fn db_add_item_template(
+    uuid: String,
+    name: String,
+    category: String,
+    default_tt_value: f64,
+    default_markup: f64,
+    description: Option<String>,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO item_templates (uuid, name, category, default_tt_value, default_markup, description) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![uuid, name, category, default_tt_value, default_markup, description],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_delete_item_template(uuid: String, state: State<'_, DbState>) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute("DELETE FROM item_templates WHERE uuid = ?1", params![uuid])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_all_item_templates(state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, name, category, default_tt_value, default_markup, description FROM item_templates")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "name": row.get::<_, String>(1)?,
+                "category": row.get::<_, String>(2)?,
+                "defaultTTValue": row.get::<_, f64>(3)?,
+                "defaultMarkup": row.get::<_, f64>(4)?,
+                "description": row.get::<_, Option<String>>(5)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut templates = Vec::new();
+    for row in rows {
+        templates.push(row.map_err(|e| e.to_string())?);
+    }
+   Ok(json!(templates))
+}
+
+// ========== SETTINGS ==========
+
+#[tauri::command]
+pub fn db_set_setting(key: String, value: String, state: State<'_, DbState>) -> Result<(), String> {
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+        params![key, value],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_setting(key: String, state: State<'_, DbState>) -> Result<Option<String>, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT value FROM settings WHERE key = ?1")
+        .map_err(|e| e.to_string())?;
+    
+    let result = stmt.query_row([key], |row| row.get::<_, String>(0)).optional().map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn db_get_all_settings(state: State<'_, DbState>) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT key, value FROM settings")
+        .map_err(|e| e.to_string())?;
+    
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut settings = serde_json::Map::new();
+    for row in rows {
+        let (key, value) = row.map_err(|e| e.to_string())?;
+        settings.insert(key, json!(value));
+    }
+    Ok(json!(settings))
+}

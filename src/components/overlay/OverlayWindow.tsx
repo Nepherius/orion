@@ -1,4 +1,4 @@
-import { useHuntStore, setupStoreSync } from '../../store';
+import { useHuntStore, setupStoreSync, initializeStoreFromDb } from '../../store';
 import { LiveTimer } from '../layout/LiveTimer';
 import { Play, Pause, GripVertical, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -13,6 +13,7 @@ export function OverlayWindow() {
 
   // Setup cross-window sync on mount
   useEffect(() => {
+    initializeStoreFromDb();
     setupStoreSync();
   }, []);
 

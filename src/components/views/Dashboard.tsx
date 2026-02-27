@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useHuntStore } from '../../store';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
@@ -11,9 +12,18 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { AnalyticsModal } from '../analytics/AnalyticsModal';
+import { PerformanceAnalytics } from '../analytics/PerformanceAnalytics';
+import { EconomyAnalytics } from '../analytics/EconomyAnalytics';
+import { EfficiencyAnalytics } from '../analytics/EfficiencyAnalytics';
+import { SkillsAnalytics } from '../analytics/SkillsAnalytics';
+import { CombatAnalytics } from '../analytics/CombatAnalytics';
+import { HourlyRatesAnalytics } from '../analytics/HourlyRatesAnalytics';
 
 export function Dashboard() {
   const activeSession = useHuntStore((state) => state.getActiveSession());
+  type AnalyticsView = 'performance' | 'economy' | 'efficiency' | 'skills' | 'combat' | 'hourly' | null;
+  const [analyticsView, setAnalyticsView] = useState<AnalyticsView>(null);
 
   if (!activeSession) {
     return (
@@ -115,6 +125,7 @@ export function Dashboard() {
   );
 
   return (
+    <>
     <div className="grid grid-cols-12 gap-6">
       {/* Main Content */}
       <div className="col-span-9 space-y-6">
@@ -193,10 +204,13 @@ export function Dashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4">
           {/* Performance */}
-          <div className="card p-4">
+          <div 
+            className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+            onClick={() => setAnalyticsView('performance')}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-blue-400 uppercase">Performance</h3>
-              <span className="text-blue-400">›</span>
+              <span className="text-blue-400 text-xl">›</span>
             </div>
             <div className="space-y-3">
               <StatCard
@@ -225,10 +239,13 @@ export function Dashboard() {
           </div>
 
           {/* Economy */}
-          <div className="card p-4">
+          <div 
+            className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+            onClick={() => setAnalyticsView('economy')}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-blue-400 uppercase">Economy</h3>
-              <span className="text-blue-400">›</span>
+              <span className="text-blue-400 text-xl">›</span>
             </div>
             <div className="space-y-3">
               <StatCard
@@ -253,10 +270,13 @@ export function Dashboard() {
           </div>
 
           {/* Efficiency */}
-          <div className="card p-4">
+          <div 
+            className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+            onClick={() => setAnalyticsView('efficiency')}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-blue-400 uppercase">Efficiency</h3>
-              <span className="text-blue-400">›</span>
+              <span className="text-blue-400 text-xl">›</span>
             </div>
             <div className="space-y-3">
               <StatCard label="DPP" value={dpp.toFixed(2)} />
@@ -272,10 +292,13 @@ export function Dashboard() {
         {/* Bottom Stats Grid */}
         <div className="grid grid-cols-3 gap-4">
           {/* Skills */}
-          <div className="card p-4">
+          <div 
+            className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+            onClick={() => setAnalyticsView('skills')}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-blue-400 uppercase">Skills</h3>
-              <span className="text-blue-400">›</span>
+              <span className="text-blue-400 text-xl">›</span>
             </div>
             <div className="space-y-3">
               <StatCard label="Total Gains" value="0.0000" />
@@ -288,10 +311,13 @@ export function Dashboard() {
           </div>
 
           {/* Combat */}
-          <div className="card p-4">
+          <div 
+            className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+            onClick={() => setAnalyticsView('combat')}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-blue-400 uppercase">Combat</h3>
-              <span className="text-blue-400">›</span>
+              <span className="text-blue-400 text-xl">›</span>
             </div>
             <div className="space-y-3">
               <StatCard label="Kills" value={activeSession.stats.kills} />
@@ -338,10 +364,13 @@ export function Dashboard() {
           </div>
 
           {/* Hourly Rates */}
-          <div className="card p-4">
+          <div 
+            className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+            onClick={() => setAnalyticsView('hourly')}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-blue-400 uppercase">Hourly Rates</h3>
-              <span className="text-blue-400">›</span>
+              <span className="text-blue-400 text-xl">›</span>
             </div>
             <div className="space-y-3">
               <StatCard label="Loot/Hour" value={`${lootPerHour.toFixed(2)} PED`} />
@@ -370,5 +399,28 @@ export function Dashboard() {
         <ActiveSessionSidebar />
       </div>
     </div>
+
+      {/* Analytics Modal */}
+      <AnalyticsModal
+        isOpen={!!analyticsView}
+        onClose={() => setAnalyticsView(null)}
+        title={
+          analyticsView === 'performance' ? 'Performance Analytics' :
+          analyticsView === 'economy' ? 'Economy Analytics' :
+          analyticsView === 'efficiency' ? 'Efficiency Analytics' :
+          analyticsView === 'skills' ? 'Skills Analytics' :
+          analyticsView === 'combat' ? 'Combat Analytics' :
+          analyticsView === 'hourly' ? 'Hourly Rates Analytics' :
+          'Analytics'
+        }
+      >
+        {analyticsView === 'performance' && <PerformanceAnalytics session={activeSession} />}
+        {analyticsView === 'economy' && <EconomyAnalytics session={activeSession} />}
+        {analyticsView === 'efficiency' && <EfficiencyAnalytics session={activeSession} />}
+        {analyticsView === 'skills' && <SkillsAnalytics session={activeSession} />}
+        {analyticsView === 'combat' && <CombatAnalytics session={activeSession} />}
+        {analyticsView === 'hourly' && <HourlyRatesAnalytics session={activeSession} />}
+      </AnalyticsModal>
+    </>
   );
 }

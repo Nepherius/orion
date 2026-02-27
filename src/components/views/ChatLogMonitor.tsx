@@ -37,7 +37,7 @@ interface DamageTakenEvent {
 interface SkillGain {
   timestamp: string;
   skill_name: string;
-  amount: number;
+  gain: number;
 }
 
 interface ParseResult {
@@ -496,10 +496,28 @@ export function ChatLogMonitor() {
               console.debug('[ChatLogMonitor] Added', addedCount, 'new damage taken events');
             }
 
-            // Process skill gains (we could add these to session later if needed)
+            // Process skill gains
             if (activeSession && skillGains.length > 0) {
-              console.debug('Processing skill gains:', skillGains.length);
-              // Skill gains could be tracked separately in the future
+              console.debug('[ChatLogMonitor] Processing skill gains:', skillGains.length);
+              const storeActions = useHuntStore.getState();
+              let addedCount = 0;
+              skillGains.forEach((skill) => {
+                const eventKey = `skill:${skill.timestamp}:${skill.skill_name}:${skill.gain}`;
+                if (!processedEventsRef.current.has(eventKey)) {
+                  console.debug(
+                    '[ChatLogMonitor] Adding skill gain:',
+                    skill.skill_name,
+                    skill.gain
+                  );
+                  storeActions.addSkillGain(activeSession.id, {
+                    skillName: skill.skill_name,
+                    gainAmount: skill.gain,
+                  });
+                  processedEventsRef.current.add(eventKey);
+                  addedCount++;
+                }
+              });
+              console.debug('[ChatLogMonitor] Added', addedCount, 'new skill gains');
             }
           } catch (error) {
             console.error('[ChatLogMonitor] Error parsing chat log:', error);

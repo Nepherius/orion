@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useHuntStore, setupStoreSync } from './store';
+import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import { SessionList } from './components/sessions/SessionList';
 import { SessionDetails } from './components/sessions/SessionDetails';
 import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
@@ -11,6 +11,7 @@ import { WelcomeModal } from './components/views/WelcomeModal';
 import { Dashboard } from './components/views/Dashboard';
 import { Loot } from './components/loot/Loot';
 import { Loadouts } from './components/views/Loadouts';
+import { Analytics } from './components/views/Analytics';
 import {
   Database,
   Settings as SettingsIcon,
@@ -31,6 +32,7 @@ function App() {
 
   // Setup cross-window sync on mount
   useEffect(() => {
+    initializeStoreFromDb();
     setupStoreSync();
   }, []);
 
@@ -169,10 +171,7 @@ function App() {
         {currentView === 'database' && <ItemDatabase />}
 
         {currentView === 'analytics' && (
-          <div className="card p-8 text-center text-gray-400">
-            <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p>Analytics view coming soon</p>
-          </div>
+          <Analytics />
         )}
 
         {currentView === 'settings' && <Settings />}

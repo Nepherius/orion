@@ -1,20 +1,20 @@
 mod chat_parser;
 mod file_watcher;
 mod language_patterns;
+mod db_commands;
 
 use chat_parser::{
     ChatLogParser, CombatEvent, DamageEvent, DamageTakenEvent, HealingEvent, LootEvent, SkillGain,
 };
 use file_watcher::FileWatcher;
+use db_commands::DbState;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::{Arc, Mutex};
 use tauri::{Manager, State};
 
-use rusqlite::{params, Connection};
-use serde_json::json;
+use rusqlite::Connection;
 use std::path::PathBuf;
-use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ParseResult {
@@ -30,7 +30,6 @@ pub struct ParseResult {
 struct AppState {
     parser: ChatLogParser,
     watcher: Arc<Mutex<FileWatcher>>,
-    db: Arc<Mutex<Connection>>,
 }
 
 fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
@@ -47,6 +46,9 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             start_time INTEGER NOT NULL,
             end_time INTEGER,
             status TEXT NOT NULL,
+            paused_at INTEGER,
+            total_paused_ms INTEGER DEFAULT 0,
+            loadout_id TEXT,
             ammo_cost REAL DEFAULT 0,
             repair_cost REAL DEFAULT 0,
             armor_decay REAL DEFAULT 0,
@@ -54,24 +56,130 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             other_costs REAL DEFAULT 0
         );
 
-        CREATE TABLE IF NOT EXISTS combat_events (
+        CREATE TABLE IF NOT EXISTS loot_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id INTEGER NOT NULL,
-            ts INTEGER NOT NULL,
-            type TEXT NOT NULL,
-            actor TEXT,
-            target TEXT,
-            weapon TEXT,
-            amount REAL,
-            qty INTEGER,
-            value REAL,
-            is_crit INTEGER DEFAULT 0,
-            related_event_id INTEGER,
-            raw_line TEXT,
-            meta TEXT
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            name TEXT NOT NULL,
+            quantity INTEGER NOT NULL,
+            value REAL NOT NULL,
+            markup REAL NOT NULL,
+            total_value REAL NOT NULL,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
         );
 
-        CREATE INDEX IF NOT EXISTS idx_events_session_ts ON combat_events(session_id, ts);
+        CREATE TABLE IF NOT EXISTS skill_gains (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            skill_name TEXT NOT NULL,
+            gain_amount REAL NOT NULL,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS globals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            creature TEXT NOT NULL,
+            value REAL NOT NULL,
+            is_hof INTEGER NOT NULL DEFAULT 0,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS damage_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            damage REAL NOT NULL,
+            is_critical INTEGER NOT NULL DEFAULT 0,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS combat_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            type TEXT NOT NULL,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS healing_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            amount REAL NOT NULL,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS damage_taken_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            damage REAL NOT NULL,
+            is_critical INTEGER NOT NULL DEFAULT 0,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS loadouts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            weapon TEXT,
+            weapon_tt REAL DEFAULT 0,
+            amp TEXT,
+            amp_tt REAL DEFAULT 0,
+            sight TEXT,
+            sight_tt REAL DEFAULT 0,
+            scope TEXT,
+            scope_tt REAL DEFAULT 0,
+            armor_head TEXT,
+            armor_head_tt REAL DEFAULT 0,
+            armor_upper TEXT,
+            armor_upper_tt REAL DEFAULT 0,
+            armor_lower TEXT,
+            armor_lower_tt REAL DEFAULT 0,
+            armor_arms TEXT,
+            armor_arms_tt REAL DEFAULT 0,
+            armor_hands TEXT,
+            armor_hands_tt REAL DEFAULT 0,
+            armor_feet TEXT,
+            armor_feet_tt REAL DEFAULT 0,
+            enhancers TEXT,
+            notes TEXT,
+            is_favorite INTEGER NOT NULL DEFAULT 0,
+            is_active INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS item_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            default_tt_value REAL NOT NULL,
+            default_markup REAL NOT NULL,
+            description TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_loot_session ON loot_items(session_uuid);
+        CREATE INDEX IF NOT EXISTS idx_skills_session ON skill_gains(session_uuid);
+        CREATE INDEX IF NOT EXISTS idx_globals_session ON globals(session_uuid);
+        CREATE INDEX IF NOT EXISTS idx_damage_session ON damage_events(session_uuid);
+        CREATE INDEX IF NOT EXISTS idx_combat_session ON combat_events(session_uuid);
+        CREATE INDEX IF NOT EXISTS idx_healing_session ON healing_events(session_uuid);
+        CREATE INDEX IF NOT EXISTS idx_damage_taken_session ON damage_taken_events(session_uuid);
         COMMIT;",
     )
 }
@@ -182,109 +290,6 @@ fn get_watched_path(state: State<AppState>) -> Result<Option<String>, String> {
     Ok(watcher
         .current_path()
         .map(|p| p.to_string_lossy().to_string()))
-}
-
-#[tauri::command]
-fn db_add_session(
-    name: String,
-    start_time: i64,
-    status: String,
-    notes: Option<String>,
-    state: State<AppState>,
-) -> Result<i64, String> {
-    let conn = state.db.lock().unwrap();
-    let uuid = Uuid::new_v4().to_string();
-    conn.execute(
-        "INSERT INTO sessions (uuid, name, start_time, status, notes) VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![uuid, name, start_time, status, notes],
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(conn.last_insert_rowid())
-}
-
-#[allow(clippy::too_many_arguments)]
-#[tauri::command]
-fn db_add_event(
-    session_id: i64,
-    ts: i64,
-    type_: String,
-    actor: Option<String>,
-    target: Option<String>,
-    weapon: Option<String>,
-    amount: Option<f64>,
-    qty: Option<i64>,
-    value: Option<f64>,
-    is_crit: Option<bool>,
-    raw_line: Option<String>,
-    state: State<AppState>,
-) -> Result<i64, String> {
-    let conn = state.db.lock().unwrap();
-    conn.execute(
-        "INSERT INTO combat_events (session_id, ts, type, actor, target, weapon, amount, qty, value, is_crit, raw_line) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-        params![session_id, ts, type_, actor, target, weapon, amount, qty, value, is_crit.map(|b| if b {1} else {0}), raw_line],
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(conn.last_insert_rowid())
-}
-
-#[tauri::command]
-fn db_get_sessions(state: State<AppState>) -> Result<serde_json::Value, String> {
-    let conn = state.db.lock().unwrap();
-    let mut stmt = conn
-        .prepare("SELECT id, uuid, name, start_time, end_time, status FROM sessions ORDER BY start_time DESC")
-        .map_err(|e| e.to_string())?;
-    let rows = stmt
-        .query_map([], |row| {
-            Ok(json!({
-                "id": row.get::<_, i64>(0)?,
-                "uuid": row.get::<_, String>(1)?,
-                "name": row.get::<_, String>(2)?,
-                "start_time": row.get::<_, i64>(3)?,
-                "end_time": row.get::<_, Option<i64>>(4)?,
-                "status": row.get::<_, String>(5)?,
-            }))
-        })
-        .map_err(|e| e.to_string())?;
-
-    let mut v = vec![];
-    for r in rows {
-        v.push(r.map_err(|e| e.to_string())?);
-    }
-    Ok(json!(v))
-}
-
-#[tauri::command]
-fn db_get_session_events(
-    session_id: i64,
-    state: State<AppState>,
-) -> Result<serde_json::Value, String> {
-    let conn = state.db.lock().unwrap();
-    let mut stmt = conn
-        .prepare("SELECT id, ts, type, actor, target, weapon, amount, qty, value, is_crit, raw_line FROM combat_events WHERE session_id = ?1 ORDER BY ts ASC")
-        .map_err(|e| e.to_string())?;
-    let rows = stmt
-        .query_map([session_id], |row| {
-            Ok(json!({
-                "id": row.get::<_, i64>(0)?,
-                "ts": row.get::<_, i64>(1)?,
-                "type": row.get::<_, String>(2)?,
-                "actor": row.get::<_, Option<String>>(3)?,
-                "target": row.get::<_, Option<String>>(4)?,
-                "weapon": row.get::<_, Option<String>>(5)?,
-                "amount": row.get::<_, Option<f64>>(6)?,
-                "qty": row.get::<_, Option<i64>>(7)?,
-                "value": row.get::<_, Option<f64>>(8)?,
-                "is_crit": row.get::<_, Option<i64>>(9)?.map(|i| i != 0),
-                "raw_line": row.get::<_, Option<String>>(10)?,
-            }))
-        })
-        .map_err(|e| e.to_string())?;
-
-    let mut v = vec![];
-    for r in rows {
-        v.push(r.map_err(|e| e.to_string())?);
-    }
-    Ok(json!(v))
 }
 
 #[tauri::command]
@@ -421,10 +426,15 @@ pub fn run() {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
             ensure_db_schema(&conn).map_err(|e| e.to_string())?;
 
+            let db_arc = Arc::new(Mutex::new(conn));
+
             app.manage(AppState {
                 parser: ChatLogParser::new(),
                 watcher: Arc::new(Mutex::new(FileWatcher::new())),
-                db: Arc::new(Mutex::new(conn)),
+            });
+
+            app.manage(DbState {
+                db: db_arc,
             });
 
             // Close overlay when main window closes
@@ -451,13 +461,41 @@ pub fn run() {
             is_watching,
             get_watched_path,
             detect_chat_log_path,
-            db_add_session,
-            db_add_event,
-            db_get_sessions,
-            db_get_session_events,
             show_overlay,
             hide_overlay,
             get_overlay_geometry,
+                    db_commands::db_create_session,
+                    db_commands::db_update_session,
+                    db_commands::db_delete_session,
+                    db_commands::db_get_all_sessions,
+                    db_commands::db_get_all_sessions_summary,
+                    db_commands::db_get_session_stats,
+                    db_commands::db_add_loot,
+                    db_commands::db_update_loot,
+                    db_commands::db_delete_loot,
+                    db_commands::db_get_session_loot,
+                    db_commands::db_get_session_loot_grouped,
+                    db_commands::db_add_skill,
+                    db_commands::db_get_session_skills,
+                    db_commands::db_add_global,
+                    db_commands::db_get_session_globals,
+                    db_commands::db_add_damage_event,
+                    db_commands::db_get_session_damage_events,
+                    db_commands::db_add_combat_event,
+                    db_commands::db_get_session_combat_events,
+                    db_commands::db_add_healing_event,
+                    db_commands::db_get_session_healing_events,
+                    db_commands::db_add_damage_taken_event,
+                    db_commands::db_get_session_damage_taken_events,
+                    db_commands::db_create_loadout,
+                    db_commands::db_delete_loadout,
+                    db_commands::db_get_all_loadouts,
+                    db_commands::db_add_item_template,
+                    db_commands::db_delete_item_template,
+                    db_commands::db_get_all_item_templates,
+                    db_commands::db_set_setting,
+                    db_commands::db_get_setting,
+                    db_commands::db_get_all_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
