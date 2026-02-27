@@ -17,7 +17,7 @@ import {
   BarChart3,
   Activity,
   Package,
-  Crosshair,
+  Swords
 } from 'lucide-react';
 
 type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analytics' | 'settings';
@@ -37,8 +37,7 @@ function App() {
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/icon.png" alt="Orion" className="w-8 h-8" />
-            <h1 className="text-2xl font-bold">Orion</h1>
+            <div className="font-bold text-primary-400 text-lg tracking-widest">ORION</div>
             <span className="text-sm text-gray-400">Entropia Universe Loot Tracker</span>
           </div>
 
@@ -66,14 +65,14 @@ function App() {
               onClick={() => setCurrentView('sessions')}
               className={`btn ${currentView === 'sessions' ? 'btn-primary' : 'btn-secondary'}`}
             >
-              <img src="/icon.png" alt="Orion" className="w-4 h-4 inline mr-2 object-contain" />
+              <span className="text-primary-400 text-xs font-bold tracking-wide inline mr-2">◆</span>
               Sessions
             </button>
             <button
               onClick={() => setCurrentView('loadouts')}
               className={`btn ${currentView === 'loadouts' ? 'btn-primary' : 'btn-secondary'}`}
             >
-              <Crosshair className="w-4 h-4 inline mr-2" />
+              <Swords className="w-4 h-4 inline mr-2" />
               Loadouts
             </button>
             <button

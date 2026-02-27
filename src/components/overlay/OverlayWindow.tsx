@@ -1,7 +1,8 @@
 import { useHuntStore } from '../../store';
 import { LiveTimer } from '../layout/LiveTimer';
-import { Play, Pause, GripVertical } from 'lucide-react';
+import { Play, Pause, GripVertical, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { invoke } from '@tauri-apps/api/core';
 
 export function OverlayWindow() {
   const activeSession = useHuntStore((state) => state.getActiveSession());
@@ -25,10 +26,27 @@ export function OverlayWindow() {
     }
   };
 
+  const handleCloseOverlay = async () => {
+    try {
+      await invoke('hide_overlay');
+    } catch (error) {
+      console.error('Failed to hide overlay:', error);
+    }
+  };
+
   if (!activeSession) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-900/95 backdrop-blur-sm">
-        <div className="text-gray-400">No Active Session</div>
+        <div className="flex items-center gap-4 text-gray-400">
+          <span>No Active Session</span>
+          <button
+            onClick={handleCloseOverlay}
+            className="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-500 hover:text-gray-300"
+            title="Close Overlay"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     );
   }

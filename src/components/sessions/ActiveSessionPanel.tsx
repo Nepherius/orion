@@ -25,6 +25,17 @@ export function ActiveSessionPanel({
     }
   };
 
+  const handleEndSession = async () => {
+    endSession(session.id);
+    onSessionEnded?.(session.id);
+    // Close overlay when session ends (safety feature)
+    try {
+      await invoke('hide_overlay');
+    } catch (error) {
+      console.error('Failed to hide overlay:', error);
+    }
+  };
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-6">
@@ -68,7 +79,7 @@ export function ActiveSessionPanel({
         {session.status === 'active' ? (
           <button
             onClick={() => pauseSession(session.id)}
-            className="btn-secondary flex items-center gap-2"
+            className="btn-secondary flex flex-1 items-center justify-center gap-2 px-8 py-1 text-sm"
           >
             <Pause className="w-4 h-4" />
             Pause
@@ -79,29 +90,26 @@ export function ActiveSessionPanel({
               startSession(session.id);
               onSessionResumed?.();
             }}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex flex-1 items-center justify-center gap-2 px-8 py-1 text-sm"
           >
             <Play className="w-4 h-4" />
-            Resume
+            Start
           </button>
         )}
         <button
+          onClick={handleEndSession}
+          className="btn-danger flex flex-1 items-center justify-center gap-2 px-8 py-1 text-sm"
+        >
+          <StopCircle className="w-4 h-4" />
+          End Session
+        </button>
+        <button
           onClick={handleShowOverlay}
-          className="btn-secondary flex items-center gap-2"
+          className="btn-secondary flex flex-1 items-center justify-center gap-2 px-8 py-1 text-sm"
           title="Show Overlay Window"
         >
           <Maximize2 className="w-4 h-4" />
           Overlay
-        </button>
-        <button
-          onClick={() => {
-            endSession(session.id);
-            onSessionEnded?.(session.id);
-          }}
-          className="btn-danger flex items-center gap-2"
-        >
-          <StopCircle className="w-4 h-4" />
-          End Session
         </button>
       </div>
     </div>
