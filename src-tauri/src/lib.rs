@@ -332,7 +332,7 @@ async fn show_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
         tauri::WebviewUrl::App("index.html#/overlay".into()),
     )
     .title("ORION Overlay")
-    .inner_size(750.0, 56.0)
+    .inner_size(750.0, 40.0)
     .position(20.0, 20.0)
     .decorations(false)
     .resizable(true)

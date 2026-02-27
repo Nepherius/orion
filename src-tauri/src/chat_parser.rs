@@ -208,11 +208,14 @@ impl ChatLogParser {
         };
 
         let event_type = if line.contains("The attack missed you") {
-            Some("miss".to_string())
+            // Enemy attack missed - player evaded
+            Some("incoming_miss".to_string())
         } else if line.contains("The target Dodged your attack") {
+            // Player attacked, target dodged the attack - player shot
             Some("dodge".to_string())
         } else if line.contains("You Evaded the") {
-            Some("evade".to_string())
+            // Enemy attack - player evaded
+            Some("incoming_evade".to_string())
         } else {
             None
         }?;
@@ -508,7 +511,7 @@ mod tests {
         assert!(result.is_some());
 
         let event = result.unwrap();
-        assert_eq!(event.event_type, "miss");
+        assert_eq!(event.event_type, "incoming_miss");
     }
 
     #[test]
@@ -532,7 +535,7 @@ mod tests {
         assert!(result.is_some());
 
         let event = result.unwrap();
-        assert_eq!(event.event_type, "evade");
+        assert_eq!(event.event_type, "incoming_evade");
     }
 
     #[test]

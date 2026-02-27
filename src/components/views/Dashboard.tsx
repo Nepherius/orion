@@ -53,18 +53,19 @@ export function Dashboard() {
 
   // Combat calculations
   const totalHits = activeSession.stats.hits || 0;
+  const totalCritHits = activeSession.stats.criticalHits || 0;
   const totalMisses = activeSession.stats.misses || 0;
   const totalDodges = activeSession.stats.dodges || 0;
   const totalEvades = activeSession.stats.evades || 0;
-  const totalAttempts = totalHits + totalMisses + totalDodges;
-  const hitRate = totalAttempts > 0 ? (totalHits / totalAttempts) * 100 : 0;
+  const shotsFired = activeSession.stats.shotsFired || 0;
+  const hitRate = shotsFired > 0 ? ((totalHits + totalCritHits) / shotsFired) * 100 : 0;
   const critRate =
-    activeSession.stats.shotsFired > 0
-      ? (activeSession.stats.criticalHits / activeSession.stats.shotsFired) * 100
+    shotsFired > 0
+      ? (totalCritHits / shotsFired) * 100
       : 0;
   const evasionRate =
-    totalHits + totalMisses + totalDodges + totalEvades > 0
-      ? (totalEvades / (totalHits + totalMisses + totalDodges + totalEvades)) * 100
+    shotsFired + totalMisses > 0
+      ? ((totalDodges + totalEvades) / (shotsFired + totalMisses)) * 100
       : 0;
 
   // Performance metrics

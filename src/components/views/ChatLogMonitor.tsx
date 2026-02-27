@@ -416,8 +416,7 @@ export function ChatLogMonitor() {
               );
               const storeActions = useHuntStore.getState();
               let addedCount = 0;
-              const recentDamage = damageEvents.slice(-20);
-              recentDamage.forEach((dmg) => {
+              damageEvents.forEach((dmg) => {
                 const eventKey = `dmg:${dmg.timestamp}:${dmg.damage}:${dmg.is_critical}`;
                 if (!processedEventsRef.current.has(eventKey)) {
                   console.debug(
@@ -427,6 +426,9 @@ export function ChatLogMonitor() {
                     dmg.is_critical
                   );
                   storeActions.addDamageEvent(activeSession.id, dmg.damage, dmg.is_critical);
+                  // Generate a combat event for this hit to charge shot costs
+                  const combatEventType = dmg.is_critical ? 'crit' : 'hit';
+                  storeActions.addCombatEvent(activeSession.id, combatEventType);
                   processedEventsRef.current.add(eventKey);
                   addedCount++;
                 } else {
@@ -441,8 +443,7 @@ export function ChatLogMonitor() {
               console.debug('[ChatLogMonitor] Processing combat events:', combatEvents.length);
               const storeActions = useHuntStore.getState();
               let addedCount = 0;
-              const recentCombat = combatEvents.slice(-20);
-              recentCombat.forEach((combat) => {
+              combatEvents.forEach((combat) => {
                 const eventKey = `combat:${combat.timestamp}:${combat.event_type}`;
                 if (!processedEventsRef.current.has(eventKey)) {
                   console.debug('[ChatLogMonitor] Adding combat event:', combat.event_type);
@@ -459,8 +460,7 @@ export function ChatLogMonitor() {
               console.debug('[ChatLogMonitor] Processing healing events:', healingEvents.length);
               const storeActions = useHuntStore.getState();
               let addedCount = 0;
-              const recentHealing = healingEvents.slice(-20);
-              recentHealing.forEach((heal) => {
+              healingEvents.forEach((heal) => {
                 const eventKey = `heal:${heal.timestamp}:${heal.amount}`;
                 if (!processedEventsRef.current.has(eventKey)) {
                   console.debug('[ChatLogMonitor] Adding healing event:', heal.amount);
@@ -480,8 +480,7 @@ export function ChatLogMonitor() {
               );
               const storeActions = useHuntStore.getState();
               let addedCount = 0;
-              const recentDamageTaken = damageTakenEvents.slice(-20);
-              recentDamageTaken.forEach((dmgTaken) => {
+              damageTakenEvents.forEach((dmgTaken) => {
                 const eventKey = `dmgtaken:${dmgTaken.timestamp}:${dmgTaken.damage}:${dmgTaken.is_critical}`;
                 if (!processedEventsRef.current.has(eventKey)) {
                   console.debug('[ChatLogMonitor] Adding damage taken event:', dmgTaken.damage);

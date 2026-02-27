@@ -61,7 +61,7 @@ interface HuntStore {
   addDamageEvent: (sessionId: string, damage: number, isCritical?: boolean) => void;
   addCombatEvent: (
     sessionId: string,
-    eventType: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit'
+    eventType: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit' | 'incoming_miss' | 'incoming_evade'
   ) => void;
   addHealingEvent: (sessionId: string, amount: number) => void;
   addDamageTakenEvent: (sessionId: string, damage: number, isCritical?: boolean) => void;
@@ -90,6 +90,17 @@ interface HuntStore {
 
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
 
+let syncInitialized = false;
+let isApplyingRemoteSync = false;
+const storeSyncSourceId = `store-${Math.random().toString(36).slice(2)}`;
+
+type StoreSyncPayload = {
+  sourceId: string;
+  sessions: HuntSession[];
+  activeSessionId: string | null;
+  loadouts: Loadout[];
+};
+
 const calculateStats = (session: HuntSession): SessionStats => {
   const totalLoot = session.loot.reduce((sum, item) => sum + item.totalValue, 0);
   const totalCost =
@@ -110,6 +121,16 @@ const calculateStats = (session: HuntSession): SessionStats => {
     : now - session.startTime;
   const duration = Math.max(0, rawDuration - totalPausedMs);
 
+  const misses = session.combatEvents?.filter((e) => e.type === 'miss').length || 0;
+  const dodges = session.combatEvents?.filter((e) => e.type === 'dodge').length || 0;
+  const evades = session.combatEvents?.filter((e) => e.type === 'evade').length || 0;
+  const criticalHits = session.damageEvents?.filter((e) => e.isCritical).length || 0;
+  const regularHits = session.damageEvents?.filter((e) => !e.isCritical).length || 0;
+  const totalHits = criticalHits + regularHits;
+  
+  // Shots fired = combat events that actually registered (hits/crits) or were avoided (dodges/evades), not misses
+  const shotsFiredCount = totalHits + dodges + evades;
+
   return {
     kills: 0, // Will be tracked separately
     lootEvents: session.loot.length,
@@ -119,16 +140,16 @@ const calculateStats = (session: HuntSession): SessionStats => {
     totalCost,
     returns,
     duration: Math.floor(duration / 1000), // Convert to seconds
-    shotsFired: session.damageEvents?.length || 0,
+    shotsFired: shotsFiredCount,
     damageDealt: session.damageEvents?.reduce((sum, evt) => sum + evt.damage, 0) || 0,
     damageTaken: session.damageTakenEvents?.reduce((sum, evt) => sum + evt.damage, 0) || 0,
     healsUsed: session.healingEvents?.length || 0,
     totalHealing: session.healingEvents?.reduce((sum, evt) => sum + evt.amount, 0) || 0,
-    misses: session.combatEvents?.filter((e) => e.type === 'miss').length || 0,
-    dodges: session.combatEvents?.filter((e) => e.type === 'dodge').length || 0,
-    evades: session.combatEvents?.filter((e) => e.type === 'evade').length || 0,
-    criticalHits: session.damageEvents?.filter((e) => e.isCritical).length || 0,
-    hits: session.damageEvents?.filter((e) => !e.isCritical).length || 0,
+    misses,
+    dodges,
+    evades,
+    criticalHits,
+    hits: regularHits,
   };
 };
 
@@ -245,10 +266,6 @@ export const useHuntStore = create<HuntStore>()(
       pauseSession: (id) => {
         const now = Date.now();
         get().updateSession(id, { status: 'paused', pausedAt: now });
-        // Emit event to sync across windows
-        emit('session-paused', { sessionId: id, pausedAt: now }).catch(() => {
-          // Silently fail if emit is not available (dev environment)
-        });
       },
 
       resumeSession: (id) => {
@@ -273,10 +290,6 @@ export const useHuntStore = create<HuntStore>()(
             ),
             activeSessionId: id,
           };
-        });
-        // Emit event to sync across windows
-        emit('session-resumed', { sessionId: id }).catch(() => {
-          // Silently fail if emit is not available (dev environment)
         });
       },
 
@@ -399,6 +412,33 @@ export const useHuntStore = create<HuntStore>()(
           isCritical,
         };
 
+        set((state) => ({
+          sessions: state.sessions.map((s) => {
+            if (s.id === sessionId) {
+              const updated = {
+                ...s,
+                damageEvents: [...(s.damageEvents || []), newDamageEvent],
+              };
+              updated.stats = calculateStats(updated);
+              return updated;
+            }
+            return s;
+          }),
+        }));
+      },
+
+      addCombatEvent: (sessionId, eventType) => {
+        // Skip incoming attack events - they're not player shots
+        if (eventType === 'incoming_miss' || eventType === 'incoming_evade') {
+          return;
+        }
+
+        const newCombatEvent: CombatEvent = {
+          id: generateId(),
+          type: eventType,
+          timestamp: Date.now(),
+        };
+
         set((state) => {
           const session = state.sessions.find((s) => s.id === sessionId);
           if (!session) {
@@ -411,16 +451,18 @@ export const useHuntStore = create<HuntStore>()(
             ? state.loadouts.find((l) => l.id === session.loadoutId)
             : state.loadouts.find((l) => l.name === session.weapon);
 
-          // Calculate cost for this shot
-          const shotCost = loadout?.costPerShot || 0;
+          // Apply shot costs only for player shots (hit/crit/miss/dodge/evade where player attacked)
+          const ammoCostPerShot = (loadout?.ammoBurn || 0) / 10000;
+          const decayCostPerShot = (loadout?.decay || 0) / 100;
 
           return {
             sessions: state.sessions.map((s) => {
               if (s.id === sessionId) {
                 const updated = {
                   ...s,
-                  damageEvents: [...(s.damageEvents || []), newDamageEvent],
-                  ammoCost: s.ammoCost + shotCost,
+                  combatEvents: [...(s.combatEvents || []), newCombatEvent],
+                  ammoCost: s.ammoCost + ammoCostPerShot,
+                  repairCost: s.repairCost + decayCostPerShot,
                 };
                 updated.stats = calculateStats(updated);
                 return updated;
@@ -429,28 +471,6 @@ export const useHuntStore = create<HuntStore>()(
             }),
           };
         });
-      },
-
-      addCombatEvent: (sessionId, eventType) => {
-        const newCombatEvent: CombatEvent = {
-          id: generateId(),
-          type: eventType,
-          timestamp: Date.now(),
-        };
-
-        set((state) => ({
-          sessions: state.sessions.map((s) => {
-            if (s.id === sessionId) {
-              const updated = {
-                ...s,
-                combatEvents: [...(s.combatEvents || []), newCombatEvent],
-              };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return s;
-          }),
-        }));
       },
 
       addHealingEvent: (sessionId, amount) => {
@@ -466,7 +486,6 @@ export const useHuntStore = create<HuntStore>()(
               const updated = {
                 ...s,
                 healingEvents: [...(s.healingEvents || []), newHealingEvent],
-                healingCost: s.healingCost + amount * 0.01, // Rough estimate: 1 PEC per heal point
               };
               updated.stats = calculateStats(updated);
               return updated;
@@ -490,8 +509,6 @@ export const useHuntStore = create<HuntStore>()(
               const updated = {
                 ...s,
                 damageTakenEvents: [...(s.damageTakenEvents || []), newDamageTakenEvent],
-                // Optionally estimate armor decay cost
-                armorDecay: s.armorDecay + damage * 0.005, // Rough estimate
               };
               updated.stats = calculateStats(updated);
               return updated;
@@ -658,44 +675,58 @@ export const useHuntStore = create<HuntStore>()(
 
 // Setup event listeners for cross-window synchronization
 export async function setupStoreSync() {
-  // Listen for pause events from other windows
-  listen('session-paused', (event: any) => {
-    const { sessionId, pausedAt } = event.payload;
-    const state = useHuntStore.getState();
-    const session = state.sessions.find((s) => s.id === sessionId);
-    if (session && session.status !== 'paused') {
-      useHuntStore.setState((prevState) => ({
-        sessions: prevState.sessions.map((s) =>
-          s.id === sessionId ? { ...s, status: 'paused', pausedAt } : s
-        ),
-      }));
+  if (syncInitialized) {
+    return;
+  }
+  syncInitialized = true;
+
+  // Broadcast relevant store state changes to other windows
+  let lastSyncedSnapshot = '';
+  useHuntStore.subscribe((state) => {
+    if (isApplyingRemoteSync) {
+      return;
     }
+
+    const snapshot = {
+      sessions: state.sessions,
+      activeSessionId: state.activeSessionId,
+      loadouts: state.loadouts,
+    };
+    const serialized = JSON.stringify(snapshot);
+
+    if (serialized === lastSyncedSnapshot) {
+      return;
+    }
+
+    lastSyncedSnapshot = serialized;
+    const payload: StoreSyncPayload = {
+      sourceId: storeSyncSourceId,
+      ...snapshot,
+    };
+
+    emit('store-sync', payload).catch(() => {
+      // Silently fail if emit is not available (dev environment)
+    });
+  });
+
+  // Listen for full store sync events from other windows
+  listen('store-sync', (event: any) => {
+    const payload = event.payload as StoreSyncPayload;
+    if (!payload || payload.sourceId === storeSyncSourceId) {
+      return;
+    }
+
+    isApplyingRemoteSync = true;
+    useHuntStore.setState((prevState) => ({
+      ...prevState,
+      sessions: payload.sessions,
+      activeSessionId: payload.activeSessionId,
+      loadouts: payload.loadouts,
+    }));
+    isApplyingRemoteSync = false;
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)
   });
 
-  // Listen for resume events from other windows
-  listen('session-resumed', (event: any) => {
-    const { sessionId } = event.payload;
-    const state = useHuntStore.getState();
-    const session = state.sessions.find((s) => s.id === sessionId);
-    if (session && session.status !== 'active') {
-      const now = Date.now();
-      useHuntStore.setState((prevState) => ({
-        sessions: prevState.sessions.map((s) =>
-          s.id === sessionId
-            ? {
-                ...s,
-                status: 'active',
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
-            : s
-        ),
-      }));
-    }
-  }).catch(() => {
-    // Silently fail if listen is not available (dev environment)
-  });
 }
 

@@ -34,7 +34,7 @@ export interface DamageEvent {
 
 export interface CombatEvent {
   id: string;
-  type: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit';
+  type: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit' | 'incoming_miss' | 'incoming_evade';
   timestamp: number;
 }
 
