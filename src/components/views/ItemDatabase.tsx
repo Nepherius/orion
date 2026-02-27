@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
-import { ItemTemplate } from '../types';
+import { ItemTemplate } from '../../types';
 
 export function ItemDatabase() {
   const { itemDatabase, addItemTemplate, updateItemTemplate, deleteItemTemplate } = useHuntStore();

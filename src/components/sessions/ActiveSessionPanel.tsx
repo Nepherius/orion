@@ -1,5 +1,5 @@
-import { HuntSession } from '../types';
-import { useHuntStore } from '../store';
+import { HuntSession } from '../../types';
+import { useHuntStore } from '../../store';
 import { Play, Pause, StopCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

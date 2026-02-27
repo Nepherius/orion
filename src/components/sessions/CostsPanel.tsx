@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useHuntStore } from '../store';
-import { HuntSession } from '../types';
+import { useHuntStore } from '../../store';
+import { HuntSession } from '../../types';
 import { DollarSign, Edit2, Save } from 'lucide-react';
 
 interface CostsPanelProps {

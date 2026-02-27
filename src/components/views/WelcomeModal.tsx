@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 
 interface WelcomeModalProps {
   onComplete?: () => void;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 import { Info, Search, ArrowUpDown, ExternalLink } from 'lucide-react';
-import { ActiveSessionSidebar } from './ActiveSessionSidebar';
+import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 
 export function Loot() {
   const activeSession = useHuntStore((state) => state.getActiveSession());

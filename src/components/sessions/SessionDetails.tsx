@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 import { Plus, Trash2, TrendingUp, TrendingDown, Award, Zap, Play, Pause, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { AddLootModal } from './AddLootModal';
-import { AddGlobalModal } from './AddGlobalModal';
+import { AddLootModal } from '../loot/AddLootModal';
+import { AddGlobalModal } from '../loot/AddGlobalModal';
 import { EditSessionModal } from './EditSessionModal';
 import { CostsPanel } from './CostsPanel';
 

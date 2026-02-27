@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 import { Plus, Search, Circle, CheckCircle, Clock } from 'lucide-react';
 import { NewSessionModal } from './NewSessionModal';
 import { format } from 'date-fns';

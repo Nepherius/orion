@@ -1,7 +1,7 @@
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
-import { ActiveSessionSidebar } from './ActiveSessionSidebar';
-import { LiveTimer } from './LiveTimer';
+import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
+import { LiveTimer } from '../layout/LiveTimer';
 
 export function Dashboard() {
   const activeSession = useHuntStore((state) => state.getActiveSession());

@@ -1,4 +1,4 @@
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 import { format } from 'date-fns';
 import { LiveTimer } from './LiveTimer';
 

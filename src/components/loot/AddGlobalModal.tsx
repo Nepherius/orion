@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 import { X } from 'lucide-react';
 
 interface AddGlobalModalProps {
@@ -8,7 +8,7 @@ interface AddGlobalModalProps {
 }
 
 export function AddGlobalModal({ sessionId, onClose }: AddGlobalModalProps) {
-  const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
+  const _session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
   const addGlobal = useHuntStore((state) => state.addGlobal);
   const [formData, setFormData] = useState({
     creature: '',

@@ -1,19 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useHuntStore } from './store';
-import { SessionList } from './components/SessionList';
-import { SessionDetails } from './components/SessionDetails';
-import { ActiveSessionPanel } from './components/ActiveSessionPanel';
-import { ActiveSessionSidebar } from './components/ActiveSessionSidebar';
-import { ItemDatabase } from './components/ItemDatabase';
-import { Settings } from './components/Settings';
-import { ChatLogMonitor } from './components/ChatLogMonitor';
-import { WelcomeModal } from './components/WelcomeModal';
-import { Dashboard } from './components/Dashboard';
-import { Loot } from './components/Loot';
-import { Loadouts } from './components/Loadouts';
+import { SessionList } from './components/sessions/SessionList';
+import { SessionDetails } from './components/sessions/SessionDetails';
+import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
+import { ItemDatabase } from './components/views/ItemDatabase';
+import { Settings } from './components/views/Settings';
+import { ChatLogMonitor } from './components/views/ChatLogMonitor';
+import { WelcomeModal } from './components/views/WelcomeModal';
+import { Dashboard } from './components/views/Dashboard';
+import { Loot } from './components/loot/Loot';
 import { Database, Settings as SettingsIcon, BarChart3, Activity, Package, Crosshair } from 'lucide-react';
 
-type View = 'dashboard' | 'loot' | 'sessions' | 'loadouts' | 'database' | 'analytics' | 'settings';
+type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analytics' | 'settings';
+
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('sessions');
@@ -21,13 +20,6 @@ function App() {
   const activeSession = useHuntStore((state) => state.getActiveSession());
   const avatarName = useHuntStore((state) => state.settings.avatarName);
   const [showWelcome, setShowWelcome] = useState(!avatarName);
-
-  // Redirect to sessions view if trying to view Dashboard/Loot without an active session
-  useEffect(() => {
-    if (!activeSession && (currentView === 'dashboard' || currentView === 'loot')) {
-      setCurrentView('sessions');
-    }
-  }, [activeSession, currentView]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -63,18 +55,18 @@ function App() {
               </>
             )}
             <button
-              onClick={() => setCurrentView('loadouts')}
-              className={`btn ${currentView === 'loadouts' ? 'btn-primary' : 'btn-secondary'}`}
-            >
-              <Crosshair className="w-4 h-4 inline mr-2" />
-              Loadouts
-            </button>
-            <button
               onClick={() => setCurrentView('sessions')}
               className={`btn ${currentView === 'sessions' ? 'btn-primary' : 'btn-secondary'}`}
             >
               <img src="/icon.png" alt="Orion" className="w-4 h-4 inline mr-2 object-contain" />
               Sessions
+            </button>
+                        <button
+              onClick={() => setCurrentView('loadouts')}
+              className={`btn ${currentView === 'loadouts' ? 'btn-primary' : 'btn-secondary'}`}
+            >
+              <Crosshair className="w-4 h-4 inline mr-2" />
+              Loadouts
             </button>
             <button
               onClick={() => setCurrentView('database')}
@@ -116,18 +108,16 @@ function App() {
 
         {currentView === 'loot' && <Loot />}
 
-        {currentView === 'loadouts' && <Loadouts />}
-
         {currentView === 'sessions' && (
           <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-3 space-y-6">
+            <div className="col-span-4 space-y-6">
               <SessionList
                 selectedSessionId={selectedSessionId}
                 onSelectSession={setSelectedSessionId}
               />
               <ChatLogMonitor />
             </div>
-            <div className={activeSession ? "col-span-6" : "col-span-9"}>
+            <div className="col-span-8">
               {selectedSessionId ? (
                 <SessionDetails sessionId={selectedSessionId} />
               ) : (
@@ -137,11 +127,6 @@ function App() {
                 </div>
               )}
             </div>
-            {activeSession && (
-              <div className="col-span-3">
-                <ActiveSessionSidebar />
-              </div>
-            )}
           </div>
         )}
 

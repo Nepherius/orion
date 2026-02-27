@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { FileText, Play, Square, AlertCircle, CheckCircle } from 'lucide-react';
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 
 interface LootEvent {
   timestamp: string;

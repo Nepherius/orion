@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useHuntStore } from '../store';
+import { useHuntStore } from '../../store';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderOpen, User, FileText, Palette, Sliders } from 'lucide-react';
