@@ -269,8 +269,6 @@ fn db_get_session_events(session_id: i64, state: State<AppState>) -> Result<serd
 
 #[tauri::command]
 fn detect_chat_log_path() -> Result<Option<String>, String> {
-    use std::path::Path;
-    
     // Try common Entropia Universe chat.log locations
     let home = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")).ok();
     
@@ -295,6 +293,48 @@ fn detect_chat_log_path() -> Result<Option<String>, String> {
 
     Ok(None)
 }
+
+#[tauri::command]
+async fn show_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
+    use tauri::Manager;
+    
+    // Check if overlay window already exists
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+    
+    // Create new overlay window
+    let _overlay_window = tauri::WebviewWindowBuilder::new(
+        &app_handle,
+        "overlay",
+        tauri::WebviewUrl::App("index.html#/overlay".into())
+    )
+    .title("ORION Overlay")
+    .inner_size(600.0, 56.0)
+    .position(20.0, 20.0)
+    .decorations(false)
+    .resizable(true)
+    .always_on_top(true)
+    .transparent(true)
+    .build()
+    .map_err(|e| e.to_string())?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+async fn hide_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
+    use tauri::Manager;
+    
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        window.hide().map_err(|e| e.to_string())?;
+    }
+    
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
         tauri::Builder::default()
@@ -305,6 +345,10 @@ pub fn run() {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
                         .level(log::LevelFilter::Info)
+                        .level_for(
+                            "tao::platform_impl::platform::event_loop::runner",
+                            log::LevelFilter::Error,
+                        )
                         .build(),
                 )?;
             }
@@ -337,6 +381,8 @@ pub fn run() {
                 db_add_event,
                 db_get_sessions,
                 db_get_session_events,
+                show_overlay,
+                hide_overlay,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

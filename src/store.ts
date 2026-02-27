@@ -85,9 +85,14 @@ const calculateStats = (session: HuntSession): SessionStats => {
     session.otherCosts;
   const returns = totalCost > 0 ? (totalLoot / totalCost) * 100 : 0;
 
-  const duration = session.endTime
+  const now = Date.now();
+  const basePausedMs = session.totalPausedMs || 0;
+  const activePauseMs = session.status === 'paused' && session.pausedAt ? now - session.pausedAt : 0;
+  const totalPausedMs = basePausedMs + activePauseMs;
+  const rawDuration = session.endTime
     ? session.endTime - session.startTime
-    : Date.now() - session.startTime;
+    : now - session.startTime;
+  const duration = Math.max(0, rawDuration - totalPausedMs);
 
   return {
     kills: 0, // Will be tracked separately
@@ -132,6 +137,8 @@ export const useHuntStore = create<HuntStore>()(
         const newSession: HuntSession = {
           ...sessionData,
           id: generateId(),
+          pausedAt: undefined,
+          totalPausedMs: 0,
           loot: [],
           skills: [],
           globals: [],
@@ -163,8 +170,9 @@ export const useHuntStore = create<HuntStore>()(
         set((state) => {
           // If new session should start immediately, pause existing active session(s)
           if (newSession.status === 'active') {
+            const now = Date.now();
             const sessions = state.sessions.map((s) =>
-              s.status === 'active' ? { ...s, status: 'paused' as const } : s
+              s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
             );
             return { sessions: [newSession, ...sessions], activeSessionId: newSession.id };
           }
@@ -195,15 +203,24 @@ export const useHuntStore = create<HuntStore>()(
 
       startSession: (id) => {
         set((state) => {
+          const now = Date.now();
           // Pause any active session
           const sessions = state.sessions.map((s) =>
-            s.status === 'active' ? { ...s, status: 'paused' as const } : s
+            s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
           );
 
           // Start the selected session
           return {
             sessions: sessions.map((s) =>
-              s.id === id ? { ...s, status: 'active' as const, startTime: Date.now() } : s
+              s.id === id
+                ? {
+                    ...s,
+                    status: 'active' as const,
+                    startTime: now,
+                    pausedAt: undefined,
+                    totalPausedMs: 0,
+                  }
+                : s
             ),
             activeSessionId: id,
           };
@@ -211,20 +228,29 @@ export const useHuntStore = create<HuntStore>()(
       },
 
       pauseSession: (id) => {
-        get().updateSession(id, { status: 'paused' });
+        const now = Date.now();
+        get().updateSession(id, { status: 'paused', pausedAt: now });
       },
 
       resumeSession: (id) => {
         set((state) => {
+          const now = Date.now();
           // Pause any active session
           const sessions = state.sessions.map((s) =>
-            s.status === 'active' ? { ...s, status: 'paused' as const } : s
+            s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
           );
 
           // Resume the selected session
           return {
             sessions: sessions.map((s) =>
-              s.id === id ? { ...s, status: 'active' as const } : s
+              s.id === id
+                ? {
+                    ...s,
+                    status: 'active' as const,
+                    totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                    pausedAt: undefined,
+                  }
+                : s
             ),
             activeSessionId: id,
           };
@@ -232,12 +258,23 @@ export const useHuntStore = create<HuntStore>()(
       },
 
       endSession: (id) => {
-        set((state) => ({
-          sessions: state.sessions.map((s) =>
-            s.id === id ? { ...s, status: 'completed' as const, endTime: Date.now() } : s
-          ),
-          activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
-        }));
+        set((state) => {
+          const now = Date.now();
+          return {
+            sessions: state.sessions.map((s) =>
+              s.id === id
+                ? {
+                    ...s,
+                    status: 'completed' as const,
+                    endTime: now,
+                    totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                    pausedAt: undefined,
+                  }
+                : s
+            ),
+            activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
+          };
+        });
       },
 
       addLoot: (sessionId, lootData) => {

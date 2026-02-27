@@ -78,6 +78,8 @@ export interface HuntSession {
   startTime: number;
   endTime?: number;
   status: 'active' | 'paused' | 'completed';
+  pausedAt?: number;
+  totalPausedMs?: number;
 
   // Hunting details
   weapon: string;

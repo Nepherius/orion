@@ -1,7 +1,8 @@
 import { HuntSession } from '../../types';
 import { useHuntStore } from '../../store';
-import { Play, Pause, StopCircle } from 'lucide-react';
+import { Play, Pause, StopCircle, Maximize2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { invoke } from '@tauri-apps/api/core';
 
 interface ActiveSessionPanelProps {
   session: HuntSession;
@@ -11,6 +12,14 @@ interface ActiveSessionPanelProps {
 
 export function ActiveSessionPanel({ session, onSessionEnded, onSessionResumed }: ActiveSessionPanelProps) {
   const { pauseSession, endSession, startSession } = useHuntStore();
+
+  const handleShowOverlay = async () => {
+    try {
+      await invoke('show_overlay');
+    } catch (error) {
+      console.error('Failed to show overlay:', error);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between">
@@ -72,6 +81,14 @@ export function ActiveSessionPanel({ session, onSessionEnded, onSessionResumed }
             Resume
           </button>
         )}
+        <button
+          onClick={handleShowOverlay}
+          className="btn-secondary flex items-center gap-2"
+          title="Show Overlay Window"
+        >
+          <Maximize2 className="w-4 h-4" />
+          Overlay
+        </button>
         <button
           onClick={() => {
             endSession(session.id);

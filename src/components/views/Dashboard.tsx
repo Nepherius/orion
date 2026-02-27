@@ -17,7 +17,13 @@ export function Dashboard() {
   }
 
   const profit = activeSession.stats.totalLoot - activeSession.stats.totalCost;
-  const duration = Date.now() - activeSession.startTime;
+  const now = Date.now();
+  const pausedMs =
+    (activeSession.totalPausedMs || 0) +
+    (activeSession.status === 'paused' && activeSession.pausedAt
+      ? now - activeSession.pausedAt
+      : 0);
+  const duration = Math.max(0, now - activeSession.startTime - pausedMs);
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 
@@ -251,7 +257,12 @@ export function Dashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-gray-400">Combat Time</div>
                 <div className="font-semibold text-white">
-                  <LiveTimer startTime={activeSession.startTime} />
+                  <LiveTimer
+                    startTime={activeSession.startTime}
+                    isRunning={activeSession.status === 'active'}
+                    pausedAt={activeSession.pausedAt}
+                    pausedDurationMs={activeSession.totalPausedMs || 0}
+                  />
                 </div>
               </div>
             </div>

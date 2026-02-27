@@ -134,9 +134,12 @@ export function Settings() {
               className="w-4 h-4"
             />
             <label htmlFor="overlayEnabled" className="text-sm text-gray-300">
-              Enable overlay mode (Coming Soon)
+              Enable session overlay
             </label>
           </div>
+          <p className="text-xs text-gray-400 mt-1 ml-7">
+            Show a draggable overlay with session stats during hunts
+          </p>
         </div>
       </SettingSection>
 

@@ -29,7 +29,12 @@ export function ActiveSessionSidebar() {
         {/* Duration */}
         <div className="bg-gray-900 rounded-lg p-4 text-center">
           <div className="text-4xl font-bold text-blue-400 font-mono">
-            <LiveTimer startTime={activeSession.startTime} />
+            <LiveTimer
+              startTime={activeSession.startTime}
+              isRunning={activeSession.status === 'active'}
+              pausedAt={activeSession.pausedAt}
+              pausedDurationMs={activeSession.totalPausedMs || 0}
+            />
           </div>
         </div>
 
