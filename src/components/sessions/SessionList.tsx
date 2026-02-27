@@ -7,12 +7,13 @@ import { format } from 'date-fns';
 interface SessionListProps {
   selectedSessionId: string | null;
   onSelectSession: (id: string) => void;
+  onNavigateToDashboard?: () => void;
 }
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
 type SortOption = 'newest' | 'oldest' | 'profit' | 'returns';
 
-export function SessionList({ selectedSessionId, onSelectSession }: SessionListProps) {
+export function SessionList({ selectedSessionId, onSelectSession, onNavigateToDashboard }: SessionListProps) {
   const sessions = useHuntStore((state) => state.sessions);
   const [showNewModal, setShowNewModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -206,7 +207,12 @@ export function SessionList({ selectedSessionId, onSelectSession }: SessionListP
         )}
       </div>
 
-      {showNewModal && <NewSessionModal onClose={() => setShowNewModal(false)} />}
+      {showNewModal && (
+        <NewSessionModal
+          onClose={() => setShowNewModal(false)}
+          onSessionCreated={onNavigateToDashboard}
+        />
+      )}
     </div>
   );
 }

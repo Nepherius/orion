@@ -44,16 +44,6 @@ export function ActiveSessionSidebar() {
           </div>
         )}
 
-        {/* MU / AE Buttons */}
-        <div className="grid grid-cols-2 gap-2">
-          <button className="p-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition-colors">
-            MU
-          </button>
-          <button className="p-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition-colors">
-            AE
-          </button>
-        </div>
-
         {/* My Globals */}
         <div className="flex-1">
           <div className="text-xs text-gray-400 uppercase mb-3">My Globals</div>

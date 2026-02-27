@@ -9,9 +9,10 @@ import { CostsPanel } from './CostsPanel';
 
 interface SessionDetailsProps {
   sessionId: string;
+  onSessionResumed?: () => void;
 }
 
-export function SessionDetails({ sessionId }: SessionDetailsProps) {
+export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsProps) {
   const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
   const removeLoot = useHuntStore((state) => state.removeLoot);
   const deleteSession = useHuntStore((state) => state.deleteSession);
@@ -35,6 +36,7 @@ export function SessionDetails({ sessionId }: SessionDetailsProps) {
 
   const handleResume = () => {
     resumeSession(sessionId);
+    onSessionResumed?.();
   };
 
   const handlePause = () => {

@@ -119,11 +119,32 @@ impl FileWatcher {
                                             match f.read_to_string(&mut buf) {
                                                 Ok(_) => {
                                                     if !buf.is_empty() {
-                                                        eprintln!("Emitting appended content for {} ({} bytes)", path_clone.display(), buf.len());
-                                                        for l in buf.lines().take(50) {
-                                                            eprintln!("{}", l);
+                                                        // Only emit complete lines to avoid partial line issues
+                                                        // Find the last newline and only emit up to there
+                                                        let lines: Vec<&str> = buf.lines().collect();
+                                                        let complete_lines = if buf.ends_with('\n') {
+                                                            // All lines are complete
+                                                            lines.join("\n") + "\n"
+                                                        } else if lines.len() > 1 {
+                                                            // Last line is incomplete, emit all but the last
+                                                            lines[..lines.len()-1].join("\n") + "\n"
+                                                        } else {
+                                                            // Only one incomplete line, don't emit yet
+                                                            String::new()
+                                                        };
+                                                        
+                                                        if !complete_lines.is_empty() {
+                                                            eprintln!("Emitting appended content for {} ({} bytes)", path_clone.display(), complete_lines.len());
+                                                            for l in complete_lines.lines().take(50) {
+                                                                eprintln!("{}", l);
+                                                            }
+                                                            let _ = app_handle.emit("chat-log-updated", complete_lines.clone());
+                                                            
+                                                            // Update position to end of complete lines only
+                                                            *last += complete_lines.len() as u64;
+                                                        } else {
+                                                            eprintln!("Incomplete line detected, waiting for more data");
                                                         }
-                                                        let _ = app_handle.emit("chat-log-updated", buf);
                                                     }
                                                 }
                                                 Err(e) => eprintln!("Failed to read appended data: {:?}", e),
@@ -133,7 +154,7 @@ impl FileWatcher {
                                     Err(e) => eprintln!("Failed to open file for appended read: {:?}", e),
                                 }
 
-                                *last = new_len;
+                                // Don't update *last here - it's updated above only for complete lines
                             }
                             Err(e) => eprintln!("Failed to stat watched file: {:?}", e),
                         }

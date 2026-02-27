@@ -1,5 +1,6 @@
 mod chat_parser;
 mod file_watcher;
+mod language_patterns;
 
 use chat_parser::{ChatLogParser, LootEvent};
 use file_watcher::FileWatcher;

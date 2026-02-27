@@ -4,9 +4,10 @@ import { X } from 'lucide-react';
 
 interface NewSessionModalProps {
   onClose: () => void;
+  onSessionCreated?: () => void;
 }
 
-export function NewSessionModal({ onClose }: NewSessionModalProps) {
+export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalProps) {
   const createSession = useHuntStore((state) => state.createSession);
   const loadouts = useHuntStore((state) => state.loadouts);
   const activeLoadout = useHuntStore((state) => state.getActiveLoadout());
@@ -35,6 +36,7 @@ export function NewSessionModal({ onClose }: NewSessionModalProps) {
       notes: formData.notes,
     });
     onClose();
+    onSessionCreated?.();
   };
 
   return (

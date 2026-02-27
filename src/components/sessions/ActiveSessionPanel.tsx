@@ -5,9 +5,11 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface ActiveSessionPanelProps {
   session: HuntSession;
+  onSessionEnded?: (sessionId: string) => void;
+  onSessionResumed?: () => void;
 }
 
-export function ActiveSessionPanel({ session }: ActiveSessionPanelProps) {
+export function ActiveSessionPanel({ session, onSessionEnded, onSessionResumed }: ActiveSessionPanelProps) {
   const { pauseSession, endSession, startSession } = useHuntStore();
 
   return (
@@ -60,7 +62,10 @@ export function ActiveSessionPanel({ session }: ActiveSessionPanelProps) {
           </button>
         ) : (
           <button
-            onClick={() => startSession(session.id)}
+            onClick={() => {
+              startSession(session.id);
+              onSessionResumed?.();
+            }}
             className="btn-primary flex items-center gap-2"
           >
             <Play className="w-4 h-4" />
@@ -68,7 +73,10 @@ export function ActiveSessionPanel({ session }: ActiveSessionPanelProps) {
           </button>
         )}
         <button
-          onClick={() => endSession(session.id)}
+          onClick={() => {
+            endSession(session.id);
+            onSessionEnded?.(session.id);
+          }}
           className="btn-danger flex items-center gap-2"
         >
           <StopCircle className="w-4 h-4" />

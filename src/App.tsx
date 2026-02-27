@@ -97,10 +97,17 @@ function App() {
       {activeSession && (
         <div className="bg-primary-900 border-b border-primary-700">
           <div className="max-w-7xl mx-auto px-6 py-3">
-            <ActiveSessionPanel session={activeSession} />
+            <ActiveSessionPanel
+              session={activeSession}
+              onSessionEnded={(sessionId) => {
+                setCurrentView('sessions');
+                setSelectedSessionId(sessionId);
+              }}
+              onSessionResumed={() => setCurrentView('dashboard')}
+            />
           </div>
         </div>
-      )}
+      )}    
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
@@ -114,12 +121,16 @@ function App() {
               <SessionList
                 selectedSessionId={selectedSessionId}
                 onSelectSession={setSelectedSessionId}
+                onNavigateToDashboard={() => setCurrentView('dashboard')}
               />
               <ChatLogMonitor />
             </div>
             <div className="col-span-8">
               {selectedSessionId ? (
-                <SessionDetails sessionId={selectedSessionId} />
+                <SessionDetails
+                  sessionId={selectedSessionId}
+                  onSessionResumed={() => setCurrentView('dashboard')}
+                />
               ) : (
                 <div className="card p-8 text-center text-gray-400">
                   <img src="/icon.png" alt="Orion" className="w-16 h-16 mx-auto mb-4 opacity-50 object-contain" />

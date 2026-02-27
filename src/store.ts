@@ -284,9 +284,16 @@ export const useHuntStore = create<HuntStore>()(
           timestamp: Date.now(),
         };
 
-        get().updateSession(sessionId, {
-          globals: [...(get().sessions.find((s) => s.id === sessionId)?.globals || []), newGlobal],
-        });
+        set((state) => ({
+          sessions: state.sessions.map((session) => {
+            if (session.id === sessionId) {
+              const updated = { ...session, globals: [...session.globals, newGlobal] };
+              updated.stats = calculateStats(updated);
+              return updated;
+            }
+            return session;
+          }),
+        }));
       },
 
       addItemTemplate: (itemData) => {

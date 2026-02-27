@@ -17,7 +17,7 @@ export function ChatLogMonitor() {
   const [watchedPath, setWatchedPath] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'watching' | 'error'>('idle');
 
-  const { addGlobal, getActiveSession, createSession, startSession } = useHuntStore();
+  const { addGlobal, addLoot, getActiveSession, createSession, startSession } = useHuntStore();
   const settings = useHuntStore((state) => state.settings);
   const activeSession = useHuntStore((state) => state.getActiveSession());
   const getActiveLoadout = useHuntStore((state) => state.getActiveLoadout);
@@ -79,23 +79,25 @@ export function ChatLogMonitor() {
           const recentEvents = events.slice(-10);
 
           recentEvents.forEach((evt) => {
-            // Only add if it's our player, a system pickup (no player in line),
-            // or we're in a team (no avatarName set).
+            
+            // Determine if this is a system pickup (no player) or a global (has player)
             const isSystemPickup = !evt.player || evt.player.trim() === '';
-            if (!settings.avatarName || isSystemPickup || evt.player.includes(settings.avatarName)) {
-              console.debug('adding global to session', activeSession.id, evt.creature, evt.value, 'isHoF', evt.is_hof);
+            
+            if (isSystemPickup) {
+              // System pickups should be added as loot items
+              addLoot(activeSession.id, {
+                name: evt.creature,
+                quantity: 1,
+                value: evt.value,
+                markup: settings.defaultMarkup || 100,
+                totalValue: evt.value * ((settings.defaultMarkup || 100) / 100),
+              });
+            } else if (settings.avatarName && evt.player.includes(settings.avatarName)) {
+              // Only add globals if avatar name is set AND it matches the player
               addGlobal(activeSession.id, {
                 creature: evt.creature,
                 value: evt.value,
                 isHoF: evt.is_hof,
-              });
-              // Debug: log updated session stats so we can verify UI updates
-              const updatedSession = useHuntStore.getState().sessions.find((s) => s.id === activeSession.id);
-              console.debug('updated session after addGlobal:', {
-                id: updatedSession?.id,
-                globals: updatedSession?.globals.length,
-                hofs: updatedSession?.globals.filter((g) => g.isHoF).length,
-                stats: updatedSession?.stats,
               });
             }
           });
@@ -110,7 +112,7 @@ export function ChatLogMonitor() {
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, [settings.avatarName, addGlobal, getActiveSession, createSession, startSession]);
+  }, [settings.avatarName, settings.defaultMarkup, addGlobal, addLoot, getActiveSession, createSession, startSession]);
 
   const checkWatchStatus = async () => {
     try {
