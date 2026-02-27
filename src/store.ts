@@ -14,6 +14,7 @@ import {
   SessionStats,
   Loadout,
 } from './types';
+import { calculateLoadoutStats } from './utils/loadoutCalculations';
 
 interface HuntStore {
   sessions: HuntSession[];
@@ -551,6 +552,16 @@ export const useHuntStore = create<HuntStore>()(
             totalCost: 0,
             returns: 0,
             duration: 0,
+            shotsFired: 0,
+            damageDealt: 0,
+            damageTaken: 0,
+            healsUsed: 0,
+            totalHealing: 0,
+            misses: 0,
+            dodges: 0,
+            evades: 0,
+            criticalHits: 0,
+            hits: 0,
           };
         }
         return calculateStats(session);
@@ -558,6 +569,38 @@ export const useHuntStore = create<HuntStore>()(
     }),
     {
       name: 'orion-loot-tracker',
+      onRehydrateStorage: () => (state) => {
+        // Recalculate all loadout stats when store is loaded
+        if (state?.loadouts) {
+          state.loadouts = state.loadouts.map((loadout) => {
+            const stats = calculateLoadoutStats(
+              loadout.weapon,
+              loadout.amplifier,
+              loadout.scope,
+              {
+                dmg: loadout.enhancers?.dmg || 0,
+                acc: loadout.enhancers?.acc || 0,
+                rng: loadout.enhancers?.rng || 0,
+                eco: loadout.enhancers?.eco || 0,
+              }
+            );
+            return {
+              ...loadout,
+              costPerShot: stats.costPerShot,
+              dpp: stats.dpp,
+              totalDamage: stats.totalDamage,
+              range: stats.range,
+              criticalChance: stats.criticalChance,
+              hitRate: stats.hitRate,
+              effectiveDamage: stats.effectiveDamage,
+              efficiency: stats.efficiency,
+              decay: stats.decay,
+              ammoBurn: stats.ammoBurn,
+              totalUses: stats.totalUses,
+            };
+          });
+        }
+      },
     }
   )
 );

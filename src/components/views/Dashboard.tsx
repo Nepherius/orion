@@ -2,6 +2,7 @@ import { useHuntStore } from '../../store';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 import { LiveTimer } from '../layout/LiveTimer';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function Dashboard() {
   const activeSession = useHuntStore((state) => state.getActiveSession());
@@ -19,6 +20,17 @@ export function Dashboard() {
   const duration = Date.now() - activeSession.startTime;
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
+
+  // Calculate return rate over time
+  const chartData = activeSession.loot.map((item, index) => {
+    const cumulativeLoot = activeSession.loot.slice(0, index + 1).reduce((sum, l) => sum + l.totalValue, 0);
+    const returnRate = activeSession.stats.totalCost > 0 ? (cumulativeLoot / activeSession.stats.totalCost) * 100 : 0;
+    return {
+      name: `${index + 1}`,
+      returnRate: Math.round(returnRate * 10) / 10, // Round to 1 decimal
+      time: item.timestamp,
+    };
+  });
 
   // Combat calculations
   const totalHits = activeSession.stats.hits || 0;
@@ -72,10 +84,6 @@ export function Dashboard() {
         {/* Key Metrics */}
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">KEY METRICS</h2>
-          <div className="flex gap-2 text-sm">
-            <button className="px-3 py-1 bg-primary-600 rounded">📊</button>
-            <button className="px-3 py-1 bg-gray-700 rounded">🔄</button>
-          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
@@ -100,19 +108,40 @@ export function Dashboard() {
 
         {/* Return Rate Chart */}
         <div className="card p-6">
-          <div className="text-xs text-gray-400 uppercase mb-2">RETURN RATE</div>
-          <div className="relative h-48 bg-gray-800 rounded" style={{ background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.1) 100%)' }}>
-            <div className="absolute top-4 left-4 text-red-400 font-bold text-xl">{activeSession.stats.returns.toFixed(1)}%</div>
-            <div className="absolute bottom-4 right-4 text-xs text-gray-500">Return Rate</div>
-            <div className="absolute top-2 right-2 text-xs text-gray-500">80</div>
-            <div className="absolute bottom-2 left-12 flex justify-between w-[calc(100%-3rem)] text-xs text-gray-600">
-              <span>0s</span>
-              <span>3s</span>
-              <span>6s</span>
-              <span>10s</span>
-              <span>13s</span>
+          <div className="text-xs text-gray-400 uppercase mb-4">RETURN RATE OVER TIME</div>
+          {chartData.length === 0 ? (
+            <div className="h-48 flex items-center justify-center text-gray-400">
+              No loot data yet
             </div>
-          </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis
+                  dataKey="name"
+                  label={{ value: 'Loot Event', position: 'insideBottomRight', offset: -5 }}
+                  stroke="#9CA3AF"
+                />
+                <YAxis
+                  label={{ value: 'Return Rate %', angle: -90, position: 'insideLeft' }}
+                  stroke="#9CA3AF"
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  formatter={(value: any) => [`${value}%`, 'Return Rate']}
+                  labelFormatter={(label) => `Event #${label}`}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="returnRate"
+                  stroke={activeSession.stats.returns >= 100 ? '#22C55E' : '#EF4444'}
+                  dot={{ fill: activeSession.stats.returns >= 100 ? '#22C55E' : '#EF4444', r: 4 }}
+                  activeDot={{ r: 6 }}
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Stats Grid */}

@@ -29,7 +29,8 @@ export function calculateLoadoutStats(
   const totalDecay = weaponDecay + ampDecay + scopeDecay;
 
   const ammoBurn = weapon?.Properties?.Economy?.AmmoBurn || 0;
-  const costPerShot = (totalDecay + ammoBurn) / 100; // PEC to PED
+  // Decay is in PEC, AmmoBurn needs /100 to get PEC, then total /100 to get PED
+  const costPerShot = (totalDecay + (ammoBurn / 100)) / 100;
 
   const weaponDamage = weapon?.Properties?.Damage?.Penetration || 0;
   const totalDamage = weaponDamage * (1 + enhancers.dmg * 0.01);

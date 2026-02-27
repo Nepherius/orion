@@ -12,7 +12,7 @@ export function LoadoutStatsPanel({ loadout }: LoadoutStatsPanelProps) {
         <div className="bg-gray-700 rounded p-3 text-center">
           <div className="text-xs text-gray-400 uppercase mb-1">Cost/Shot</div>
           <div className="text-xl font-bold text-blue-400">
-            {loadout.costPerShot.toFixed(3)} <span className="text-xs">PEC</span>
+            {loadout.costPerShot.toFixed(4)} <span className="text-xs">PED</span>
           </div>
         </div>
         <div className="bg-gray-700 rounded p-3 text-center">
@@ -62,7 +62,7 @@ export function LoadoutStatsPanel({ loadout }: LoadoutStatsPanelProps) {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Ammo Burn</span>
-            <span>{loadout.ammoBurn}</span>
+            <span>{(loadout.ammoBurn / 100).toFixed(4)} PEC</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Total Uses</span>
@@ -105,7 +105,7 @@ export function LoadoutStatsPanel({ loadout }: LoadoutStatsPanelProps) {
           </div>
           <div className="flex justify-between border-t border-gray-600 pt-1 mt-1 font-bold">
             <span>Total/Shot</span>
-            <span className="text-blue-400">{loadout.costPerShot.toFixed(4)} PEC</span>
+            <span className="text-blue-400">{loadout.costPerShot.toFixed(4)} PED</span>
           </div>
         </div>
       </div>

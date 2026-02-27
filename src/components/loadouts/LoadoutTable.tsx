@@ -75,7 +75,7 @@ export function LoadoutTable({
                       </div>
                     </td>
                     <td className="p-4 text-right">
-                      <div className="text-blue-400 font-mono">{loadout.costPerShot.toFixed(3)}</div>
+                      <div className="text-blue-400 font-mono">{loadout.costPerShot.toFixed(4)} PED</div>
                       <div className="text-xs text-gray-500">PEC</div>
                     </td>
                     <td className="p-4 text-right">

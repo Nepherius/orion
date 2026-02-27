@@ -321,30 +321,48 @@ export function ChatLogMonitor() {
             const isSystemPickup = !evt.player || evt.player.trim() === '';
             
             if (isSystemPickup) {
-              // System pickups should be added as loot items
-              console.debug('[ChatLogMonitor] Adding system pickup:', evt.creature, evt.value);
+              // Create unique key for duplicate detection
+              const eventKey = `loot:${evt.timestamp}:${evt.creature}:${evt.value}`;
               
-              // Check if item exists in database and use its markup
-              const customItem = storeState.itemDatabase.find(
-                (item) => item.name.toLowerCase() === evt.creature.toLowerCase()
-              );
-              const markup = customItem?.defaultMarkup || storeSettings.defaultMarkup || 100;
-              
-              storeActions.addLoot(activeSession.id, {
-                name: evt.creature,
-                quantity: 1,
-                value: evt.value,
-                markup: markup,
-                totalValue: evt.value * (markup / 100),
-              });
+              if (!processedEventsRef.current.has(eventKey)) {
+                // System pickups should be added as loot items
+                console.debug('[ChatLogMonitor] Adding system pickup:', evt.creature, evt.value);
+                
+                // Check if item exists in database and use its markup
+                const customItem = storeState.itemDatabase.find(
+                  (item) => item.name.toLowerCase() === evt.creature.toLowerCase()
+                );
+                const markup = customItem?.defaultMarkup || storeSettings.defaultMarkup || 100;
+                
+                storeActions.addLoot(activeSession.id, {
+                  name: evt.creature,
+                  quantity: 1,
+                  value: evt.value,
+                  markup: markup,
+                  totalValue: evt.value * (markup / 100),
+                });
+                
+                processedEventsRef.current.add(eventKey);
+              } else {
+                console.debug('[ChatLogMonitor] Skipping duplicate loot event');
+              }
             } else if (storeSettings.avatarName && evt.player.includes(storeSettings.avatarName)) {
-              // Only add globals if avatar name is set AND it matches the player
-              console.debug('[ChatLogMonitor] Adding global:', evt.creature, evt.value);
-              storeActions.addGlobal(activeSession.id, {
-                creature: evt.creature,
-                value: evt.value,
-                isHoF: evt.is_hof,
-              });
+              // Create unique key for duplicate detection
+              const eventKey = `global:${evt.timestamp}:${evt.creature}:${evt.value}:${evt.is_hof}`;
+              
+              if (!processedEventsRef.current.has(eventKey)) {
+                // Only add globals if avatar name is set AND it matches the player
+                console.debug('[ChatLogMonitor] Adding global:', evt.creature, evt.value);
+                storeActions.addGlobal(activeSession.id, {
+                  creature: evt.creature,
+                  value: evt.value,
+                  isHoF: evt.is_hof,
+                });
+                
+                processedEventsRef.current.add(eventKey);
+              } else {
+                console.debug('[ChatLogMonitor] Skipping duplicate global event');
+              }
             }
           });
         }
