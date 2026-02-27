@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { emit, listen } from '@tauri-apps/api/event';
+import { emit, listen, type Event } from '@tauri-apps/api/event';
 import {
   HuntSession,
   LootItem,
@@ -714,8 +714,8 @@ export async function setupStoreSync() {
   });
 
   // Listen for full store sync events from other windows
-  listen('store-sync', (event: any) => {
-    const payload = event.payload as StoreSyncPayload;
+  listen('store-sync', (event: Event<StoreSyncPayload>) => {
+    const payload = event.payload;
     if (!payload || payload.sourceId === storeSyncSourceId) {
       return;
     }

@@ -46,6 +46,8 @@ build:linux:
     paths:
       - src-tauri/target/release/bundle/
     expire_in: 30 days
+  only:
+    - tags
   cache:
     paths:
       - node_modules/
