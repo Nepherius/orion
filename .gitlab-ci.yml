@@ -25,9 +25,9 @@ lint:rust:
   script:
     - cd src-tauri
     - rustup component add clippy
-    - cargo clippy --manifest-path Cargo.toml -- -D warnings
+    - cargo clippy -- -D warnings
     - rustup component add rustfmt
-    - cargo fmt --manifest-path Cargo.toml -- --check
+    - cargo fmt -- --check
   allow_failure: false
 
 # Build for Linux
@@ -50,12 +50,16 @@ build:linux:
     paths:
       - node_modules/
       - src-tauri/target/
-      - ~/.cargo/
+      - $HOME/.cargo/
 
 # Build for Windows (when tagged)
 build:windows:
   stage: build
   image: mcr.microsoft.com/windows/servercore:ltsc2022
+  before_script:
+    - choco install nodejs -y --version=20.0.0
+    - choco install rust -y
+    - refreshenv
   script:
     - npm install
     - npm run tauri:build
@@ -70,21 +74,3 @@ build:windows:
       - node_modules/
       - src-tauri/target/
 
-# Build for macOS (requires macOS runner - configure in GitLab)
-build:macos:
-  stage: build
-  tags:
-    - macos
-  script:
-    - npm install
-    - npm run tauri:build
-  artifacts:
-    paths:
-      - src-tauri/target/release/bundle/
-    expire_in: 30 days
-  only:
-    - tags
-  cache:
-    paths:
-      - node_modules/
-      - src-tauri/target/
