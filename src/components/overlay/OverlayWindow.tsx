@@ -9,11 +9,56 @@ export function OverlayWindow() {
   const activeSession = useHuntStore((state) => state.getActiveSession());
   const pauseSession = useHuntStore((state) => state.pauseSession);
   const resumeSession = useHuntStore((state) => state.resumeSession);
+  const updateSettings = useHuntStore((state) => state.updateSettings);
 
   // Setup cross-window sync on mount
   useEffect(() => {
     setupStoreSync();
   }, []);
+
+  // Save overlay geometry when window is moved or resized
+  useEffect(() => {
+    let saveTimeout: number;
+
+    const saveGeometry = async () => {
+      try {
+        const geometry = await invoke<{ x: number; y: number; width: number; height: number } | null>('get_overlay_geometry');
+        if (geometry) {
+          updateSettings({
+            overlayX: geometry.x,
+            overlayY: geometry.y,
+            overlayWidth: geometry.width,
+            overlayHeight: geometry.height,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to save overlay geometry:', error);
+      }
+    };
+
+    const debouncedSave = () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveGeometry, 500); // Debounce save by 500ms
+    };
+
+    const setupListeners = async () => {
+      const window = getCurrentWindow();
+      const unlistenMove = await window.onMoved(debouncedSave);
+      const unlistenResize = await window.onResized(debouncedSave);
+
+      return () => {
+        unlistenMove();
+        unlistenResize();
+        clearTimeout(saveTimeout);
+      };
+    };
+
+    const cleanup = setupListeners();
+
+    return () => {
+      cleanup.then((fn) => fn());
+    };
+  }, [updateSettings]);
 
   const handleTogglePause = () => {
     if (!activeSession) return;

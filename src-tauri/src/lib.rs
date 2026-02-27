@@ -315,7 +315,13 @@ fn detect_chat_log_path() -> Result<Option<String>, String> {
 }
 
 #[tauri::command]
-async fn show_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
+async fn show_overlay(
+    app_handle: tauri::AppHandle,
+    x: Option<f64>,
+    y: Option<f64>,
+    width: Option<f64>,
+    height: Option<f64>,
+) -> Result<(), String> {
     use tauri::Manager;
 
     // Check if overlay window already exists
@@ -325,6 +331,12 @@ async fn show_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
         return Ok(());
     }
 
+    // Use provided values or defaults
+    let pos_x = x.unwrap_or(20.0);
+    let pos_y = y.unwrap_or(20.0);
+    let win_width = width.unwrap_or(750.0);
+    let win_height = height.unwrap_or(40.0);
+
     // Create new overlay window
     let _overlay_window = tauri::WebviewWindowBuilder::new(
         &app_handle,
@@ -332,8 +344,8 @@ async fn show_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
         tauri::WebviewUrl::App("index.html#/overlay".into()),
     )
     .title("ORION Overlay")
-    .inner_size(750.0, 40.0)
-    .position(20.0, 20.0)
+    .inner_size(win_width, win_height)
+    .position(pos_x, pos_y)
     .decorations(false)
     .resizable(true)
     .always_on_top(true)
@@ -353,6 +365,33 @@ async fn hide_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[derive(Serialize)]
+struct OverlayGeometry {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
+#[tauri::command]
+async fn get_overlay_geometry(app_handle: tauri::AppHandle) -> Result<Option<OverlayGeometry>, String> {
+    use tauri::Manager;
+
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        let position = window.outer_position().map_err(|e| e.to_string())?;
+        let size = window.outer_size().map_err(|e| e.to_string())?;
+        
+        Ok(Some(OverlayGeometry {
+            x: position.x as f64,
+            y: position.y as f64,
+            width: size.width as f64,
+            height: size.height as f64,
+        }))
+    } else {
+        Ok(None)
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -416,6 +455,7 @@ pub fn run() {
             db_get_session_events,
             show_overlay,
             hide_overlay,
+            get_overlay_geometry,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

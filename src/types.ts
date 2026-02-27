@@ -124,6 +124,10 @@ export interface AppSettings {
   theme: 'light' | 'dark';
   chatLogPath?: string;
   autoStartSession?: boolean;
+  overlayX?: number;
+  overlayY?: number;
+  overlayWidth?: number;
+  overlayHeight?: number;
 }
 
 // Equipment and Loadout types

@@ -15,11 +15,16 @@ export function ActiveSessionPanel({
   onSessionEnded,
   onSessionResumed,
 }: ActiveSessionPanelProps) {
-  const { pauseSession, resumeSession, endSession } = useHuntStore();
+  const { pauseSession, resumeSession, endSession, settings } = useHuntStore();
 
   const handleShowOverlay = async () => {
     try {
-      await invoke('show_overlay');
+      await invoke('show_overlay', {
+        x: settings.overlayX,
+        y: settings.overlayY,
+        width: settings.overlayWidth,
+        height: settings.overlayHeight,
+      });
     } catch (error) {
       console.error('Failed to show overlay:', error);
     }

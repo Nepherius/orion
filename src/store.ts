@@ -167,6 +167,10 @@ export const useHuntStore = create<HuntStore>()(
         theme: 'dark',
         chatLogPath: '',
         autoStartSession: true,
+        overlayX: 20,
+        overlayY: 20,
+        overlayWidth: 750,
+        overlayHeight: 56,
       },
 
       createSession: (sessionData) => {
