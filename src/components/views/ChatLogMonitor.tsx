@@ -61,6 +61,16 @@ export function ChatLogMonitor() {
   const settings = useHuntStore((state) => state.settings);
   const activeSession = useHuntStore((state) => state.getActiveSession());
 
+  const getIsWatching = async () => {
+    try {
+      const watching: boolean = await invoke('is_watching');
+      return watching;
+    } catch (error) {
+      console.error('[ChatLogMonitor] Error checking watch status:', error);
+      return false;
+    }
+  };
+
   const startWatching = async () => {
     const pathToWatch = settings.chatLogPath;
     console.log('[ChatLogMonitor] startWatching called. pathToWatch:', pathToWatch);
@@ -78,28 +88,75 @@ export function ChatLogMonitor() {
     }
   };
 
-  // Auto-start monitoring when a session becomes active and chat log path is set
+  const stopWatching = async () => {
+    try {
+      console.log('[ChatLogMonitor] stopWatching called');
+      await invoke('stop_watching_file');
+      console.log('[ChatLogMonitor] ✅ stop_watching_file succeeded');
+    } catch (error) {
+      console.error('[ChatLogMonitor] Error stopping watch:', error);
+    }
+  };
+
+  // Auto-start monitoring based on settings and session status
   // IMPORTANT: Only runs after event listener is ready to avoid race condition
   useEffect(() => {
     console.log('[ChatLogMonitor] Auto-start effect triggered');
     console.log('[ChatLogMonitor] - listenerReady:', listenerReady);
     console.log('[ChatLogMonitor] - activeSession:', activeSession?.id, 'status:', activeSession?.status);
     console.log('[ChatLogMonitor] - chatLogPath:', settings.chatLogPath);
+    console.log('[ChatLogMonitor] - autoStartSession:', settings.autoStartSession);
     
     if (!listenerReady) {
       console.log('[ChatLogMonitor] ⏳ Waiting for event listener to be ready...');
       return;
     }
     
-    if (activeSession && activeSession.status === 'active' && settings.chatLogPath) {
-      console.log('[ChatLogMonitor] ✅ Conditions met! Auto-starting file watcher for active session:', activeSession.id);
-      // Reset processed event timestamps for new session
-      processedEventsRef.current = new Set();
-      startWatching();
-    } else {
-      console.log('[ChatLogMonitor] ❌ Conditions not met for auto-start');
+    if (!settings.chatLogPath) {
+      console.log('[ChatLogMonitor] ❌ No chat log path set');
+      return;
     }
-  }, [listenerReady, activeSession?.id, activeSession?.status, settings.chatLogPath]);
+
+    const ensureWatching = async () => {
+      const watching = await getIsWatching();
+
+      if (settings.autoStartSession) {
+        // Always watch when auto-start is enabled
+        if (!watching) {
+          console.log('[ChatLogMonitor] ✅ Auto-start enabled, starting watcher');
+          startWatching();
+        } else {
+          console.log('[ChatLogMonitor] ℹ️ Auto-start enabled, watcher already running');
+        }
+        return;
+      }
+
+      // Auto-start disabled: only watch while an active session is running
+      if (activeSession && activeSession.status === 'active') {
+        if (!watching) {
+          console.log('[ChatLogMonitor] ✅ Active session detected, starting watcher');
+          // Reset processed event timestamps for new session
+          processedEventsRef.current = new Set();
+          startWatching();
+        } else {
+          console.log('[ChatLogMonitor] ℹ️ Active session detected, watcher already running');
+        }
+      } else if (watching) {
+        console.log('[ChatLogMonitor] ⏹️ No active session and auto-start disabled, stopping watcher');
+        stopWatching();
+      } else {
+        console.log('[ChatLogMonitor] ℹ️ No active session and watcher is already stopped');
+      }
+    };
+
+    ensureWatching();
+  }, [
+    listenerReady,
+    activeSession?.id,
+    activeSession?.status,
+    settings.chatLogPath,
+    settings.autoStartSession,
+  ]);
 
   // Setup event listener on mount FIRST - before any auto-start can happen
   useEffect(() => {

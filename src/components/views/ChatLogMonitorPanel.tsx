@@ -11,6 +11,7 @@ export function ChatLogMonitorPanel() {
   const [isWatching, setIsWatching] = useState(false);
   const [watchedPath, setWatchedPath] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'watching' | 'error'>('idle');
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
 
   const settings = useHuntStore((state) => state.settings);
   const activeSession = useHuntStore((state) => state.getActiveSession());
@@ -56,6 +57,23 @@ export function ChatLogMonitorPanel() {
       return;
     }
 
+    if (settings.autoStartSession) {
+      setShowStopConfirm(true);
+      return;
+    }
+
+    try {
+      await invoke('stop_watching_file');
+      setIsWatching(false);
+      setStatus('idle');
+    } catch (error) {
+      console.error('[ChatLogMonitorPanel] Error stopping watch:', error);
+    }
+  };
+
+  const confirmStopWatching = async () => {
+    setShowStopConfirm(false);
+    useHuntStore.getState().updateSettings({ autoStartSession: false });
     try {
       await invoke('stop_watching_file');
       setIsWatching(false);
@@ -138,6 +156,34 @@ export function ChatLogMonitorPanel() {
           />
         </label>
       </div>
+
+      {showStopConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-bold mb-2">Disable Auto-Start?</h3>
+            <p className="text-sm text-gray-300 mb-4">
+              Auto-start is enabled. Stopping the file monitor will disable auto-start.
+              Do you want to continue?
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowStopConfirm(false)}
+                className="btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmStopWatching}
+                className="btn-danger flex-1"
+              >
+                Stop & Disable
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
