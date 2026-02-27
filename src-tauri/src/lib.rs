@@ -376,13 +376,15 @@ struct OverlayGeometry {
 }
 
 #[tauri::command]
-async fn get_overlay_geometry(app_handle: tauri::AppHandle) -> Result<Option<OverlayGeometry>, String> {
+async fn get_overlay_geometry(
+    app_handle: tauri::AppHandle,
+) -> Result<Option<OverlayGeometry>, String> {
     use tauri::Manager;
 
     if let Some(window) = app_handle.get_webview_window("overlay") {
         let position = window.outer_position().map_err(|e| e.to_string())?;
         let size = window.outer_size().map_err(|e| e.to_string())?;
-        
+
         Ok(Some(OverlayGeometry {
             x: position.x as f64,
             y: position.y as f64,

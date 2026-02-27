@@ -22,7 +22,12 @@ export function OverlayWindow() {
 
     const saveGeometry = async () => {
       try {
-        const geometry = await invoke<{ x: number; y: number; width: number; height: number } | null>('get_overlay_geometry');
+        const geometry = await invoke<{
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+        } | null>('get_overlay_geometry');
         if (geometry) {
           updateSettings({
             overlayX: geometry.x,
@@ -169,7 +174,9 @@ export function OverlayWindow() {
         {/* Profit */}
         <div className="flex flex-col items-center leading-tight flex-1">
           <span className="text-gray-400 text-xs text-center whitespace-nowrap">Profit</span>
-          <span className={`font-bold text-sm whitespace-nowrap ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
+          <span
+            className={`font-bold text-sm whitespace-nowrap ${isProfitable ? 'text-green-400' : 'text-red-400'}`}
+          >
             {isProfitable ? '+' : ''}
             {profit.toFixed(2)} PED
           </span>

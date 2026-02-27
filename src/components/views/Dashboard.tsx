@@ -59,10 +59,7 @@ export function Dashboard() {
   const totalEvades = activeSession.stats.evades || 0;
   const shotsFired = activeSession.stats.shotsFired || 0;
   const hitRate = shotsFired > 0 ? ((totalHits + totalCritHits) / shotsFired) * 100 : 0;
-  const critRate =
-    shotsFired > 0
-      ? (totalCritHits / shotsFired) * 100
-      : 0;
+  const critRate = shotsFired > 0 ? (totalCritHits / shotsFired) * 100 : 0;
   const evasionRate =
     shotsFired + totalMisses > 0
       ? ((totalDodges + totalEvades) / (shotsFired + totalMisses)) * 100

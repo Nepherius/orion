@@ -70,7 +70,9 @@ function App() {
               onClick={() => setCurrentView('sessions')}
               className={`btn ${currentView === 'sessions' ? 'btn-primary' : 'btn-secondary'}`}
             >
-              <span className="text-primary-400 text-xs font-bold tracking-wide inline mr-2">◆</span>
+              <span className="text-primary-400 text-xs font-bold tracking-wide inline mr-2">
+                ◆
+              </span>
               Sessions
             </button>
             <button

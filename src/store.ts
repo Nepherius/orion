@@ -127,7 +127,7 @@ const calculateStats = (session: HuntSession): SessionStats => {
   const criticalHits = session.damageEvents?.filter((e) => e.isCritical).length || 0;
   const regularHits = session.damageEvents?.filter((e) => !e.isCritical).length || 0;
   const totalHits = criticalHits + regularHits;
-  
+
   // Shots fired = combat events that actually registered (hits/crits) or were avoided (dodges/evades), not misses
   const shotsFiredCount = totalHits + dodges + evades;
 
@@ -731,6 +731,4 @@ export async function setupStoreSync() {
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)
   });
-
 }
-
