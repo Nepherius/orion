@@ -20,9 +20,17 @@ export function Dashboard() {
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 
+  // Combat calculations
+  const totalHits = activeSession.stats.hits || 0;
+  const totalMisses = activeSession.stats.misses || 0;
+  const totalDodges = activeSession.stats.dodges || 0;
+  const totalEvades = activeSession.stats.evades || 0;
+  const totalAttempts = totalHits + totalMisses + totalDodges;
+  const hitRate = totalAttempts > 0 ? (totalHits / totalAttempts) * 100 : 0;
+  const critRate = activeSession.stats.shotsFired > 0 ? (activeSession.stats.criticalHits / activeSession.stats.shotsFired) * 100 : 0;
+  const evasionRate = (totalHits + totalMisses + totalDodges + totalEvades) > 0 ? (totalEvades / (totalHits + totalMisses + totalDodges + totalEvades)) * 100 : 0;
+
   // Performance metrics
-  const hitRate = activeSession.stats.kills > 0 ? 100 : 0; // Placeholder
-  const critRate = 0; // Placeholder
   const totalEvents = activeSession.stats.lootEvents;
 
   // Economy metrics
@@ -38,21 +46,14 @@ export function Dashboard() {
   const dps = durationMinutes > 0 ? totalSpend / durationMinutes : 0;
   const killsPerPED = totalSpend > 0 ? activeSession.stats.kills / totalSpend : 0;
   const killsPerHour = durationHours > 0 ? activeSession.stats.kills / durationHours : 0;
-  const avgDmgPerHit = 0; // Placeholder
-  const shotsPerKill = 0; // Placeholder
+  const avgDmgPerHit = activeSession.stats.shotsFired > 0 ? activeSession.stats.damageDealt / activeSession.stats.shotsFired : 0;
+  const shotsPerKill = activeSession.stats.kills > 0 ? activeSession.stats.shotsFired / activeSession.stats.kills : 0;
 
   // Hourly rates
   const lootPerHour = durationHours > 0 ? totalLoot / durationHours : 0;
   const spendPerHour = durationHours > 0 ? totalSpend / durationHours : 0;
   const skillsPerHour = 0; // Placeholder
-  const dmgPerHour = 0; // Placeholder
-
-  // Combat stats
-  const kills = activeSession.stats.kills;
-  const totalDamage = 0; // Placeholder
-  const totalShots = 0; // Placeholder
-  const totalHits = 0; // Placeholder
-  const deaths = 0; // Placeholder
+  const dmgPerHour = durationHours > 0 ? activeSession.stats.damageDealt / durationHours : 0;
 
   const StatCard = ({ label, value, color = 'text-white', info }: { label: string; value: string | number; color?: string; info?: string }) => (
     <div className="flex items-center justify-between">
@@ -126,8 +127,8 @@ export function Dashboard() {
               <StatCard label="Return Rate" value={`${activeSession.stats.returns.toFixed(1)}%`} color={activeSession.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'} />
               <StatCard label="Profit/Loss" value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`} color={profit >= 0 ? 'text-green-400' : 'text-red-400'} />
               <StatCard label="Skills/PED" value="0.0000" />
-              <StatCard label="Hit Rate" value={`${hitRate.toFixed(1)}%`} color="text-green-400" />
-              <StatCard label="Crit Rate" value={`${critRate.toFixed(1)}%`} />
+              <StatCard label="Hit Rate" value={`${hitRate.toFixed(1)}%`} color={hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'} />
+              <StatCard label="Crit Rate" value={`${critRate.toFixed(1)}%`} color={critRate >= 5 ? 'text-yellow-400' : 'text-white'} />
               <StatCard label="Total Events" value={totalEvents} />
             </div>
           </div>
@@ -190,12 +191,19 @@ export function Dashboard() {
               <span className="text-blue-400">›</span>
             </div>
             <div className="space-y-3">
-              <StatCard label="Kills" value={kills} />
-              <StatCard label="Total Damage" value={totalDamage} />
-              <StatCard label="Total Shots" value={totalShots} />
-              <StatCard label="Total Hits" value={totalHits} />
-              <StatCard label="Hit Rate" value={`${hitRate.toFixed(1)}%`} color="text-green-400" />
-              <StatCard label="Deaths" value={deaths} />
+              <StatCard label="Kills" value={activeSession.stats.kills} />
+              <StatCard label="Total Damage Out" value={activeSession.stats.damageDealt.toFixed(0)} />
+              <StatCard label="Total Damage In" value={(activeSession.stats.damageTaken || 0).toFixed(0)} color="text-red-400" />
+              <StatCard label="Total Healing" value={(activeSession.stats.totalHealing || 0).toFixed(0)} color="text-green-400" />
+              <StatCard label="Shots Fired" value={activeSession.stats.shotsFired} />
+              <StatCard label="Hits" value={totalHits} color="text-green-400" />
+              <StatCard label="Critical Hits" value={activeSession.stats.criticalHits || 0} color="text-yellow-400" />
+              <StatCard label="Misses" value={totalMisses} color="text-gray-400" />
+              <StatCard label="Dodges" value={totalDodges} color="text-red-400" />
+              <StatCard label="Evades" value={totalEvades} color="text-blue-400" />
+              <StatCard label="Hit Rate" value={`${hitRate.toFixed(1)}%`} color={hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'} />
+              <StatCard label="Crit Rate" value={`${critRate.toFixed(1)}%`} color={critRate >= 5 ? 'text-yellow-400' : 'text-white'} />
+              <StatCard label="Evasion Rate" value={`${evasionRate.toFixed(1)}%`} color={evasionRate >= 20 ? 'text-green-400' : 'text-white'} />
             </div>
           </div>
 

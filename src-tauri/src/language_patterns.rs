@@ -8,6 +8,7 @@ pub struct LanguagePatterns {
     pub rare_found: Vec<&'static str>,
     pub value_label: Vec<&'static str>,
     pub hof_markers: Vec<&'static str>,
+    pub damage_inflicted: Vec<&'static str>,
 }
 
 impl LanguagePatterns {
@@ -45,6 +46,12 @@ impl LanguagePatterns {
                 "Hall of Fame",
                 "hall of fame",  // case variation
                 "înregistrare a fost adăugată",  // Romanian partial
+            ],
+            
+            // Damage inflicted phrases
+            damage_inflicted: vec![
+                "You inflicted",
+                "Ai provocat",  // Romanian
             ],
         }
     }
@@ -95,6 +102,20 @@ impl LanguagePatterns {
     pub fn is_hall_of_fame(&self, line: &str) -> bool {
         let line_lower = line.to_lowercase();
         self.hof_markers.iter().any(|marker| line_lower.contains(&marker.to_lowercase()))
+    }
+    
+    /// Build a regex pattern for damage events
+    pub fn build_damage_regex(&self) -> Regex {
+        let inflicted = self.damage_inflicted.join("|");
+        
+        // Pattern: [System] [] (Critical hit - Additional damage! )? <inflicted_phrase> <damage> points of damage
+        // The critical hit prefix is optional
+        let pattern = format!(
+            r"\[System\] \[\] (?:Critical hit - Additional damage! )?({}) ([\d.]+) points? of damage",
+            inflicted
+        );
+        
+        Regex::new(&pattern).expect("Invalid damage regex pattern")
     }
 }
 

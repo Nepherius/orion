@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import { FileText, Play, Square, AlertCircle, CheckCircle } from 'lucide-react';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useHuntStore } from '../../store';
 
 interface LootEvent {
@@ -12,47 +11,141 @@ interface LootEvent {
   is_hof: boolean;
 }
 
-export function ChatLogMonitor() {
-  const [isWatching, setIsWatching] = useState(false);
-  const [watchedPath, setWatchedPath] = useState<string | null>(null);
-  const [status, setStatus] = useState<'idle' | 'watching' | 'error'>('idle');
+interface DamageEvent {
+  timestamp: string;
+  damage: number;
+  is_critical: boolean;
+}
 
-  const { addGlobal, addLoot, getActiveSession, createSession, startSession } = useHuntStore();
+interface CombatEvent {
+  timestamp: string;
+  event_type: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit';
+}
+
+interface HealingEvent {
+  timestamp: string;
+  amount: number;
+}
+
+interface DamageTakenEvent {
+  timestamp: string;
+  damage: number;
+  is_critical: boolean;
+}
+
+interface SkillGain {
+  timestamp: string;
+  skill_name: string;
+  amount: number;
+}
+
+interface ParseResult {
+  loot_events: LootEvent[];
+  damage_events: DamageEvent[];
+  combat_events: CombatEvent[];
+  healing_events: HealingEvent[];
+  damage_taken_events: DamageTakenEvent[];
+  skill_gains: SkillGain[];
+}
+
+/**
+ * Chat Log Monitor - Logic Only
+ * Handles event listening and auto-start functionality
+ * UI is in ChatLogMonitorPanel.tsx
+ */
+export function ChatLogMonitor() {
+  const [listenerReady, setListenerReady] = useState(false);
+  // Track processed event timestamps to avoid duplicates - use ref since we don't need re-renders
+  const processedEventsRef = useRef<Set<string>>(new Set());
+
   const settings = useHuntStore((state) => state.settings);
   const activeSession = useHuntStore((state) => state.getActiveSession());
-  const getActiveLoadout = useHuntStore((state) => state.getActiveLoadout);
+
+  const startWatching = async () => {
+    const pathToWatch = settings.chatLogPath;
+    console.log('[ChatLogMonitor] startWatching called. pathToWatch:', pathToWatch);
+    if (!pathToWatch) {
+      console.warn('[ChatLogMonitor] No path to watch, returning');
+      return;
+    }
+
+    try {
+      console.log('[ChatLogMonitor] Invoking start_watching_file with path:', pathToWatch);
+      await invoke('start_watching_file', { path: pathToWatch });
+      console.log('[ChatLogMonitor] ✅ start_watching_file succeeded');
+    } catch (error) {
+      console.error('Error starting watch:', error);
+    }
+  };
 
   // Auto-start monitoring when a session becomes active and chat log path is set
+  // IMPORTANT: Only runs after event listener is ready to avoid race condition
   useEffect(() => {
-    if (activeSession && activeSession.status === 'active' && settings.chatLogPath && !isWatching) {
-      console.debug('Auto-starting file watcher for active session:', activeSession.id);
-      startWatching();
+    console.log('[ChatLogMonitor] Auto-start effect triggered');
+    console.log('[ChatLogMonitor] - listenerReady:', listenerReady);
+    console.log('[ChatLogMonitor] - activeSession:', activeSession?.id, 'status:', activeSession?.status);
+    console.log('[ChatLogMonitor] - chatLogPath:', settings.chatLogPath);
+    
+    if (!listenerReady) {
+      console.log('[ChatLogMonitor] ⏳ Waiting for event listener to be ready...');
+      return;
     }
-  }, [activeSession?.id, activeSession?.status, settings.chatLogPath, isWatching]);
+    
+    if (activeSession && activeSession.status === 'active' && settings.chatLogPath) {
+      console.log('[ChatLogMonitor] ✅ Conditions met! Auto-starting file watcher for active session:', activeSession.id);
+      // Reset processed event timestamps for new session
+      processedEventsRef.current = new Set();
+      startWatching();
+    } else {
+      console.log('[ChatLogMonitor] ❌ Conditions not met for auto-start');
+    }
+  }, [listenerReady, activeSession?.id, activeSession?.status, settings.chatLogPath]);
 
+  // Setup event listener on mount FIRST - before any auto-start can happen
   useEffect(() => {
-    // Check if already watching on mount
-    checkWatchStatus();
+    console.log('[ChatLogMonitor] 🎧 Setting up event listener on mount');
+    let unlistenFn: UnlistenFn | null = null;
+    let isMounted = true;
 
-    // Listen for file updates
-    const unlisten = listen<string>('chat-log-updated', async (event) => {
+    const setupListener = async () => {
+      try {
+        console.log('[ChatLogMonitor] 🔧 Starting setupListener...');
+        
+        // Listen for file updates - await to ensure it's registered before we continue
+        console.log('[ChatLogMonitor] 📡 Registering event listener for chat-log-updated...');
+        unlistenFn = await listen<string>('chat-log-updated', async (event) => {
+          console.log('[ChatLogMonitor] ===== 🔔 RECEIVED chat-log-updated EVENT =====');
       try {
         const content = event.payload;
-        console.debug('chat-log-updated payload length:', content?.length);
-        const events: LootEvent[] = await invoke('parse_chat_log', { content });
-        console.debug('parsed events from payload:', events);
+        console.debug('[ChatLogMonitor] File updated, parsing content... Length:', content.length);
+        console.debug('[ChatLogMonitor] Content preview:', JSON.stringify(content.substring(0, 200)));
+        const result: ParseResult = await invoke('parse_chat_log', { content });
+        const events = result.loot_events;
+        const damageEvents = result.damage_events;
+        const combatEvents = result.combat_events;
+        const healingEvents = result.healing_events;
+        const damageTakenEvents = result.damage_taken_events;
+        const skillGains = result.skill_gains;
 
-        // Process new events
-        let activeSession = getActiveSession();
-        // If there's no active session but we have system pickups and auto-start is enabled, auto-create one
-        if (!activeSession && events.length > 0 && settings.autoStartSession) {
+        console.debug(`[ChatLogMonitor] Parsed: ${events.length} loot, ${damageEvents.length} damage, ${combatEvents.length} combat, ${healingEvents.length} healing, ${damageTakenEvents.length} damage taken, ${skillGains.length} skills`);
+
+        // Process new events - get fresh state each time
+        let activeSession = useHuntStore.getState().getActiveSession();
+        const storeSettings = useHuntStore.getState().settings;
+        console.debug('[ChatLogMonitor] Current active session:', activeSession?.id);
+        
+        // If there's no active session but we have events (loot, damage, combat, healing, damage taken) and auto-start is enabled, auto-create one
+        const hasAnyEvents = events.length > 0 || damageEvents.length > 0 || combatEvents.length > 0 || healingEvents.length > 0 || damageTakenEvents.length > 0;
+        if (!activeSession && storeSettings.autoStartSession && hasAnyEvents) {
           const hasSystemPickup = events.some((e) => !e.player || e.player.trim() === '');
-          if (hasSystemPickup) {
-            const activeLoadout = getActiveLoadout();
-            console.debug('No active session — creating auto session to capture system pickups');
-            createSession({
+          if (hasSystemPickup || damageEvents.length > 0) {
+            const activeLoadout = useHuntStore.getState().getActiveLoadout();
+            const storeActions = useHuntStore.getState();
+            console.debug('[ChatLogMonitor] No active session — creating auto session to capture events');
+            storeActions.createSession({
               name: 'Auto Session (Chat Monitor)',
               weapon: activeLoadout?.name || 'No Loadout',
+              loadoutId: activeLoadout?.id,
               armor: '',
               location: 'Auto',
               startTime: Date.now(),
@@ -62,169 +155,173 @@ export function ChatLogMonitor() {
               armorDecay: 0,
               healingCost: 0,
               otherCosts: 0,
-              notes: 'Automatically created to capture system pickups from chat.log',
+              notes: 'Automatically created to capture events from chat.log',
             });
-            const newId = useHuntStore.getState().sessions[0]?.id;
+            // Get the newly created session from store state
+            const state = useHuntStore.getState();
+            const newId = state.sessions[0]?.id;
+            console.debug('[ChatLogMonitor] New session ID:', newId, 'Total sessions:', state.sessions.length);
             if (newId) {
-              startSession(newId);
-              activeSession = getActiveSession();
-              console.debug('Auto session created and started:', newId);
+              state.startSession(newId);
+              activeSession = state.getActiveSession();
+              console.debug('[ChatLogMonitor] Auto session created and started:', newId, 'Status:', activeSession?.status);
+            } else {
+              console.error('[ChatLogMonitor] Failed to create session - no ID returned');
             }
           }
         }
 
         if (activeSession && events.length > 0) {
-          console.debug('activeSession id:', activeSession.id);
+          console.debug('[ChatLogMonitor] Processing loot events for session:', activeSession.id);
           // Get the last few events (avoid duplicates)
           const recentEvents = events.slice(-10);
+          const storeActions = useHuntStore.getState();
 
           recentEvents.forEach((evt) => {
-            
             // Determine if this is a system pickup (no player) or a global (has player)
             const isSystemPickup = !evt.player || evt.player.trim() === '';
             
             if (isSystemPickup) {
               // System pickups should be added as loot items
-              addLoot(activeSession.id, {
+              console.debug('[ChatLogMonitor] Adding system pickup:', evt.creature, evt.value);
+              storeActions.addLoot(activeSession.id, {
                 name: evt.creature,
                 quantity: 1,
                 value: evt.value,
-                markup: settings.defaultMarkup || 100,
-                totalValue: evt.value * ((settings.defaultMarkup || 100) / 100),
+                markup: storeSettings.defaultMarkup || 100,
+                totalValue: evt.value * ((storeSettings.defaultMarkup || 100) / 100),
               });
-            } else if (settings.avatarName && evt.player.includes(settings.avatarName)) {
+            } else if (storeSettings.avatarName && evt.player.includes(storeSettings.avatarName)) {
               // Only add globals if avatar name is set AND it matches the player
-              addGlobal(activeSession.id, {
+              console.debug('[ChatLogMonitor] Adding global:', evt.creature, evt.value);
+              storeActions.addGlobal(activeSession.id, {
                 creature: evt.creature,
                 value: evt.value,
                 isHoF: evt.is_hof,
               });
             }
           });
+        }
+          
+        // Process damage events (independent of loot events)
+        if (activeSession && damageEvents.length > 0) {
+          console.debug('[ChatLogMonitor] Processing damage events:', damageEvents.length, 'for session:', activeSession.id);
+          const storeActions = useHuntStore.getState();
+          let addedCount = 0;
+          const recentDamage = damageEvents.slice(-20);
+          recentDamage.forEach((dmg) => {
+            const eventKey = `dmg:${dmg.timestamp}:${dmg.damage}:${dmg.is_critical}`;
+            if (!processedEventsRef.current.has(eventKey)) {
+              console.debug('[ChatLogMonitor] Adding damage event:', dmg.damage, 'damage, critical:', dmg.is_critical);
+              storeActions.addDamageEvent(activeSession.id, dmg.damage, dmg.is_critical);
+              processedEventsRef.current.add(eventKey);
+              addedCount++;
+            } else {
+              console.debug('[ChatLogMonitor] Skipping duplicate damage event');
+            }
+          });
+          console.debug('[ChatLogMonitor] Added', addedCount, 'new damage events');
+        }
 
-          setStatus('watching');
+        // Process combat events (miss, dodge, evade, hit, crit)
+        if (activeSession && combatEvents.length > 0) {
+          console.debug('[ChatLogMonitor] Processing combat events:', combatEvents.length);
+          const storeActions = useHuntStore.getState();
+          let addedCount = 0;
+          const recentCombat = combatEvents.slice(-20);
+          recentCombat.forEach((combat) => {
+            const eventKey = `combat:${combat.timestamp}:${combat.event_type}`;
+            if (!processedEventsRef.current.has(eventKey)) {
+              console.debug('[ChatLogMonitor] Adding combat event:', combat.event_type);
+              storeActions.addCombatEvent(activeSession.id, combat.event_type);
+              processedEventsRef.current.add(eventKey);
+              addedCount++;
+            }
+          });
+          console.debug('[ChatLogMonitor] Added', addedCount, 'new combat events');
+        }
+
+        // Process healing events
+        if (activeSession && healingEvents.length > 0) {
+          console.debug('[ChatLogMonitor] Processing healing events:', healingEvents.length);
+          const storeActions = useHuntStore.getState();
+          let addedCount = 0;
+          const recentHealing = healingEvents.slice(-20);
+          recentHealing.forEach((heal) => {
+            const eventKey = `heal:${heal.timestamp}:${heal.amount}`;
+            if (!processedEventsRef.current.has(eventKey)) {
+              console.debug('[ChatLogMonitor] Adding healing event:', heal.amount);
+              storeActions.addHealingEvent(activeSession.id, heal.amount);
+              processedEventsRef.current.add(eventKey);
+              addedCount++;
+            }
+          });
+          console.debug('[ChatLogMonitor] Added', addedCount, 'new healing events');
+        }
+
+        // Process damage taken events
+        if (activeSession && damageTakenEvents.length > 0) {
+          console.debug('[ChatLogMonitor] Processing damage taken events:', damageTakenEvents.length);
+          const storeActions = useHuntStore.getState();
+          let addedCount = 0;
+          const recentDamageTaken = damageTakenEvents.slice(-20);
+          recentDamageTaken.forEach((dmgTaken) => {
+            const eventKey = `dmgtaken:${dmgTaken.timestamp}:${dmgTaken.damage}:${dmgTaken.is_critical}`;
+            if (!processedEventsRef.current.has(eventKey)) {
+              console.debug('[ChatLogMonitor] Adding damage taken event:', dmgTaken.damage);
+              storeActions.addDamageTakenEvent(activeSession.id, dmgTaken.damage, dmgTaken.is_critical);
+              processedEventsRef.current.add(eventKey);
+              addedCount++;
+            }
+          });
+          console.debug('[ChatLogMonitor] Added', addedCount, 'new damage taken events');
+        }
+
+        // Process skill gains (we could add these to session later if needed)
+        if (activeSession && skillGains.length > 0) {
+          console.debug('Processing skill gains:', skillGains.length);
+          // Skill gains could be tracked separately in the future
         }
       } catch (error) {
-        console.error('Error parsing chat log:', error);
+        console.error('[ChatLogMonitor] Error parsing chat log:', error);
       }
-    });
+        });
+
+        // Check again if component is still mounted before updating state
+        if (!isMounted) {
+          console.log('[ChatLogMonitor] ⚠️ Component unmounted before setState, cleaning up listener');
+          if (unlistenFn) unlistenFn();
+          return;
+        }
+
+        console.log('[ChatLogMonitor] ✅ Event listener registered successfully');
+        console.log('[ChatLogMonitor] 🎯 Setting listenerReady to true');
+        setListenerReady(true);
+        console.log('[ChatLogMonitor] 🎯 listenerReady state updated');
+      } catch (error) {
+        console.error('[ChatLogMonitor] ❌ Failed to setup event listener:', error);
+        console.error('[ChatLogMonitor] ❌ Error details:', JSON.stringify(error, null, 2));
+      }
+    };
+
+    console.log('[ChatLogMonitor] 🚀 Calling setupListener()...');
+    setupListener();
+    console.log('[ChatLogMonitor] 🚀 setupListener() called (async, will complete later)');
+
 
     return () => {
-      unlisten.then((fn) => fn());
+      console.log('[ChatLogMonitor] 🧹 Cleaning up event listener');
+      isMounted = false;
+      if (unlistenFn) {
+        console.log('[ChatLogMonitor] 🧹 Calling unlisten function');
+        unlistenFn();
+      }
+      setListenerReady(false);
+      console.log('[ChatLogMonitor] 🧹 Cleanup complete');
     };
-  }, [settings.avatarName, settings.defaultMarkup, addGlobal, addLoot, getActiveSession, createSession, startSession]);
+  }, []); // Empty dependency array - set up listener only once on mount
 
-  const checkWatchStatus = async () => {
-    try {
-      const watching: boolean = await invoke('is_watching');
-      setIsWatching(watching);
-
-      if (watching) {
-        const path: string | null = await invoke('get_watched_path');
-        setWatchedPath(path);
-        setStatus('watching');
-      }
-    } catch (error) {
-      console.error('Error checking watch status:', error);
-    }
-  };
-
-  const startWatching = async () => {
-    const pathToWatch = watchedPath || settings.chatLogPath;
-    if (!pathToWatch) return;
-
-    try {
-      await invoke('start_watching_file', { path: pathToWatch });
-      setIsWatching(true);
-      if (!watchedPath) {
-        setWatchedPath(pathToWatch);
-      }
-      setStatus('watching');
-    } catch (error) {
-      console.error('Error starting watch:', error);
-      setStatus('error');
-    }
-  };
-
-  const stopWatching = async () => {
-    // Prevent stopping monitoring during an active session
-    if (activeSession && activeSession.status === 'active') {
-      alert('Cannot stop monitoring during an active session. Please pause or end the session first.');
-      return;
-    }
-
-    try {
-      await invoke('stop_watching_file');
-      setIsWatching(false);
-      setStatus('idle');
-    } catch (error) {
-      console.error('Error stopping watch:', error);
-    }
-  };
-
-  const toggleAutoStart = () => {
-    const newValue = !settings.autoStartSession;
-    useHuntStore.getState().updateSettings({ autoStartSession: newValue });
-  };
-
-  return (
-    <div className="bg-gray-800 rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <FileText className="w-5 h-5 text-primary-500" />
-        <h3 className="text-sm font-bold">Chat Log Monitor</h3>
-      </div>
-
-      <div className="space-y-3">
-        {/* Status Indicator */}
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-700">
-          {status === 'watching' && (
-            <>
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-400">Monitoring</span>
-            </>
-          )}
-          {status === 'idle' && (
-            <>
-              <AlertCircle className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-400">Not Monitoring</span>
-            </>
-          )}
-          {status === 'error' && (
-            <>
-              <AlertCircle className="w-4 h-4 text-red-400" />
-              <span className="text-sm text-red-400">Error</span>
-            </>
-          )}
-        </div>
-
-        {/* Start/Stop Button */}
-        {!isWatching ? (
-          <button 
-            onClick={startWatching} 
-            className="btn-primary w-full" 
-            disabled={activeSession !== null || (!watchedPath && !settings.chatLogPath)}
-          >
-            <Play className="w-4 h-4 inline mr-2" />
-            Start
-          </button>
-        ) : (
-          <button onClick={stopWatching} className="btn-danger w-full">
-            <Square className="w-4 h-4 inline mr-2" />
-            Stop
-          </button>
-        )}
-
-        {/* Auto-start Toggle */}
-        <label className="flex items-center justify-between p-2 rounded-lg bg-gray-700 cursor-pointer hover:bg-gray-600 transition-colors">
-          <span className="text-sm text-gray-300">Auto-start session</span>
-          <input
-            type="checkbox"
-            checked={settings.autoStartSession}
-            onChange={toggleAutoStart}
-            className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary-600 focus:ring-primary-500 focus:ring-offset-gray-800"
-          />
-        </label>
-      </div>
-    </div>
-  );
+  // This component has no UI - it only handles logic
+  // UI is in ChatLogMonitorPanel.tsx
+  return null;
 }

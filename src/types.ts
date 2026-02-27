@@ -25,6 +25,32 @@ export interface Global {
   isHoF: boolean; // Hall of Fame (larger globals)
 }
 
+export interface DamageEvent {
+  id: string;
+  damage: number;
+  timestamp: number;
+  isCritical?: boolean;
+}
+
+export interface CombatEvent {
+  id: string;
+  type: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit';
+  timestamp: number;
+}
+
+export interface HealingEvent {
+  id: string;
+  amount: number;
+  timestamp: number;
+}
+
+export interface DamageTakenEvent {
+  id: string;
+  damage: number;
+  timestamp: number;
+  isCritical?: boolean;
+}
+
 export interface SessionStats {
   kills: number;
   lootEvents: number;
@@ -34,6 +60,16 @@ export interface SessionStats {
   totalCost: number;
   returns: number; // percentage
   duration: number; // in seconds
+  shotsFired: number;
+  damageDealt: number;
+  damageTaken: number;
+  healsUsed: number;
+  totalHealing: number;
+  misses: number;
+  dodges: number;
+  evades: number;
+  criticalHits: number;
+  hits: number;
 }
 
 export interface HuntSession {
@@ -52,7 +88,12 @@ export interface HuntSession {
   loot: LootItem[];
   skills: SkillGain[];
   globals: Global[];
+  damageEvents: DamageEvent[];
+  combatEvents: CombatEvent[];
+  healingEvents: HealingEvent[];
+  damageTakenEvents: DamageTakenEvent[];
   notes: string;
+  loadoutId?: string; // Link to loadout for cost calculations
 
   // Costs
   ammoCost: number;

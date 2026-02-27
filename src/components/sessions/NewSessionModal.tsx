@@ -26,6 +26,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
     createSession({
       ...formData,
       weapon: selectedLoadout?.name || 'No Loadout',
+      loadoutId: formData.loadoutId || undefined,
       startTime: Date.now(),
       status: 'active',
       ammoCost: 0,

@@ -19,11 +19,38 @@ pub struct SkillGain {
     pub gain: f64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DamageEvent {
+    pub timestamp: String,
+    pub damage: f64,
+    pub is_critical: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CombatEvent {
+    pub timestamp: String,
+    pub event_type: String, // "miss", "dodge", "evade", "hit", "crit"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealingEvent {
+    pub timestamp: String,
+    pub amount: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DamageTakenEvent {
+    pub timestamp: String,
+    pub damage: f64,
+    pub is_critical: bool,
+}
+
 pub struct ChatLogParser {
     global_regex: Regex,
     mining_regex: Regex,
     rare_item_regex: Regex,
     system_receive_regex: Regex,
+    damage_regex: Regex,
     language_patterns: LanguagePatterns,
 }
 
@@ -35,6 +62,7 @@ impl ChatLogParser {
         let global_regex = language_patterns.build_hunting_regex();
         let mining_regex = language_patterns.build_mining_regex();
         let rare_item_regex = language_patterns.build_rare_item_regex();
+        let damage_regex = language_patterns.build_damage_regex();
 
         // Pattern for system "You received" loot lines. Match either
         // `You received [Item] x (N) Value: X PED` or
@@ -48,6 +76,7 @@ impl ChatLogParser {
             mining_regex,
             rare_item_regex,
             system_receive_regex,
+            damage_regex,
             language_patterns,
         }
     }
@@ -133,11 +162,159 @@ impl ChatLogParser {
         None
     }
     
+    pub fn parse_damage_line(&self, line: &str) -> Option<DamageEvent> {
+        // Extract timestamp from start of line
+        let timestamp = if let Some(pos) = line.find(" [") {
+            line[..pos].trim().to_string()
+        } else {
+            line.chars().take(19).collect::<String>()
+        };
+        
+        // Check for critical hit damage
+        let is_critical = line.contains("Critical hit - Additional damage!");
+        
+        // Try damage pattern: [System] [] You inflicted X points of damage
+        // or: [System] [] Critical hit - Additional damage! You inflicted X points of damage
+        if let Some(caps) = self.damage_regex.captures(line) {
+            let damage: f64 = caps.get(2)?.as_str().parse().ok()?;
+            
+            return Some(DamageEvent {
+                timestamp,
+                damage,
+                is_critical,
+            });
+        }
+        
+        None
+    }
+    
+    pub fn parse_combat_event(&self, line: &str) -> Option<CombatEvent> {
+        let timestamp = if let Some(pos) = line.find(" [") {
+            line[..pos].trim().to_string()
+        } else {
+            line.chars().take(19).collect::<String>()
+        };
+        
+        let event_type = if line.contains("The attack missed you") {
+            Some("miss".to_string())
+        } else if line.contains("The target Dodged your attack") {
+            Some("dodge".to_string())
+        } else if line.contains("You Evaded the") {
+            Some("evade".to_string())
+        } else {
+            None
+        }?;
+        
+        Some(CombatEvent {
+            timestamp,
+            event_type,
+        })
+    }
+    
+    pub fn parse_healing_event(&self, line: &str) -> Option<HealingEvent> {
+        let timestamp = if let Some(pos) = line.find(" [") {
+            line[..pos].trim().to_string()
+        } else {
+            line.chars().take(19).collect::<String>()
+        };
+        
+        // Pattern: You healed yourself X points
+        if line.contains("You healed yourself") {
+            let re = regex::Regex::new(r"You healed yourself ([\d.]+) points?").ok()?;
+            let caps = re.captures(line)?;
+            let amount: f64 = caps.get(1)?.as_str().parse().ok()?;
+            
+            return Some(HealingEvent {
+                timestamp,
+                amount,
+            });
+        }
+        
+        None
+    }
+    
+    pub fn parse_damage_taken(&self, line: &str) -> Option<DamageTakenEvent> {
+        let timestamp = if let Some(pos) = line.find(" [") {
+            line[..pos].trim().to_string()
+        } else {
+            line.chars().take(19).collect::<String>()
+        };
+        
+        let is_critical = line.contains("Critical hit - Additional damage!");
+        
+        // Pattern: You took X points of damage
+        // or: Critical hit - Additional damage! You took X points of damage
+        if line.contains("You took") && line.contains("points of damage") {
+            let re = regex::Regex::new(r"You took ([\d.]+) points? of damage").ok()?;
+            let caps = re.captures(line)?;
+            let damage: f64 = caps.get(1)?.as_str().parse().ok()?;
+            
+            return Some(DamageTakenEvent {
+                timestamp,
+                damage,
+                is_critical,
+            });
+        }
+        
+        None
+    }
+    
+    pub fn parse_skill_gain(&self, line: &str) -> Option<SkillGain> {
+        let timestamp = if let Some(pos) = line.find(" [") {
+            line[..pos].trim().to_string()
+        } else {
+            line.chars().take(19).collect::<String>()
+        };
+        
+        // Pattern: You have gained X SkillName
+        if line.contains("You have gained") {
+            let re = regex::Regex::new(r"You have gained ([\d.]+) (.+)").ok()?;
+            let caps = re.captures(line)?;
+            let gain: f64 = caps.get(1)?.as_str().parse().ok()?;
+            let skill_name = caps.get(2)?.as_str().trim().to_string();
+            
+            return Some(SkillGain {
+                timestamp,
+                skill_name,
+                gain,
+            });
+        }
+        
+        None
+    }
+    
     pub fn parse_file(&self, content: &str) -> Vec<LootEvent> {
         content
             .lines()
             .filter_map(|line| self.parse_line(line))
             .collect()
+    }
+    
+    pub fn parse_file_with_damage(&self, content: &str) -> (Vec<LootEvent>, Vec<DamageEvent>, Vec<CombatEvent>, Vec<HealingEvent>, Vec<DamageTakenEvent>, Vec<SkillGain>) {
+        let mut loot_events = Vec::new();
+        let mut damage_events = Vec::new();
+        let mut combat_events = Vec::new();
+        let mut healing_events = Vec::new();
+        let mut damage_taken_events = Vec::new();
+        let mut skill_gains = Vec::new();
+        
+        for line in content.lines() {
+            if let Some(loot) = self.parse_line(line) {
+                loot_events.push(loot);
+            } else if let Some(damage) = self.parse_damage_line(line) {
+                damage_events.push(damage);
+            } else if let Some(combat) = self.parse_combat_event(line) {
+                combat_events.push(combat);
+            } else if let Some(healing) = self.parse_healing_event(line) {
+                healing_events.push(healing);
+            } else if let Some(damage_taken) = self.parse_damage_taken(line) {
+                damage_taken_events.push(damage_taken);
+            } else if let Some(skill) = self.parse_skill_gain(line) {
+                skill_gains.push(skill);
+            }
+        }
+        
+        (loot_events, damage_events, combat_events, healing_events, damage_taken_events, skill_gains)
     }
 }
 
@@ -261,5 +438,143 @@ mod tests {
         assert_eq!(event.creature, "Animal Muscle Oil");
         assert_eq!(event.value, 0.27);
         assert_eq!(event.is_hof, false);
+    }    
+    #[test]
+    fn test_parse_damage_english() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 01:41:42 [System] [] You inflicted 7.4 points of damage";
+        
+        let result = parser.parse_damage_line(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.damage, 7.4);
+        assert_eq!(event.timestamp, "2026-02-27 01:41:42");
+    }
+    
+    #[test]
+    fn test_parse_damage_large() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] You inflicted 125.8 points of damage";
+        
+        let result = parser.parse_damage_line(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.damage, 125.8);
+        assert_eq!(event.is_critical, false);
+    }
+
+    #[test]
+    fn test_parse_damage_critical() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] Critical hit - Additional damage! You inflicted 17.7 points of damage";
+        
+        let result = parser.parse_damage_line(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.damage, 17.7);
+        assert_eq!(event.is_critical, true);
+    }
+
+    #[test]
+    fn test_parse_combat_miss() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] The attack missed you";
+        
+        let result = parser.parse_combat_event(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.event_type, "miss");
+    }
+
+    #[test]
+    fn test_parse_combat_dodge() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] The target Dodged your attack";
+        
+        let result = parser.parse_combat_event(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.event_type, "dodge");
+    }
+
+    #[test]
+    fn test_parse_combat_evade() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] You Evaded the attack";
+        
+        let result = parser.parse_combat_event(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.event_type, "evade");
+    }
+
+    #[test]
+    fn test_parse_healing() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] You healed yourself 23.4 points";
+        
+        let result = parser.parse_healing_event(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.amount, 23.4);
+    }
+
+    #[test]
+    fn test_parse_damage_taken() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] You took 3.1 points of damage";
+        
+        let result = parser.parse_damage_taken(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.damage, 3.1);
+        assert_eq!(event.is_critical, false);
+    }
+
+    #[test]
+    fn test_parse_damage_taken_critical() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] Critical hit - Additional damage! You took 7.2 points of damage";
+        
+        let result = parser.parse_damage_taken(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.damage, 7.2);
+        assert_eq!(event.is_critical, true);
+    }
+
+    #[test]
+    fn test_parse_skill_gain() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] You have gained 0.3438 Courage";
+        
+        let result = parser.parse_skill_gain(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.gain, 0.3438);
+        assert_eq!(event.skill_name, "Courage");
+    }
+
+    #[test]
+    fn test_parse_skill_gain_multi_word() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-27 10:15:30 [System] [] You have gained 0.1234 Rifle (Dmg)";
+        
+        let result = parser.parse_skill_gain(line);
+        assert!(result.is_some());
+        
+        let event = result.unwrap();
+        assert_eq!(event.gain, 0.1234);
+        assert_eq!(event.skill_name, "Rifle (Dmg)");
     }
 }

@@ -2,16 +2,27 @@ mod chat_parser;
 mod file_watcher;
 mod language_patterns;
 
-use chat_parser::{ChatLogParser, LootEvent};
+use chat_parser::{ChatLogParser, LootEvent, DamageEvent, CombatEvent, HealingEvent, DamageTakenEvent, SkillGain};
 use file_watcher::FileWatcher;
 use std::fs;
 use std::sync::{Arc, Mutex};
 use tauri::{State, Manager};
+use serde::{Serialize, Deserialize};
 
 use rusqlite::{params, Connection};
 use serde_json::json;
 use std::path::PathBuf;
 use uuid::Uuid;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ParseResult {
+    pub loot_events: Vec<LootEvent>,
+    pub damage_events: Vec<DamageEvent>,
+    pub combat_events: Vec<CombatEvent>,
+    pub healing_events: Vec<HealingEvent>,
+    pub damage_taken_events: Vec<DamageTakenEvent>,
+    pub skill_gains: Vec<SkillGain>,
+}
 
 // State management
 struct AppState {
@@ -65,8 +76,17 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
 
 // Tauri commands
 #[tauri::command]
-fn parse_chat_log(content: String, state: State<AppState>) -> Result<Vec<LootEvent>, String> {
-    Ok(state.parser.parse_file(&content))
+fn parse_chat_log(content: String, state: State<AppState>) -> Result<ParseResult, String> {
+    let (loot_events, damage_events, combat_events, healing_events, damage_taken_events, skill_gains) = 
+        state.parser.parse_file_with_damage(&content);
+    Ok(ParseResult {
+        loot_events,
+        damage_events,
+        combat_events,
+        healing_events,
+        damage_taken_events,
+        skill_gains,
+    })
 }
 
 #[tauri::command]

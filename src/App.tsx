@@ -6,9 +6,11 @@ import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
 import { ItemDatabase } from './components/views/ItemDatabase';
 import { Settings } from './components/views/Settings';
 import { ChatLogMonitor } from './components/views/ChatLogMonitor';
+import { ChatLogMonitorPanel } from './components/views/ChatLogMonitorPanel';
 import { WelcomeModal } from './components/views/WelcomeModal';
 import { Dashboard } from './components/views/Dashboard';
 import { Loot } from './components/loot/Loot';
+import { Loadouts } from './components/views/Loadouts';
 import { Database, Settings as SettingsIcon, BarChart3, Activity, Package, Crosshair } from 'lucide-react';
 
 type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analytics' | 'settings';
@@ -109,6 +111,11 @@ function App() {
         </div>
       )}    
 
+      {/* Chat Log Monitor - Always mounted to track events */}
+      <div className="hidden">
+        <ChatLogMonitor />
+      </div>
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
         {currentView === 'dashboard' && <Dashboard />}
@@ -123,7 +130,7 @@ function App() {
                 onSelectSession={setSelectedSessionId}
                 onNavigateToDashboard={() => setCurrentView('dashboard')}
               />
-              <ChatLogMonitor />
+              <ChatLogMonitorPanel />
             </div>
             <div className="col-span-8">
               {selectedSessionId ? (
@@ -140,6 +147,8 @@ function App() {
             </div>
           </div>
         )}
+
+        {currentView === 'loadouts' && <Loadouts />}
 
         {currentView === 'database' && <ItemDatabase />}
 
