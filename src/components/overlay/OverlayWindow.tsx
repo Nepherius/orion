@@ -15,8 +15,8 @@ interface StoreSyncPayload {
 }
 
 export function OverlayWindow() {
-  const activeSession = useHuntStore((state) =>
-    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  const activeSession = useHuntStore(
+    (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
   const updateSettings = useHuntStore((state) => state.updateSettings);
   const syncSetupRef = useRef(false);
@@ -31,7 +31,7 @@ export function OverlayWindow() {
     syncSetupRef.current = true;
 
     let unlistenSync: (() => void) | undefined;
-    let requestTimers: number[] = [];
+    const requestTimers: number[] = [];
 
     const setupListeners = async () => {
       try {

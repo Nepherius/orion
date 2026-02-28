@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { HuntSession, Loadout } from '../types';
-import { calculateSessionStats, emptySessionStats, ensureSingleLoadoutPrimary } from './sessionCore';
+import {
+  calculateSessionStats,
+  emptySessionStats,
+  ensureSingleLoadoutPrimary,
+} from './sessionCore';
 
 function makeLoadout(overrides: Partial<Loadout> = {}): Loadout {
   return {
@@ -73,8 +77,24 @@ describe('calculateSessionStats', () => {
   it('calculates totals and returns correctly', () => {
     const session = makeSession({
       loot: [
-        { id: 'loot1', name: 'Oil', quantity: 1, value: 1, markup: 100, totalValue: 8, timestamp: 1 },
-        { id: 'loot2', name: 'Hide', quantity: 1, value: 1, markup: 100, totalValue: 4, timestamp: 2 },
+        {
+          id: 'loot1',
+          name: 'Oil',
+          quantity: 1,
+          value: 1,
+          markup: 100,
+          totalValue: 8,
+          timestamp: 1,
+        },
+        {
+          id: 'loot2',
+          name: 'Hide',
+          quantity: 1,
+          value: 1,
+          markup: 100,
+          totalValue: 4,
+          timestamp: 2,
+        },
       ],
       ammoCost: 2,
       repairCost: 1,
@@ -143,8 +163,24 @@ describe('calculateSessionStats', () => {
 
     const session = makeSession({
       loot: [
-        { id: 'l1', name: 'Shrapnel', quantity: 196, value: 0.0196, markup: 100, totalValue: 0.0196, timestamp: ts1 },
-        { id: 'l2', name: 'Animal Muscle Oil', quantity: 3, value: 0.09, markup: 100, totalValue: 0.09, timestamp: ts2 },
+        {
+          id: 'l1',
+          name: 'Shrapnel',
+          quantity: 196,
+          value: 0.0196,
+          markup: 100,
+          totalValue: 0.0196,
+          timestamp: ts1,
+        },
+        {
+          id: 'l2',
+          name: 'Animal Muscle Oil',
+          quantity: 3,
+          value: 0.09,
+          markup: 100,
+          totalValue: 0.09,
+          timestamp: ts2,
+        },
       ],
     });
 
@@ -157,8 +193,24 @@ describe('calculateSessionStats', () => {
     const ts2 = new Date(2026, 1, 28, 12, 45, 30).getTime(); // 5 seconds later
     const session = makeSession({
       loot: [
-        { id: 'l1', name: 'Shrapnel', quantity: 1, value: 0.01, markup: 100, totalValue: 0.01, timestamp: ts1 },
-        { id: 'l2', name: 'Oil', quantity: 1, value: 0.09, markup: 100, totalValue: 0.09, timestamp: ts2 },
+        {
+          id: 'l1',
+          name: 'Shrapnel',
+          quantity: 1,
+          value: 0.01,
+          markup: 100,
+          totalValue: 0.01,
+          timestamp: ts1,
+        },
+        {
+          id: 'l2',
+          name: 'Oil',
+          quantity: 1,
+          value: 0.09,
+          markup: 100,
+          totalValue: 0.09,
+          timestamp: ts2,
+        },
       ],
     });
 
@@ -175,7 +227,15 @@ describe('calculateSessionStats', () => {
   it('counts 1 kill for a single loot item', () => {
     const session = makeSession({
       loot: [
-        { id: 'l1', name: 'Shrapnel', quantity: 1, value: 0.01, markup: 100, totalValue: 0.01, timestamp: 1000 },
+        {
+          id: 'l1',
+          name: 'Shrapnel',
+          quantity: 1,
+          value: 0.01,
+          markup: 100,
+          totalValue: 0.01,
+          timestamp: 1000,
+        },
       ],
     });
     const stats = calculateSessionStats(session, 5000);

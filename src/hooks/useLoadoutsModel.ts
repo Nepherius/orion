@@ -53,10 +53,7 @@ export function useLoadoutsModel() {
     });
   }, [loadouts, searchQuery, statusFilter, sortBy]);
 
-  const activeCount = useMemo(
-    () => loadouts.filter((l) => l.isPrimary).length,
-    [loadouts]
-  );
+  const activeCount = useMemo(() => loadouts.filter((l) => l.isPrimary).length, [loadouts]);
   const favoriteCount = useMemo(() => loadouts.filter((l) => l.favorite).length, [loadouts]);
 
   const handleEdit = (loadout: Loadout) => {

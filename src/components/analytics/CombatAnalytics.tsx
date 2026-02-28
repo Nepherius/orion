@@ -34,21 +34,22 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
 
   const hitRate = shotsFired > 0 ? ((hits + critHits) / shotsFired) * 100 : 0;
   const critRate = shotsFired > 0 ? (critHits / shotsFired) * 100 : 0;
-  const missRate = (shotsFired + misses) > 0 ? (misses / (shotsFired + misses)) * 100 : 0;
-  const evasionRate = (shotsFired + misses) > 0 ? ((dodges + evades) / (shotsFired + misses)) * 100 : 0;
+  const missRate = shotsFired + misses > 0 ? (misses / (shotsFired + misses)) * 100 : 0;
+  const evasionRate =
+    shotsFired + misses > 0 ? ((dodges + evades) / (shotsFired + misses)) * 100 : 0;
 
   // Hit distribution
   const hitDistribution = [
     { name: 'Hits', value: hits, color: '#22C55E' },
     { name: 'Critical Hits', value: critHits, color: '#FBBF24' },
     { name: 'Misses', value: misses, color: '#9CA3AF' },
-  ].filter(item => item.value > 0);
+  ].filter((item) => item.value > 0);
 
   // Evasion distribution
   const evasionDistribution = [
     { name: 'Dodges', value: dodges, color: '#EF4444' },
     { name: 'Evades', value: evades, color: '#3B82F6' },
-  ].filter(item => item.value > 0);
+  ].filter((item) => item.value > 0);
 
   // Damage over time
   const damageChart = session.damageEvents.slice(0, 100).map((event, index) => {
@@ -198,9 +199,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
       <div className="card p-6">
         <h3 className="text-lg font-bold mb-4">Cumulative Damage Dealt</h3>
         {damageChart.length === 0 ? (
-          <div className="h-64 flex items-center justify-center text-gray-400">
-            No damage data
-          </div>
+          <div className="h-64 flex items-center justify-center text-gray-400">No damage data</div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={damageChart}>
@@ -212,13 +211,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                 formatter={(value: number) => [value.toFixed(0), 'Damage']}
                 labelFormatter={(label) => `Hit #${label}`}
               />
-              <Line
-                type="monotone"
-                dataKey="damage"
-                stroke="#22C55E"
-                strokeWidth={2}
-                dot={false}
-              />
+              <Line type="monotone" dataKey="damage" stroke="#22C55E" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -275,7 +268,9 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
           <div className="space-y-3">
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Hit Rate</span>
-              <span className={`font-semibold ${hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'}`}>
+              <span
+                className={`font-semibold ${hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'}`}
+              >
                 {hitRate.toFixed(1)}%
               </span>
             </div>
@@ -291,7 +286,9 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Evasion Rate</span>
-              <span className={`font-semibold ${evasionRate >= 20 ? 'text-green-400' : 'text-white'}`}>
+              <span
+                className={`font-semibold ${evasionRate >= 20 ? 'text-green-400' : 'text-white'}`}
+              >
                 {evasionRate.toFixed(1)}%
               </span>
             </div>
@@ -309,9 +306,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Dmg/Kill</span>
-              <span className="font-semibold">
-                {(kills > 0 ? dmgDealt / kills : 0).toFixed(0)}
-              </span>
+              <span className="font-semibold">{(kills > 0 ? dmgDealt / kills : 0).toFixed(0)}</span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Shots/Kill</span>
@@ -321,7 +316,9 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Net Damage</span>
-              <span className={`font-semibold ${(dmgDealt - dmgTaken) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <span
+                className={`font-semibold ${dmgDealt - dmgTaken > 0 ? 'text-green-400' : 'text-red-400'}`}
+              >
                 {(dmgDealt - dmgTaken).toFixed(0)}
               </span>
             </div>

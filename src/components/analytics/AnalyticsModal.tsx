@@ -27,9 +27,7 @@ export function AnalyticsModal({ isOpen, onClose, title, children }: AnalyticsMo
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {children}
-        </div>
+        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   );

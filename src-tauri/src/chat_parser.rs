@@ -600,7 +600,8 @@ mod tests {
     #[test]
     fn test_parse_skill_gain_with_experience() {
         let parser = ChatLogParser::new();
-        let line = "2026-02-26 19:26:03 [System] [] You have gained 0.6742 experience in your Rifle skill";
+        let line =
+            "2026-02-26 19:26:03 [System] [] You have gained 0.6742 experience in your Rifle skill";
 
         let result = parser.parse_skill_gain(line);
         assert!(result.is_some());
@@ -630,7 +631,10 @@ mod tests {
             "26-02-27 01:41:54 [System] [] You received [Animal Eye Oil] x (9) Value: 0.2700 PED";
 
         let result = parser.parse_line(line);
-        assert!(result.is_some(), "Parser failed to match bracketed system pickup line");
+        assert!(
+            result.is_some(),
+            "Parser failed to match bracketed system pickup line"
+        );
 
         let event = result.unwrap();
         assert_eq!(event.player, "");
@@ -652,8 +656,14 @@ mod tests {
         ]
         .join("\n");
 
-        let (loot_events, damage_events, combat_events, healing_events, damage_taken_events, skill_gains) =
-            parser.parse_file_with_damage(&content);
+        let (
+            loot_events,
+            damage_events,
+            combat_events,
+            healing_events,
+            damage_taken_events,
+            skill_gains,
+        ) = parser.parse_file_with_damage(&content);
 
         assert_eq!(loot_events.len(), 1);
         assert_eq!(loot_events[0].creature, "Animal Eye Oil");

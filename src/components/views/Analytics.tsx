@@ -23,31 +23,35 @@ export function Analytics() {
   const loadouts = useHuntStore((state) => state.loadouts);
 
   // Calculate lifetime stats
-  const lifetimeStats = useMemo(() => sessions.reduce(
-    (acc, session) => {
-      acc.totalLoot += session.stats.totalLoot;
-      acc.totalCost += session.stats.totalCost;
-      acc.totalKills += session.stats.kills;
-      acc.totalGlobals += session.stats.globals;
-      acc.totalHofs += session.stats.hofs;
-      acc.totalDamage += session.stats.damageDealt;
-      acc.totalShotsFired += session.stats.shotsFired;
-      acc.totalDuration += session.stats.duration;
-      acc.totalSessions += 1;
-      return acc;
-    },
-    {
-      totalLoot: 0,
-      totalCost: 0,
-      totalKills: 0,
-      totalGlobals: 0,
-      totalHofs: 0,
-      totalDamage: 0,
-      totalShotsFired: 0,
-      totalDuration: 0,
-      totalSessions: 0,
-    }
-  ), [sessions]);
+  const lifetimeStats = useMemo(
+    () =>
+      sessions.reduce(
+        (acc, session) => {
+          acc.totalLoot += session.stats.totalLoot;
+          acc.totalCost += session.stats.totalCost;
+          acc.totalKills += session.stats.kills;
+          acc.totalGlobals += session.stats.globals;
+          acc.totalHofs += session.stats.hofs;
+          acc.totalDamage += session.stats.damageDealt;
+          acc.totalShotsFired += session.stats.shotsFired;
+          acc.totalDuration += session.stats.duration;
+          acc.totalSessions += 1;
+          return acc;
+        },
+        {
+          totalLoot: 0,
+          totalCost: 0,
+          totalKills: 0,
+          totalGlobals: 0,
+          totalHofs: 0,
+          totalDamage: 0,
+          totalShotsFired: 0,
+          totalDuration: 0,
+          totalSessions: 0,
+        }
+      ),
+    [sessions]
+  );
 
   const lifetimeProfit = lifetimeStats.totalLoot - lifetimeStats.totalCost;
   const lifetimeReturnRate =
@@ -55,31 +59,43 @@ export function Analytics() {
   const lifetimeHitRate = useMemo(() => {
     return lifetimeStats.totalShotsFired > 0
       ? (sessions.reduce((sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0), 0) /
-        lifetimeStats.totalShotsFired) *
-      100
+          lifetimeStats.totalShotsFired) *
+          100
       : 0;
   }, [sessions, lifetimeStats.totalShotsFired]);
 
   // Sessions by location
   const locationData = useMemo(() => {
-    const sessionsByLocation = sessions.reduce((acc, session) => {
-      const location = session.location || 'Unknown';
-      if (!acc[location]) {
-        acc[location] = {
-          count: 0,
-          totalLoot: 0,
-          totalCost: 0,
-          totalKills: 0,
-          totalGlobals: 0,
-        };
-      }
-      acc[location].count += 1;
-      acc[location].totalLoot += session.stats.totalLoot;
-      acc[location].totalCost += session.stats.totalCost;
-      acc[location].totalKills += session.stats.kills;
-      acc[location].totalGlobals += session.stats.globals;
-      return acc;
-    }, {} as Record<string, { count: number; totalLoot: number; totalCost: number; totalKills: number; totalGlobals: number }>);
+    const sessionsByLocation = sessions.reduce(
+      (acc, session) => {
+        const location = session.location || 'Unknown';
+        if (!acc[location]) {
+          acc[location] = {
+            count: 0,
+            totalLoot: 0,
+            totalCost: 0,
+            totalKills: 0,
+            totalGlobals: 0,
+          };
+        }
+        acc[location].count += 1;
+        acc[location].totalLoot += session.stats.totalLoot;
+        acc[location].totalCost += session.stats.totalCost;
+        acc[location].totalKills += session.stats.kills;
+        acc[location].totalGlobals += session.stats.globals;
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          count: number;
+          totalLoot: number;
+          totalCost: number;
+          totalKills: number;
+          totalGlobals: number;
+        }
+      >
+    );
 
     return Object.entries(sessionsByLocation)
       .map(([location, data]) => ({
@@ -105,24 +121,36 @@ export function Analytics() {
 
   // Weapon performance
   const weaponData = useMemo(() => {
-    const weaponPerformance = sessions.reduce((acc, session) => {
-      const weapon = session.weapon || 'Unknown';
-      if (!acc[weapon]) {
-        acc[weapon] = {
-          sessions: 0,
-          totalLoot: 0,
-          totalCost: 0,
-          totalKills: 0,
-          totalDamage: 0,
-        };
-      }
-      acc[weapon].sessions += 1;
-      acc[weapon].totalLoot += session.stats.totalLoot;
-      acc[weapon].totalCost += session.stats.totalCost;
-      acc[weapon].totalKills += session.stats.kills;
-      acc[weapon].totalDamage += session.stats.damageDealt;
-      return acc;
-    }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; totalKills: number; totalDamage: number }>);
+    const weaponPerformance = sessions.reduce(
+      (acc, session) => {
+        const weapon = session.weapon || 'Unknown';
+        if (!acc[weapon]) {
+          acc[weapon] = {
+            sessions: 0,
+            totalLoot: 0,
+            totalCost: 0,
+            totalKills: 0,
+            totalDamage: 0,
+          };
+        }
+        acc[weapon].sessions += 1;
+        acc[weapon].totalLoot += session.stats.totalLoot;
+        acc[weapon].totalCost += session.stats.totalCost;
+        acc[weapon].totalKills += session.stats.kills;
+        acc[weapon].totalDamage += session.stats.damageDealt;
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          sessions: number;
+          totalLoot: number;
+          totalCost: number;
+          totalKills: number;
+          totalDamage: number;
+        }
+      >
+    );
 
     return Object.entries(weaponPerformance)
       .map(([weapon, data]) => ({
@@ -139,22 +167,28 @@ export function Analytics() {
 
   // Armor performance
   const armorData = useMemo(() => {
-    const armorPerformance = sessions.reduce((acc, session) => {
-      const armor = session.armor || 'None';
-      if (!acc[armor]) {
-        acc[armor] = {
-          sessions: 0,
-          totalLoot: 0,
-          totalCost: 0,
-          damageTaken: 0,
-        };
-      }
-      acc[armor].sessions += 1;
-      acc[armor].totalLoot += session.stats.totalLoot;
-      acc[armor].totalCost += session.stats.totalCost;
-      acc[armor].damageTaken += session.stats.damageTaken || 0;
-      return acc;
-    }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; damageTaken: number }>);
+    const armorPerformance = sessions.reduce(
+      (acc, session) => {
+        const armor = session.armor || 'None';
+        if (!acc[armor]) {
+          acc[armor] = {
+            sessions: 0,
+            totalLoot: 0,
+            totalCost: 0,
+            damageTaken: 0,
+          };
+        }
+        acc[armor].sessions += 1;
+        acc[armor].totalLoot += session.stats.totalLoot;
+        acc[armor].totalCost += session.stats.totalCost;
+        acc[armor].damageTaken += session.stats.damageTaken || 0;
+        return acc;
+      },
+      {} as Record<
+        string,
+        { sessions: number; totalLoot: number; totalCost: number; damageTaken: number }
+      >
+    );
 
     return Object.entries(armorPerformance)
       .map(([armor, data]) => ({
@@ -171,23 +205,29 @@ export function Analytics() {
   const loadoutData = useMemo(() => {
     const loadoutPerformance = sessions
       .filter((s) => s.loadoutId)
-      .reduce((acc, session) => {
-        const loadout = loadouts.find((l) => l.id === session.loadoutId);
-        const loadoutName = loadout?.name || 'Unknown';
-        if (!acc[loadoutName]) {
-          acc[loadoutName] = {
-            sessions: 0,
-            totalLoot: 0,
-            totalCost: 0,
-            totalKills: 0,
-          };
-        }
-        acc[loadoutName].sessions += 1;
-        acc[loadoutName].totalLoot += session.stats.totalLoot;
-        acc[loadoutName].totalCost += session.stats.totalCost;
-        acc[loadoutName].totalKills += session.stats.kills;
-        return acc;
-      }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; totalKills: number }>);
+      .reduce(
+        (acc, session) => {
+          const loadout = loadouts.find((l) => l.id === session.loadoutId);
+          const loadoutName = loadout?.name || 'Unknown';
+          if (!acc[loadoutName]) {
+            acc[loadoutName] = {
+              sessions: 0,
+              totalLoot: 0,
+              totalCost: 0,
+              totalKills: 0,
+            };
+          }
+          acc[loadoutName].sessions += 1;
+          acc[loadoutName].totalLoot += session.stats.totalLoot;
+          acc[loadoutName].totalCost += session.stats.totalCost;
+          acc[loadoutName].totalKills += session.stats.kills;
+          return acc;
+        },
+        {} as Record<
+          string,
+          { sessions: number; totalLoot: number; totalCost: number; totalKills: number }
+        >
+      );
 
     return Object.entries(loadoutPerformance)
       .map(([name, data]) => ({
@@ -203,19 +243,22 @@ export function Analytics() {
   // Top loot items
   const topLootItems = useMemo(() => {
     const allLootItems = sessions.flatMap((s) => s.loot);
-    const lootByName = allLootItems.reduce((acc, item) => {
-      if (!acc[item.name]) {
-        acc[item.name] = {
-          totalValue: 0,
-          quantity: 0,
-          count: 0,
-        };
-      }
-      acc[item.name].totalValue += item.totalValue;
-      acc[item.name].quantity += item.quantity;
-      acc[item.name].count += 1;
-      return acc;
-    }, {} as Record<string, { totalValue: number; quantity: number; count: number }>);
+    const lootByName = allLootItems.reduce(
+      (acc, item) => {
+        if (!acc[item.name]) {
+          acc[item.name] = {
+            totalValue: 0,
+            quantity: 0,
+            count: 0,
+          };
+        }
+        acc[item.name].totalValue += item.totalValue;
+        acc[item.name].quantity += item.quantity;
+        acc[item.name].count += 1;
+        return acc;
+      },
+      {} as Record<string, { totalValue: number; quantity: number; count: number }>
+    );
 
     return Object.entries(lootByName)
       .map(([name, data]) => ({
@@ -232,13 +275,16 @@ export function Analytics() {
   // Skills gained
   const topSkills = useMemo(() => {
     const allSkills = sessions.flatMap((s) => s.skills);
-    const skillsByName = allSkills.reduce((acc, skill) => {
-      if (!acc[skill.skillName]) {
-        acc[skill.skillName] = 0;
-      }
-      acc[skill.skillName] += skill.gainAmount;
-      return acc;
-    }, {} as Record<string, number>);
+    const skillsByName = allSkills.reduce(
+      (acc, skill) => {
+        if (!acc[skill.skillName]) {
+          acc[skill.skillName] = 0;
+        }
+        acc[skill.skillName] += skill.gainAmount;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return Object.entries(skillsByName)
       .map(([name, total]) => ({ name, total }))
@@ -314,11 +360,15 @@ export function Analytics() {
       <div className="grid grid-cols-6 gap-4">
         <div className="card p-4">
           <div className="text-sm text-gray-400 mb-1">Total Loot</div>
-          <div className="text-2xl font-bold text-green-400">{lifetimeStats.totalLoot.toFixed(2)} PED</div>
+          <div className="text-2xl font-bold text-green-400">
+            {lifetimeStats.totalLoot.toFixed(2)} PED
+          </div>
         </div>
         <div className="card p-4">
           <div className="text-sm text-gray-400 mb-1">Total Cost</div>
-          <div className="text-2xl font-bold text-red-400">{lifetimeStats.totalCost.toFixed(2)} PED</div>
+          <div className="text-2xl font-bold text-red-400">
+            {lifetimeStats.totalCost.toFixed(2)} PED
+          </div>
         </div>
         <div className="card p-4">
           <div className="text-sm text-gray-400 mb-1">Net Profit</div>
@@ -339,11 +389,15 @@ export function Analytics() {
         </div>
         <div className="card p-4">
           <div className="text-sm text-gray-400 mb-1">Total Kills</div>
-          <div className="text-2xl font-bold text-white">{lifetimeStats.totalKills.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-white">
+            {lifetimeStats.totalKills.toLocaleString()}
+          </div>
         </div>
         <div className="card p-4">
           <div className="text-sm text-gray-400 mb-1">Total Time</div>
-          <div className="text-2xl font-bold text-white">{formatDuration(lifetimeStats.totalDuration)}</div>
+          <div className="text-2xl font-bold text-white">
+            {formatDuration(lifetimeStats.totalDuration)}
+          </div>
         </div>
       </div>
 
@@ -385,8 +439,20 @@ export function Analytics() {
                 labelStyle={{ color: '#F3F4F6' }}
               />
               <Legend />
-              <Line type="monotone" dataKey="returnRate" stroke="#10B981" name="Return Rate %" strokeWidth={2} />
-              <Line type="monotone" dataKey="loot" stroke="#3B82F6" name="Loot (PED)" strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="returnRate"
+                stroke="#10B981"
+                name="Return Rate %"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="loot"
+                stroke="#3B82F6"
+                name="Loot (PED)"
+                strokeWidth={2}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -407,7 +473,10 @@ export function Analytics() {
                 <div className="text-right">Globals</div>
               </div>
               {locationData.map((loc) => (
-                <div key={loc.location} className="grid grid-cols-5 gap-2 text-sm py-1 hover:bg-gray-750">
+                <div
+                  key={loc.location}
+                  className="grid grid-cols-5 gap-2 text-sm py-1 hover:bg-gray-750"
+                >
                   <div className="truncate" title={loc.location}>
                     {loc.location}
                   </div>
@@ -494,7 +563,10 @@ export function Analytics() {
               <div className="text-right">Avg Kills</div>
             </div>
             {loadoutData.map((loadout) => (
-              <div key={loadout.name} className="grid grid-cols-5 gap-2 text-sm py-2 hover:bg-gray-750">
+              <div
+                key={loadout.name}
+                className="grid grid-cols-5 gap-2 text-sm py-2 hover:bg-gray-750"
+              >
                 <div className="font-semibold truncate" title={loadout.name}>
                   {loadout.name}
                 </div>
@@ -540,14 +612,18 @@ export function Analytics() {
                   {global.isHoF && <span className="text-purple-400">★</span>}
                   {global.creature}
                 </div>
-                <div className="text-right font-bold text-green-400">{global.value.toFixed(2)} PED</div>
+                <div className="text-right font-bold text-green-400">
+                  {global.value.toFixed(2)} PED
+                </div>
                 <div className="truncate text-gray-400" title={global.sessionName}>
                   {global.sessionName}
                 </div>
                 <div className="truncate text-gray-400" title={global.location || 'Unknown'}>
                   {global.location || 'Unknown'}
                 </div>
-                <div className="text-right text-gray-400">{format(global.timestamp, 'MM/dd/yy')}</div>
+                <div className="text-right text-gray-400">
+                  {format(global.timestamp, 'MM/dd/yy')}
+                </div>
               </div>
             ))}
           </div>
@@ -611,7 +687,10 @@ export function Analytics() {
               <div className="text-right">Avg Damage Taken</div>
             </div>
             {armorData.map((armor) => (
-              <div key={armor.armor} className="grid grid-cols-4 gap-2 text-sm py-2 hover:bg-gray-750">
+              <div
+                key={armor.armor}
+                className="grid grid-cols-4 gap-2 text-sm py-2 hover:bg-gray-750"
+              >
                 <div className="truncate" title={armor.armor}>
                   {armor.armor}
                 </div>

@@ -6,11 +6,11 @@ A modern **desktop application** for tracking Entropia Universe hunting sessions
 
 - 🔥 **Automatic loot detection** from chat log
 - 📊 **Real-time monitoring** with file watching
-- 💎 **Tiny file size** (~5-10 MB vs 120+ MB Electron apps)
+- 💎 **Tiny file size** (~10-20 MB)
 - ⚡ **Fast & efficient** - Native performance with Rust backend
 - 💾 **Local-first** - All data stays on your machine
 
-Inspired by **Entropia Tally**, **Artemis**, and **LootNanny**.
+Inspired by **Entropia Tally**, **Artemis**
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -108,20 +108,12 @@ The built executable will be in `src-tauri/target/release/`
 ### First Run Setup
 
 1. **Launch Orion** - Double-click the executable
-2. **Create a hunting session** - Click "New Session"
-3. **Select your chat log**:
+2. **Create a Loadout** - Navigate to the "Loadouts" tab and create your first equipment loadout.
+3. **Select your chat log** (if not auto-detected in Settings):
    - Windows: `C:\Users\<YourName>\Documents\Entropia Universe\chat.log`
    - Linux: `~/.wine/drive_c/users/<YourName>/Documents/Entropia Universe/chat.log`
-4. **Start monitoring** - Click "Start Monitoring"
-5. **Hunt!** - Globals and HoFs will be automatically detected and added to your active session
-
-```bash
-npm run build
-# or
-yarn build
-```
-
-The built files will be in the `dist` folder, ready to deploy.
+4. **Create a hunting session** - Click "New Session" and select your new loadout.
+5. **Hunt!** - Globals, HoFs, and loot will be automatically detected from your chat log.
 
 ## 📖 Usage
 
@@ -159,8 +151,9 @@ The built files will be in the `dist` folder, ready to deploy.
 3. Create templates for frequently looted items with default values
 4. Use these templates for quick loot entry
 
-## Tauri 2\*\* - Rust-powered desktop framework
+## 🛠️ Technology Stack
 
+- **Tauri 2** - Rust-powered desktop framework
 - **Rust** - Backend for file operations and parsing
 - **React 18** - UI framework
 - **TypeScript** - Type safety
@@ -168,24 +161,17 @@ The built files will be in the `dist` folder, ready to deploy.
 - **Tailwind CSS** - Styling
 - **Zustand** - State management with local persistence
 - **Notify** - File system watching
-- **Regex** - Chat log parsingities
-- \*\*� Future Enhancements
+- **Regex** - Chat log parsing
+
+## 🚀 Future Enhancements
 
 - [x] Automatic chat log parsing
 - [x] Real-time file watching
 - [x] Global and HoF detection
+- [x] Analytics dashboard with charts
+- [x] Skills & attributes parsing from chat
+- [x] Overlay mode for in-game use
 - [ ] Team/shared loot detection
-- [ ] Skills & attributes parsing from chat
-- [ ] Analytics dashboard with charts
-- [ ] Export to Excel/CSV
-- [ ] Import from Entropia Tally
-- [ ] Overlay mode for in-game use
-- [ ] Auto-updater
-- [ ] macOS build testing
-- [ ] Light theme
-- [ ] Multi-session comparison
-- [ ] Light theme
-- [ ] Mobile responsive design improvements
 
 ## 🤝 Contributing
 
@@ -204,8 +190,7 @@ This project is licensed under the MIT License.
 ## 🙏 Acknowledgments
 
 - Inspired by [Entropia Tally](https://github.com/EntropiaTally/entropia-tally-app/)
-- Inspired by [Artemis](https://www.thedeltaproject.net/artemis) by Project Delta
-- Inspired by [LootNanny](https://lootnanny.com/)
+- Inspired by [Artemis](https://www.thedeltaproject.net/artemis)
 
 ## ⚠️ Disclaimer
 
@@ -214,3 +199,7 @@ This is an independent project and is **not affiliated with MindArk PE AB or Ent
 ## 📧 Contact
 
 For issues, questions, or suggestions, please use the GitLab issue tracker.
+
+---
+
+_Orion Loot Tracker v0.1.0_

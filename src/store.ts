@@ -52,25 +52,44 @@ interface HuntStore {
   endSession: (id: string) => void;
 
   // Loot actions
-  addLoot: (sessionId: string, loot: Omit<LootItem, 'id' | 'timestamp'> & { timestamp?: number }) => void;
+  addLoot: (
+    sessionId: string,
+    loot: Omit<LootItem, 'id' | 'timestamp'> & { timestamp?: number }
+  ) => void;
   updateLoot: (sessionId: string, lootId: string, updates: Partial<LootItem>) => void;
   removeLoot: (sessionId: string, lootId: string) => void;
 
   // Skill actions
-  addSkillGain: (sessionId: string, skill: Omit<SkillGain, 'id' | 'timestamp'> & { timestamp?: number }) => void;
+  addSkillGain: (
+    sessionId: string,
+    skill: Omit<SkillGain, 'id' | 'timestamp'> & { timestamp?: number }
+  ) => void;
 
   // Global actions
-  addGlobal: (sessionId: string, global: Omit<Global, 'id' | 'timestamp'> & { timestamp?: number }) => void;
+  addGlobal: (
+    sessionId: string,
+    global: Omit<Global, 'id' | 'timestamp'> & { timestamp?: number }
+  ) => void;
 
   // Combat event actions
-  addDamageEvent: (sessionId: string, damage: number, isCritical?: boolean, timestamp?: number) => void;
+  addDamageEvent: (
+    sessionId: string,
+    damage: number,
+    isCritical?: boolean,
+    timestamp?: number
+  ) => void;
   addCombatEvent: (
     sessionId: string,
     eventType: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit' | 'incoming_miss' | 'incoming_evade',
     timestamp?: number
   ) => void;
   addHealingEvent: (sessionId: string, amount: number, timestamp?: number) => void;
-  addDamageTakenEvent: (sessionId: string, damage: number, isCritical?: boolean, timestamp?: number) => void;
+  addDamageTakenEvent: (
+    sessionId: string,
+    damage: number,
+    isCritical?: boolean,
+    timestamp?: number
+  ) => void;
 
   // Item database actions
   addItemTemplate: (item: Omit<ItemTemplate, 'id'>) => void;
@@ -310,12 +329,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'active' as const,
-              startTime: now,
-              pausedAt: undefined,
-              totalPausedMs: 0,
-            }
+                ...s,
+                status: 'active' as const,
+                startTime: now,
+                pausedAt: undefined,
+                totalPausedMs: 0,
+              }
             : s
         ),
         activeSessionId: id,
@@ -351,11 +370,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'active' as const,
-              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-              pausedAt: undefined,
-            }
+                ...s,
+                status: 'active' as const,
+                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                pausedAt: undefined,
+              }
             : s
         ),
         activeSessionId: id,
@@ -379,12 +398,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: state.sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'completed' as const,
-              endTime: now,
-              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-              pausedAt: undefined,
-            }
+                ...s,
+                status: 'completed' as const,
+                endTime: now,
+                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                pausedAt: undefined,
+              }
             : s
         ),
         activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
@@ -818,8 +837,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     }
     return calculateStats(session);
   },
-})
-);
+}));
 
 let dbStoreInitialized = false;
 
@@ -903,7 +921,8 @@ export async function initializeStoreFromDb() {
   useHuntStore.setState((prev) => ({
     ...prev,
     sessions,
-    activeSessionId: storedActiveSessionId ?? sessions.find((s) => s.status === 'active')?.id ?? null,
+    activeSessionId:
+      storedActiveSessionId ?? sessions.find((s) => s.status === 'active')?.id ?? null,
     settings: storedSettings ?? defaultSettings,
     loadouts: normalizedHydratedLoadouts,
     itemDatabase: storedItemDatabase ?? [],

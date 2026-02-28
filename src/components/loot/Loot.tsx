@@ -4,8 +4,8 @@ import { Info, Search, ArrowUpDown, ExternalLink } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 
 export function Loot() {
-  const activeSession = useHuntStore((state) =>
-    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  const activeSession = useHuntStore(
+    (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'value' | 'qty' | 'name'>('value');

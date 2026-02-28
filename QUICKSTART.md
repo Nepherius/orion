@@ -12,26 +12,33 @@
    git clone https://gitlab.com/Nepherius/orion.git
    cd orion
    npm install
-   npm run dev
+   npm run tauri:dev
    ```
 
-3. **Open your browser**
-   - Navigate to http://localhost:3000
-   - The app is now running!
+3. **Open the app**
+   - The Tauri window will launch automatically.
+   - The app is now running locally on your machine!
 
 ## Your First Hunt Session (2 minutes)
 
-### Step 1: Create a Session
+### Step 1: Create a Loadout
+
+1. Navigate to the **Loadouts** tab
+2. Click **"New Loadout"**
+3. Enter your weapon, amplifier, and other equipment details
+4. Click **"Save"**
+
+### Step 2: Create a Session
 
 1. Click **"New Session"** button
 2. Fill in:
    - Session Name: "My First Hunt"
    - Creature: "Atrox"
-   - Weapon: "TT Rifle"
+   - Loadout: Select the loadout you just created
    - Location: "Port Atlantis"
 3. Click **"Create Session"**
 
-### Step 2: Add Some Loot
+### Step 3: Add Some Loot
 
 1. Click **"Add Loot"** in the session details
 2. Enter:
@@ -42,7 +49,7 @@
 3. Click **"Add Loot"**
 4. Your loot total updates automatically!
 
-### Step 3: Track Costs
+### Step 4: Track Costs
 
 1. Find the **"Costs"** panel
 2. Click **"Edit"**
@@ -52,7 +59,7 @@
 4. Click **"Save"**
 5. Watch your returns percentage update!
 
-### Step 4: Add a Global
+### Step 5: Add a Global
 
 1. Click **"Add Global"**
 2. Enter:
@@ -141,15 +148,6 @@ Formula: `Total Loot - Total Cost`
 4. Just adjust quantity!
 ```
 
-## Keyboard Shortcuts
-
-Currently none - but coming soon:
-
-- `Ctrl+N` - New Session
-- `Ctrl+L` - Add Loot
-- `Ctrl+G` - Add Global
-- `Ctrl+,` - Settings
-
 ## What's Next?
 
 ### Explore Features
@@ -157,29 +155,21 @@ Currently none - but coming soon:
 - [ ] Try the Item Database
 - [ ] Add multiple sessions
 - [ ] Track a full hunt from start to finish
-- [ ] Check your returns over multiple sessions
+- [ ] Open the floating Live Overlay while hunting
+- [ ] Check your returns over multiple sessions in Analytics
 
 ### Customize Settings
 
 - Go to **Settings** tab
 - Set your player name
 - Adjust default markup percentage
-- Configure auto-save
-
-### Future Features
-
-- Analytics with charts
-- Export to Excel
-- Overlay mode for in-game use
-- Skills tracking
+- Configure auto-save and theme
 
 ## Need Help?
 
 ### Data Not Saving?
 
-- Check that auto-save is enabled in Settings
-- Your data is stored in browser localStorage
-- Clearing browser data will delete sessions
+- Check the console logs for SQLite database write errors
 
 ### Returns Look Wrong?
 
@@ -195,28 +185,20 @@ Currently none - but coming soon:
 
 ## Backup Your Data
 
-⚠️ **Important**: All data is stored locally in your browser.
+⚠️ **Important**: All data is stored locally on your machine via a SQLite database, NOT the browser localStorage. It is safe from browser cache-clearing.
 
 To backup:
 
-1. Go to Settings
-2. (Export feature coming soon)
-3. For now: Don't clear browser data!
-
-To restore:
-
-1. (Import feature coming soon)
-
-## Screenshots Coming Soon
-
-- Creating a session
-- Adding loot
-- Viewing statistics
-- Item database
-- Settings page
+1. Locate the Orion application data folder for your OS.
+2. Manually copy the `orion.db` file to a safe location.
+3. (Automated Export feature coming soon)
 
 ---
 
 **Happy Hunting!** 🎯
 
 Track your hunts, analyze your returns, and hunt smarter in Entropia Universe!
+
+---
+
+_Orion Loot Tracker v0.1.0_

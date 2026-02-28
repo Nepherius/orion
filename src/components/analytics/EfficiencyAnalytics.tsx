@@ -30,17 +30,31 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
 
   const dpp = session.stats.kills > 0 ? session.stats.totalCost / session.stats.kills : 0;
   const dps = durationMinutes > 0 ? session.stats.totalCost / durationMinutes : 0;
-  const killsPerPED = session.stats.totalCost > 0 ? session.stats.kills / session.stats.totalCost : 0;
+  const killsPerPED =
+    session.stats.totalCost > 0 ? session.stats.kills / session.stats.totalCost : 0;
   const killsPerHour = durationHours > 0 ? session.stats.kills / durationHours : 0;
   const avgDmgPerHit =
     session.stats.shotsFired > 0 ? session.stats.damageDealt / session.stats.shotsFired : 0;
-  const shotsPerKill =
-    session.stats.kills > 0 ? session.stats.shotsFired / session.stats.kills : 0;
+  const shotsPerKill = session.stats.kills > 0 ? session.stats.shotsFired / session.stats.kills : 0;
 
   // Efficiency radar chart
   const efficiencyRadar = [
-    { category: 'Hit Rate', value: (session.stats.shotsFired > 0 ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) * 100 : 0), max: 100 },
-    { category: 'Crit Rate', value: (session.stats.shotsFired > 0 ? (session.stats.criticalHits / session.stats.shotsFired) * 100 * 2 : 0), max: 100 },
+    {
+      category: 'Hit Rate',
+      value:
+        session.stats.shotsFired > 0
+          ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) * 100
+          : 0,
+      max: 100,
+    },
+    {
+      category: 'Crit Rate',
+      value:
+        session.stats.shotsFired > 0
+          ? (session.stats.criticalHits / session.stats.shotsFired) * 100 * 2
+          : 0,
+      max: 100,
+    },
     { category: 'Return Rate', value: session.stats.returns, max: 150 },
     { category: 'Dmg/Shot', value: avgDmgPerHit * 2, max: 100 },
     { category: 'Kills/Hour', value: Math.min(killsPerHour * 10, 100), max: 100 },
@@ -49,9 +63,15 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
   // Time efficiency metrics
   const timeMetrics = [
     { name: 'Kills/Hour', value: killsPerHour },
-    { name: 'Damage/Hour', value: durationHours > 0 ? session.stats.damageDealt / durationHours : 0 },
+    {
+      name: 'Damage/Hour',
+      value: durationHours > 0 ? session.stats.damageDealt / durationHours : 0,
+    },
     { name: 'Loot/Hour', value: durationHours > 0 ? session.stats.totalLoot / durationHours : 0 },
-    { name: 'Events/Hour', value: durationHours > 0 ? session.stats.lootEvents / durationHours : 0 },
+    {
+      name: 'Events/Hour',
+      value: durationHours > 0 ? session.stats.lootEvents / durationHours : 0,
+    },
   ];
 
   return (
@@ -151,7 +171,10 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Loot/PED</span>
               <span className="font-semibold">
-                {(session.stats.totalCost > 0 ? session.stats.totalLoot / session.stats.totalCost : 0).toFixed(3)}
+                {(session.stats.totalCost > 0
+                  ? session.stats.totalLoot / session.stats.totalCost
+                  : 0
+                ).toFixed(3)}
               </span>
             </div>
           </div>
@@ -171,16 +194,21 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Dmg/PED</span>
               <span className="font-semibold">
-                {(session.stats.totalCost > 0 ? session.stats.damageDealt / session.stats.totalCost : 0).toFixed(1)}
+                {(session.stats.totalCost > 0
+                  ? session.stats.damageDealt / session.stats.totalCost
+                  : 0
+                ).toFixed(1)}
               </span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Hit Rate</span>
               <span className="font-semibold">
                 {(session.stats.shotsFired > 0
-                  ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) * 100
+                  ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) *
+                    100
                   : 0
-                ).toFixed(1)}%
+                ).toFixed(1)}
+                %
               </span>
             </div>
           </div>

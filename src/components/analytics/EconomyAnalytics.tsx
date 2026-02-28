@@ -44,7 +44,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
   const topLootItems = [...session.loot]
     .sort((a, b) => b.totalValue - a.totalValue)
     .slice(0, 10)
-    .map(item => ({
+    .map((item) => ({
       name: item.name,
       value: item.totalValue,
     }));
@@ -56,7 +56,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
     { name: 'Armor', value: session.armorDecay },
     { name: 'Healing', value: session.healingCost },
     { name: 'Other', value: session.otherCosts },
-  ].filter(item => item.value > 0);
+  ].filter((item) => item.value > 0);
 
   return (
     <div className="space-y-6">
@@ -82,7 +82,8 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
           <div className="text-sm text-gray-400 mb-2">NET P/L</div>
           <div className={`text-3xl font-bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             {netPL >= 0 ? <TrendingUp className="w-5 h-5 inline mr-2" /> : null}
-            {netPL >= 0 ? '+' : ''}{netPL.toFixed(2)} PED
+            {netPL >= 0 ? '+' : ''}
+            {netPL.toFixed(2)} PED
           </div>
         </div>
 
@@ -98,9 +99,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Loot vs Spend Over Time</h3>
           {economyChart.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400">
-              No data yet
-            </div>
+            <div className="h-64 flex items-center justify-center text-gray-400">No data yet</div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={economyChart}>
@@ -113,7 +112,13 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
                 />
                 <Legend />
                 <Line type="monotone" dataKey="loot" stroke="#22C55E" strokeWidth={2} name="Loot" />
-                <Line type="monotone" dataKey="spend" stroke="#EF4444" strokeWidth={2} name="Spend" />
+                <Line
+                  type="monotone"
+                  dataKey="spend"
+                  stroke="#EF4444"
+                  strokeWidth={2}
+                  name="Spend"
+                />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -123,9 +128,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Top Loot Items</h3>
           {topLootItems.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400">
-              No loot yet
-            </div>
+            <div className="h-64 flex items-center justify-center text-gray-400">No loot yet</div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topLootItems} layout="vertical">
@@ -189,7 +192,8 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
             <div className="flex justify-between p-3 bg-gray-700 rounded">
               <span className="text-gray-300">Net P/L</span>
               <span className={`font-bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {netPL >= 0 ? '+' : ''}{netPL.toFixed(2)} PED
+                {netPL >= 0 ? '+' : ''}
+                {netPL.toFixed(2)} PED
               </span>
             </div>
             <div className="flex justify-between p-3 bg-gray-700 rounded">

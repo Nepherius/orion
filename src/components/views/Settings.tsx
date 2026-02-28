@@ -158,8 +158,8 @@ export function Settings() {
               className="text-primary-400 hover:text-primary-300 underline cursor-pointer"
             >
               Entropia Tally
-            </button>
-            {' '}and{' '}
+            </button>{' '}
+            and{' '}
             <button
               onClick={() => open('https://www.thedeltaproject.net/artemis')}
               className="text-primary-400 hover:text-primary-300 underline cursor-pointer"

@@ -74,18 +74,21 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
   const profit = session.stats.totalLoot - session.stats.totalCost;
 
   const groupedSkills = Object.values(
-    session.skills.reduce((acc, skill) => {
-      if (!acc[skill.skillName]) {
-        acc[skill.skillName] = {
-          skillName: skill.skillName,
-          gainAmount: 0,
-          count: 0,
-        };
-      }
-      acc[skill.skillName].gainAmount += skill.gainAmount;
-      acc[skill.skillName].count += 1;
-      return acc;
-    }, {} as Record<string, { skillName: string; gainAmount: number; count: number }>)
+    session.skills.reduce(
+      (acc, skill) => {
+        if (!acc[skill.skillName]) {
+          acc[skill.skillName] = {
+            skillName: skill.skillName,
+            gainAmount: 0,
+            count: 0,
+          };
+        }
+        acc[skill.skillName].gainAmount += skill.gainAmount;
+        acc[skill.skillName].count += 1;
+        return acc;
+      },
+      {} as Record<string, { skillName: string; gainAmount: number; count: number }>
+    )
   ).sort((a, b) => b.gainAmount - a.gainAmount);
 
   const handleDeleteRequest = () => {
@@ -215,8 +218,9 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
           <div className="bg-gray-700 rounded-lg p-4">
             <div className="text-sm text-gray-400 mb-1">Returns</div>
             <div
-              className={`text-2xl font-bold flex items-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-                }`}
+              className={`text-2xl font-bold flex items-center gap-2 ${
+                session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+              }`}
             >
               {session.stats.returns >= 100 ? (
                 <TrendingUp className="w-5 h-5" />
@@ -388,10 +392,11 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
             {session.globals.map((global) => (
               <div
                 key={global.id}
-                className={`p-3 rounded-lg flex items-center justify-between ${global.isHoF
-                  ? 'bg-purple-900 border border-purple-600'
-                  : 'bg-yellow-900 border border-yellow-600'
-                  }`}
+                className={`p-3 rounded-lg flex items-center justify-between ${
+                  global.isHoF
+                    ? 'bg-purple-900 border border-purple-600'
+                    : 'bg-yellow-900 border border-yellow-600'
+                }`}
               >
                 <div>
                   <span className="font-medium">{global.creature}</span>

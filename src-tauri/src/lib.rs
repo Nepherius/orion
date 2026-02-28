@@ -1,13 +1,13 @@
 mod chat_parser;
+mod db_commands;
 mod file_watcher;
 mod language_patterns;
-mod db_commands;
 
 use chat_parser::{
     ChatLogParser, CombatEvent, DamageEvent, DamageTakenEvent, HealingEvent, LootEvent, SkillGain,
 };
-use file_watcher::FileWatcher;
 use db_commands::DbState;
+use file_watcher::FileWatcher;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::{Arc, Mutex};
@@ -35,12 +35,8 @@ struct AppState {
 // Check if sessions table has all required columns
 fn check_schema_version(conn: &Connection) -> bool {
     // Try to query a column that should exist in the current schema
-    let result = conn.query_row(
-        "SELECT loadout_id FROM sessions LIMIT 1",
-        [],
-        |_| Ok(())
-    );
-    
+    let result = conn.query_row("SELECT loadout_id FROM sessions LIMIT 1", [], |_| Ok(()));
+
     // If the query succeeds or returns no rows, schema is valid
     // If it fails with "no such column", schema is outdated
     match result {
@@ -65,11 +61,11 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
              DROP TABLE IF EXISTS loot_items;
              DROP TABLE IF EXISTS sessions;
              DROP TABLE IF EXISTS loadouts;
-             DROP TABLE IF EXISTS item_templates;"
+             DROP TABLE IF EXISTS item_templates;",
         )?;
         println!("[DB] Old tables dropped. Creating fresh schema...");
     }
-    
+
     // Create tables with IF NOT EXISTS
     conn.execute_batch(
         "BEGIN;
@@ -473,11 +469,11 @@ pub fn run() {
             let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
             std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
             let db_path: PathBuf = app_dir.join("orion.db");
-            
+
             // Log database location for debugging
             println!("[DB] Database path: {:?}", db_path);
             println!("[DB] Database exists: {}", db_path.exists());
-            
+
             let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
             ensure_db_schema(&conn).map_err(|e| e.to_string())?;
 
@@ -488,9 +484,7 @@ pub fn run() {
                 watcher: Arc::new(Mutex::new(FileWatcher::new())),
             });
 
-            app.manage(DbState {
-                db: db_arc,
-            });
+            app.manage(DbState { db: db_arc });
 
             // Close overlay when main window closes
             let app_handle = app.handle().clone();
@@ -518,40 +512,40 @@ pub fn run() {
             detect_chat_log_path,
             show_overlay,
             hide_overlay,
-                is_overlay_visible,
+            is_overlay_visible,
             get_overlay_geometry,
-                    db_commands::db_create_session,
-                    db_commands::db_update_session,
-                    db_commands::db_delete_session,
-                    db_commands::db_get_all_sessions,
-                    db_commands::db_get_all_sessions_summary,
-                    db_commands::db_get_session_stats,
-                    db_commands::db_add_loot,
-                    db_commands::db_update_loot,
-                    db_commands::db_delete_loot,
-                    db_commands::db_get_session_loot,
-                    db_commands::db_get_session_loot_grouped,
-                    db_commands::db_add_skill,
-                    db_commands::db_get_session_skills,
-                    db_commands::db_add_global,
-                    db_commands::db_get_session_globals,
-                    db_commands::db_add_damage_event,
-                    db_commands::db_get_session_damage_events,
-                    db_commands::db_add_combat_event,
-                    db_commands::db_get_session_combat_events,
-                    db_commands::db_add_healing_event,
-                    db_commands::db_get_session_healing_events,
-                    db_commands::db_add_damage_taken_event,
-                    db_commands::db_get_session_damage_taken_events,
-                    db_commands::db_create_loadout,
-                    db_commands::db_delete_loadout,
-                    db_commands::db_get_all_loadouts,
-                    db_commands::db_add_item_template,
-                    db_commands::db_delete_item_template,
-                    db_commands::db_get_all_item_templates,
-                    db_commands::db_set_setting,
-                    db_commands::db_get_setting,
-                    db_commands::db_get_all_settings,
+            db_commands::db_create_session,
+            db_commands::db_update_session,
+            db_commands::db_delete_session,
+            db_commands::db_get_all_sessions,
+            db_commands::db_get_all_sessions_summary,
+            db_commands::db_get_session_stats,
+            db_commands::db_add_loot,
+            db_commands::db_update_loot,
+            db_commands::db_delete_loot,
+            db_commands::db_get_session_loot,
+            db_commands::db_get_session_loot_grouped,
+            db_commands::db_add_skill,
+            db_commands::db_get_session_skills,
+            db_commands::db_add_global,
+            db_commands::db_get_session_globals,
+            db_commands::db_add_damage_event,
+            db_commands::db_get_session_damage_events,
+            db_commands::db_add_combat_event,
+            db_commands::db_get_session_combat_events,
+            db_commands::db_add_healing_event,
+            db_commands::db_get_session_healing_events,
+            db_commands::db_add_damage_taken_event,
+            db_commands::db_get_session_damage_taken_events,
+            db_commands::db_create_loadout,
+            db_commands::db_delete_loadout,
+            db_commands::db_get_all_loadouts,
+            db_commands::db_add_item_template,
+            db_commands::db_delete_item_template,
+            db_commands::db_get_all_item_templates,
+            db_commands::db_set_setting,
+            db_commands::db_get_setting,
+            db_commands::db_get_all_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

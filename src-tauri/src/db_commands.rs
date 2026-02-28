@@ -1,5 +1,5 @@
-use rusqlite::{params, Connection};
 use rusqlite::OptionalExtension;
+use rusqlite::{params, Connection};
 use serde_json::{json, Value as JsonValue};
 use std::sync::{Arc, Mutex};
 use tauri::State;
@@ -63,40 +63,85 @@ pub fn db_update_session(
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
-    
+
     // Build dynamic update query
     let mut updates = Vec::new();
     let mut values: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
-    
-    if let Some(v) = name { updates.push("name = ?"); values.push(Box::new(v)); }
-    if let Some(v) = weapon { updates.push("weapon = ?"); values.push(Box::new(v)); }
-    if let Some(v) = armor { updates.push("armor = ?"); values.push(Box::new(v)); }
-    if let Some(v) = location { updates.push("location = ?"); values.push(Box::new(v)); }
-    if let Some(v) = end_time { updates.push("end_time = ?"); values.push(Box::new(v)); }
-    if let Some(v) = status { updates.push("status = ?"); values.push(Box::new(v)); }
-    if let Some(v) = paused_at { updates.push("paused_at = ?"); values.push(Box::new(v)); }
-    if let Some(v) = total_paused_ms { updates.push("total_paused_ms = ?"); values.push(Box::new(v)); }
-    if let Some(v) = loadout_id { updates.push("loadout_id = ?"); values.push(Box::new(v)); }
-    if let Some(v) = notes { updates.push("notes = ?"); values.push(Box::new(v)); }
-    if let Some(v) = ammo_cost { updates.push("ammo_cost = ?"); values.push(Box::new(v)); }
-    if let Some(v) = repair_cost { updates.push("repair_cost = ?"); values.push(Box::new(v)); }
-    if let Some(v) = armor_decay { updates.push("armor_decay = ?"); values.push(Box::new(v)); }
-    if let Some(v) = healing_cost { updates.push("healing_cost = ?"); values.push(Box::new(v)); }
-    if let Some(v) = other_costs { updates.push("other_costs = ?"); values.push(Box::new(v)); }
-    
+
+    if let Some(v) = name {
+        updates.push("name = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = weapon {
+        updates.push("weapon = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = armor {
+        updates.push("armor = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = location {
+        updates.push("location = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = end_time {
+        updates.push("end_time = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = status {
+        updates.push("status = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = paused_at {
+        updates.push("paused_at = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = total_paused_ms {
+        updates.push("total_paused_ms = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = loadout_id {
+        updates.push("loadout_id = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = notes {
+        updates.push("notes = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = ammo_cost {
+        updates.push("ammo_cost = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = repair_cost {
+        updates.push("repair_cost = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = armor_decay {
+        updates.push("armor_decay = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = healing_cost {
+        updates.push("healing_cost = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = other_costs {
+        updates.push("other_costs = ?");
+        values.push(Box::new(v));
+    }
+
     if updates.is_empty() {
         return Ok(());
     }
-    
+
     values.push(Box::new(uuid.clone()));
     let query = format!("UPDATE sessions SET {} WHERE uuid = ?", updates.join(", "));
-    
+
     conn.execute(
         &query,
         rusqlite::params_from_iter(values.iter().map(|v| v.as_ref())),
     )
     .map_err(|e| e.to_string())?;
-    
+
     Ok(())
 }
 
@@ -114,7 +159,7 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
     let mut stmt = conn
         .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([], |row| {
             Ok(json!({
@@ -180,29 +225,47 @@ pub fn db_update_loot(
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
-    
+
     let mut updates = Vec::new();
     let mut values: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
-    
-    if let Some(v) = name { updates.push("name = ?"); values.push(Box::new(v)); }
-    if let Some(v) = quantity { updates.push("quantity = ?"); values.push(Box::new(v)); }
-    if let Some(v) = value { updates.push("value = ?"); values.push(Box::new(v)); }
-    if let Some(v) = markup { updates.push("markup = ?"); values.push(Box::new(v)); }
-    if let Some(v) = total_value { updates.push("total_value = ?"); values.push(Box::new(v)); }
-    
+
+    if let Some(v) = name {
+        updates.push("name = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = quantity {
+        updates.push("quantity = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = value {
+        updates.push("value = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = markup {
+        updates.push("markup = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = total_value {
+        updates.push("total_value = ?");
+        values.push(Box::new(v));
+    }
+
     if updates.is_empty() {
         return Ok(());
     }
-    
+
     values.push(Box::new(uuid.clone()));
-    let query = format!("UPDATE loot_items SET {} WHERE uuid = ?", updates.join(", "));
-    
+    let query = format!(
+        "UPDATE loot_items SET {} WHERE uuid = ?",
+        updates.join(", ")
+    );
+
     conn.execute(
         &query,
         rusqlite::params_from_iter(values.iter().map(|v| v.as_ref())),
     )
     .map_err(|e| e.to_string())?;
-    
+
     Ok(())
 }
 
@@ -215,12 +278,15 @@ pub fn db_delete_loot(uuid: String, state: State<'_, DbState>) -> Result<(), Str
 }
 
 #[tauri::command]
-pub fn db_get_session_loot(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_loot(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, name, quantity, value, markup, total_value, timestamp FROM loot_items WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([session_uuid], |row| {
             Ok(json!({
@@ -243,12 +309,15 @@ pub fn db_get_session_loot(session_uuid: String, state: State<'_, DbState>) -> R
 }
 
 #[tauri::command]
-pub fn db_get_session_loot_grouped(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_loot_grouped(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT name, SUM(quantity) as quantity, SUM(value) as value, AVG(markup) as markup, SUM(total_value) as total_value, COUNT(*) as count FROM loot_items WHERE session_uuid = ?1 GROUP BY name ORDER BY SUM(total_value) DESC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([session_uuid], |row| {
             Ok(json!({
@@ -270,7 +339,10 @@ pub fn db_get_session_loot_grouped(session_uuid: String, state: State<'_, DbStat
 }
 
 #[tauri::command]
-pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_stats(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
 
     // Get basic session info for cost calculations
@@ -338,7 +410,9 @@ pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> 
         .prepare("SELECT COALESCE(SUM(CASE WHEN type = 'miss' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'dodge' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'evade' THEN 1 ELSE 0 END), 0) FROM combat_events WHERE session_uuid = ?1")
         .map_err(|e| e.to_string())?;
     let (misses, dodges, evades): (i64, i64, i64) = stmt
-        .query_row([&session_uuid], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .query_row([&session_uuid], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
         .unwrap_or((0, 0, 0));
 
     let heals_used: i64 = conn
@@ -382,7 +456,7 @@ pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> 
     } else {
         now - start_time
     };
-    let duration_seconds = (std::cmp::max(0, raw_duration - total_paused) / 1000) as i64;
+    let duration_seconds = (std::cmp::max(0, raw_duration - total_paused) / 1000);
 
     let total_cost = ammo_cost + repair_cost + armor_decay + healing_cost + other_costs;
     let returns = if total_cost > 0.0 {
@@ -472,12 +546,15 @@ pub fn db_add_skill(
 }
 
 #[tauri::command]
-pub fn db_get_session_skills(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_skills(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, skill_name, gain_amount, timestamp FROM skill_gains WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([session_uuid], |row| {
             Ok(json!({
@@ -518,12 +595,15 @@ pub fn db_add_global(
 }
 
 #[tauri::command]
-pub fn db_get_session_globals(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_globals(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, creature, value, is_hof, timestamp FROM globals WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([session_uuid], |row| {
             Ok(json!({
@@ -564,12 +644,15 @@ pub fn db_add_damage_event(
 }
 
 #[tauri::command]
-pub fn db_get_session_damage_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_damage_events(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, damage, is_critical, timestamp FROM damage_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([session_uuid], |row| {
             Ok(json!({
@@ -608,12 +691,15 @@ pub fn db_add_combat_event(
 }
 
 #[tauri::command]
-pub fn db_get_session_combat_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_combat_events(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, type, timestamp FROM combat_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([session_uuid], |row| {
             Ok(json!({
@@ -651,12 +737,15 @@ pub fn db_add_healing_event(
 }
 
 #[tauri::command]
-pub fn db_get_session_healing_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_healing_events(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, amount, timestamp FROM healing_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([session_uuid], |row| {
             Ok(json!({
@@ -695,12 +784,15 @@ pub fn db_add_damage_taken_event(
 }
 
 #[tauri::command]
-pub fn db_get_session_damage_taken_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+pub fn db_get_session_damage_taken_events(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, damage, is_critical, timestamp FROM damage_taken_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([session_uuid], |row| {
             Ok(json!({
@@ -776,7 +868,7 @@ pub fn db_get_all_loadouts(state: State<'_, DbState>) -> Result<JsonValue, Strin
     let mut stmt = conn
         .prepare("SELECT uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor_head, armor_head_tt, armor_upper, armor_upper_tt, armor_lower, armor_lower_tt, armor_arms, armor_arms_tt, armor_hands, armor_hands_tt, armor_feet, armor_feet_tt, enhancers, notes, is_favorite, is_active FROM loadouts")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([], |row| {
             Ok(json!({
@@ -852,7 +944,7 @@ pub fn db_get_all_item_templates(state: State<'_, DbState>) -> Result<JsonValue,
     let mut stmt = conn
         .prepare("SELECT uuid, name, category, default_tt_value, default_markup, description FROM item_templates")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([], |row| {
             Ok(json!({
@@ -870,7 +962,7 @@ pub fn db_get_all_item_templates(state: State<'_, DbState>) -> Result<JsonValue,
     for row in rows {
         templates.push(row.map_err(|e| e.to_string())?);
     }
-   Ok(json!(templates))
+    Ok(json!(templates))
 }
 
 // ========== SETTINGS ==========
@@ -892,8 +984,11 @@ pub fn db_get_setting(key: String, state: State<'_, DbState>) -> Result<Option<S
     let mut stmt = conn
         .prepare("SELECT value FROM settings WHERE key = ?1")
         .map_err(|e| e.to_string())?;
-    
-    let result = stmt.query_row([key], |row| row.get::<_, String>(0)).optional().map_err(|e| e.to_string())?;
+
+    let result = stmt
+        .query_row([key], |row| row.get::<_, String>(0))
+        .optional()
+        .map_err(|e| e.to_string())?;
     Ok(result)
 }
 
@@ -903,7 +998,7 @@ pub fn db_get_all_settings(state: State<'_, DbState>) -> Result<JsonValue, Strin
     let mut stmt = conn
         .prepare("SELECT key, value FROM settings")
         .map_err(|e| e.to_string())?;
-    
+
     let rows = stmt
         .query_map([], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))

@@ -26,8 +26,8 @@ type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analy
 function App() {
   const [currentView, setCurrentView] = useState<View>('sessions');
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const activeSession = useHuntStore((state) =>
-    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  const activeSession = useHuntStore(
+    (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
   const avatarName = useHuntStore((state) => state.settings.avatarName);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -72,149 +72,147 @@ function App() {
         <>
           {/* Header */}
           <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="font-bold text-primary-400 text-lg tracking-widest">ORION</div>
-            <span className="text-sm text-gray-400">Entropia Universe Loot Tracker</span>
-          </div>
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="font-bold text-primary-400 text-lg tracking-widest">ORION</div>
+                <span className="text-sm text-gray-400">Entropia Universe Loot Tracker</span>
+              </div>
 
-          {/* Navigation */}
-          <nav className="flex gap-2">
-            {activeSession && (
-              <>
+              {/* Navigation */}
+              <nav className="flex gap-2">
+                {activeSession && (
+                  <>
+                    <button
+                      onClick={() => setCurrentView('dashboard')}
+                      className={`btn ${currentView === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
+                    >
+                      <Activity className="w-4 h-4 inline mr-2" />
+                      Dashboard
+                    </button>
+                    <button
+                      onClick={() => setCurrentView('loot')}
+                      className={`btn ${currentView === 'loot' ? 'btn-primary' : 'btn-secondary'}`}
+                    >
+                      <Package className="w-4 h-4 inline mr-2" />
+                      Loot
+                    </button>
+                  </>
+                )}
                 <button
-                  onClick={() => setCurrentView('dashboard')}
-                  className={`btn ${currentView === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setCurrentView('sessions')}
+                  className={`btn ${currentView === 'sessions' ? 'btn-primary' : 'btn-secondary'}`}
                 >
-                  <Activity className="w-4 h-4 inline mr-2" />
-                  Dashboard
+                  <span className="text-primary-400 text-xs font-bold tracking-wide inline mr-2">
+                    ◆
+                  </span>
+                  Sessions
                 </button>
                 <button
-                  onClick={() => setCurrentView('loot')}
-                  className={`btn ${currentView === 'loot' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setCurrentView('loadouts')}
+                  className={`btn ${currentView === 'loadouts' ? 'btn-primary' : 'btn-secondary'}`}
                 >
-                  <Package className="w-4 h-4 inline mr-2" />
-                  Loot
+                  <Sword className="w-4 h-4 inline mr-2" />
+                  Loadouts
                 </button>
-              </>
-            )}
-            <button
-              onClick={() => setCurrentView('sessions')}
-              className={`btn ${currentView === 'sessions' ? 'btn-primary' : 'btn-secondary'}`}
-            >
-              <span className="text-primary-400 text-xs font-bold tracking-wide inline mr-2">
-                ◆
-              </span>
-              Sessions
-            </button>
-            <button
-              onClick={() => setCurrentView('loadouts')}
-              className={`btn ${currentView === 'loadouts' ? 'btn-primary' : 'btn-secondary'}`}
-            >
-              <Sword className="w-4 h-4 inline mr-2" />
-              Loadouts
-            </button>
-            <button
-              onClick={() => setCurrentView('database')}
-              className={`btn ${currentView === 'database' ? 'btn-primary' : 'btn-secondary'}`}
-            >
-              <Database className="w-4 h-4 inline mr-2" />
-              Database
-            </button>
-            <button
-              onClick={() => setCurrentView('analytics')}
-              className={`btn ${currentView === 'analytics' ? 'btn-primary' : 'btn-secondary'}`}
-            >
-              <BarChart3 className="w-4 h-4 inline mr-2" />
-              Analytics
-            </button>
-            <button
-              onClick={() => setCurrentView('settings')}
-              className={`btn ${currentView === 'settings' ? 'btn-primary' : 'btn-secondary'}`}
-            >
-              <SettingsIcon className="w-4 h-4 inline mr-2" />
-              Settings
-            </button>
-          </nav>
-        </div>
-      </header>
-
-      {/* Active Session Banner */}
-      {activeSession && (
-        <div className="bg-primary-900 border-b border-primary-700">
-          <div className="max-w-7xl mx-auto px-6 py-3">
-            <ActiveSessionPanel
-              session={activeSession}
-              onSessionEnded={(sessionId) => {
-                setCurrentView('sessions');
-                setSelectedSessionId(sessionId);
-              }}
-              onSessionResumed={() => setCurrentView('dashboard')}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Chat Log Monitor - Always mounted to track events */}
-      <div className="hidden">
-        <ChatLogMonitor />
-      </div>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-6">
-        {currentView === 'dashboard' && <Dashboard />}
-
-        {currentView === 'loot' && <Loot />}
-
-        {currentView === 'sessions' && (
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-4 space-y-6">
-              <SessionList
-                selectedSessionId={selectedSessionId}
-                onSelectSession={setSelectedSessionId}
-                onNavigateToDashboard={() => setCurrentView('dashboard')}
-              />
-              <ChatLogMonitorPanel />
+                <button
+                  onClick={() => setCurrentView('database')}
+                  className={`btn ${currentView === 'database' ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  <Database className="w-4 h-4 inline mr-2" />
+                  Database
+                </button>
+                <button
+                  onClick={() => setCurrentView('analytics')}
+                  className={`btn ${currentView === 'analytics' ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  <BarChart3 className="w-4 h-4 inline mr-2" />
+                  Analytics
+                </button>
+                <button
+                  onClick={() => setCurrentView('settings')}
+                  className={`btn ${currentView === 'settings' ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  <SettingsIcon className="w-4 h-4 inline mr-2" />
+                  Settings
+                </button>
+              </nav>
             </div>
-            <div className="col-span-8">
-              {selectedSessionId ? (
-                <SessionDetails
-                  sessionId={selectedSessionId}
+          </header>
+
+          {/* Active Session Banner */}
+          {activeSession && (
+            <div className="bg-primary-900 border-b border-primary-700">
+              <div className="max-w-7xl mx-auto px-6 py-3">
+                <ActiveSessionPanel
+                  session={activeSession}
+                  onSessionEnded={(sessionId) => {
+                    setCurrentView('sessions');
+                    setSelectedSessionId(sessionId);
+                  }}
                   onSessionResumed={() => setCurrentView('dashboard')}
                 />
-              ) : (
-                <div className="card p-8 text-center text-gray-400">
-                  <img
-                    src="/icon.png"
-                    alt="Orion"
-                    className="w-16 h-16 mx-auto mb-4 opacity-50 object-contain"
-                  />
-                  <p>Select a session to view details</p>
-                </div>
-              )}
+              </div>
             </div>
+          )}
+
+          {/* Chat Log Monitor - Always mounted to track events */}
+          <div className="hidden">
+            <ChatLogMonitor />
           </div>
-        )}
 
-        {currentView === 'loadouts' && <Loadouts />}
+          {/* Main Content */}
+          <main className="max-w-7xl mx-auto px-6 py-6">
+            {currentView === 'dashboard' && <Dashboard />}
 
-        {currentView === 'database' && <ItemDatabase />}
+            {currentView === 'loot' && <Loot />}
 
-        {currentView === 'analytics' && (
-          <Analytics />
-        )}
+            {currentView === 'sessions' && (
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-4 space-y-6">
+                  <SessionList
+                    selectedSessionId={selectedSessionId}
+                    onSelectSession={setSelectedSessionId}
+                    onNavigateToDashboard={() => setCurrentView('dashboard')}
+                  />
+                  <ChatLogMonitorPanel />
+                </div>
+                <div className="col-span-8">
+                  {selectedSessionId ? (
+                    <SessionDetails
+                      sessionId={selectedSessionId}
+                      onSessionResumed={() => setCurrentView('dashboard')}
+                    />
+                  ) : (
+                    <div className="card p-8 text-center text-gray-400">
+                      <img
+                        src="/icon.png"
+                        alt="Orion"
+                        className="w-16 h-16 mx-auto mb-4 opacity-50 object-contain"
+                      />
+                      <p>Select a session to view details</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-        {currentView === 'settings' && <Settings />}
-      </main>
+            {currentView === 'loadouts' && <Loadouts />}
 
-      {/* Footer */}
-      <footer className="bg-gray-800 border-t border-gray-700 px-6 py-4 mt-12">
-        <div className="max-w-7xl mx-auto text-center text-sm text-gray-400">
-          <p>Orion Loot Tracker v0.1.0 - Track your Entropia Universe hunting sessions</p>
-          <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
-        </div>
-      </footer>
-      </>
+            {currentView === 'database' && <ItemDatabase />}
+
+            {currentView === 'analytics' && <Analytics />}
+
+            {currentView === 'settings' && <Settings />}
+          </main>
+
+          {/* Footer */}
+          <footer className="bg-gray-800 border-t border-gray-700 px-6 py-4 mt-12">
+            <div className="max-w-7xl mx-auto text-center text-sm text-gray-400">
+              <p>Orion Loot Tracker v0.1.0 - Track your Entropia Universe hunting sessions</p>
+              <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
+            </div>
+          </footer>
+        </>
       )}
     </div>
   );

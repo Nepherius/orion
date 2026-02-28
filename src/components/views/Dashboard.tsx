@@ -21,10 +21,17 @@ import { CombatAnalytics } from '../analytics/CombatAnalytics';
 import { HourlyRatesAnalytics } from '../analytics/HourlyRatesAnalytics';
 
 export function Dashboard() {
-  const activeSession = useHuntStore((state) =>
-    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  const activeSession = useHuntStore(
+    (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
-  type AnalyticsView = 'performance' | 'economy' | 'efficiency' | 'skills' | 'combat' | 'hourly' | null;
+  type AnalyticsView =
+    | 'performance'
+    | 'economy'
+    | 'efficiency'
+    | 'skills'
+    | 'combat'
+    | 'hourly'
+    | null;
   const [analyticsView, setAnalyticsView] = useState<AnalyticsView>(null);
 
   if (!activeSession) {
@@ -110,7 +117,8 @@ export function Dashboard() {
   const totalSkillEvents = activeSession.skills.length;
   const skillsPerPed = totalSpend > 0 ? totalSkillGains / totalSpend : 0;
   const skillsPerHour = durationHours > 0 ? totalSkillGains / durationHours : 0;
-  const skillsPerKill = activeSession.stats.kills > 0 ? totalSkillGains / activeSession.stats.kills : 0;
+  const skillsPerKill =
+    activeSession.stats.kills > 0 ? totalSkillGains / activeSession.stats.kills : 0;
   const avgSkillValue = totalSkillEvents > 0 ? totalSkillGains / totalSkillEvents : 0;
 
   const StatCard = ({
@@ -414,13 +422,19 @@ export function Dashboard() {
         isOpen={!!analyticsView}
         onClose={() => setAnalyticsView(null)}
         title={
-          analyticsView === 'performance' ? 'Performance Analytics' :
-            analyticsView === 'economy' ? 'Economy Analytics' :
-              analyticsView === 'efficiency' ? 'Efficiency Analytics' :
-                analyticsView === 'skills' ? 'Skills Analytics' :
-                  analyticsView === 'combat' ? 'Combat Analytics' :
-                    analyticsView === 'hourly' ? 'Hourly Rates Analytics' :
-                      'Analytics'
+          analyticsView === 'performance'
+            ? 'Performance Analytics'
+            : analyticsView === 'economy'
+              ? 'Economy Analytics'
+              : analyticsView === 'efficiency'
+                ? 'Efficiency Analytics'
+                : analyticsView === 'skills'
+                  ? 'Skills Analytics'
+                  : analyticsView === 'combat'
+                    ? 'Combat Analytics'
+                    : analyticsView === 'hourly'
+                      ? 'Hourly Rates Analytics'
+                      : 'Analytics'
         }
       >
         {analyticsView === 'performance' && <PerformanceAnalytics session={activeSession} />}

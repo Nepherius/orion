@@ -1,7 +1,7 @@
 use notify::{Event, RecursiveMode, Result as NotifyResult, Watcher};
 use std::fs;
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
@@ -54,8 +54,7 @@ impl FileWatcher {
         {
             let mut cur = self.current_path.lock().unwrap();
             if cur.as_deref() != Some(&path) {
-                *self.last_size.lock().unwrap() =
-                    fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+                *self.last_size.lock().unwrap() = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
                 *cur = Some(path.clone());
             } else {
                 // Same file – if the file grew while we weren't watching,
@@ -151,14 +150,18 @@ impl FileWatcher {
                                                         }
                                                     }
                                                     Err(e) => {
-                                                        eprintln!("Error reading file line: {:?}", e);
+                                                        eprintln!(
+                                                            "Error reading file line: {:?}",
+                                                            e
+                                                        );
                                                         break;
                                                     }
                                                 }
                                             }
 
                                             if !complete_lines.is_empty() {
-                                                let _ = app_handle.emit("chat-log-updated", complete_lines);
+                                                let _ = app_handle
+                                                    .emit("chat-log-updated", complete_lines);
                                                 // Safely advance parser EXACTLY the number of physical
                                                 // bytes we consumed from the complete lines
                                                 *last += bytes_read_total;

@@ -21,7 +21,7 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
   const totalGains = session.skills.reduce((sum, skill) => sum + skill.gainAmount, 0);
   const skillEvents = session.skills.length;
   const skillsPerPED = session.stats.totalCost > 0 ? totalGains / session.stats.totalCost : 0;
-  const avgSkillValue = skillEvents > 0 ? totalGains /skillEvents : 0;
+  const avgSkillValue = skillEvents > 0 ? totalGains / skillEvents : 0;
 
   const now = Date.now();
   const pausedMs =
@@ -45,16 +45,19 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
   });
 
   // Skills by type
-  const skillsByType = session.skills.reduce((acc, skill) => {
-    const existing = acc.find(s => s.name === skill.skillName);
-    if (existing) {
-      existing.gains += skill.gainAmount;
-      existing.count++;
-    } else {
-      acc.push({ name: skill.skillName, gains: skill.gainAmount, count: 1 });
-    }
-    return acc;
-  }, [] as Array<{ name: string; gains: number; count: number }>);
+  const skillsByType = session.skills.reduce(
+    (acc, skill) => {
+      const existing = acc.find((s) => s.name === skill.skillName);
+      if (existing) {
+        existing.gains += skill.gainAmount;
+        existing.count++;
+      } else {
+        acc.push({ name: skill.skillName, gains: skill.gainAmount, count: 1 });
+      }
+      return acc;
+    },
+    [] as Array<{ name: string; gains: number; count: number }>
+  );
 
   skillsByType.sort((a, b) => b.gains - a.gains);
 
@@ -80,9 +83,7 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
 
         <div className="card p-6">
           <div className="text-sm text-gray-400 mb-2">SKILLS/HOUR</div>
-          <div className="text-3xl font-bold text-green-400">
-            {skillsPerHour.toFixed(4)}
-          </div>
+          <div className="text-3xl font-bold text-green-400">{skillsPerHour.toFixed(4)}</div>
         </div>
 
         <div className="card p-6">
@@ -175,12 +176,16 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
                       {skill.gains.toFixed(4)}
                     </td>
                     <td className="py-3 px-4 text-right">{skill.count}</td>
-                    <td className="py-3 px-4 text-right">{(skill.gains / skill.count).toFixed(4)}</td>
+                    <td className="py-3 px-4 text-right">
+                      {(skill.gains / skill.count).toFixed(4)}
+                    </td>
                     <td className="py-3 px-4 text-right">
                       {((skill.gains / totalGains) * 100).toFixed(1)}%
                     </td>
                   </tr>
-                ))}\n              </tbody>
+                ))}
+                \n{' '}
+              </tbody>
             </table>
           </div>
         )}

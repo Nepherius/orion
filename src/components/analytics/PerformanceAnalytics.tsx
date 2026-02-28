@@ -51,23 +51,33 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
   });
 
   // Hit distribution
-  const hitRate = session.stats.shotsFired > 0
-    ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) * 100
-    : 0;
-  const critRate = session.stats.shotsFired > 0
-    ? (session.stats.criticalHits / session.stats.shotsFired) * 100
-    : 0;
+  const hitRate =
+    session.stats.shotsFired > 0
+      ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) * 100
+      : 0;
+  const critRate =
+    session.stats.shotsFired > 0
+      ? (session.stats.criticalHits / session.stats.shotsFired) * 100
+      : 0;
 
   const hitDistribution = [
     { name: 'Hits', value: session.stats.hits, color: '#22C55E' },
     { name: 'Critical Hits', value: session.stats.criticalHits, color: '#FBBF24' },
     { name: 'Misses', value: session.stats.misses, color: '#9CA3AF' },
-  ].filter(item => item.value > 0);
+  ].filter((item) => item.value > 0);
 
   // Performance breakdown
   const performanceMetrics = [
-    { label: 'Return Rate', value: `${session.stats.returns.toFixed(1)}%`, good: session.stats.returns >= 100 },
-    { label: 'Profit/Loss', value: `${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`, good: profit >= 0 },
+    {
+      label: 'Return Rate',
+      value: `${session.stats.returns.toFixed(1)}%`,
+      good: session.stats.returns >= 100,
+    },
+    {
+      label: 'Profit/Loss',
+      value: `${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`,
+      good: profit >= 0,
+    },
     { label: 'Hit Rate', value: `${hitRate.toFixed(1)}%`, good: hitRate >= 80 },
     { label: 'Crit Rate', value: `${critRate.toFixed(1)}%`, good: critRate >= 5 },
     { label: 'Total Events', value: session.stats.lootEvents, good: true },
@@ -95,9 +105,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
 
         <div className="card p-6">
           <div className="text-sm text-gray-400 mb-2">NET PROFIT/LOSS</div>
-          <div
-            className={`text-3xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-          >
+          <div className={`text-3xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             {profit >= 0 ? '+' : ''}
             {profit.toFixed(2)} PED
           </div>
@@ -105,7 +113,9 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
 
         <div className="card p-6">
           <div className="text-sm text-gray-400 mb-2">HIT RATE</div>
-          <div className={`text-3xl font-bold ${hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'}`}>
+          <div
+            className={`text-3xl font-bold ${hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'}`}
+          >
             <Target className="w-5 h-5 inline mr-2" />
             {hitRate.toFixed(1)}%
           </div>
@@ -200,7 +210,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -222,12 +232,13 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
           <h3 className="text-lg font-bold mb-4">Performance Metrics</h3>
           <div className="space-y-4">
             {performanceMetrics.map((metric, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-700 rounded">
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 bg-gray-700 rounded"
+              >
                 <span className="text-gray-300">{metric.label}</span>
                 <span
-                  className={`font-bold text-lg ${
-                    metric.good ? 'text-green-400' : 'text-red-400'
-                  }`}
+                  className={`font-bold text-lg ${metric.good ? 'text-green-400' : 'text-red-400'}`}
                 >
                   {metric.value}
                 </span>

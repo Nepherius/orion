@@ -48,10 +48,11 @@ export function LoadoutList({
         <div className="space-y-1">
           <button
             onClick={() => onStatusFilterChange('all')}
-            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${statusFilter === 'all'
-              ? 'bg-primary-900 text-primary-300'
-              : 'text-gray-400 hover:bg-gray-700'
-              }`}
+            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
+              statusFilter === 'all'
+                ? 'bg-primary-900 text-primary-300'
+                : 'text-gray-400 hover:bg-gray-700'
+            }`}
           >
             <div className="flex items-center gap-2">
               <Circle className="w-4 h-4" />
@@ -61,10 +62,11 @@ export function LoadoutList({
           </button>
           <button
             onClick={() => onStatusFilterChange('primary')}
-            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${statusFilter === 'primary'
+            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
+              statusFilter === 'primary'
                 ? 'bg-primary-900 text-primary-300'
                 : 'text-gray-400 hover:bg-gray-700'
-              }`}
+            }`}
           >
             <div className="flex items-center gap-2">
               <Circle className="w-4 h-4 fill-green-400 text-green-400" />
@@ -74,10 +76,11 @@ export function LoadoutList({
           </button>
           <button
             onClick={() => onStatusFilterChange('favorites')}
-            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${statusFilter === 'favorites'
-              ? 'bg-primary-900 text-primary-300'
-              : 'text-gray-400 hover:bg-gray-700'
-              }`}
+            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
+              statusFilter === 'favorites'
+                ? 'bg-primary-900 text-primary-300'
+                : 'text-gray-400 hover:bg-gray-700'
+            }`}
           >
             <div className="flex items-center gap-2">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -102,6 +105,6 @@ export function LoadoutList({
           <option value="dpp">Highest DPP</option>
         </select>
       </div>
-    </div >
+    </div>
   );
 }

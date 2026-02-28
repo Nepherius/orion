@@ -36,7 +36,10 @@ export function ensureSingleLoadoutPrimary(loadouts: Loadout[]): Loadout[] {
   return [{ ...onlyLoadout, isPrimary: true }];
 }
 
-export function calculateSessionStats(session: HuntSession, now: number = Date.now()): SessionStats {
+export function calculateSessionStats(
+  session: HuntSession,
+  now: number = Date.now()
+): SessionStats {
   const totalLoot = session.loot.reduce((sum, item) => sum + item.totalValue, 0);
   const totalCost =
     session.ammoCost +
@@ -50,7 +53,9 @@ export function calculateSessionStats(session: HuntSession, now: number = Date.n
   const activePauseMs =
     session.status === 'paused' && session.pausedAt ? now - session.pausedAt : 0;
   const totalPausedMs = basePausedMs + activePauseMs;
-  const rawDuration = session.endTime ? session.endTime - session.startTime : now - session.startTime;
+  const rawDuration = session.endTime
+    ? session.endTime - session.startTime
+    : now - session.startTime;
   const duration = Math.max(0, rawDuration - totalPausedMs);
 
   const misses = session.combatEvents?.filter((e) => e.type === 'miss').length || 0;

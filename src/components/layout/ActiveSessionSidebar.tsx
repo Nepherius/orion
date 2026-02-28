@@ -3,8 +3,8 @@ import { format } from 'date-fns';
 import { LiveTimer } from './LiveTimer';
 
 export function ActiveSessionSidebar() {
-  const activeSession = useHuntStore((state) =>
-    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  const activeSession = useHuntStore(
+    (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
 
   if (!activeSession) {

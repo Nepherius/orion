@@ -26,19 +26,25 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
 
   const lootPerHour = durationHours > 0 ? session.stats.totalLoot / durationHours : 0;
   const spendPerHour = durationHours > 0 ? session.stats.totalCost / durationHours : 0;
-  const profitPerHour = durationHours > 0 ? (session.stats.totalLoot - session.stats.totalCost) / durationHours : 0;
+  const profitPerHour =
+    durationHours > 0 ? (session.stats.totalLoot - session.stats.totalCost) / durationHours : 0;
   const killsPerHour = durationHours > 0 ? session.stats.kills / durationHours : 0;
   const dmgPerHour = durationHours > 0 ? session.stats.damageDealt / durationHours : 0;
-  const skillsPerHour = durationHours > 0
-    ? session.skills.reduce((sum, s) => sum + s.gainAmount, 0) / durationHours
-    : 0;
+  const skillsPerHour =
+    durationHours > 0
+      ? session.skills.reduce((sum, s) => sum + s.gainAmount, 0) / durationHours
+      : 0;
   const eventsPerHour = durationHours > 0 ? session.stats.lootEvents / durationHours : 0;
 
   // Hourly metrics comparison
   const hourlyMetrics = [
     { name: 'Loot', value: lootPerHour, color: '#22C55E' },
     { name: 'Spend', value: spendPerHour, color: '#EF4444' },
-    { name: 'Profit', value: Math.abs(profitPerHour), color: profitPerHour >= 0 ? '#3B82F6' : '#F59E0B' },
+    {
+      name: 'Profit',
+      value: Math.abs(profitPerHour),
+      color: profitPerHour >= 0 ? '#3B82F6' : '#F59E0B',
+    },
   ];
 
   // Activity metrics
@@ -85,9 +91,12 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
 
         <div className="card p-6">
           <div className="text-sm text-gray-400 mb-2">PROFIT/HOUR</div>
-          <div className={`text-3xl font-bold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}>
+          <div
+            className={`text-3xl font-bold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}
+          >
             <TrendingUp className="w-5 h-5 inline mr-2" />
-            {profitPerHour >= 0 ? '+' : ''}{profitPerHour.toFixed(2)}
+            {profitPerHour >= 0 ? '+' : ''}
+            {profitPerHour.toFixed(2)}
           </div>
           <div className="text-xs text-gray-500 mt-1">PED</div>
         </div>
@@ -174,11 +183,18 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               </tr>
               <tr className="border-b border-gray-800 hover:bg-gray-700">
                 <td className="py-3 px-4">Profit/Loss</td>
-                <td className={`py-3 px-4 text-right font-semibold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}>
-                  {profitPerHour >= 0 ? '+' : ''}{profitPerHour.toFixed(2)} PED
+                <td
+                  className={`py-3 px-4 text-right font-semibold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}
+                >
+                  {profitPerHour >= 0 ? '+' : ''}
+                  {profitPerHour.toFixed(2)} PED
                 </td>
                 <td className="py-3 px-4 text-right">
-                  {(durationMinutes > 0 ? (session.stats.totalLoot - session.stats.totalCost) / durationMinutes : 0).toFixed(2)} PED
+                  {(durationMinutes > 0
+                    ? (session.stats.totalLoot - session.stats.totalCost) / durationMinutes
+                    : 0
+                  ).toFixed(2)}{' '}
+                  PED
                 </td>
                 <td className="py-3 px-4 text-right">
                   {(session.stats.totalLoot - session.stats.totalCost).toFixed(2)} PED
@@ -202,7 +218,9 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                 <td className="py-3 px-4">Damage Dealt</td>
                 <td className="py-3 px-4 text-right font-semibold">{dmgPerHour.toFixed(0)}</td>
                 <td className="py-3 px-4 text-right">
-                  {(durationMinutes > 0 ? session.stats.damageDealt / durationMinutes : 0).toFixed(1)}
+                  {(durationMinutes > 0 ? session.stats.damageDealt / durationMinutes : 0).toFixed(
+                    1
+                  )}
                 </td>
                 <td className="py-3 px-4 text-right">{session.stats.damageDealt.toFixed(0)}</td>
               </tr>
@@ -254,20 +272,28 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
           <div className="space-y-3">
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Return Rate</span>
-              <span className={`font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}>
+              <span
+                className={`font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
+              >
                 {session.stats.returns.toFixed(1)}%
               </span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Loot/Spend</span>
               <span className="font-semibold">
-                {(session.stats.totalCost > 0 ? session.stats.totalLoot / session.stats.totalCost : 0).toFixed(3)}
+                {(session.stats.totalCost > 0
+                  ? session.stats.totalLoot / session.stats.totalCost
+                  : 0
+                ).toFixed(3)}
               </span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Net/Hour</span>
-              <span className={`font-semibold ${profitPerHour >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {profitPerHour >= 0 ? '+' : ''}{profitPerHour.toFixed(2)} PED
+              <span
+                className={`font-semibold ${profitPerHour >= 0 ? 'text-green-400' : 'text-red-400'}`}
+              >
+                {profitPerHour >= 0 ? '+' : ''}
+                {profitPerHour.toFixed(2)} PED
               </span>
             </div>
           </div>
