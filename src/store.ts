@@ -14,6 +14,7 @@ import {
   AppSettings,
   SessionStats,
   Loadout,
+  Goal,
 } from './types';
 import { calculateLoadoutStats } from './utils/loadoutCalculations';
 import {
@@ -28,6 +29,12 @@ interface HuntStore {
   itemDatabase: ItemTemplate[];
   loadouts: Loadout[];
   settings: AppSettings;
+  goals: Goal[];
+
+  // Goal actions
+  addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;
+  updateGoal: (id: string, updates: Partial<Goal>) => void;
+  deleteGoal: (id: string) => void;
 
   // Session actions
   createSession: (
@@ -257,6 +264,34 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   itemDatabase: [],
   loadouts: [],
   settings: defaultSettings,
+  goals: [],
+
+  addGoal: (goalData) => {
+    set((state) => {
+      const newGoal: Goal = {
+        ...goalData,
+        id: generateId(),
+        createdAt: Date.now(),
+      };
+      const goals = [...(state.goals || []), newGoal];
+      void saveJsonSetting('goals', goals);
+      return { goals };
+    });
+  },
+  updateGoal: (id, updates) => {
+    set((state) => {
+      const goals = (state.goals || []).map((g) => (g.id === id ? { ...g, ...updates } : g));
+      void saveJsonSetting('goals', goals);
+      return { goals };
+    });
+  },
+  deleteGoal: (id) => {
+    set((state) => {
+      const goals = (state.goals || []).filter((g) => g.id !== id);
+      void saveJsonSetting('goals', goals);
+      return { goals };
+    });
+  },
 
   createSession: (sessionData) => {
     const newSession: HuntSession = {
@@ -851,13 +886,14 @@ export async function initializeStoreFromDb() {
   }
   dbStoreInitialized = true;
 
-  const [sessionRows, storedSettings, storedLoadouts, storedItemDatabase, storedActiveSessionId] =
+  const [sessionRows, storedSettings, storedLoadouts, storedItemDatabase, storedActiveSessionId, storedGoals] =
     await Promise.all([
       safeInvoke<Array<Partial<HuntSession>>>('db_get_all_sessions_summary'),
       loadJsonSetting<AppSettings>('settings'),
       loadJsonSetting<Loadout[]>('loadouts'),
       loadJsonSetting<ItemTemplate[]>('itemDatabase'),
       loadJsonSetting<string | null>('activeSessionId'),
+      loadJsonSetting<Goal[]>('goals'),
     ]);
   console.debug('[Settings] Loaded settings from DB:', storedSettings);
 
@@ -929,6 +965,7 @@ export async function initializeStoreFromDb() {
     settings: storedSettings ?? defaultSettings,
     loadouts: normalizedHydratedLoadouts,
     itemDatabase: storedItemDatabase ?? [],
+    goals: storedGoals ?? [],
   }));
 }
 

@@ -149,7 +149,7 @@ export function Loot() {
         <div className="card p-6">
           <div className="text-xs text-gray-400 uppercase mb-4">COMPOSITION</div>
           <div className="space-y-2">
-            {topItems.slice(0, 2).map((item, idx) => {
+            {topItems.slice(0, 5).map((item, idx) => {
               const percent = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
               return (
                 <div key={idx} className="space-y-1">

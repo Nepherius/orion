@@ -19,6 +19,7 @@ import { EfficiencyAnalytics } from '../analytics/EfficiencyAnalytics';
 import { SkillsAnalytics } from '../analytics/SkillsAnalytics';
 import { CombatAnalytics } from '../analytics/CombatAnalytics';
 import { HourlyRatesAnalytics } from '../analytics/HourlyRatesAnalytics';
+import { GrindGoals } from '../analytics/GrindGoals';
 
 export function Dashboard() {
   const activeSession = useHuntStore(
@@ -412,7 +413,10 @@ export function Dashboard() {
         </div>
 
         {/* Active Session Sidebar */}
-        <div className="col-span-3">
+        <div className="col-span-3 flex flex-col pt-14">
+          <div className="mb-6 flex flex-1 overflow-hidden min-h-[300px]">
+            <GrindGoals />
+          </div>
           <ActiveSessionSidebar />
         </div>
       </div>

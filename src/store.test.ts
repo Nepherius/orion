@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useHuntStore } from './store';
-import { Loadout, HuntSession } from './types';
+import { Loadout, HuntSession, SessionStats, CombatEvent } from './types';
 
 // Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
@@ -48,7 +48,7 @@ describe('HuntStore - addCombatEvent Costs', () => {
             globals: [],
             ammoCost: 0,
             repairCost: 0,
-            stats: {} as any,
+            stats: {} as SessionStats,
         };
 
         useHuntStore.setState({
@@ -66,7 +66,7 @@ describe('HuntStore - addCombatEvent Costs', () => {
             const sessionId = setupTestSession(10000, 50); // 1.0 ammo cost, 0.5 decay
             const { addCombatEvent } = useHuntStore.getState();
 
-            addCombatEvent(sessionId, eventType as any);
+            addCombatEvent(sessionId, eventType as CombatEvent['type']);
 
             const session = useHuntStore.getState().sessions[0];
             expect(session.ammoCost).toBe(1);
@@ -83,7 +83,7 @@ describe('HuntStore - addCombatEvent Costs', () => {
             const sessionId = setupTestSession(10000, 50);
             const { addCombatEvent } = useHuntStore.getState();
 
-            addCombatEvent(sessionId, eventType as any);
+            addCombatEvent(sessionId, eventType as CombatEvent['type']);
 
             const session = useHuntStore.getState().sessions[0];
             expect(session.ammoCost).toBe(0);

@@ -10,6 +10,15 @@ export interface LootItem {
   timestamp: number;
 }
 
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  isCompleted: boolean;
+  createdAt: number;
+}
+
 export interface SkillGain {
   id: string;
   skillName: string;

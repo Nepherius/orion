@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useHuntStore } from '../../store';
 import { BarChart3 } from 'lucide-react';
 import {
@@ -22,10 +22,48 @@ export function Analytics() {
   const sessions = useHuntStore((state) => state.sessions);
   const loadouts = useHuntStore((state) => state.loadouts);
 
+  const [timeRange, setTimeRange] = useState<
+    '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom'
+  >('lifetime');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
+
+  const filteredSessions = useMemo(() => {
+    if (timeRange === 'lifetime') return sessions;
+
+    const now = Date.now();
+    let startTime = 0;
+
+    switch (timeRange) {
+      case '24h':
+        startTime = now - 24 * 60 * 60 * 1000;
+        break;
+      case '7d':
+        startTime = now - 7 * 24 * 60 * 60 * 1000;
+        break;
+      case '1m':
+        startTime = now - 30 * 24 * 60 * 60 * 1000;
+        break;
+      case '3m':
+        startTime = now - 90 * 24 * 60 * 60 * 1000;
+        break;
+      case '1y':
+        startTime = now - 365 * 24 * 60 * 60 * 1000;
+        break;
+      case 'custom': {
+        const start = customStartDate ? new Date(customStartDate).getTime() : 0;
+        const end = customEndDate ? new Date(customEndDate).getTime() + 86399999 : now; // Includes end of day
+        return sessions.filter((s) => s.startTime >= start && s.startTime <= end);
+      }
+    }
+
+    return sessions.filter((s) => s.startTime >= startTime);
+  }, [sessions, timeRange, customStartDate, customEndDate]);
+
   // Calculate lifetime stats
   const lifetimeStats = useMemo(
     () =>
-      sessions.reduce(
+      filteredSessions.reduce(
         (acc, session) => {
           acc.totalLoot += session.stats.totalLoot;
           acc.totalCost += session.stats.totalCost;
@@ -50,7 +88,7 @@ export function Analytics() {
           totalSessions: 0,
         }
       ),
-    [sessions]
+    [filteredSessions]
   );
 
   const lifetimeProfit = lifetimeStats.totalLoot - lifetimeStats.totalCost;
@@ -58,15 +96,15 @@ export function Analytics() {
     lifetimeStats.totalCost > 0 ? (lifetimeStats.totalLoot / lifetimeStats.totalCost) * 100 : 0;
   const lifetimeHitRate = useMemo(() => {
     return lifetimeStats.totalShotsFired > 0
-      ? (sessions.reduce((sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0), 0) /
-          lifetimeStats.totalShotsFired) *
-          100
+      ? (filteredSessions.reduce((sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0), 0) /
+        lifetimeStats.totalShotsFired) *
+      100
       : 0;
-  }, [sessions, lifetimeStats.totalShotsFired]);
+  }, [filteredSessions, lifetimeStats.totalShotsFired]);
 
   // Sessions by location
   const locationData = useMemo(() => {
-    const sessionsByLocation = sessions.reduce(
+    const sessionsByLocation = filteredSessions.reduce(
       (acc, session) => {
         const location = session.location || 'Unknown';
         if (!acc[location]) {
@@ -109,19 +147,19 @@ export function Analytics() {
         globals: data.totalGlobals,
       }))
       .sort((a, b) => b.loot - a.loot);
-  }, [sessions]);
+  }, [filteredSessions]);
 
   // All globals with creatures
   const allGlobals = useMemo(() => {
-    return sessions
+    return filteredSessions
       .flatMap((s) => s.globals.map((g) => ({ ...g, sessionName: s.name, location: s.location })))
       .sort((a, b) => b.value - a.value)
       .slice(0, 50); // Top 50 globals
-  }, [sessions]);
+  }, [filteredSessions]);
 
   // Weapon performance
   const weaponData = useMemo(() => {
-    const weaponPerformance = sessions.reduce(
+    const weaponPerformance = filteredSessions.reduce(
       (acc, session) => {
         const weapon = session.weapon || 'Unknown';
         if (!acc[weapon]) {
@@ -163,11 +201,11 @@ export function Analytics() {
       }))
       .sort((a, b) => b.totalCost - a.totalCost)
       .slice(0, 10);
-  }, [sessions]);
+  }, [filteredSessions]);
 
   // Armor performance
   const armorData = useMemo(() => {
-    const armorPerformance = sessions.reduce(
+    const armorPerformance = filteredSessions.reduce(
       (acc, session) => {
         const armor = session.armor || 'None';
         if (!acc[armor]) {
@@ -199,11 +237,11 @@ export function Analytics() {
       }))
       .sort((a, b) => b.sessions - a.sessions)
       .slice(0, 10);
-  }, [sessions]);
+  }, [filteredSessions]);
 
   // Loadout performance
   const loadoutData = useMemo(() => {
-    const loadoutPerformance = sessions
+    const loadoutPerformance = filteredSessions
       .filter((s) => s.loadoutId)
       .reduce(
         (acc, session) => {
@@ -238,11 +276,11 @@ export function Analytics() {
         avgKills: data.sessions > 0 ? data.totalKills / data.sessions : 0,
       }))
       .sort((a, b) => b.returnRate - a.returnRate);
-  }, [sessions, loadouts]);
+  }, [filteredSessions, loadouts]);
 
   // Top loot items
   const topLootItems = useMemo(() => {
-    const allLootItems = sessions.flatMap((s) => s.loot);
+    const allLootItems = filteredSessions.flatMap((s) => s.loot);
     const lootByName = allLootItems.reduce(
       (acc, item) => {
         if (!acc[item.name]) {
@@ -270,11 +308,11 @@ export function Analytics() {
       }))
       .sort((a, b) => b.totalValue - a.totalValue)
       .slice(0, 20);
-  }, [sessions]);
+  }, [filteredSessions]);
 
   // Skills gained
   const topSkills = useMemo(() => {
-    const allSkills = sessions.flatMap((s) => s.skills);
+    const allSkills = filteredSessions.flatMap((s) => s.skills);
     const skillsByName = allSkills.reduce(
       (acc, skill) => {
         if (!acc[skill.skillName]) {
@@ -290,11 +328,11 @@ export function Analytics() {
       .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 15);
-  }, [sessions]);
+  }, [filteredSessions]);
 
   // Cost breakdown
   const costData = useMemo(() => {
-    const costBreakdown = sessions.reduce(
+    const costBreakdown = filteredSessions.reduce(
       (acc, session) => {
         acc.ammo += session.ammoCost;
         acc.repair += session.repairCost;
@@ -313,11 +351,11 @@ export function Analytics() {
       { name: 'Healing', value: costBreakdown.healing, color: '#10B981' },
       { name: 'Other', value: costBreakdown.other, color: '#6B7280' },
     ].filter((item) => item.value > 0);
-  }, [sessions]);
+  }, [filteredSessions]);
 
   // Sessions over time (last 30)
   const recentSessions = useMemo(() => {
-    return sessions
+    return filteredSessions
       .filter((s) => s.status === 'completed')
       .sort((a, b) => a.startTime - b.startTime)
       .slice(-30)
@@ -327,7 +365,7 @@ export function Analytics() {
         profit: s.stats.totalLoot - s.stats.totalCost,
         loot: s.stats.totalLoot,
       }));
-  }, [sessions]);
+  }, [filteredSessions]);
 
   // Format duration
   const formatDuration = (seconds: number) => {
@@ -350,7 +388,39 @@ export function Analytics() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Lifetime Analytics</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold">Analytics</h1>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value as '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom')}
+            className="input bg-gray-900 border-gray-700 text-sm py-1.5"
+          >
+            <option value="24h">Last 24 Hours</option>
+            <option value="7d">Last 7 Days</option>
+            <option value="1m">Last 30 Days</option>
+            <option value="3m">Last 90 Days</option>
+            <option value="1y">Last Year</option>
+            <option value="lifetime">Lifetime</option>
+            <option value="custom">Custom Range</option>
+          </select>
+          {timeRange === 'custom' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="input bg-gray-900 border-gray-700 text-sm py-1.5"
+              />
+              <span className="text-gray-500">-</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="input bg-gray-900 border-gray-700 text-sm py-1.5"
+              />
+            </div>
+          )}
+        </div>
         <div className="text-sm text-gray-400">
           Across {lifetimeStats.totalSessions} session{lifetimeStats.totalSessions !== 1 ? 's' : ''}
         </div>
@@ -437,6 +507,7 @@ export function Analytics() {
               <Tooltip
                 contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
                 labelStyle={{ color: '#F3F4F6' }}
+                formatter={(value: number) => value.toFixed(2)}
               />
               <Legend />
               <Line
