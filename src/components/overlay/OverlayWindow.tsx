@@ -1,21 +1,79 @@
-import { useHuntStore, setupStoreSync } from '../../store';
+import { useHuntStore } from '../../store';
 import { LiveTimer } from '../layout/LiveTimer';
 import { Play, Pause, GripVertical, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { emit, listen } from '@tauri-apps/api/event';
+import { HuntSession, Loadout } from '../../types';
+
+interface StoreSyncPayload {
+  sourceId: string;
+  sessions: HuntSession[];
+  activeSessionId: string | null;
+  loadouts: Loadout[];
+}
 
 export function OverlayWindow() {
-  const activeSession = useHuntStore((state) => state.getActiveSession());
-  const pauseSession = useHuntStore((state) => state.pauseSession);
-  const resumeSession = useHuntStore((state) => state.resumeSession);
+  const activeSession = useHuntStore((state) =>
+    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  );
   const updateSettings = useHuntStore((state) => state.updateSettings);
+  const syncSetupRef = useRef(false);
 
-  // Setup sync with delayed broadcasting - overlay will periodically request state from main window
-  // until it has an active session. This ensures the overlay always gets fresh data even if
-  // initial sync fails or main window starts a session after overlay opens.
+  // Setup overlay to ONLY listen for state from main window
+  // Do NOT call setupStoreSync - that would set up bidirectional broadcasting
+  // Overlay is read-only except for pause/resume which go through normal store actions
   useEffect(() => {
-    setupStoreSync(500); // Delay broadcasting for 500ms, request state periodically if no active session
+    if (syncSetupRef.current) {
+      return;
+    }
+    syncSetupRef.current = true;
+
+    let unlistenSync: (() => void) | undefined;
+    let requestTimers: number[] = [];
+
+    const setupListeners = async () => {
+      try {
+        // Listen for state broadcasts from main window ONLY
+        // Do not broadcast back - overlay is read-only
+        unlistenSync = await listen<StoreSyncPayload>('store-sync', (event) => {
+          const payload = event.payload;
+          if (!payload) {
+            return;
+          }
+
+          // Apply state from main window without triggering broadcast
+          useHuntStore.setState((prevState) => ({
+            ...prevState,
+            sessions: payload.sessions,
+            activeSessionId: payload.activeSessionId,
+            loadouts: payload.loadouts,
+          }));
+        });
+      } catch (error) {
+        // Silently fail if listen not available
+      }
+
+      // Request current state from main window periodically
+      const requestState = () => {
+        emit('store-sync-request', {}).catch(() => {
+          // Silently fail
+        });
+      };
+
+      // Request immediately and retry a few times
+      requestState();
+      requestTimers.push(window.setTimeout(() => requestState(), 100));
+      requestTimers.push(window.setTimeout(() => requestState(), 300));
+    };
+
+    setupListeners();
+
+    return () => {
+      unlistenSync?.();
+      requestTimers.forEach(clearTimeout);
+    };
   }, []);
 
   // Save overlay geometry when window is moved or resized
@@ -69,11 +127,13 @@ export function OverlayWindow() {
 
   const handleTogglePause = () => {
     if (!activeSession) return;
-    if (activeSession.status === 'active') {
-      pauseSession(activeSession.id);
-    } else {
-      resumeSession(activeSession.id);
-    }
+    const command = activeSession.status === 'active' ? 'pause' : 'resume';
+    emit('overlay-session-command', {
+      sessionId: activeSession.id,
+      command,
+    }).catch((error) => {
+      console.error('Failed to send overlay session command:', error);
+    });
   };
 
   const handleStartDrag = async () => {

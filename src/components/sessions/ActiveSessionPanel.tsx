@@ -19,6 +19,12 @@ export function ActiveSessionPanel({
 
   const handleShowOverlay = async () => {
     try {
+      const isVisible = await invoke<boolean>('is_overlay_visible');
+      if (isVisible) {
+        await invoke('hide_overlay');
+        return;
+      }
+
       await invoke('show_overlay', {
         x: settings.overlayX,
         y: settings.overlayY,
@@ -111,7 +117,7 @@ export function ActiveSessionPanel({
         <button
           onClick={handleShowOverlay}
           className="btn-secondary flex flex-1 items-center justify-center gap-2 px-8 py-1 text-sm"
-          title="Show Overlay Window"
+          title="Toggle Overlay Window"
         >
           <Maximize2 className="w-4 h-4" />
           Overlay

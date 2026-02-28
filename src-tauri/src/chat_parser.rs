@@ -60,6 +60,10 @@ pub struct ChatLogParser {
     rare_item_regex: Regex,
     system_receive_regex: Regex,
     damage_regex: Regex,
+    healing_regex: Regex,
+    damage_taken_regex: Regex,
+    skill_gain_exp_regex: Regex,
+    skill_gain_simple_regex: Regex,
     language_patterns: LanguagePatterns,
 }
 
@@ -72,6 +76,11 @@ impl ChatLogParser {
         let mining_regex = language_patterns.build_mining_regex();
         let rare_item_regex = language_patterns.build_rare_item_regex();
         let damage_regex = language_patterns.build_damage_regex();
+        let healing_regex = Regex::new(r"You healed yourself ([\d.]+) points?").unwrap();
+        let damage_taken_regex = Regex::new(r"You took ([\d.]+) points? of damage").unwrap();
+        let skill_gain_exp_regex =
+            Regex::new(r"You have gained ([\d.]+) experience in your (.+?) skill").unwrap();
+        let skill_gain_simple_regex = Regex::new(r"You have gained ([\d.]+) (.+)").unwrap();
 
         // Pattern for system "You received" loot lines. Match either
         // `You received [Item] x (N) Value: X PED` or
@@ -86,18 +95,24 @@ impl ChatLogParser {
             rare_item_regex,
             system_receive_regex,
             damage_regex,
+            healing_regex,
+            damage_taken_regex,
+            skill_gain_exp_regex,
+            skill_gain_simple_regex,
             language_patterns,
         }
     }
 
-    pub fn parse_line(&self, line: &str) -> Option<LootEvent> {
-        // Extract timestamp from start of line (more robust)
-        let timestamp = if let Some(pos) = line.find(" [") {
+    fn extract_timestamp(line: &str) -> String {
+        if let Some(pos) = line.find(" [") {
             line[..pos].trim().to_string()
         } else {
-            // Fallback: take first 19 characters (typical timestamp format)
             line.chars().take(19).collect::<String>()
-        };
+        }
+    }
+
+    pub fn parse_line(&self, line: &str) -> Option<LootEvent> {
+        let timestamp = Self::extract_timestamp(line);
 
         // Check if it's a Hall of Fame using multilingual detection
         let is_hof = self.language_patterns.is_hall_of_fame(line);
@@ -175,12 +190,7 @@ impl ChatLogParser {
     }
 
     pub fn parse_damage_line(&self, line: &str) -> Option<DamageEvent> {
-        // Extract timestamp from start of line
-        let timestamp = if let Some(pos) = line.find(" [") {
-            line[..pos].trim().to_string()
-        } else {
-            line.chars().take(19).collect::<String>()
-        };
+        let timestamp = Self::extract_timestamp(line);
 
         // Check for critical hit damage
         let is_critical = line.contains("Critical hit - Additional damage!");
@@ -201,11 +211,7 @@ impl ChatLogParser {
     }
 
     pub fn parse_combat_event(&self, line: &str) -> Option<CombatEvent> {
-        let timestamp = if let Some(pos) = line.find(" [") {
-            line[..pos].trim().to_string()
-        } else {
-            line.chars().take(19).collect::<String>()
-        };
+        let timestamp = Self::extract_timestamp(line);
 
         let event_type = if line.contains("The attack missed you") {
             // Enemy attack missed - player evaded
@@ -227,16 +233,11 @@ impl ChatLogParser {
     }
 
     pub fn parse_healing_event(&self, line: &str) -> Option<HealingEvent> {
-        let timestamp = if let Some(pos) = line.find(" [") {
-            line[..pos].trim().to_string()
-        } else {
-            line.chars().take(19).collect::<String>()
-        };
+        let timestamp = Self::extract_timestamp(line);
 
         // Pattern: You healed yourself X points
         if line.contains("You healed yourself") {
-            let re = regex::Regex::new(r"You healed yourself ([\d.]+) points?").ok()?;
-            let caps = re.captures(line)?;
+            let caps = self.healing_regex.captures(line)?;
             let amount: f64 = caps.get(1)?.as_str().parse().ok()?;
 
             return Some(HealingEvent { timestamp, amount });
@@ -246,19 +247,14 @@ impl ChatLogParser {
     }
 
     pub fn parse_damage_taken(&self, line: &str) -> Option<DamageTakenEvent> {
-        let timestamp = if let Some(pos) = line.find(" [") {
-            line[..pos].trim().to_string()
-        } else {
-            line.chars().take(19).collect::<String>()
-        };
+        let timestamp = Self::extract_timestamp(line);
 
         let is_critical = line.contains("Critical hit - Additional damage!");
 
         // Pattern: You took X points of damage
         // or: Critical hit - Additional damage! You took X points of damage
         if line.contains("You took") && line.contains("points of damage") {
-            let re = regex::Regex::new(r"You took ([\d.]+) points? of damage").ok()?;
-            let caps = re.captures(line)?;
+            let caps = self.damage_taken_regex.captures(line)?;
             let damage: f64 = caps.get(1)?.as_str().parse().ok()?;
 
             return Some(DamageTakenEvent {
@@ -272,11 +268,7 @@ impl ChatLogParser {
     }
 
     pub fn parse_skill_gain(&self, line: &str) -> Option<SkillGain> {
-        let timestamp = if let Some(pos) = line.find(" [") {
-            line[..pos].trim().to_string()
-        } else {
-            line.chars().take(19).collect::<String>()
-        };
+        let timestamp = Self::extract_timestamp(line);
 
         if !line.contains("You have gained") {
             return None;
@@ -284,8 +276,7 @@ impl ChatLogParser {
 
         // Try pattern 1: "You have gained X experience in your SkillName skill"
         if line.contains("experience in your") {
-            let re = regex::Regex::new(r"You have gained ([\d.]+) experience in your (.+?) skill").ok()?;
-            if let Some(caps) = re.captures(line) {
+            if let Some(caps) = self.skill_gain_exp_regex.captures(line) {
                 let gain: f64 = caps.get(1)?.as_str().parse().ok()?;
                 let skill_name = caps.get(2)?.as_str().trim().to_string();
 
@@ -297,8 +288,7 @@ impl ChatLogParser {
             }
         } else {
             // Try pattern 2: "You have gained X SkillName" (without "experience in your")
-            let re = regex::Regex::new(r"You have gained ([\d.]+) (.+)").ok()?;
-            if let Some(caps) = re.captures(line) {
+            if let Some(caps) = self.skill_gain_simple_regex.captures(line) {
                 let gain: f64 = caps.get(1)?.as_str().parse().ok()?;
                 let skill_name = caps.get(2)?.as_str().trim().to_string();
 

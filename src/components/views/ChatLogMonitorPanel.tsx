@@ -16,7 +16,9 @@ export function ChatLogMonitorPanel() {
   const [showSessionActiveAlert, setShowSessionActiveAlert] = useState(false);
 
   const settings = useHuntStore((state) => state.settings);
-  const activeSession = useHuntStore((state) => state.getActiveSession());
+  const activeSession = useHuntStore((state) =>
+    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  );
 
   const checkWatchStatus = async () => {
     try {

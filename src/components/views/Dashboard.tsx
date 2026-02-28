@@ -21,7 +21,9 @@ import { CombatAnalytics } from '../analytics/CombatAnalytics';
 import { HourlyRatesAnalytics } from '../analytics/HourlyRatesAnalytics';
 
 export function Dashboard() {
-  const activeSession = useHuntStore((state) => state.getActiveSession());
+  const activeSession = useHuntStore((state) =>
+    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  );
   type AnalyticsView = 'performance' | 'economy' | 'efficiency' | 'skills' | 'combat' | 'hourly' | null;
   const [analyticsView, setAnalyticsView] = useState<AnalyticsView>(null);
 

@@ -107,6 +107,11 @@ type StoreSyncPayload = {
   loadouts: Loadout[];
 };
 
+type OverlaySessionCommandPayload = {
+  sessionId: string;
+  command: 'pause' | 'resume';
+};
+
 const calculateStats = (session: HuntSession): SessionStats => calculateSessionStatsCore(session);
 
 const defaultSettings: AppSettings = {
@@ -981,6 +986,26 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
     emit('store-sync', payload).catch(() => {
       // Silently fail if emit is not available
     });
+  }).catch(() => {
+    // Silently fail if listen is not available (dev environment)
+  });
+
+  // Listen for overlay session commands (overlay is read-only except pause/resume controls)
+  listen('overlay-session-command', (event: Event<OverlaySessionCommandPayload>) => {
+    const payload = event.payload;
+    if (!payload?.sessionId) {
+      return;
+    }
+
+    const state = useHuntStore.getState();
+    if (payload.command === 'pause') {
+      state.pauseSession(payload.sessionId);
+      return;
+    }
+
+    if (payload.command === 'resume') {
+      state.resumeSession(payload.sessionId);
+    }
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)
   });

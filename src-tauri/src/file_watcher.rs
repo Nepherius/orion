@@ -96,19 +96,8 @@ impl FileWatcher {
 
                                 if new_len < *last {
                                     // file was truncated or rotated; read whole file
-                                    eprintln!("Detected truncation/rotation of {} (old={}, new={}), reading full file", path_clone.display(), *last, new_len);
                                     match fs::read_to_string(&path_clone) {
                                         Ok(content) => {
-                                            eprintln!(
-                                                "Emitting full content for {} ({} bytes)",
-                                                path_clone.display(),
-                                                content.len()
-                                            );
-                                            eprintln!("-- last lines (most recent first) --");
-                                            for l in content.lines().rev().take(50) {
-                                                eprintln!("{}", l);
-                                            }
-                                            eprintln!("-- end recent lines --");
                                             let _ = app_handle.emit("chat-log-updated", content);
                                         }
                                         Err(e) => eprintln!(
@@ -146,20 +135,14 @@ impl FileWatcher {
                                                         };
 
                                                         if !complete_lines.is_empty() {
-                                                            eprintln!("Emitting appended content for {} ({} bytes)", path_clone.display(), complete_lines.len());
-                                                            for l in complete_lines.lines().take(50)
-                                                            {
-                                                                eprintln!("{}", l);
-                                                            }
+                                                            let emitted_len = complete_lines.len();
                                                             let _ = app_handle.emit(
                                                                 "chat-log-updated",
-                                                                complete_lines.clone(),
+                                                                complete_lines,
                                                             );
 
                                                             // Update position to end of complete lines only
-                                                            *last += complete_lines.len() as u64;
-                                                        } else {
-                                                            eprintln!("Incomplete line detected, waiting for more data");
+                                                            *last += emitted_len as u64;
                                                         }
                                                     }
                                                 }

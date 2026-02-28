@@ -26,7 +26,9 @@ type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analy
 function App() {
   const [currentView, setCurrentView] = useState<View>('sessions');
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const activeSession = useHuntStore((state) => state.getActiveSession());
+  const activeSession = useHuntStore((state) =>
+    state.sessions.find((s) => s.id === state.activeSessionId) || null
+  );
   const avatarName = useHuntStore((state) => state.settings.avatarName);
   const [showWelcome, setShowWelcome] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);

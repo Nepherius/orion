@@ -410,6 +410,17 @@ async fn hide_overlay(app_handle: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn is_overlay_visible(app_handle: tauri::AppHandle) -> Result<bool, String> {
+    use tauri::Manager;
+
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        window.is_visible().map_err(|e| e.to_string())
+    } else {
+        Ok(false)
+    }
+}
+
 #[derive(Serialize)]
 struct OverlayGeometry {
     x: f64,
@@ -507,6 +518,7 @@ pub fn run() {
             detect_chat_log_path,
             show_overlay,
             hide_overlay,
+                is_overlay_visible,
             get_overlay_geometry,
                     db_commands::db_create_session,
                     db_commands::db_update_session,
