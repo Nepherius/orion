@@ -128,9 +128,10 @@ describe('calculateSessionStats', () => {
         { id: 'd2', damage: 20, isCritical: true, timestamp: 2 },
       ],
       combatEvents: [
-        { id: 'c1', type: 'dodge', timestamp: 1 },
-        { id: 'c2', type: 'evade', timestamp: 2 },
-        { id: 'c3', type: 'miss', timestamp: 3 },
+        { id: 'c1', type: 'player_dodge', timestamp: 1 },
+        { id: 'c2', type: 'player_evade', timestamp: 2 },
+        { id: 'c3', type: 'player_miss', timestamp: 3 },
+        { id: 'c4', type: 'enemy_dodge', timestamp: 4 },
       ],
       healingEvents: [{ id: 'h1', amount: 5, timestamp: 3 }],
       damageTakenEvents: [{ id: 't1', damage: 7, isCritical: false, timestamp: 4 }],
@@ -148,6 +149,7 @@ describe('calculateSessionStats', () => {
     expect(stats.misses).toBe(1);
     expect(stats.dodges).toBe(1);
     expect(stats.evades).toBe(1);
+    expect(stats.enemyDodges).toBe(1);
     expect(stats.shotsFired).toBe(4);
     expect(stats.healsUsed).toBe(1);
     expect(stats.totalHealing).toBe(5);

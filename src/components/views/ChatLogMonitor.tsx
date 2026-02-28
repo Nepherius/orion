@@ -20,7 +20,7 @@ interface DamageEvent {
 
 interface CombatEvent {
   timestamp: string;
-  event_type: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit';
+  event_type: 'hit' | 'crit' | 'player_miss' | 'player_dodge' | 'player_evade' | 'enemy_miss' | 'enemy_evade';
 }
 
 interface HealingEvent {

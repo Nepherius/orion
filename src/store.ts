@@ -80,7 +80,7 @@ interface HuntStore {
   ) => void;
   addCombatEvent: (
     sessionId: string,
-    eventType: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit' | 'incoming_miss' | 'incoming_evade',
+    eventType: 'hit' | 'crit' | 'player_miss' | 'player_dodge' | 'player_evade' | 'enemy_miss' | 'enemy_evade' | 'enemy_dodge',
     timestamp?: number
   ) => void;
   addHealingEvent: (sessionId: string, amount: number, timestamp?: number) => void;
@@ -158,6 +158,7 @@ const safeInvoke = async <T = unknown>(command: string, args?: Record<string, un
 };
 
 const saveJsonSetting = async (key: string, value: unknown) => {
+  console.debug(`[Settings] Saving key '${key}' with value:`, value);
   await safeInvoke('db_set_setting', {
     key,
     value: JSON.stringify(value),
@@ -167,11 +168,15 @@ const saveJsonSetting = async (key: string, value: unknown) => {
 const loadJsonSetting = async <T>(key: string): Promise<T | null> => {
   const raw = await safeInvoke<string | null>('db_get_setting', { key });
   if (!raw) {
+    console.debug(`[Settings] loadJsonSetting: No value for key '${key}'`);
     return null;
   }
   try {
-    return JSON.parse(raw) as T;
+    const parsed = JSON.parse(raw) as T;
+    console.debug(`[Settings] loadJsonSetting: Loaded key '${key}' value:`, parsed);
+    return parsed;
   } catch {
+    console.warn(`[Settings] loadJsonSetting: Failed to parse value for key '${key}'`);
     return null;
   }
 };
@@ -329,12 +334,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'active' as const,
-                startTime: now,
-                pausedAt: undefined,
-                totalPausedMs: 0,
-              }
+              ...s,
+              status: 'active' as const,
+              startTime: now,
+              pausedAt: undefined,
+              totalPausedMs: 0,
+            }
             : s
         ),
         activeSessionId: id,
@@ -370,11 +375,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'active' as const,
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
+              ...s,
+              status: 'active' as const,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            }
             : s
         ),
         activeSessionId: id,
@@ -398,12 +403,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: state.sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'completed' as const,
-                endTime: now,
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
+              ...s,
+              status: 'completed' as const,
+              endTime: now,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            }
             : s
         ),
         activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
@@ -585,11 +590,6 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   },
 
   addCombatEvent: (sessionId, eventType, timestamp?: number) => {
-    // Skip incoming attack events - they're not player shots
-    if (eventType === 'incoming_miss' || eventType === 'incoming_evade') {
-      return;
-    }
-
     const newCombatEvent: CombatEvent = {
       id: generateId(),
       type: eventType,
@@ -608,9 +608,10 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         ? state.loadouts.find((l) => l.id === session.loadoutId)
         : state.loadouts.find((l) => l.name === session.weapon);
 
-      // Apply shot costs only for player shots (hit/crit/miss/dodge/evade where player attacked)
-      const ammoCostPerShot = (loadout?.ammoBurn || 0) / 10000;
-      const decayCostPerShot = (loadout?.decay || 0) / 100;
+      // Apply shot costs only for player shots (hit/crit/player_miss/enemy_dodge/enemy_evade)
+      const isPlayerAttack = ['hit', 'crit', 'player_miss', 'enemy_dodge', 'enemy_evade'].includes(eventType);
+      const ammoCostPerShot = isPlayerAttack ? ((loadout?.ammoBurn || 0) / 10000) : 0;
+      const decayCostPerShot = isPlayerAttack ? ((loadout?.decay || 0) / 100) : 0;
 
       return {
         sessions: state.sessions.map((s) => {
@@ -819,6 +820,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     set((state) => ({
       settings: (() => {
         const settings = { ...state.settings, ...updates };
+        console.debug('[Settings] updateSettings called with:', updates, 'Resulting settings:', settings);
         void saveJsonSetting('settings', settings);
         return settings;
       })(),
@@ -857,6 +859,7 @@ export async function initializeStoreFromDb() {
       loadJsonSetting<ItemTemplate[]>('itemDatabase'),
       loadJsonSetting<string | null>('activeSessionId'),
     ]);
+  console.debug('[Settings] Loaded settings from DB:', storedSettings);
 
   const sessions = await Promise.all(
     (sessionRows ?? []).map(async (row) => {

@@ -34,7 +34,7 @@ export interface DamageEvent {
 
 export interface CombatEvent {
   id: string;
-  type: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit' | 'incoming_miss' | 'incoming_evade';
+  type: 'hit' | 'crit' | 'player_miss' | 'player_dodge' | 'player_evade' | 'enemy_miss' | 'enemy_evade' | 'enemy_dodge';
   timestamp: number;
 }
 
@@ -68,6 +68,9 @@ export interface SessionStats {
   misses: number;
   dodges: number;
   evades: number;
+  enemyMisses: number;
+  enemyEvades: number;
+  enemyDodges: number;
   criticalHits: number;
   hits: number;
 }

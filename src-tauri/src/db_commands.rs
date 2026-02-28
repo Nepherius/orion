@@ -407,13 +407,13 @@ pub fn db_get_session_stats(
         .unwrap_or((0, 0));
 
     let mut stmt = conn
-        .prepare("SELECT COALESCE(SUM(CASE WHEN type = 'miss' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'dodge' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'evade' THEN 1 ELSE 0 END), 0) FROM combat_events WHERE session_uuid = ?1")
+        .prepare("SELECT COALESCE(SUM(CASE WHEN type = 'player_miss' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'player_dodge' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'player_evade' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'enemy_miss' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'enemy_evade' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'enemy_dodge' THEN 1 ELSE 0 END), 0) FROM combat_events WHERE session_uuid = ?1")
         .map_err(|e| e.to_string())?;
-    let (misses, dodges, evades): (i64, i64, i64) = stmt
+    let (misses, dodges, evades, enemy_misses, enemy_evades, enemy_dodges): (i64, i64, i64, i64, i64, i64) = stmt
         .query_row([&session_uuid], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
         })
-        .unwrap_or((0, 0, 0));
+        .unwrap_or((0, 0, 0, 0, 0, 0));
 
     let heals_used: i64 = conn
         .query_row(
@@ -456,7 +456,7 @@ pub fn db_get_session_stats(
     } else {
         now - start_time
     };
-    let duration_seconds = (std::cmp::max(0, raw_duration - total_paused) / 1000);
+    let duration_seconds = std::cmp::max(0, raw_duration - total_paused) / 1000;
 
     let total_cost = ammo_cost + repair_cost + armor_decay + healing_cost + other_costs;
     let returns = if total_cost > 0.0 {
@@ -474,7 +474,7 @@ pub fn db_get_session_stats(
         "totalCost": total_cost,
         "returns": returns,
         "duration": duration_seconds,
-        "shotsFired": hits + critical_hits + dodges + evades,
+        "shotsFired": hits + critical_hits + misses + enemy_dodges + enemy_evades,
         "damageDealt": damage_dealt,
         "damageTaken": damage_taken,
         "healsUsed": heals_used,
@@ -482,6 +482,9 @@ pub fn db_get_session_stats(
         "misses": misses,
         "dodges": dodges,
         "evades": evades,
+        "enemyMisses": enemy_misses,
+        "enemyEvades": enemy_evades,
+        "enemyDodges": enemy_dodges,
         "criticalHits": critical_hits,
         "hits": hits,
     }))

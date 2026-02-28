@@ -18,6 +18,9 @@ export function emptySessionStats(): SessionStats {
     misses: 0,
     dodges: 0,
     evades: 0,
+    enemyMisses: 0,
+    enemyEvades: 0,
+    enemyDodges: 0,
     criticalHits: 0,
     hits: 0,
   };
@@ -58,14 +61,17 @@ export function calculateSessionStats(
     : now - session.startTime;
   const duration = Math.max(0, rawDuration - totalPausedMs);
 
-  const misses = session.combatEvents?.filter((e) => e.type === 'miss').length || 0;
-  const dodges = session.combatEvents?.filter((e) => e.type === 'dodge').length || 0;
-  const evades = session.combatEvents?.filter((e) => e.type === 'evade').length || 0;
+  const misses = session.combatEvents?.filter((e) => e.type === 'player_miss').length || 0;
+  const dodges = session.combatEvents?.filter((e) => e.type === 'player_dodge').length || 0;
+  const evades = session.combatEvents?.filter((e) => e.type === 'player_evade').length || 0;
+  const enemyMisses = session.combatEvents?.filter((e) => e.type === 'enemy_miss').length || 0;
+  const enemyEvades = session.combatEvents?.filter((e) => e.type === 'enemy_evade').length || 0;
+  const enemyDodges = session.combatEvents?.filter((e) => e.type === 'enemy_dodge').length || 0;
   const criticalHits = session.damageEvents?.filter((e) => e.isCritical).length || 0;
   const regularHits = session.damageEvents?.filter((e) => !e.isCritical).length || 0;
   const totalHits = criticalHits + regularHits;
 
-  const shotsFiredCount = totalHits + dodges + evades;
+  const shotsFiredCount = totalHits + misses + enemyDodges + enemyEvades;
 
   // Kill Tracking: Group loot events by 3-second clusters
   let kills = 0;
@@ -102,6 +108,9 @@ export function calculateSessionStats(
     misses,
     dodges,
     evades,
+    enemyMisses,
+    enemyEvades,
+    enemyDodges,
     criticalHits,
     hits: regularHits,
   };

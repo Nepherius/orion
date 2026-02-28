@@ -34,9 +34,9 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
 
   const hitRate = shotsFired > 0 ? ((hits + critHits) / shotsFired) * 100 : 0;
   const critRate = shotsFired > 0 ? (critHits / shotsFired) * 100 : 0;
-  const missRate = shotsFired + misses > 0 ? (misses / (shotsFired + misses)) * 100 : 0;
+  const missRate = shotsFired > 0 ? (misses / shotsFired) * 100 : 0;
   const evasionRate =
-    shotsFired + misses > 0 ? ((dodges + evades) / (shotsFired + misses)) * 100 : 0;
+    shotsFired > 0 ? ((session.stats.enemyDodges + session.stats.enemyEvades) / shotsFired) * 100 : 0;
 
   // Hit distribution
   const hitDistribution = [
@@ -45,10 +45,10 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
     { name: 'Misses', value: misses, color: '#9CA3AF' },
   ].filter((item) => item.value > 0);
 
-  // Evasion distribution
+  // Evasion distribution (Enemy evading our attacks)
   const evasionDistribution = [
-    { name: 'Dodges', value: dodges, color: '#EF4444' },
-    { name: 'Evades', value: evades, color: '#3B82F6' },
+    { name: 'Target Dodges', value: session.stats.enemyDodges, color: '#EF4444' },
+    { name: 'Target Evades', value: session.stats.enemyEvades, color: '#3B82F6' },
   ].filter((item) => item.value > 0);
 
   // Damage over time

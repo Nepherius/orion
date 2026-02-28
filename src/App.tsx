@@ -29,9 +29,16 @@ function App() {
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
+
   const avatarName = useHuntStore((state) => state.settings.avatarName);
-  const [showWelcome, setShowWelcome] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Show welcome modal only after data is loaded and avatar name is still empty
+  const showWelcome = dataLoaded && !avatarName;
+
+  useEffect(() => {
+    console.debug('[App] avatarName:', avatarName, 'dataLoaded:', dataLoaded, 'showWelcome:', showWelcome);
+  }, [avatarName, dataLoaded, showWelcome]);
 
   // Setup cross-window sync on mount
   // CRITICAL: Must await DB initialization before setting up sync
@@ -46,16 +53,9 @@ function App() {
     init();
   }, []);
 
-  // Show welcome modal only after data is loaded and avatar name is still empty
-  useEffect(() => {
-    if (dataLoaded && !avatarName) {
-      setShowWelcome(true);
-    }
-  }, [dataLoaded, avatarName]);
-
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {showWelcome && <WelcomeModal onComplete={() => setShowWelcome(false)} />}
+      {showWelcome && <WelcomeModal />}
 
       {/* Loading screen while database initializes */}
       {!dataLoaded && (

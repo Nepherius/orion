@@ -29,7 +29,7 @@ pub struct DamageEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CombatEvent {
     pub timestamp: String,
-    pub event_type: String, // "miss", "dodge", "evade", "hit", "crit"
+    pub event_type: String, // "player_miss", "player_dodge", "player_evade", "hit", "crit"
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -213,15 +213,18 @@ impl ChatLogParser {
     pub fn parse_combat_event(&self, line: &str) -> Option<CombatEvent> {
         let timestamp = Self::extract_timestamp(line);
 
-        let event_type = if line.contains("The attack missed you") {
-            // Enemy attack missed - player evaded
-            Some("incoming_miss".to_string())
-        } else if line.contains("The target Dodged your attack") {
-            // Player attacked, target dodged the attack - player shot
-            Some("dodge".to_string())
+        let event_type = if line.contains("The target Dodged your attack") {
+            Some("enemy_dodge".to_string())
+        } else if line.contains("The target Evaded your attack") {
+            Some("enemy_evade".to_string())
+        } else if line.contains("You missed") {
+            Some("player_miss".to_string())
+        } else if line.contains("The attack missed you") {
+            Some("enemy_miss".to_string())
         } else if line.contains("You Evaded the") {
-            // Enemy attack - player evaded
-            Some("incoming_evade".to_string())
+            Some("player_evade".to_string())
+        } else if line.contains("You dodged") {
+            Some("player_dodge".to_string())
         } else {
             None
         }?;
@@ -519,7 +522,7 @@ mod tests {
         assert!(result.is_some());
 
         let event = result.unwrap();
-        assert_eq!(event.event_type, "incoming_miss");
+        assert_eq!(event.event_type, "enemy_miss");
     }
 
     #[test]
@@ -531,7 +534,7 @@ mod tests {
         assert!(result.is_some());
 
         let event = result.unwrap();
-        assert_eq!(event.event_type, "dodge");
+        assert_eq!(event.event_type, "enemy_dodge");
     }
 
     #[test]
@@ -543,7 +546,7 @@ mod tests {
         assert!(result.is_some());
 
         let event = result.unwrap();
-        assert_eq!(event.event_type, "incoming_evade");
+        assert_eq!(event.event_type, "player_evade");
     }
 
     #[test]
@@ -669,7 +672,7 @@ mod tests {
         assert_eq!(loot_events[0].creature, "Animal Eye Oil");
         assert_eq!(damage_events.len(), 1);
         assert_eq!(combat_events.len(), 1);
-        assert_eq!(combat_events[0].event_type, "dodge");
+        assert_eq!(combat_events[0].event_type, "enemy_dodge");
         assert_eq!(healing_events.len(), 1);
         assert_eq!(damage_taken_events.len(), 1);
         assert_eq!(skill_gains.len(), 1);
