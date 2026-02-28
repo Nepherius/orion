@@ -632,4 +632,47 @@ mod tests {
         assert_eq!(event.gain, 0.5023);
         assert_eq!(event.skill_name, "Laser Weaponry Technology");
     }
+
+    #[test]
+    fn test_parse_system_pickup_with_brackets() {
+        let parser = ChatLogParser::new();
+        let line =
+            "26-02-27 01:41:54 [System] [] You received [Animal Eye Oil] x (9) Value: 0.2700 PED";
+
+        let result = parser.parse_line(line);
+        assert!(result.is_some(), "Parser failed to match bracketed system pickup line");
+
+        let event = result.unwrap();
+        assert_eq!(event.player, "");
+        assert_eq!(event.creature, "Animal Eye Oil");
+        assert_eq!(event.value, 0.27);
+        assert!(!event.is_hof);
+    }
+
+    #[test]
+    fn test_parse_file_with_damage_routes_events_correctly() {
+        let parser = ChatLogParser::new();
+        let content = [
+            "2026-02-27 01:41:42 [System] [] You inflicted 7.4 points of damage",
+            "2026-02-27 01:41:43 [System] [] The target Dodged your attack",
+            "2026-02-27 01:41:44 [System] [] You healed yourself 23.4 points",
+            "2026-02-27 01:41:45 [System] [] You took 3.1 points of damage",
+            "2026-02-27 01:41:46 [System] [] You have gained 0.3438 Bravado",
+            "26-02-27 01:41:54 [System] [] You received [Animal Eye Oil] x (9) Value: 0.2700 PED",
+        ]
+        .join("\n");
+
+        let (loot_events, damage_events, combat_events, healing_events, damage_taken_events, skill_gains) =
+            parser.parse_file_with_damage(&content);
+
+        assert_eq!(loot_events.len(), 1);
+        assert_eq!(loot_events[0].creature, "Animal Eye Oil");
+        assert_eq!(damage_events.len(), 1);
+        assert_eq!(combat_events.len(), 1);
+        assert_eq!(combat_events[0].event_type, "dodge");
+        assert_eq!(healing_events.len(), 1);
+        assert_eq!(damage_taken_events.len(), 1);
+        assert_eq!(skill_gains.len(), 1);
+        assert_eq!(skill_gains[0].skill_name, "Bravado");
+    }
 }
