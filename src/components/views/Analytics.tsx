@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useHuntStore } from '../../store';
 import { BarChart3 } from 'lucide-react';
 import {
@@ -22,7 +23,7 @@ export function Analytics() {
   const loadouts = useHuntStore((state) => state.loadouts);
 
   // Calculate lifetime stats
-  const lifetimeStats = sessions.reduce(
+  const lifetimeStats = useMemo(() => sessions.reduce(
     (acc, session) => {
       acc.totalLoot += session.stats.totalLoot;
       acc.totalCost += session.stats.totalCost;
@@ -46,222 +47,241 @@ export function Analytics() {
       totalDuration: 0,
       totalSessions: 0,
     }
-  );
+  ), [sessions]);
 
   const lifetimeProfit = lifetimeStats.totalLoot - lifetimeStats.totalCost;
   const lifetimeReturnRate =
     lifetimeStats.totalCost > 0 ? (lifetimeStats.totalLoot / lifetimeStats.totalCost) * 100 : 0;
-  const lifetimeHitRate =
-    lifetimeStats.totalShotsFired > 0
+  const lifetimeHitRate = useMemo(() => {
+    return lifetimeStats.totalShotsFired > 0
       ? (sessions.reduce((sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0), 0) /
         lifetimeStats.totalShotsFired) *
       100
       : 0;
+  }, [sessions, lifetimeStats.totalShotsFired]);
 
   // Sessions by location
-  const sessionsByLocation = sessions.reduce((acc, session) => {
-    const location = session.location || 'Unknown';
-    if (!acc[location]) {
-      acc[location] = {
-        count: 0,
-        totalLoot: 0,
-        totalCost: 0,
-        totalKills: 0,
-        totalGlobals: 0,
-      };
-    }
-    acc[location].count += 1;
-    acc[location].totalLoot += session.stats.totalLoot;
-    acc[location].totalCost += session.stats.totalCost;
-    acc[location].totalKills += session.stats.kills;
-    acc[location].totalGlobals += session.stats.globals;
-    return acc;
-  }, {} as Record<string, { count: number; totalLoot: number; totalCost: number; totalKills: number; totalGlobals: number }>);
+  const locationData = useMemo(() => {
+    const sessionsByLocation = sessions.reduce((acc, session) => {
+      const location = session.location || 'Unknown';
+      if (!acc[location]) {
+        acc[location] = {
+          count: 0,
+          totalLoot: 0,
+          totalCost: 0,
+          totalKills: 0,
+          totalGlobals: 0,
+        };
+      }
+      acc[location].count += 1;
+      acc[location].totalLoot += session.stats.totalLoot;
+      acc[location].totalCost += session.stats.totalCost;
+      acc[location].totalKills += session.stats.kills;
+      acc[location].totalGlobals += session.stats.globals;
+      return acc;
+    }, {} as Record<string, { count: number; totalLoot: number; totalCost: number; totalKills: number; totalGlobals: number }>);
 
-  const locationData = Object.entries(sessionsByLocation)
-    .map(([location, data]) => ({
-      location,
-      sessions: data.count,
-      loot: data.totalLoot,
-      cost: data.totalCost,
-      profit: data.totalLoot - data.totalCost,
-      returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
-      kills: data.totalKills,
-      globals: data.totalGlobals,
-    }))
-    .sort((a, b) => b.loot - a.loot);
+    return Object.entries(sessionsByLocation)
+      .map(([location, data]) => ({
+        location,
+        sessions: data.count,
+        loot: data.totalLoot,
+        cost: data.totalCost,
+        profit: data.totalLoot - data.totalCost,
+        returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
+        kills: data.totalKills,
+        globals: data.totalGlobals,
+      }))
+      .sort((a, b) => b.loot - a.loot);
+  }, [sessions]);
 
   // All globals with creatures
-  const allGlobals = sessions
-    .flatMap((s) => s.globals.map((g) => ({ ...g, sessionName: s.name, location: s.location })))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 50); // Top 50 globals
+  const allGlobals = useMemo(() => {
+    return sessions
+      .flatMap((s) => s.globals.map((g) => ({ ...g, sessionName: s.name, location: s.location })))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 50); // Top 50 globals
+  }, [sessions]);
 
   // Weapon performance
-  const weaponPerformance = sessions.reduce((acc, session) => {
-    const weapon = session.weapon || 'Unknown';
-    if (!acc[weapon]) {
-      acc[weapon] = {
-        sessions: 0,
-        totalLoot: 0,
-        totalCost: 0,
-        totalKills: 0,
-        totalDamage: 0,
-      };
-    }
-    acc[weapon].sessions += 1;
-    acc[weapon].totalLoot += session.stats.totalLoot;
-    acc[weapon].totalCost += session.stats.totalCost;
-    acc[weapon].totalKills += session.stats.kills;
-    acc[weapon].totalDamage += session.stats.damageDealt;
-    return acc;
-  }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; totalKills: number; totalDamage: number }>);
-
-  const weaponData = Object.entries(weaponPerformance)
-    .map(([weapon, data]) => ({
-      weapon,
-      sessions: data.sessions,
-      returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
-      totalLoot: data.totalLoot,
-      totalCost: data.totalCost,
-      avgDamage: data.totalKills > 0 ? data.totalDamage / data.totalKills : 0,
-    }))
-    .sort((a, b) => b.totalCost - a.totalCost)
-    .slice(0, 10);
-
-  // Armor performance
-  const armorPerformance = sessions.reduce((acc, session) => {
-    const armor = session.armor || 'None';
-    if (!acc[armor]) {
-      acc[armor] = {
-        sessions: 0,
-        totalLoot: 0,
-        totalCost: 0,
-        damageTaken: 0,
-      };
-    }
-    acc[armor].sessions += 1;
-    acc[armor].totalLoot += session.stats.totalLoot;
-    acc[armor].totalCost += session.stats.totalCost;
-    acc[armor].damageTaken += session.stats.damageTaken || 0;
-    return acc;
-  }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; damageTaken: number }>);
-
-  const armorData = Object.entries(armorPerformance)
-    .map(([armor, data]) => ({
-      armor,
-      sessions: data.sessions,
-      returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
-      avgDamageTaken: data.sessions > 0 ? data.damageTaken / data.sessions : 0,
-    }))
-    .sort((a, b) => b.sessions - a.sessions)
-    .slice(0, 10);
-
-  // Loadout performance
-  const loadoutPerformance = sessions
-    .filter((s) => s.loadoutId)
-    .reduce((acc, session) => {
-      const loadout = loadouts.find((l) => l.id === session.loadoutId);
-      const loadoutName = loadout?.name || 'Unknown';
-      if (!acc[loadoutName]) {
-        acc[loadoutName] = {
+  const weaponData = useMemo(() => {
+    const weaponPerformance = sessions.reduce((acc, session) => {
+      const weapon = session.weapon || 'Unknown';
+      if (!acc[weapon]) {
+        acc[weapon] = {
           sessions: 0,
           totalLoot: 0,
           totalCost: 0,
           totalKills: 0,
+          totalDamage: 0,
         };
       }
-      acc[loadoutName].sessions += 1;
-      acc[loadoutName].totalLoot += session.stats.totalLoot;
-      acc[loadoutName].totalCost += session.stats.totalCost;
-      acc[loadoutName].totalKills += session.stats.kills;
+      acc[weapon].sessions += 1;
+      acc[weapon].totalLoot += session.stats.totalLoot;
+      acc[weapon].totalCost += session.stats.totalCost;
+      acc[weapon].totalKills += session.stats.kills;
+      acc[weapon].totalDamage += session.stats.damageDealt;
       return acc;
-    }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; totalKills: number }>);
+    }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; totalKills: number; totalDamage: number }>);
 
-  const loadoutData = Object.entries(loadoutPerformance)
-    .map(([name, data]) => ({
-      name,
-      sessions: data.sessions,
-      returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
-      profit: data.totalLoot - data.totalCost,
-      avgKills: data.sessions > 0 ? data.totalKills / data.sessions : 0,
-    }))
-    .sort((a, b) => b.returnRate - a.returnRate);
+    return Object.entries(weaponPerformance)
+      .map(([weapon, data]) => ({
+        weapon,
+        sessions: data.sessions,
+        returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
+        totalLoot: data.totalLoot,
+        totalCost: data.totalCost,
+        avgDamage: data.totalKills > 0 ? data.totalDamage / data.totalKills : 0,
+      }))
+      .sort((a, b) => b.totalCost - a.totalCost)
+      .slice(0, 10);
+  }, [sessions]);
+
+  // Armor performance
+  const armorData = useMemo(() => {
+    const armorPerformance = sessions.reduce((acc, session) => {
+      const armor = session.armor || 'None';
+      if (!acc[armor]) {
+        acc[armor] = {
+          sessions: 0,
+          totalLoot: 0,
+          totalCost: 0,
+          damageTaken: 0,
+        };
+      }
+      acc[armor].sessions += 1;
+      acc[armor].totalLoot += session.stats.totalLoot;
+      acc[armor].totalCost += session.stats.totalCost;
+      acc[armor].damageTaken += session.stats.damageTaken || 0;
+      return acc;
+    }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; damageTaken: number }>);
+
+    return Object.entries(armorPerformance)
+      .map(([armor, data]) => ({
+        armor,
+        sessions: data.sessions,
+        returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
+        avgDamageTaken: data.sessions > 0 ? data.damageTaken / data.sessions : 0,
+      }))
+      .sort((a, b) => b.sessions - a.sessions)
+      .slice(0, 10);
+  }, [sessions]);
+
+  // Loadout performance
+  const loadoutData = useMemo(() => {
+    const loadoutPerformance = sessions
+      .filter((s) => s.loadoutId)
+      .reduce((acc, session) => {
+        const loadout = loadouts.find((l) => l.id === session.loadoutId);
+        const loadoutName = loadout?.name || 'Unknown';
+        if (!acc[loadoutName]) {
+          acc[loadoutName] = {
+            sessions: 0,
+            totalLoot: 0,
+            totalCost: 0,
+            totalKills: 0,
+          };
+        }
+        acc[loadoutName].sessions += 1;
+        acc[loadoutName].totalLoot += session.stats.totalLoot;
+        acc[loadoutName].totalCost += session.stats.totalCost;
+        acc[loadoutName].totalKills += session.stats.kills;
+        return acc;
+      }, {} as Record<string, { sessions: number; totalLoot: number; totalCost: number; totalKills: number }>);
+
+    return Object.entries(loadoutPerformance)
+      .map(([name, data]) => ({
+        name,
+        sessions: data.sessions,
+        returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
+        profit: data.totalLoot - data.totalCost,
+        avgKills: data.sessions > 0 ? data.totalKills / data.sessions : 0,
+      }))
+      .sort((a, b) => b.returnRate - a.returnRate);
+  }, [sessions, loadouts]);
 
   // Top loot items
-  const allLootItems = sessions.flatMap((s) => s.loot);
-  const lootByName = allLootItems.reduce((acc, item) => {
-    if (!acc[item.name]) {
-      acc[item.name] = {
-        totalValue: 0,
-        quantity: 0,
-        count: 0,
-      };
-    }
-    acc[item.name].totalValue += item.totalValue;
-    acc[item.name].quantity += item.quantity;
-    acc[item.name].count += 1;
-    return acc;
-  }, {} as Record<string, { totalValue: number; quantity: number; count: number }>);
+  const topLootItems = useMemo(() => {
+    const allLootItems = sessions.flatMap((s) => s.loot);
+    const lootByName = allLootItems.reduce((acc, item) => {
+      if (!acc[item.name]) {
+        acc[item.name] = {
+          totalValue: 0,
+          quantity: 0,
+          count: 0,
+        };
+      }
+      acc[item.name].totalValue += item.totalValue;
+      acc[item.name].quantity += item.quantity;
+      acc[item.name].count += 1;
+      return acc;
+    }, {} as Record<string, { totalValue: number; quantity: number; count: number }>);
 
-  const topLootItems = Object.entries(lootByName)
-    .map(([name, data]) => ({
-      name,
-      totalValue: data.totalValue,
-      quantity: data.quantity,
-      drops: data.count,
-      avgValue: data.count > 0 ? data.totalValue / data.count : 0,
-    }))
-    .sort((a, b) => b.totalValue - a.totalValue)
-    .slice(0, 20);
+    return Object.entries(lootByName)
+      .map(([name, data]) => ({
+        name,
+        totalValue: data.totalValue,
+        quantity: data.quantity,
+        drops: data.count,
+        avgValue: data.count > 0 ? data.totalValue / data.count : 0,
+      }))
+      .sort((a, b) => b.totalValue - a.totalValue)
+      .slice(0, 20);
+  }, [sessions]);
 
   // Skills gained
-  const allSkills = sessions.flatMap((s) => s.skills);
-  const skillsByName = allSkills.reduce((acc, skill) => {
-    if (!acc[skill.skillName]) {
-      acc[skill.skillName] = 0;
-    }
-    acc[skill.skillName] += skill.gainAmount;
-    return acc;
-  }, {} as Record<string, number>);
+  const topSkills = useMemo(() => {
+    const allSkills = sessions.flatMap((s) => s.skills);
+    const skillsByName = allSkills.reduce((acc, skill) => {
+      if (!acc[skill.skillName]) {
+        acc[skill.skillName] = 0;
+      }
+      acc[skill.skillName] += skill.gainAmount;
+      return acc;
+    }, {} as Record<string, number>);
 
-  const topSkills = Object.entries(skillsByName)
-    .map(([name, total]) => ({ name, total }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 15);
+    return Object.entries(skillsByName)
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 15);
+  }, [sessions]);
 
   // Cost breakdown
-  const costBreakdown = sessions.reduce(
-    (acc, session) => {
-      acc.ammo += session.ammoCost;
-      acc.repair += session.repairCost;
-      acc.armor += session.armorDecay;
-      acc.healing += session.healingCost;
-      acc.other += session.otherCosts;
-      return acc;
-    },
-    { ammo: 0, repair: 0, armor: 0, healing: 0, other: 0 }
-  );
+  const costData = useMemo(() => {
+    const costBreakdown = sessions.reduce(
+      (acc, session) => {
+        acc.ammo += session.ammoCost;
+        acc.repair += session.repairCost;
+        acc.armor += session.armorDecay;
+        acc.healing += session.healingCost;
+        acc.other += session.otherCosts;
+        return acc;
+      },
+      { ammo: 0, repair: 0, armor: 0, healing: 0, other: 0 }
+    );
 
-  const costData = [
-    { name: 'Ammo', value: costBreakdown.ammo, color: '#EF4444' },
-    { name: 'Repair', value: costBreakdown.repair, color: '#F59E0B' },
-    { name: 'Armor', value: costBreakdown.armor, color: '#3B82F6' },
-    { name: 'Healing', value: costBreakdown.healing, color: '#10B981' },
-    { name: 'Other', value: costBreakdown.other, color: '#6B7280' },
-  ].filter((item) => item.value > 0);
+    return [
+      { name: 'Ammo', value: costBreakdown.ammo, color: '#EF4444' },
+      { name: 'Repair', value: costBreakdown.repair, color: '#F59E0B' },
+      { name: 'Armor', value: costBreakdown.armor, color: '#3B82F6' },
+      { name: 'Healing', value: costBreakdown.healing, color: '#10B981' },
+      { name: 'Other', value: costBreakdown.other, color: '#6B7280' },
+    ].filter((item) => item.value > 0);
+  }, [sessions]);
 
   // Sessions over time (last 30)
-  const recentSessions = sessions
-    .filter((s) => s.status === 'completed')
-    .sort((a, b) => a.startTime - b.startTime)
-    .slice(-30)
-    .map((s) => ({
-      date: format(s.startTime, 'MM/dd'),
-      returnRate: s.stats.returns,
-      profit: s.stats.totalLoot - s.stats.totalCost,
-      loot: s.stats.totalLoot,
-    }));
+  const recentSessions = useMemo(() => {
+    return sessions
+      .filter((s) => s.status === 'completed')
+      .sort((a, b) => a.startTime - b.startTime)
+      .slice(-30)
+      .map((s) => ({
+        date: format(s.startTime, 'MM/dd'),
+        returnRate: s.stats.returns,
+        profit: s.stats.totalLoot - s.stats.totalCost,
+        loot: s.stats.totalLoot,
+      }));
+  }, [sessions]);
 
   // Format duration
   const formatDuration = (seconds: number) => {
