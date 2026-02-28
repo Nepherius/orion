@@ -71,7 +71,7 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
               <option value="">Keep current: {formData.weapon}</option>
               {loadouts.map((loadout) => (
                 <option key={loadout.id} value={loadout.id}>
-                  {loadout.name} {loadout.status === 'active' ? '(Active)' : ''}
+                  {loadout.name} {loadout.isPrimary ? '(Primary)' : ''}
                 </option>
               ))}
             </select>

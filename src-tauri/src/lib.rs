@@ -32,7 +32,45 @@ struct AppState {
     watcher: Arc<Mutex<FileWatcher>>,
 }
 
+// Check if sessions table has all required columns
+fn check_schema_version(conn: &Connection) -> bool {
+    // Try to query a column that should exist in the current schema
+    let result = conn.query_row(
+        "SELECT loadout_id FROM sessions LIMIT 1",
+        [],
+        |_| Ok(())
+    );
+    
+    // If the query succeeds or returns no rows, schema is valid
+    // If it fails with "no such column", schema is outdated
+    match result {
+        Ok(_) => true,
+        Err(rusqlite::Error::QueryReturnedNoRows) => true,
+        Err(_) => false,
+    }
+}
+
 fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
+    // Check if schema is outdated
+    if !check_schema_version(conn) {
+        println!("[DB] Outdated schema detected. Recreating database tables...");
+        // Drop all tables to start fresh
+        conn.execute_batch(
+            "DROP TABLE IF EXISTS damage_taken_events;
+             DROP TABLE IF EXISTS healing_events;
+             DROP TABLE IF EXISTS combat_events;
+             DROP TABLE IF EXISTS damage_events;
+             DROP TABLE IF EXISTS globals;
+             DROP TABLE IF EXISTS skill_gains;
+             DROP TABLE IF EXISTS loot_items;
+             DROP TABLE IF EXISTS sessions;
+             DROP TABLE IF EXISTS loadouts;
+             DROP TABLE IF EXISTS item_templates;"
+        )?;
+        println!("[DB] Old tables dropped. Creating fresh schema...");
+    }
+    
+    // Create tables with IF NOT EXISTS
     conn.execute_batch(
         "BEGIN;
         CREATE TABLE IF NOT EXISTS sessions (
@@ -406,6 +444,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -423,7 +462,12 @@ pub fn run() {
             let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
             std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
             let db_path: PathBuf = app_dir.join("orion.db");
-            let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+            
+            // Log database location for debugging
+            println!("[DB] Database path: {:?}", db_path);
+            println!("[DB] Database exists: {}", db_path.exists());
+            
+            let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
             ensure_db_schema(&conn).map_err(|e| e.to_string())?;
 
             let db_arc = Arc::new(Mutex::new(conn));

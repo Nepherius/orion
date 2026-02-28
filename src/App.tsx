@@ -28,20 +28,48 @@ function App() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const activeSession = useHuntStore((state) => state.getActiveSession());
   const avatarName = useHuntStore((state) => state.settings.avatarName);
-  const [showWelcome, setShowWelcome] = useState(!avatarName);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Setup cross-window sync on mount
+  // CRITICAL: Must await DB initialization before setting up sync
+  // to prevent broadcasting empty state before sessions are loaded
   useEffect(() => {
-    initializeStoreFromDb();
-    setupStoreSync();
+    const init = async () => {
+      await initializeStoreFromDb();
+      setupStoreSync();
+      // Mark as loaded after DB init completes
+      setDataLoaded(true);
+    };
+    init();
   }, []);
+
+  // Show welcome modal only after data is loaded and avatar name is still empty
+  useEffect(() => {
+    if (dataLoaded && !avatarName) {
+      setShowWelcome(true);
+    }
+  }, [dataLoaded, avatarName]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {showWelcome && <WelcomeModal onComplete={() => setShowWelcome(false)} />}
 
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+      {/* Loading screen while database initializes */}
+      {!dataLoaded && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4"></div>
+            <p className="text-gray-400">Loading...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Main app content - only show after DB is initialized */}
+      {dataLoaded && (
+        <>
+          {/* Header */}
+          <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="font-bold text-primary-400 text-lg tracking-widest">ORION</div>
@@ -184,6 +212,8 @@ function App() {
           <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
         </div>
       </footer>
+      </>
+      )}
     </div>
   );
 }

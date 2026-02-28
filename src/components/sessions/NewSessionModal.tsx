@@ -10,11 +10,11 @@ interface NewSessionModalProps {
 export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalProps) {
   const createSession = useHuntStore((state) => state.createSession);
   const loadouts = useHuntStore((state) => state.loadouts);
-  const activeLoadout = useHuntStore((state) => state.getActiveLoadout());
+  const primaryLoadout = useHuntStore((state) => state.getPrimaryLoadout());
 
   const [formData, setFormData] = useState({
     name: '',
-    loadoutId: activeLoadout?.id || '',
+    loadoutId: primaryLoadout?.id || '',
     armor: '',
     location: '',
     notes: '',
@@ -74,7 +74,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
               <option value="">Select a loadout</option>
               {loadouts.map((loadout) => (
                 <option key={loadout.id} value={loadout.id}>
-                  {loadout.name} {loadout.status === 'active' ? '(Active)' : ''}
+                  {loadout.name} {loadout.isPrimary ? '(Primary)' : ''}
                 </option>
               ))}
             </select>

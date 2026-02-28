@@ -20,7 +20,7 @@ export function SessionList({
   onNavigateToDashboard,
 }: SessionListProps) {
   const sessions = useHuntStore((state) => state.sessions);
-  const activeLoadout = useHuntStore((state) => state.getActiveLoadout());
+  const primaryLoadout = useHuntStore((state) => state.getPrimaryLoadout());
   const [showNewModal, setShowNewModal] = useState(false);
   const [showLoadoutError, setShowLoadoutError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,7 +149,7 @@ export function SessionList({
       {/* New Session Button */}
       <button
         onClick={() => {
-          if (activeLoadout) {
+          if (primaryLoadout) {
             setShowNewModal(true);
           } else {
             setShowLoadoutError(true);

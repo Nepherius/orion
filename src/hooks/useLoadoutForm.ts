@@ -49,7 +49,7 @@ export function useLoadoutForm(editLoadout?: Loadout) {
   const handleSave = () => {
     const loadoutData = {
       name: name || 'Unnamed Loadout',
-      status: 'inactive' as const,
+      isPrimary: false,
       favorite: false,
       weapon,
       amplifier,

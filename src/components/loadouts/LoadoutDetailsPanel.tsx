@@ -4,7 +4,7 @@ import { LoadoutStatsPanel } from './LoadoutStatsPanel';
 
 interface LoadoutDetailsPanelProps {
   loadout: Loadout | null;
-  onSetActive: (id: string) => void;
+  onSetPrimary: (id: string) => void;
   onEdit: (loadout: Loadout) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
@@ -13,7 +13,7 @@ interface LoadoutDetailsPanelProps {
 
 export function LoadoutDetailsPanel({
   loadout,
-  onSetActive,
+  onSetPrimary,
   onEdit,
   onDuplicate,
   onDelete,
@@ -42,9 +42,9 @@ export function LoadoutDetailsPanel({
       <div className="p-4 border-b border-gray-700">
         <h3 className="text-xl font-bold mb-1">{loadout.name}</h3>
         <div className="flex items-center gap-2 text-xs">
-          {loadout.status === 'active' && (
+          {loadout.isPrimary && (
             <span className="px-2 py-1 rounded bg-green-900 text-green-300 uppercase font-semibold">
-              ACTIVE
+              PRIMARY
             </span>
           )}
           {loadout.favorite && (
@@ -65,18 +65,18 @@ export function LoadoutDetailsPanel({
 
       {/* Action Buttons */}
       <div className="p-4 border-b border-gray-700 space-y-2">
-        {loadout.status === 'inactive' && (
+        {!loadout.isPrimary && (
           <button
-            onClick={() => onSetActive(loadout.id)}
+            onClick={() => onSetPrimary(loadout.id)}
             className="btn-primary w-full flex items-center justify-center gap-2"
           >
             <Circle className="w-4 h-4 fill-green-400 text-green-400" />
-            Set Active
+            Set Primary
           </button>
         )}
-        {loadout.status === 'active' && (
+        {loadout.isPrimary && (
           <div className="w-full p-3 bg-green-900 text-green-300 rounded text-center text-sm font-semibold">
-            Currently Active
+            Currently Primary
           </div>
         )}
         <button

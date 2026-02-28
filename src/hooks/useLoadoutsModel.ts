@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import { useHuntStore } from '../store';
 import { Loadout } from '../types';
 
-export type StatusFilter = 'all' | 'active' | 'favorites';
+export type StatusFilter = 'all' | 'primary' | 'favorites';
 export type SortOption = 'name-az' | 'name-za' | 'cost' | 'dpp';
 
 export function useLoadoutsModel() {
   const loadouts = useHuntStore((state) => state.loadouts);
-  const { deleteLoadout, duplicateLoadout, toggleLoadoutFavorite, setActiveLoadout } =
+  const { deleteLoadout, duplicateLoadout, toggleLoadoutFavorite, setPrimaryLoadout } =
     useHuntStore();
 
   const [showNewModal, setShowNewModal] = useState(false);
@@ -31,8 +31,8 @@ export function useLoadoutsModel() {
         loadout.weapon?.Name.toLowerCase().includes(query)
     );
 
-    if (statusFilter === 'active') {
-      filtered = filtered.filter((l) => l.status === 'active');
+    if (statusFilter === 'primary') {
+      filtered = filtered.filter((l) => l.isPrimary);
     } else if (statusFilter === 'favorites') {
       filtered = filtered.filter((l) => l.favorite);
     }
@@ -54,7 +54,7 @@ export function useLoadoutsModel() {
   }, [loadouts, searchQuery, statusFilter, sortBy]);
 
   const activeCount = useMemo(
-    () => loadouts.filter((l) => l.status === 'active').length,
+    () => loadouts.filter((l) => l.isPrimary).length,
     [loadouts]
   );
   const favoriteCount = useMemo(() => loadouts.filter((l) => l.favorite).length, [loadouts]);
@@ -109,6 +109,6 @@ export function useLoadoutsModel() {
     setDeleteConfirmId,
     duplicateLoadout,
     toggleLoadoutFavorite,
-    setActiveLoadout,
+    setPrimaryLoadout,
   };
 }

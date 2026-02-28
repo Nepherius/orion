@@ -169,7 +169,7 @@ export interface LoadoutEnhancers {
 export interface Loadout {
   id: string;
   name: string;
-  status: 'active' | 'inactive';
+  isPrimary: boolean;
   favorite: boolean;
   weapon?: EquipmentItem;
   amplifier?: EquipmentItem;

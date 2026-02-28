@@ -32,7 +32,7 @@ export function Loadouts() {
     setDeleteConfirmId,
     duplicateLoadout,
     toggleLoadoutFavorite,
-    setActiveLoadout,
+    setPrimaryLoadout,
   } = useLoadoutsModel();
 
   return (
@@ -58,7 +58,7 @@ export function Loadouts() {
 
       <LoadoutDetailsPanel
         loadout={selectedLoadout || null}
-        onSetActive={setActiveLoadout}
+        onSetPrimary={setPrimaryLoadout}
         onEdit={handleEdit}
         onDuplicate={duplicateLoadout}
         onDelete={requestDelete}

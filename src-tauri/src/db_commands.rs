@@ -29,12 +29,16 @@ pub fn db_create_session(
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
-    conn.execute(
+    let _result = conn.execute(
         "INSERT INTO sessions (uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs) 
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         params![uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs],
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+        let err_msg = format!("Failed to insert session: {}", e);
+        println!("[DB ERROR] {}", err_msg);
+        err_msg
+    })?;
     Ok(())
 }
 
@@ -211,14 +215,15 @@ pub fn db_delete_loot(uuid: String, state: State<'_, DbState>) -> Result<(), Str
 }
 
 #[tauri::command]
-pub fn db_get_session_loot(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_loot(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, name, quantity, value, markup, total_value, timestamp FROM loot_items WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
     
     let rows = stmt
-        .query_map([session_uuid], |row| {
+        .query_map([sessionUuid], |row| {
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "name": row.get::<_, String>(1)?,
@@ -239,14 +244,15 @@ pub fn db_get_session_loot(session_uuid: String, state: State<'_, DbState>) -> R
 }
 
 #[tauri::command]
-pub fn db_get_session_loot_grouped(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_loot_grouped(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT name, SUM(quantity) as quantity, SUM(value) as value, AVG(markup) as markup, SUM(total_value) as total_value, COUNT(*) as count FROM loot_items WHERE session_uuid = ?1 GROUP BY name ORDER BY SUM(total_value) DESC")
         .map_err(|e| e.to_string())?;
     
     let rows = stmt
-        .query_map([session_uuid], |row| {
+        .query_map([sessionUuid], |row| {
             Ok(json!({
                 "name": row.get::<_, String>(0)?,
                 "quantity": row.get::<_, i64>(1)?,
@@ -266,14 +272,15 @@ pub fn db_get_session_loot_grouped(session_uuid: String, state: State<'_, DbStat
 }
 
 #[tauri::command]
-pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_stats(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
 
     // Get basic session info for cost calculations
     let (ammo_cost, repair_cost, armor_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time): (f64, f64, f64, f64, f64, String, Option<i64>, Option<i64>, i64, Option<i64>) = conn
         .query_row(
-            "SELECT ammoCost, repairCost, armorDecay, healingCost, otherCosts, status, pausedAt, totalPausedMs, startTime, endTime FROM sessions WHERE uuid = ?1",
-            [&session_uuid],
+            "SELECT ammo_cost, repair_cost, armor_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time FROM sessions WHERE uuid = ?1",
+            [&sessionUuid],
             |row| {
                 Ok((
                     row.get(0)?,
@@ -295,7 +302,7 @@ pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> 
     let total_loot: f64 = conn
         .query_row(
             "SELECT COALESCE(SUM(total_value), 0) FROM loot_items WHERE session_uuid = ?1",
-            [&session_uuid],
+            [&sessionUuid],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
@@ -303,44 +310,44 @@ pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> 
     let loot_events: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM loot_items WHERE session_uuid = ?1",
-            [&session_uuid],
+            [&sessionUuid],
             |row| row.get(0),
         )
         .unwrap_or(0);
 
     let mut stmt = conn
-        .prepare("SELECT COALESCE(SUM(CASE WHEN isHoF = 0 THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN isHoF = 1 THEN 1 ELSE 0 END), 0) FROM globals WHERE session_uuid = ?1")
+        .prepare("SELECT COALESCE(SUM(CASE WHEN is_hof = 0 THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN is_hof = 1 THEN 1 ELSE 0 END), 0) FROM globals WHERE session_uuid = ?1")
         .map_err(|e| e.to_string())?;
     let (globals, hofs): (i64, i64) = stmt
-        .query_row([&session_uuid], |row| Ok((row.get(0)?, row.get(1)?)))
+        .query_row([&sessionUuid], |row| Ok((row.get(0)?, row.get(1)?)))
         .unwrap_or((0, 0));
 
     let damage_dealt: f64 = conn
         .query_row(
             "SELECT COALESCE(SUM(damage), 0) FROM damage_events WHERE session_uuid = ?1",
-            [&session_uuid],
+            [&sessionUuid],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
 
     let mut stmt = conn
-        .prepare("SELECT COALESCE(SUM(CASE WHEN isCritical = 1 THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN isCritical = 0 THEN 1 ELSE 0 END), 0) FROM damage_events WHERE session_uuid = ?1")
+        .prepare("SELECT COALESCE(SUM(CASE WHEN is_critical = 1 THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN is_critical = 0 THEN 1 ELSE 0 END), 0) FROM damage_events WHERE session_uuid = ?1")
         .map_err(|e| e.to_string())?;
     let (critical_hits, hits): (i64, i64) = stmt
-        .query_row([&session_uuid], |row| Ok((row.get(0)?, row.get(1)?)))
+        .query_row([&sessionUuid], |row| Ok((row.get(0)?, row.get(1)?)))
         .unwrap_or((0, 0));
 
     let mut stmt = conn
         .prepare("SELECT COALESCE(SUM(CASE WHEN type = 'miss' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'dodge' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'evade' THEN 1 ELSE 0 END), 0) FROM combat_events WHERE session_uuid = ?1")
         .map_err(|e| e.to_string())?;
     let (misses, dodges, evades): (i64, i64, i64) = stmt
-        .query_row([&session_uuid], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .query_row([&sessionUuid], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
         .unwrap_or((0, 0, 0));
 
     let heals_used: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM healing_events WHERE session_uuid = ?1",
-            [&session_uuid],
+            [&sessionUuid],
             |row| row.get(0),
         )
         .unwrap_or(0);
@@ -348,7 +355,7 @@ pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> 
     let total_healing: f64 = conn
         .query_row(
             "SELECT COALESCE(SUM(amount), 0) FROM healing_events WHERE session_uuid = ?1",
-            [&session_uuid],
+            [&sessionUuid],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
@@ -356,7 +363,7 @@ pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> 
     let damage_taken: f64 = conn
         .query_row(
             "SELECT COALESCE(SUM(damage), 0) FROM damage_taken_events WHERE session_uuid = ?1",
-            [&session_uuid],
+            [&sessionUuid],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
@@ -413,7 +420,7 @@ pub fn db_get_session_stats(session_uuid: String, state: State<'_, DbState>) -> 
 pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, status, startTime, endTime, totalPausedMs, pausedAt, ammoCost, repairCost, armorDecay, healingCost, otherCosts, notes, loadoutId FROM sessions ORDER BY startTime DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs, notes, loadout_id FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -468,14 +475,15 @@ pub fn db_add_skill(
 }
 
 #[tauri::command]
-pub fn db_get_session_skills(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_skills(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, skill_name, gain_amount, timestamp FROM skill_gains WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
     
     let rows = stmt
-        .query_map([session_uuid], |row| {
+        .query_map([sessionUuid], |row| {
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "skillName": row.get::<_, String>(1)?,
@@ -514,14 +522,15 @@ pub fn db_add_global(
 }
 
 #[tauri::command]
-pub fn db_get_session_globals(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_globals(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, creature, value, is_hof, timestamp FROM globals WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
     
     let rows = stmt
-        .query_map([session_uuid], |row| {
+        .query_map([sessionUuid], |row| {
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "creature": row.get::<_, String>(1)?,
@@ -560,14 +569,15 @@ pub fn db_add_damage_event(
 }
 
 #[tauri::command]
-pub fn db_get_session_damage_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_damage_events(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, damage, is_critical, timestamp FROM damage_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
     
     let rows = stmt
-        .query_map([session_uuid], |row| {
+        .query_map([sessionUuid], |row| {
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "damage": row.get::<_, f64>(1)?,
@@ -604,14 +614,15 @@ pub fn db_add_combat_event(
 }
 
 #[tauri::command]
-pub fn db_get_session_combat_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_combat_events(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, type, timestamp FROM combat_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
     
     let rows = stmt
-        .query_map([session_uuid], |row| {
+        .query_map([sessionUuid], |row| {
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "type": row.get::<_, String>(1)?,
@@ -647,14 +658,15 @@ pub fn db_add_healing_event(
 }
 
 #[tauri::command]
-pub fn db_get_session_healing_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_healing_events(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, amount, timestamp FROM healing_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
     
     let rows = stmt
-        .query_map([session_uuid], |row| {
+        .query_map([sessionUuid], |row| {
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "amount": row.get::<_, f64>(1)?,
@@ -691,14 +703,15 @@ pub fn db_add_damage_taken_event(
 }
 
 #[tauri::command]
-pub fn db_get_session_damage_taken_events(session_uuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
+#[allow(non_snake_case)]
+pub fn db_get_session_damage_taken_events(sessionUuid: String, state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
         .prepare("SELECT uuid, damage, is_critical, timestamp FROM damage_taken_events WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
     
     let rows = stmt
-        .query_map([session_uuid], |row| {
+        .query_map([sessionUuid], |row| {
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "damage": row.get::<_, f64>(1)?,

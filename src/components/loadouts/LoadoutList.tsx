@@ -64,7 +64,7 @@ export function LoadoutList({
           <button
             onClick={() => onStatusFilterChange('active')}
             className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
-              statusFilter === 'active'
+              statusFilter === 'primary'
                 ? 'bg-primary-900 text-primary-300'
                 : 'text-gray-400 hover:bg-gray-700'
             }`}

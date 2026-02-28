@@ -189,12 +189,12 @@ export function ChatLogMonitor() {
 
     const ensureWatching = async () => {
       const watching = await getIsWatching();
-      const currentActiveLoadout = useHuntStore.getState().getActiveLoadout();
+      const currentPrimaryLoadout = useHuntStore.getState().getPrimaryLoadout();
 
       if (autoStartSession) {
-        // Check if there's an active loadout before auto-starting
-        if (!currentActiveLoadout) {
-          console.log('[ChatLogMonitor] Auto-start disabled: No active loadout set');
+        // Check if there's a primary loadout before auto-starting
+        if (!currentPrimaryLoadout) {
+          console.log('[ChatLogMonitor] Auto-start disabled: No primary loadout set');
           if (watching) {
             console.log('[ChatLogMonitor] Stopping watcher due to missing loadout');
             stopWatching();
@@ -285,12 +285,12 @@ export function ChatLogMonitor() {
             if (!activeSession && storeSettings.autoStartSession && hasAnyEvents) {
               const hasSystemPickup = events.some((e) => !e.player || e.player.trim() === '');
               if (hasSystemPickup || damageEvents.length > 0) {
-                const activeLoadout = useHuntStore.getState().getActiveLoadout();
+                const primaryLoadout = useHuntStore.getState().getPrimaryLoadout();
 
-                // Cancel auto-start if no active loadout is set
-                if (!activeLoadout) {
+                // Cancel auto-start if no primary loadout is set
+                if (!primaryLoadout) {
                   console.warn(
-                    '[ChatLogMonitor] Auto-start cancelled: No active loadout set. User must create and activate a loadout first.'
+                    '[ChatLogMonitor] Auto-start cancelled: No primary loadout set. User must create and activate a loadout first.'
                   );
                   return;
                 }
@@ -301,8 +301,8 @@ export function ChatLogMonitor() {
                 );
                 storeActions.createSession({
                   name: 'Auto Session (Chat Monitor)',
-                  weapon: activeLoadout.name || 'No Loadout',
-                  loadoutId: activeLoadout.id,
+                  weapon: primaryLoadout.name || 'No Loadout',
+                  loadoutId: primaryLoadout.id,
                   armor: '',
                   location: 'Auto',
                   startTime: Date.now(),

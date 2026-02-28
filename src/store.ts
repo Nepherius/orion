@@ -77,8 +77,8 @@ interface HuntStore {
   deleteLoadout: (id: string) => void;
   duplicateLoadout: (id: string) => void;
   toggleLoadoutFavorite: (id: string) => void;
-  setActiveLoadout: (id: string) => void;
-  getActiveLoadout: () => Loadout | null;
+  setPrimaryLoadout: (id: string) => void;
+  getPrimaryLoadout: () => Loadout | null;
 
   // Settings actions
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -90,21 +90,22 @@ interface HuntStore {
 
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-const ensureSingleLoadoutActive = (loadouts: Loadout[]): Loadout[] => {
+const ensureSingleLoadoutPrimary = (loadouts: Loadout[]): Loadout[] => {
   if (loadouts.length !== 1) {
     return loadouts;
   }
 
   const [onlyLoadout] = loadouts;
-  if (onlyLoadout.status === 'active') {
+  if (onlyLoadout.isPrimary) {
     return loadouts;
   }
 
-  return [{ ...onlyLoadout, status: 'active' }];
+  return [{ ...onlyLoadout, isPrimary: true }];
 };
 
 let syncInitialized = false;
 let isApplyingRemoteSync = false;
+let allowBroadcasting = true; // Start true by default
 const storeSyncSourceId = `store-${Math.random().toString(36).slice(2)}`;
 
 type StoreSyncPayload = {
@@ -181,7 +182,9 @@ const defaultSettings: AppSettings = {
 const safeInvoke = async <T = unknown>(command: string, args?: Record<string, unknown>) => {
   try {
     return (await invoke(command, args)) as T;
-  } catch {
+  } catch (error) {
+    // Log errors so we can see when database operations fail
+    console.error(`[DB Error] Command '${command}' failed:`, error);
     return null;
   }
 };
@@ -213,21 +216,14 @@ const persistSessionToDb = async (session: HuntSession) => {
     armor: session.armor ?? null,
     location: session.location ?? null,
     startTime: session.startTime,
-    start_time: session.startTime,
     status: session.status,
     loadoutId: session.loadoutId ?? null,
-    loadout_id: session.loadoutId ?? null,
     notes: session.notes,
     ammoCost: session.ammoCost,
-    ammo_cost: session.ammoCost,
     repairCost: session.repairCost,
-    repair_cost: session.repairCost,
     armorDecay: session.armorDecay,
-    armor_decay: session.armorDecay,
     healingCost: session.healingCost,
-    healing_cost: session.healingCost,
     otherCosts: session.otherCosts,
-    other_costs: session.otherCosts,
   });
 };
 
@@ -255,16 +251,16 @@ const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
 const hydrateSessionEvents = async (session: HuntSession): Promise<HuntSession> => {
   const [loot, skills, globals, damageEvents, combatEvents, healingEvents, damageTakenEvents, stats] =
     await Promise.all([
-      safeInvoke<LootItem[]>('db_get_session_loot', { session_uuid: session.id }),
-      safeInvoke<SkillGain[]>('db_get_session_skills', { session_uuid: session.id }),
-      safeInvoke<Global[]>('db_get_session_globals', { session_uuid: session.id }),
-      safeInvoke<DamageEvent[]>('db_get_session_damage_events', { session_uuid: session.id }),
-      safeInvoke<CombatEvent[]>('db_get_session_combat_events', { session_uuid: session.id }),
-      safeInvoke<HealingEvent[]>('db_get_session_healing_events', { session_uuid: session.id }),
+      safeInvoke<LootItem[]>('db_get_session_loot', { sessionUuid: session.id }),
+      safeInvoke<SkillGain[]>('db_get_session_skills', { sessionUuid: session.id }),
+      safeInvoke<Global[]>('db_get_session_globals', { sessionUuid: session.id }),
+      safeInvoke<DamageEvent[]>('db_get_session_damage_events', { sessionUuid: session.id }),
+      safeInvoke<CombatEvent[]>('db_get_session_combat_events', { sessionUuid: session.id }),
+      safeInvoke<HealingEvent[]>('db_get_session_healing_events', { sessionUuid: session.id }),
       safeInvoke<DamageTakenEvent[]>('db_get_session_damage_taken_events', {
-        session_uuid: session.id,
+        sessionUuid: session.id,
       }),
-      safeInvoke<SessionStats>('db_get_session_stats', { session_uuid: session.id }),
+      safeInvoke<SessionStats>('db_get_session_stats', { sessionUuid: session.id }),
     ]);
 
   const hydrated: HuntSession = {
@@ -790,7 +786,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
           id: generateId(),
         };
         set((state) => {
-          const loadouts = ensureSingleLoadoutActive([newLoadout, ...state.loadouts]);
+          const loadouts = ensureSingleLoadoutPrimary([newLoadout, ...state.loadouts]);
           void saveJsonSetting('loadouts', loadouts);
           return { loadouts };
         });
@@ -811,7 +807,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       deleteLoadout: (id) => {
         set((state) => ({
           loadouts: (() => {
-            const loadouts = ensureSingleLoadoutActive(
+            const loadouts = ensureSingleLoadoutPrimary(
               state.loadouts.filter((loadout) => loadout.id !== id)
             );
             void saveJsonSetting('loadouts', loadouts);
@@ -827,7 +823,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
             ...loadout,
             id: generateId(),
             name: `${loadout.name} (Copy)`,
-            status: 'inactive',
+            isPrimary: false,
           };
           set((state) => {
             const loadouts = [duplicate, ...state.loadouts];
@@ -849,12 +845,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         }));
       },
 
-      setActiveLoadout: (id) => {
+      setPrimaryLoadout: (id) => {
         set((state) => ({
           loadouts: (() => {
             const loadouts = state.loadouts.map((loadout) => ({
               ...loadout,
-              status: (loadout.id === id ? 'active' : 'inactive') as 'active' | 'inactive',
+              isPrimary: loadout.id === id,
             }));
             void saveJsonSetting('loadouts', loadouts);
             return loadouts;
@@ -862,9 +858,9 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         }));
       },
 
-      getActiveLoadout: () => {
+      getPrimaryLoadout: () => {
         const state = get();
-        return state.loadouts.find((l) => l.status === 'active') || null;
+        return state.loadouts.find((l) => l.isPrimary) || null;
       },
 
       updateSettings: (updates) => {
@@ -914,7 +910,9 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
 let dbStoreInitialized = false;
 
 export async function initializeStoreFromDb() {
-  if (dbStoreInitialized) {
+  // Allow re-initialization if store is empty (page refresh, etc)
+  const currentState = useHuntStore.getState();
+  if (dbStoreInitialized && currentState.settings.avatarName) {
     return;
   }
   dbStoreInitialized = true;
@@ -1003,7 +1001,7 @@ export async function initializeStoreFromDb() {
     };
   });
 
-  const normalizedHydratedLoadouts = ensureSingleLoadoutActive(hydratedLoadouts);
+  const normalizedHydratedLoadouts = ensureSingleLoadoutPrimary(hydratedLoadouts);
 
   useHuntStore.setState((prev) => ({
     ...prev,
@@ -1016,16 +1014,24 @@ export async function initializeStoreFromDb() {
 }
 
 // Setup event listeners for cross-window synchronization
-export async function setupStoreSync() {
+export async function setupStoreSync(delayBroadcastMs = 0) {
   if (syncInitialized) {
     return;
   }
   syncInitialized = true;
 
+  // Optionally delay broadcasting (for overlay to load initial state from DB first)
+  if (delayBroadcastMs > 0) {
+    allowBroadcasting = false;
+    setTimeout(() => {
+      allowBroadcasting = true;
+    }, delayBroadcastMs);
+  }
+
   // Broadcast relevant store state changes to other windows
   let lastSyncedSnapshot = '';
   useHuntStore.subscribe((state) => {
-    if (isApplyingRemoteSync) {
+    if (isApplyingRemoteSync || !allowBroadcasting) {
       return;
     }
 
@@ -1058,7 +1064,7 @@ export async function setupStoreSync() {
       return;
     }
 
-    const normalizedLoadouts = ensureSingleLoadoutActive(payload.loadouts);
+    const normalizedLoadouts = ensureSingleLoadoutPrimary(payload.loadouts);
 
     isApplyingRemoteSync = true;
     useHuntStore.setState((prevState) => ({
@@ -1071,4 +1077,43 @@ export async function setupStoreSync() {
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)
   });
+
+  // Listen for state request events (when a new window opens and needs current state)
+  listen('store-sync-request', () => {
+    // Immediately broadcast current state to the requesting window
+    const state = useHuntStore.getState();
+    const payload: StoreSyncPayload = {
+      sourceId: storeSyncSourceId,
+      sessions: state.sessions,
+      activeSessionId: state.activeSessionId,
+      loadouts: state.loadouts,
+    };
+    emit('store-sync', payload).catch(() => {
+      // Silently fail if emit is not available
+    });
+  }).catch(() => {
+    // Silently fail if listen is not available (dev environment)
+  });
+
+  // If this window is loading with a delay (overlay), request current state from other windows
+  if (delayBroadcastMs > 0) {
+    // Initial request shortly after opening
+    setTimeout(() => {
+      emit('store-sync-request', { sourceId: storeSyncSourceId }).catch(() => {
+        // Silently fail if emit is not available
+      });
+    }, 100);
+    
+    // Periodically request state if we don't have an active session
+    // This handles edge cases: initial request fails, main window starts session
+    // after overlay opens, or sync is lost for any reason
+    setInterval(() => {
+      const state = useHuntStore.getState();
+      if (!state.activeSessionId) {
+        emit('store-sync-request', { sourceId: storeSyncSourceId }).catch(() => {
+          // Silently fail if emit is not available
+        });
+      }
+    }, 2000); // Check every 2 seconds
+  }
 }

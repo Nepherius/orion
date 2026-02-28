@@ -56,7 +56,7 @@ export function LoadoutTable({
                       <div className="flex items-center gap-3">
                         <Circle
                           className={`w-2 h-2 ${
-                            loadout.status === 'active'
+                            loadout.isPrimary
                               ? 'fill-green-400 text-green-400'
                               : 'fill-gray-600 text-gray-600'
                           }`}
@@ -64,9 +64,9 @@ export function LoadoutTable({
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-white">{loadout.name}</span>
-                            {loadout.status === 'active' && (
+                            {loadout.isPrimary && (
                               <span className="px-2 py-0.5 text-[10px] uppercase font-semibold rounded bg-green-900 text-green-300">
-                                ACTIVE
+                                PRIMARY
                               </span>
                             )}
                           </div>

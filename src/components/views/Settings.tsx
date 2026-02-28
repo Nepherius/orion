@@ -1,6 +1,7 @@
 import { FolderOpen, User, FileText, Palette, Sliders } from 'lucide-react';
 import { useSettingsModel } from '../../hooks/useSettingsModel';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { open } from '@tauri-apps/plugin-shell';
 
 export function Settings() {
   const {
@@ -151,8 +152,21 @@ export function Settings() {
             <strong>Orion Loot Tracker</strong> - Version 0.1.0
           </p>
           <p>
-            A modern hunt tracking application for Entropia Universe, inspired by Entropia Tally and
-            Artemis.
+            A modern hunt tracking application for Entropia Universe, inspired by{' '}
+            <button
+              onClick={() => open('https://github.com/EntropiaTally/entropia-tally-app')}
+              className="text-primary-400 hover:text-primary-300 underline cursor-pointer"
+            >
+              Entropia Tally
+            </button>
+            {' '}and{' '}
+            <button
+              onClick={() => open('https://www.thedeltaproject.net/artemis')}
+              className="text-primary-400 hover:text-primary-300 underline cursor-pointer"
+            >
+              Artemis
+            </button>
+            .
           </p>
           <p className="text-gray-400">
             Track your hunting sessions, loot, costs, globals, and statistics. All data is stored

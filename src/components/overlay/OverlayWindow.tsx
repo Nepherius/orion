@@ -1,4 +1,4 @@
-import { useHuntStore, setupStoreSync, initializeStoreFromDb } from '../../store';
+import { useHuntStore, setupStoreSync } from '../../store';
 import { LiveTimer } from '../layout/LiveTimer';
 import { Play, Pause, GripVertical, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -11,10 +11,11 @@ export function OverlayWindow() {
   const resumeSession = useHuntStore((state) => state.resumeSession);
   const updateSettings = useHuntStore((state) => state.updateSettings);
 
-  // Setup cross-window sync on mount
+  // Setup sync with delayed broadcasting - overlay will periodically request state from main window
+  // until it has an active session. This ensures the overlay always gets fresh data even if
+  // initial sync fails or main window starts a session after overlay opens.
   useEffect(() => {
-    initializeStoreFromDb();
-    setupStoreSync();
+    setupStoreSync(500); // Delay broadcasting for 500ms, request state periodically if no active session
   }, []);
 
   // Save overlay geometry when window is moved or resized
