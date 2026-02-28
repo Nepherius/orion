@@ -11,6 +11,7 @@ use tauri::Emitter;
 pub struct FileWatcher {
     watcher: Arc<Mutex<Option<notify::RecommendedWatcher>>>,
     current_path: Arc<Mutex<Option<PathBuf>>>,
+    last_size: Arc<Mutex<u64>>,
 }
 
 impl FileWatcher {
@@ -18,6 +19,7 @@ impl FileWatcher {
         Self {
             watcher: Arc::new(Mutex::new(None)),
             current_path: Arc::new(Mutex::new(None)),
+            last_size: Arc::new(Mutex::new(0)),
         }
     }
 
@@ -46,16 +48,32 @@ impl FileWatcher {
 
         // Store watcher
         *self.watcher.lock().unwrap() = Some(watcher);
-        *self.current_path.lock().unwrap() = Some(path.clone());
 
-        // Track last-read size so we only read appended data. This avoids
-        // reparsing the entire log on each filesystem event.
-        let initial_size = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-        let last_size = Arc::new(Mutex::new(initial_size));
+        // If the path changed, reset last_size. Otherwise keep the previous
+        // position so we only emit new lines on restart (e.g. HMR).
+        {
+            let mut cur = self.current_path.lock().unwrap();
+            if cur.as_deref() != Some(&path) {
+                *self.last_size.lock().unwrap() =
+                    fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+                *cur = Some(path.clone());
+            } else {
+                // Same file – if the file grew while we weren't watching,
+                // jump to the current end so we don't replay old data.
+                let current_file_size = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+                let mut last = self.last_size.lock().unwrap();
+                if current_file_size > *last {
+                    // Skip any content that was written while we were stopped
+                    *last = current_file_size;
+                }
+            }
+        }
+
+        // Clone the Arc for the thread
+        let last_size = self.last_size.clone();
 
         // Spawn thread to handle file changes
         let path_clone = path.clone();
-        let last_size_thread = last_size.clone();
         thread::spawn(move || {
             for res in rx {
                 match res {
@@ -87,7 +105,7 @@ impl FileWatcher {
                         match fs::metadata(&path_clone) {
                             Ok(meta) => {
                                 let new_len = meta.len();
-                                let mut last = last_size_thread.lock().unwrap();
+                                let mut last = last_size.lock().unwrap();
 
                                 if new_len == *last {
                                     // nothing new
@@ -113,43 +131,37 @@ impl FileWatcher {
                                 match File::open(&path_clone) {
                                     Ok(mut f) => {
                                         if f.seek(SeekFrom::Start(*last)).is_ok() {
-                                            let mut buf = String::new();
-                                            match f.read_to_string(&mut buf) {
-                                                Ok(_) => {
-                                                    if !buf.is_empty() {
-                                                        // Only emit complete lines to avoid partial line issues
-                                                        // Find the last newline and only emit up to there
-                                                        let lines: Vec<&str> =
-                                                            buf.lines().collect();
-                                                        let complete_lines = if buf.ends_with('\n')
-                                                        {
-                                                            // All lines are complete
-                                                            lines.join("\n") + "\n"
-                                                        } else if lines.len() > 1 {
-                                                            // Last line is incomplete, emit all but the last
-                                                            lines[..lines.len() - 1].join("\n")
-                                                                + "\n"
+                                            use std::io::{BufRead, BufReader};
+                                            let mut reader = BufReader::new(f);
+                                            let mut complete_lines = String::new();
+                                            let mut bytes_read_total = 0;
+
+                                            loop {
+                                                let mut line = String::new();
+                                                match reader.read_line(&mut line) {
+                                                    Ok(0) => break, // EOF
+                                                    Ok(bytes) => {
+                                                        // Only accept the line if it has a newline, ensuring it's complete
+                                                        if line.ends_with('\n') {
+                                                            complete_lines.push_str(&line);
+                                                            bytes_read_total += bytes as u64;
                                                         } else {
-                                                            // Only one incomplete line, don't emit yet
-                                                            String::new()
-                                                        };
-
-                                                        if !complete_lines.is_empty() {
-                                                            let emitted_len = complete_lines.len();
-                                                            let _ = app_handle.emit(
-                                                                "chat-log-updated",
-                                                                complete_lines,
-                                                            );
-
-                                                            // Update position to end of complete lines only
-                                                            *last += emitted_len as u64;
+                                                            // Incomplete line at EOF; stop reading and don't advance pointer
+                                                            break;
                                                         }
                                                     }
+                                                    Err(e) => {
+                                                        eprintln!("Error reading file line: {:?}", e);
+                                                        break;
+                                                    }
                                                 }
-                                                Err(e) => eprintln!(
-                                                    "Failed to read appended data: {:?}",
-                                                    e
-                                                ),
+                                            }
+
+                                            if !complete_lines.is_empty() {
+                                                let _ = app_handle.emit("chat-log-updated", complete_lines);
+                                                // Safely advance parser EXACTLY the number of physical
+                                                // bytes we consumed from the complete lines
+                                                *last += bytes_read_total;
                                             }
                                         }
                                     }

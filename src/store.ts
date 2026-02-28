@@ -52,24 +52,25 @@ interface HuntStore {
   endSession: (id: string) => void;
 
   // Loot actions
-  addLoot: (sessionId: string, loot: Omit<LootItem, 'id' | 'timestamp'>) => void;
+  addLoot: (sessionId: string, loot: Omit<LootItem, 'id' | 'timestamp'> & { timestamp?: number }) => void;
   updateLoot: (sessionId: string, lootId: string, updates: Partial<LootItem>) => void;
   removeLoot: (sessionId: string, lootId: string) => void;
 
   // Skill actions
-  addSkillGain: (sessionId: string, skill: Omit<SkillGain, 'id' | 'timestamp'>) => void;
+  addSkillGain: (sessionId: string, skill: Omit<SkillGain, 'id' | 'timestamp'> & { timestamp?: number }) => void;
 
   // Global actions
-  addGlobal: (sessionId: string, global: Omit<Global, 'id' | 'timestamp'>) => void;
+  addGlobal: (sessionId: string, global: Omit<Global, 'id' | 'timestamp'> & { timestamp?: number }) => void;
 
   // Combat event actions
-  addDamageEvent: (sessionId: string, damage: number, isCritical?: boolean) => void;
+  addDamageEvent: (sessionId: string, damage: number, isCritical?: boolean, timestamp?: number) => void;
   addCombatEvent: (
     sessionId: string,
-    eventType: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit' | 'incoming_miss' | 'incoming_evade'
+    eventType: 'miss' | 'dodge' | 'evade' | 'hit' | 'crit' | 'incoming_miss' | 'incoming_evade',
+    timestamp?: number
   ) => void;
-  addHealingEvent: (sessionId: string, amount: number) => void;
-  addDamageTakenEvent: (sessionId: string, damage: number, isCritical?: boolean) => void;
+  addHealingEvent: (sessionId: string, amount: number, timestamp?: number) => void;
+  addDamageTakenEvent: (sessionId: string, damage: number, isCritical?: boolean, timestamp?: number) => void;
 
   // Item database actions
   addItemTemplate: (item: Omit<ItemTemplate, 'id'>) => void;
@@ -197,7 +198,7 @@ const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
 };
 
 const hydrateSessionEvents = async (session: HuntSession): Promise<HuntSession> => {
-  const [loot, skills, globals, damageEvents, combatEvents, healingEvents, damageTakenEvents, stats] =
+  const [loot, skills, globals, damageEvents, combatEvents, healingEvents, damageTakenEvents] =
     await Promise.all([
       safeInvoke<LootItem[]>('db_get_session_loot', { sessionUuid: session.id }),
       safeInvoke<SkillGain[]>('db_get_session_skills', { sessionUuid: session.id }),
@@ -208,7 +209,6 @@ const hydrateSessionEvents = async (session: HuntSession): Promise<HuntSession> 
       safeInvoke<DamageTakenEvent[]>('db_get_session_damage_taken_events', {
         sessionUuid: session.id,
       }),
-      safeInvoke<SessionStats>('db_get_session_stats', { sessionUuid: session.id }),
     ]);
 
   const hydrated: HuntSession = {
@@ -220,8 +220,10 @@ const hydrateSessionEvents = async (session: HuntSession): Promise<HuntSession> 
     combatEvents: combatEvents ?? [],
     healingEvents: healingEvents ?? [],
     damageTakenEvents: damageTakenEvents ?? [],
-    stats: stats ?? session.stats,
+    stats: emptySessionStats(),
   };
+  // Recalculate stats from loaded data so kills (and everything else) are accurate
+  hydrated.stats = calculateSessionStatsCore(hydrated);
   return hydrated;
 };
 
@@ -406,7 +408,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     const newLoot: LootItem = {
       ...lootData,
       id: generateId(),
-      timestamp: Date.now(),
+      timestamp: lootData.timestamp || Date.now(),
       totalValue: lootData.value * (lootData.markup / 100) * lootData.quantity,
     };
 
@@ -488,7 +490,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     const newSkill: SkillGain = {
       ...skillData,
       id: generateId(),
-      timestamp: Date.now(),
+      timestamp: skillData.timestamp || Date.now(),
     };
 
     get().updateSession(sessionId, {
@@ -508,7 +510,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     const newGlobal: Global = {
       ...globalData,
       id: generateId(),
-      timestamp: Date.now(),
+      timestamp: globalData.timestamp || Date.now(),
     };
 
     set((state) => ({
@@ -532,11 +534,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     });
   },
 
-  addDamageEvent: (sessionId, damage, isCritical = false) => {
+  addDamageEvent: (sessionId, damage, isCritical = false, timestamp?: number) => {
     const newDamageEvent: DamageEvent = {
       id: generateId(),
       damage,
-      timestamp: Date.now(),
+      timestamp: timestamp || Date.now(),
       isCritical,
     };
 
@@ -563,7 +565,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     });
   },
 
-  addCombatEvent: (sessionId, eventType) => {
+  addCombatEvent: (sessionId, eventType, timestamp?: number) => {
     // Skip incoming attack events - they're not player shots
     if (eventType === 'incoming_miss' || eventType === 'incoming_evade') {
       return;
@@ -572,7 +574,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     const newCombatEvent: CombatEvent = {
       id: generateId(),
       type: eventType,
-      timestamp: Date.now(),
+      timestamp: timestamp || Date.now(),
     };
 
     set((state) => {
@@ -616,11 +618,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     });
   },
 
-  addHealingEvent: (sessionId, amount) => {
+  addHealingEvent: (sessionId, amount, timestamp?: number) => {
     const newHealingEvent: HealingEvent = {
       id: generateId(),
       amount,
-      timestamp: Date.now(),
+      timestamp: timestamp || Date.now(),
     };
 
     set((state) => ({
@@ -645,11 +647,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     });
   },
 
-  addDamageTakenEvent: (sessionId, damage, isCritical = false) => {
+  addDamageTakenEvent: (sessionId, damage, isCritical = false, timestamp?: number) => {
     const newDamageTakenEvent: DamageTakenEvent = {
       id: generateId(),
       damage,
-      timestamp: Date.now(),
+      timestamp: timestamp || Date.now(),
       isCritical,
     };
 

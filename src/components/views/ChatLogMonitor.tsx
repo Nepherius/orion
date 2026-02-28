@@ -64,6 +64,16 @@ export function ChatLogMonitor() {
   const parseInProgressRef = useRef(false);
   const reparseQueuedRef = useRef(false);
 
+  const parseTimestamp = (ts: string): number => {
+    // Manually extract components to avoid Date(string) parsing inconsistencies
+    const match = ts.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+    if (match) {
+      const [, y, mo, d, h, mi, s] = match.map(Number);
+      return new Date(y, mo - 1, d, h, mi, s).getTime();
+    }
+    return Date.now();
+  };
+
   const debugLog = (...args: unknown[]) => {
     if (__CHAT_MONITOR_DEBUG__) {
       console.log(...args);
@@ -396,6 +406,7 @@ export function ChatLogMonitor() {
                       value: evt.value,
                       markup: markup,
                       totalValue: evt.value * (markup / 100),
+                      timestamp: parseTimestamp(evt.timestamp),
                     });
 
                     processedEventsRef.current.add(eventKey);
@@ -416,6 +427,7 @@ export function ChatLogMonitor() {
                       creature: evt.creature,
                       value: evt.value,
                       isHoF: evt.is_hof,
+                      timestamp: parseTimestamp(evt.timestamp),
                     });
 
                     processedEventsRef.current.add(eventKey);
@@ -445,10 +457,11 @@ export function ChatLogMonitor() {
                     'damage, critical:',
                     dmg.is_critical
                   );
-                  storeActions.addDamageEvent(activeSession.id, dmg.damage, dmg.is_critical);
+                  const timestampMs = parseTimestamp(dmg.timestamp);
+                  storeActions.addDamageEvent(activeSession.id, dmg.damage, dmg.is_critical, timestampMs);
                   // Generate a combat event for this hit to charge shot costs
                   const combatEventType = dmg.is_critical ? 'crit' : 'hit';
-                  storeActions.addCombatEvent(activeSession.id, combatEventType);
+                  storeActions.addCombatEvent(activeSession.id, combatEventType, timestampMs);
                   processedEventsRef.current.add(eventKey);
                   addedCount++;
                 } else {
@@ -467,7 +480,7 @@ export function ChatLogMonitor() {
                 const eventKey = `combat:${combat.timestamp}:${combat.event_type}`;
                 if (!processedEventsRef.current.has(eventKey)) {
                   debugDetail('[ChatLogMonitor] Adding combat event:', combat.event_type);
-                  storeActions.addCombatEvent(activeSession.id, combat.event_type);
+                  storeActions.addCombatEvent(activeSession.id, combat.event_type, parseTimestamp(combat.timestamp));
                   processedEventsRef.current.add(eventKey);
                   addedCount++;
                 }
@@ -484,7 +497,7 @@ export function ChatLogMonitor() {
                 const eventKey = `heal:${heal.timestamp}:${heal.amount}`;
                 if (!processedEventsRef.current.has(eventKey)) {
                   debugDetail('[ChatLogMonitor] Adding healing event:', heal.amount);
-                  storeActions.addHealingEvent(activeSession.id, heal.amount);
+                  storeActions.addHealingEvent(activeSession.id, heal.amount, parseTimestamp(heal.timestamp));
                   processedEventsRef.current.add(eventKey);
                   addedCount++;
                 }
@@ -507,7 +520,8 @@ export function ChatLogMonitor() {
                   storeActions.addDamageTakenEvent(
                     activeSession.id,
                     dmgTaken.damage,
-                    dmgTaken.is_critical
+                    dmgTaken.is_critical,
+                    parseTimestamp(dmgTaken.timestamp)
                   );
                   processedEventsRef.current.add(eventKey);
                   addedCount++;
@@ -532,6 +546,7 @@ export function ChatLogMonitor() {
                   storeActions.addSkillGain(activeSession.id, {
                     skillName: skill.skill_name,
                     gainAmount: skill.gain,
+                    timestamp: parseTimestamp(skill.timestamp),
                   });
                   processedEventsRef.current.add(eventKey);
                   addedCount++;

@@ -134,4 +134,51 @@ describe('calculateSessionStats', () => {
     expect(stats.globals).toBe(1);
     expect(stats.hofs).toBe(1);
   });
+
+  it('counts 1 kill for loot items within 3 seconds', () => {
+    // Simulates: Shrapnel at 12:45:25, Animal Muscle Oil at 12:45:26
+    const ts1 = new Date(2026, 1, 28, 12, 45, 25).getTime();
+    const ts2 = new Date(2026, 1, 28, 12, 45, 26).getTime();
+    console.log('ts1:', ts1, 'ts2:', ts2, 'diff:', ts2 - ts1);
+
+    const session = makeSession({
+      loot: [
+        { id: 'l1', name: 'Shrapnel', quantity: 196, value: 0.0196, markup: 100, totalValue: 0.0196, timestamp: ts1 },
+        { id: 'l2', name: 'Animal Muscle Oil', quantity: 3, value: 0.09, markup: 100, totalValue: 0.09, timestamp: ts2 },
+      ],
+    });
+
+    const stats = calculateSessionStats(session, ts2 + 1000);
+    expect(stats.kills).toBe(1);
+  });
+
+  it('counts 2 kills for loot items more than 3 seconds apart', () => {
+    const ts1 = new Date(2026, 1, 28, 12, 45, 25).getTime();
+    const ts2 = new Date(2026, 1, 28, 12, 45, 30).getTime(); // 5 seconds later
+    const session = makeSession({
+      loot: [
+        { id: 'l1', name: 'Shrapnel', quantity: 1, value: 0.01, markup: 100, totalValue: 0.01, timestamp: ts1 },
+        { id: 'l2', name: 'Oil', quantity: 1, value: 0.09, markup: 100, totalValue: 0.09, timestamp: ts2 },
+      ],
+    });
+
+    const stats = calculateSessionStats(session, ts2 + 1000);
+    expect(stats.kills).toBe(2);
+  });
+
+  it('counts 0 kills for empty loot', () => {
+    const session = makeSession({ loot: [] });
+    const stats = calculateSessionStats(session);
+    expect(stats.kills).toBe(0);
+  });
+
+  it('counts 1 kill for a single loot item', () => {
+    const session = makeSession({
+      loot: [
+        { id: 'l1', name: 'Shrapnel', quantity: 1, value: 0.01, markup: 100, totalValue: 0.01, timestamp: 1000 },
+      ],
+    });
+    const stats = calculateSessionStats(session, 5000);
+    expect(stats.kills).toBe(1);
+  });
 });

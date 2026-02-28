@@ -62,8 +62,26 @@ export function calculateSessionStats(session: HuntSession, now: number = Date.n
 
   const shotsFiredCount = totalHits + dodges + evades;
 
+  // Kill Tracking: Group loot events by 3-second clusters
+  let kills = 0;
+  if (session.loot.length > 0) {
+    const sortedLoot = [...session.loot].sort((a, b) => a.timestamp - b.timestamp);
+    kills = 1;
+    let currentClusterStart = sortedLoot[0].timestamp;
+
+    for (let i = 1; i < sortedLoot.length; i++) {
+      const itemTimestamp = sortedLoot[i].timestamp;
+      const diff = itemTimestamp - currentClusterStart;
+      const isNewKill = diff > 3000;
+      if (isNewKill) {
+        kills++;
+        currentClusterStart = itemTimestamp;
+      }
+    }
+  }
+
   return {
-    kills: 0,
+    kills,
     lootEvents: session.loot.length,
     globals: session.globals.filter((g) => !g.isHoF).length,
     hofs: session.globals.filter((g) => g.isHoF).length,
