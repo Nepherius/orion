@@ -88,11 +88,10 @@ export function SessionList({
         <div className="space-y-1">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
-              statusFilter === 'all'
+            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${statusFilter === 'all'
                 ? 'bg-primary-900 text-primary-300'
                 : 'text-gray-400 hover:bg-gray-700'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2">
               <Circle className="w-4 h-4" />
@@ -102,11 +101,10 @@ export function SessionList({
           </button>
           <button
             onClick={() => setStatusFilter('active')}
-            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
-              statusFilter === 'active'
+            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${statusFilter === 'active'
                 ? 'bg-primary-900 text-primary-300'
                 : 'text-gray-400 hover:bg-gray-700'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -116,11 +114,10 @@ export function SessionList({
           </button>
           <button
             onClick={() => setStatusFilter('completed')}
-            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
-              statusFilter === 'completed'
+            className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${statusFilter === 'completed'
                 ? 'bg-primary-900 text-primary-300'
                 : 'text-gray-400 hover:bg-gray-700'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
@@ -178,11 +175,10 @@ export function SessionList({
               <button
                 key={session.id}
                 onClick={() => onSelectSession(session.id)}
-                className={`w-full text-left p-3 rounded-lg transition-colors border ${
-                  selectedSessionId === session.id
+                className={`w-full text-left p-3 rounded-lg transition-colors border ${selectedSessionId === session.id
                     ? 'bg-gray-700 border-primary-500'
                     : 'bg-gray-750 border-gray-700 hover:border-gray-600'
-                }`}
+                  }`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
@@ -196,20 +192,19 @@ export function SessionList({
                       className={`text-sm font-semibold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
                     >
                       {profit >= 0 ? '+' : ''}
-                      {profit.toFixed(3)} PED
+                      {profit.toFixed(2)} PED
                     </div>
                     <div className="text-xs text-gray-400">PROFIT</div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span
-                    className={`px-2 py-0.5 text-[10px] uppercase font-semibold rounded ${
-                      session.status === 'active'
+                    className={`px-2 py-0.5 text-[10px] uppercase font-semibold rounded ${session.status === 'active'
                         ? 'bg-green-900 text-green-300'
                         : session.status === 'paused'
                           ? 'bg-yellow-900 text-yellow-300'
                           : 'bg-gray-700 text-gray-400'
-                    }`}
+                      }`}
                   >
                     {session.status}
                   </span>
@@ -217,7 +212,7 @@ export function SessionList({
                     <div
                       className={`text-sm font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
                     >
-                      {session.stats.returns.toFixed(3)}%
+                      {session.stats.returns.toFixed(2)}%
                     </div>
                     <div className="text-xs text-gray-400">TT%</div>
                   </div>

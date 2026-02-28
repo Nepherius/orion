@@ -54,8 +54,8 @@ export function Analytics() {
   const lifetimeHitRate =
     lifetimeStats.totalShotsFired > 0
       ? (sessions.reduce((sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0), 0) /
-          lifetimeStats.totalShotsFired) *
-        100
+        lifetimeStats.totalShotsFired) *
+      100
       : 0;
 
   // Sessions by location
@@ -314,7 +314,7 @@ export function Analytics() {
           <div
             className={`text-2xl font-bold ${lifetimeReturnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
           >
-            {lifetimeReturnRate.toFixed(1)}%
+            {lifetimeReturnRate.toFixed(2)}%
           </div>
         </div>
         <div className="card p-4">
@@ -338,7 +338,7 @@ export function Analytics() {
         </div>
         <div className="card p-4">
           <div className="text-sm text-gray-400 mb-1">Hit Rate</div>
-          <div className="text-2xl font-bold text-blue-400">{lifetimeHitRate.toFixed(1)}%</div>
+          <div className="text-2xl font-bold text-blue-400">{lifetimeHitRate.toFixed(2)}%</div>
         </div>
         <div className="card p-4">
           <div className="text-sm text-gray-400 mb-1">Avg Kill Value</div>
@@ -395,13 +395,13 @@ export function Analytics() {
                   <div
                     className={`text-right font-semibold ${loc.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                   >
-                    {loc.returnRate.toFixed(1)}%
+                    {loc.returnRate.toFixed(2)}%
                   </div>
                   <div
                     className={`text-right ${loc.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
                   >
                     {loc.profit >= 0 ? '+' : ''}
-                    {loc.profit.toFixed(0)}
+                    {loc.profit.toFixed(2)}
                   </div>
                   <div className="text-right text-yellow-400">{loc.globals}</div>
                 </div>
@@ -421,7 +421,7 @@ export function Analytics() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.value.toFixed(0)} PED`}
+                  label={(entry) => `${entry.name}: ${entry.value.toFixed(2)} PED`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -482,15 +482,15 @@ export function Analytics() {
                 <div
                   className={`text-right font-bold ${loadout.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                 >
-                  {loadout.returnRate.toFixed(1)}%
+                  {loadout.returnRate.toFixed(2)}%
                 </div>
                 <div
                   className={`text-right ${loadout.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
                 >
                   {loadout.profit >= 0 ? '+' : ''}
-                  {loadout.profit.toFixed(0)}
+                  {loadout.profit.toFixed(2)}
                 </div>
-                <div className="text-right">{loadout.avgKills.toFixed(1)}</div>
+                <div className="text-right">{loadout.avgKills.toFixed(2)}</div>
               </div>
             ))}
           </div>
@@ -601,7 +601,7 @@ export function Analytics() {
                 >
                   {armor.returnRate.toFixed(1)}%
                 </div>
-                <div className="text-right">{armor.avgDamageTaken.toFixed(0)}</div>
+                <div className="text-right">{armor.avgDamageTaken.toFixed(2)}</div>
               </div>
             ))}
           </div>

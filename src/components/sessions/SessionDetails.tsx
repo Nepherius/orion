@@ -50,11 +50,11 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
 
   useEffect(() => {
     if (!session) return;
-    
+
     const loadGroupedLoot = async () => {
       try {
         const result = await invoke<GroupedLootItem[]>('db_get_session_loot_grouped', {
-          session_uuid: session.id,
+          sessionUuid: session.id,
         });
         setGroupedLoot(result);
       } catch (error) {
@@ -72,6 +72,21 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
   }
 
   const profit = session.stats.totalLoot - session.stats.totalCost;
+
+  const groupedSkills = Object.values(
+    session.skills.reduce((acc, skill) => {
+      if (!acc[skill.skillName]) {
+        acc[skill.skillName] = {
+          skillName: skill.skillName,
+          gainAmount: 0,
+          count: 0,
+        };
+      }
+      acc[skill.skillName].gainAmount += skill.gainAmount;
+      acc[skill.skillName].count += 1;
+      return acc;
+    }, {} as Record<string, { skillName: string; gainAmount: number; count: number }>)
+  ).sort((a, b) => b.gainAmount - a.gainAmount);
 
   const handleDeleteRequest = () => {
     setShowDeleteConfirm(true);
@@ -200,9 +215,8 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
           <div className="bg-gray-700 rounded-lg p-4">
             <div className="text-sm text-gray-400 mb-1">Returns</div>
             <div
-              className={`text-2xl font-bold flex items-center gap-2 ${
-                session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-              }`}
+              className={`text-2xl font-bold flex items-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+                }`}
             >
               {session.stats.returns >= 100 ? (
                 <TrendingUp className="w-5 h-5" />
@@ -374,11 +388,10 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
             {session.globals.map((global) => (
               <div
                 key={global.id}
-                className={`p-3 rounded-lg flex items-center justify-between ${
-                  global.isHoF
-                    ? 'bg-purple-900 border border-purple-600'
-                    : 'bg-yellow-900 border border-yellow-600'
-                }`}
+                className={`p-3 rounded-lg flex items-center justify-between ${global.isHoF
+                  ? 'bg-purple-900 border border-purple-600'
+                  : 'bg-yellow-900 border border-yellow-600'
+                  }`}
               >
                 <div>
                   <span className="font-medium">{global.creature}</span>
@@ -397,16 +410,19 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
       </div>
 
       {/* Skills */}
-      {session.skills.length > 0 && (
+      {groupedSkills.length > 0 && (
         <div className="card p-6">
           <h3 className="text-xl font-bold mb-4">Skill Gains</h3>
           <div className="space-y-2">
-            {session.skills.map((skill) => (
+            {groupedSkills.map((skill) => (
               <div
-                key={skill.id}
+                key={skill.skillName}
                 className="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
               >
-                <span className="font-medium">{skill.skillName}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{skill.skillName}</span>
+                  <span className="text-xs text-gray-400">({skill.count}x)</span>
+                </div>
                 <span className="text-green-400">+{skill.gainAmount.toFixed(4)}</span>
               </div>
             ))}
