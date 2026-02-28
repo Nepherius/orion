@@ -182,17 +182,17 @@ const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
     weapon: updates.weapon,
     armor: updates.armor,
     location: updates.location,
-    end_time: updates.endTime,
+    endTime: updates.endTime,
     status: updates.status,
-    paused_at: updates.pausedAt,
-    total_paused_ms: updates.totalPausedMs,
-    loadout_id: updates.loadoutId,
+    pausedAt: updates.pausedAt,
+    totalPausedMs: updates.totalPausedMs,
+    loadoutId: updates.loadoutId,
     notes: updates.notes,
-    ammo_cost: updates.ammoCost,
-    repair_cost: updates.repairCost,
-    armor_decay: updates.armorDecay,
-    healing_cost: updates.healingCost,
-    other_costs: updates.otherCosts,
+    ammoCost: updates.ammoCost,
+    repairCost: updates.repairCost,
+    armorDecay: updates.armorDecay,
+    healingCost: updates.healingCost,
+    otherCosts: updates.otherCosts,
   });
 };
 
@@ -226,597 +226,597 @@ const hydrateSessionEvents = async (session: HuntSession): Promise<HuntSession> 
 };
 
 export const useHuntStore = create<HuntStore>()((set, get) => ({
-      sessions: [],
-      activeSessionId: null,
-      itemDatabase: [],
-      loadouts: [],
-      settings: defaultSettings,
+  sessions: [],
+  activeSessionId: null,
+  itemDatabase: [],
+  loadouts: [],
+  settings: defaultSettings,
 
-      createSession: (sessionData) => {
-        const newSession: HuntSession = {
-          ...sessionData,
-          id: generateId(),
-          pausedAt: undefined,
-          totalPausedMs: 0,
-          loot: [],
-          skills: [],
-          globals: [],
-          damageEvents: [],
-          combatEvents: [],
-          healingEvents: [],
-          damageTakenEvents: [],
-          stats: {
-            ...emptySessionStats(),
-          },
-        };
-        set((state) => {
-          // If new session should start immediately, pause existing active session(s)
-          if (newSession.status === 'active') {
-            const now = Date.now();
-            const sessions = state.sessions.map((s) =>
-              s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
-            );
-            return { sessions: [newSession, ...sessions], activeSessionId: newSession.id };
-          }
-
-          return { sessions: [newSession, ...state.sessions] };
-        });
-
-        void persistSessionToDb(newSession);
-        if (newSession.status === 'active') {
-          void saveJsonSetting('activeSessionId', newSession.id);
-        }
+  createSession: (sessionData) => {
+    const newSession: HuntSession = {
+      ...sessionData,
+      id: generateId(),
+      pausedAt: undefined,
+      totalPausedMs: 0,
+      loot: [],
+      skills: [],
+      globals: [],
+      damageEvents: [],
+      combatEvents: [],
+      healingEvents: [],
+      damageTakenEvents: [],
+      stats: {
+        ...emptySessionStats(),
       },
-
-      updateSession: (id, updates) => {
-        set((state) => ({
-          sessions: state.sessions.map((session) => {
-            if (session.id === id) {
-              const updated = { ...session, ...updates };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return session;
-          }),
-        }));
-
-        void updateSessionInDb(id, updates);
-      },
-
-      deleteSession: (id) => {
-        set((state) => ({
-          sessions: state.sessions.filter((s) => s.id !== id),
-          activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
-        }));
-
-        void safeInvoke('db_delete_session', { uuid: id });
-        if (get().activeSessionId === null) {
-          void saveJsonSetting('activeSessionId', null);
-        }
-      },
-
-      startSession: (id) => {
+    };
+    set((state) => {
+      // If new session should start immediately, pause existing active session(s)
+      if (newSession.status === 'active') {
         const now = Date.now();
-        set((state) => {
-          // Pause any active session
-          const sessions = state.sessions.map((s) =>
-            s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
-          );
+        const sessions = state.sessions.map((s) =>
+          s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
+        );
+        return { sessions: [newSession, ...sessions], activeSessionId: newSession.id };
+      }
 
-          // Start the selected session
-          return {
-            sessions: sessions.map((s) =>
-              s.id === id
-                ? {
-                    ...s,
-                    status: 'active' as const,
-                    startTime: now,
-                    pausedAt: undefined,
-                    totalPausedMs: 0,
-                  }
-                : s
-            ),
-            activeSessionId: id,
-          };
-        });
-        const currentlyActive = get().sessions.find((s) => s.id === id);
-        if (currentlyActive) {
-          void updateSessionInDb(id, {
-            status: 'active',
-            startTime: now,
-            pausedAt: undefined,
-            totalPausedMs: 0,
-          });
+      return { sessions: [newSession, ...state.sessions] };
+    });
+
+    void persistSessionToDb(newSession);
+    if (newSession.status === 'active') {
+      void saveJsonSetting('activeSessionId', newSession.id);
+    }
+  },
+
+  updateSession: (id, updates) => {
+    set((state) => ({
+      sessions: state.sessions.map((session) => {
+        if (session.id === id) {
+          const updated = { ...session, ...updates };
+          updated.stats = calculateStats(updated);
+          return updated;
         }
-        void saveJsonSetting('activeSessionId', id);
-      },
+        return session;
+      }),
+    }));
 
-      pauseSession: (id) => {
-        const now = Date.now();
-        get().updateSession(id, { status: 'paused', pausedAt: now });
-      },
+    void updateSessionInDb(id, updates);
+  },
 
-      resumeSession: (id) => {
-        const now = Date.now();
-        set((state) => {
-          // Pause any active session
-          const sessions = state.sessions.map((s) =>
-            s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
-          );
+  deleteSession: (id) => {
+    set((state) => ({
+      sessions: state.sessions.filter((s) => s.id !== id),
+      activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
+    }));
 
-          // Resume the selected session
-          return {
-            sessions: sessions.map((s) =>
-              s.id === id
-                ? {
-                    ...s,
-                    status: 'active' as const,
-                    totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                    pausedAt: undefined,
-                  }
-                : s
-            ),
-            activeSessionId: id,
-          };
-        });
-        const resumed = get().sessions.find((s) => s.id === id);
-        if (resumed) {
-          void updateSessionInDb(id, {
-            status: 'active',
-            pausedAt: undefined,
-            totalPausedMs: resumed.totalPausedMs,
-          });
+    void safeInvoke('db_delete_session', { uuid: id });
+    if (get().activeSessionId === null) {
+      void saveJsonSetting('activeSessionId', null);
+    }
+  },
+
+  startSession: (id) => {
+    const now = Date.now();
+    set((state) => {
+      // Pause any active session
+      const sessions = state.sessions.map((s) =>
+        s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
+      );
+
+      // Start the selected session
+      return {
+        sessions: sessions.map((s) =>
+          s.id === id
+            ? {
+              ...s,
+              status: 'active' as const,
+              startTime: now,
+              pausedAt: undefined,
+              totalPausedMs: 0,
+            }
+            : s
+        ),
+        activeSessionId: id,
+      };
+    });
+    const currentlyActive = get().sessions.find((s) => s.id === id);
+    if (currentlyActive) {
+      void updateSessionInDb(id, {
+        status: 'active',
+        startTime: now,
+        pausedAt: undefined,
+        totalPausedMs: 0,
+      });
+    }
+    void saveJsonSetting('activeSessionId', id);
+  },
+
+  pauseSession: (id) => {
+    const now = Date.now();
+    get().updateSession(id, { status: 'paused', pausedAt: now });
+  },
+
+  resumeSession: (id) => {
+    const now = Date.now();
+    set((state) => {
+      // Pause any active session
+      const sessions = state.sessions.map((s) =>
+        s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
+      );
+
+      // Resume the selected session
+      return {
+        sessions: sessions.map((s) =>
+          s.id === id
+            ? {
+              ...s,
+              status: 'active' as const,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            }
+            : s
+        ),
+        activeSessionId: id,
+      };
+    });
+    const resumed = get().sessions.find((s) => s.id === id);
+    if (resumed) {
+      void updateSessionInDb(id, {
+        status: 'active',
+        pausedAt: undefined,
+        totalPausedMs: resumed.totalPausedMs,
+      });
+    }
+    void saveJsonSetting('activeSessionId', id);
+  },
+
+  endSession: (id) => {
+    const now = Date.now();
+    set((state) => {
+      return {
+        sessions: state.sessions.map((s) =>
+          s.id === id
+            ? {
+              ...s,
+              status: 'completed' as const,
+              endTime: now,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            }
+            : s
+        ),
+        activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
+      };
+    });
+    const ended = get().sessions.find((s) => s.id === id);
+    if (ended) {
+      void updateSessionInDb(id, {
+        status: 'completed',
+        endTime: now,
+        totalPausedMs: ended.totalPausedMs,
+        pausedAt: undefined,
+      });
+    }
+    if (get().activeSessionId === null) {
+      void saveJsonSetting('activeSessionId', null);
+    }
+  },
+
+  addLoot: (sessionId, lootData) => {
+    const newLoot: LootItem = {
+      ...lootData,
+      id: generateId(),
+      timestamp: Date.now(),
+      totalValue: lootData.value * (lootData.markup / 100) * lootData.quantity,
+    };
+
+    set((state) => ({
+      sessions: state.sessions.map((session) => {
+        if (session.id === sessionId) {
+          const updated = { ...session, loot: [...session.loot, newLoot] };
+          updated.stats = calculateStats(updated);
+          return updated;
         }
-        void saveJsonSetting('activeSessionId', id);
-      },
+        return session;
+      }),
+    }));
 
-      endSession: (id) => {
-        const now = Date.now();
-        set((state) => {
-          return {
-            sessions: state.sessions.map((s) =>
-              s.id === id
-                ? {
-                    ...s,
-                    status: 'completed' as const,
-                    endTime: now,
-                    totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                    pausedAt: undefined,
-                  }
-                : s
-            ),
-            activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
-          };
-        });
-        const ended = get().sessions.find((s) => s.id === id);
-        if (ended) {
-          void updateSessionInDb(id, {
-            status: 'completed',
-            endTime: now,
-            totalPausedMs: ended.totalPausedMs,
-            pausedAt: undefined,
-          });
-        }
-        if (get().activeSessionId === null) {
-          void saveJsonSetting('activeSessionId', null);
-        }
-      },
+    void safeInvoke('db_add_loot', {
+      uuid: newLoot.id,
+      sessionUuid: sessionId,
+      name: newLoot.name,
+      quantity: newLoot.quantity,
+      value: newLoot.value,
+      markup: newLoot.markup,
+      totalValue: newLoot.totalValue,
+      timestamp: newLoot.timestamp,
+    });
+  },
 
-      addLoot: (sessionId, lootData) => {
-        const newLoot: LootItem = {
-          ...lootData,
-          id: generateId(),
-          timestamp: Date.now(),
-          totalValue: lootData.value * (lootData.markup / 100) * lootData.quantity,
-        };
-
-        set((state) => ({
-          sessions: state.sessions.map((session) => {
-            if (session.id === sessionId) {
-              const updated = { ...session, loot: [...session.loot, newLoot] };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return session;
-          }),
-        }));
-
-        void safeInvoke('db_add_loot', {
-          uuid: newLoot.id,
-          session_uuid: sessionId,
-          name: newLoot.name,
-          quantity: newLoot.quantity,
-          value: newLoot.value,
-          markup: newLoot.markup,
-          total_value: newLoot.totalValue,
-          timestamp: newLoot.timestamp,
-        });
-      },
-
-      updateLoot: (sessionId, lootId, updates) => {
-        set((state) => ({
-          sessions: state.sessions.map((session) => {
-            if (session.id === sessionId) {
-              const updated = {
-                ...session,
-                loot: session.loot.map((item) => {
-                  if (item.id === lootId) {
-                    const updatedItem = { ...item, ...updates };
-                    updatedItem.totalValue =
-                      updatedItem.value * (updatedItem.markup / 100) * updatedItem.quantity;
-                    return updatedItem;
-                  }
-                  return item;
-                }),
-              };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return session;
-          }),
-        }));
-
-        void safeInvoke('db_update_loot', {
-          uuid: lootId,
-          name: updates.name,
-          quantity: updates.quantity,
-          value: updates.value,
-          markup: updates.markup,
-          total_value: updates.totalValue,
-        });
-      },
-
-      removeLoot: (sessionId, lootId) => {
-        set((state) => ({
-          sessions: state.sessions.map((session) => {
-            if (session.id === sessionId) {
-              const updated = {
-                ...session,
-                loot: session.loot.filter((item) => item.id !== lootId),
-              };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return session;
-          }),
-        }));
-
-        void safeInvoke('db_delete_loot', { uuid: lootId });
-      },
-
-      addSkillGain: (sessionId, skillData) => {
-        const newSkill: SkillGain = {
-          ...skillData,
-          id: generateId(),
-          timestamp: Date.now(),
-        };
-
-        get().updateSession(sessionId, {
-          skills: [...(get().sessions.find((s) => s.id === sessionId)?.skills || []), newSkill],
-        });
-
-        void safeInvoke('db_add_skill', {
-          uuid: newSkill.id,
-          session_uuid: sessionId,
-          skill_name: newSkill.skillName,
-          gain_amount: newSkill.gainAmount,
-          timestamp: newSkill.timestamp,
-        });
-      },
-
-      addGlobal: (sessionId, globalData) => {
-        const newGlobal: Global = {
-          ...globalData,
-          id: generateId(),
-          timestamp: Date.now(),
-        };
-
-        set((state) => ({
-          sessions: state.sessions.map((session) => {
-            if (session.id === sessionId) {
-              const updated = { ...session, globals: [...session.globals, newGlobal] };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return session;
-          }),
-        }));
-
-        void safeInvoke('db_add_global', {
-          uuid: newGlobal.id,
-          session_uuid: sessionId,
-          creature: newGlobal.creature,
-          value: newGlobal.value,
-          is_hof: newGlobal.isHoF,
-          timestamp: newGlobal.timestamp,
-        });
-      },
-
-      addDamageEvent: (sessionId, damage, isCritical = false) => {
-        const newDamageEvent: DamageEvent = {
-          id: generateId(),
-          damage,
-          timestamp: Date.now(),
-          isCritical,
-        };
-
-        set((state) => ({
-          sessions: state.sessions.map((s) => {
-            if (s.id === sessionId) {
-              const updated = {
-                ...s,
-                damageEvents: [...(s.damageEvents || []), newDamageEvent],
-              };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return s;
-          }),
-        }));
-
-        void safeInvoke('db_add_damage_event', {
-          uuid: newDamageEvent.id,
-          session_uuid: sessionId,
-          damage: newDamageEvent.damage,
-          is_critical: newDamageEvent.isCritical,
-          timestamp: newDamageEvent.timestamp,
-        });
-      },
-
-      addCombatEvent: (sessionId, eventType) => {
-        // Skip incoming attack events - they're not player shots
-        if (eventType === 'incoming_miss' || eventType === 'incoming_evade') {
-          return;
-        }
-
-        const newCombatEvent: CombatEvent = {
-          id: generateId(),
-          type: eventType,
-          timestamp: Date.now(),
-        };
-
-        set((state) => {
-          const session = state.sessions.find((s) => s.id === sessionId);
-          if (!session) {
-            console.warn('Session not found:', sessionId);
-            return state;
-          }
-
-          // Find loadout by matching loadoutId or weapon name
-          const loadout = session.loadoutId
-            ? state.loadouts.find((l) => l.id === session.loadoutId)
-            : state.loadouts.find((l) => l.name === session.weapon);
-
-          // Apply shot costs only for player shots (hit/crit/miss/dodge/evade where player attacked)
-          const ammoCostPerShot = (loadout?.ammoBurn || 0) / 10000;
-          const decayCostPerShot = (loadout?.decay || 0) / 100;
-
-          return {
-            sessions: state.sessions.map((s) => {
-              if (s.id === sessionId) {
-                const updated = {
-                  ...s,
-                  combatEvents: [...(s.combatEvents || []), newCombatEvent],
-                  ammoCost: s.ammoCost + ammoCostPerShot,
-                  repairCost: s.repairCost + decayCostPerShot,
-                };
-                updated.stats = calculateStats(updated);
-                return updated;
+  updateLoot: (sessionId, lootId, updates) => {
+    set((state) => ({
+      sessions: state.sessions.map((session) => {
+        if (session.id === sessionId) {
+          const updated = {
+            ...session,
+            loot: session.loot.map((item) => {
+              if (item.id === lootId) {
+                const updatedItem = { ...item, ...updates };
+                updatedItem.totalValue =
+                  updatedItem.value * (updatedItem.markup / 100) * updatedItem.quantity;
+                return updatedItem;
               }
-              return s;
+              return item;
             }),
           };
-        });
+          updated.stats = calculateStats(updated);
+          return updated;
+        }
+        return session;
+      }),
+    }));
 
-        void safeInvoke('db_add_combat_event', {
-          uuid: newCombatEvent.id,
-          session_uuid: sessionId,
-          event_type: newCombatEvent.type,
-          timestamp: newCombatEvent.timestamp,
-        });
-      },
+    void safeInvoke('db_update_loot', {
+      uuid: lootId,
+      name: updates.name,
+      quantity: updates.quantity,
+      value: updates.value,
+      markup: updates.markup,
+      totalValue: updates.totalValue,
+    });
+  },
 
-      addHealingEvent: (sessionId, amount) => {
-        const newHealingEvent: HealingEvent = {
-          id: generateId(),
-          amount,
-          timestamp: Date.now(),
-        };
-
-        set((state) => ({
-          sessions: state.sessions.map((s) => {
-            if (s.id === sessionId) {
-              const updated = {
-                ...s,
-                healingEvents: [...(s.healingEvents || []), newHealingEvent],
-              };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return s;
-          }),
-        }));
-
-        void safeInvoke('db_add_healing_event', {
-          uuid: newHealingEvent.id,
-          session_uuid: sessionId,
-          amount: newHealingEvent.amount,
-          timestamp: newHealingEvent.timestamp,
-        });
-      },
-
-      addDamageTakenEvent: (sessionId, damage, isCritical = false) => {
-        const newDamageTakenEvent: DamageTakenEvent = {
-          id: generateId(),
-          damage,
-          timestamp: Date.now(),
-          isCritical,
-        };
-
-        set((state) => ({
-          sessions: state.sessions.map((s) => {
-            if (s.id === sessionId) {
-              const updated = {
-                ...s,
-                damageTakenEvents: [...(s.damageTakenEvents || []), newDamageTakenEvent],
-              };
-              updated.stats = calculateStats(updated);
-              return updated;
-            }
-            return s;
-          }),
-        }));
-
-        void safeInvoke('db_add_damage_taken_event', {
-          uuid: newDamageTakenEvent.id,
-          session_uuid: sessionId,
-          damage: newDamageTakenEvent.damage,
-          is_critical: newDamageTakenEvent.isCritical,
-          timestamp: newDamageTakenEvent.timestamp,
-        });
-      },
-
-      addItemTemplate: (itemData) => {
-        const newItem: ItemTemplate = {
-          ...itemData,
-          id: generateId(),
-        };
-        set((state) => {
-          const itemDatabase = [...state.itemDatabase, newItem];
-          void saveJsonSetting('itemDatabase', itemDatabase);
-          return { itemDatabase };
-        });
-      },
-
-      updateItemTemplate: (id, updates) => {
-        set((state) => ({
-          itemDatabase: (() => {
-            const itemDatabase = state.itemDatabase.map((item) =>
-              item.id === id ? { ...item, ...updates } : item
-            );
-            void saveJsonSetting('itemDatabase', itemDatabase);
-            return itemDatabase;
-          })(),
-        }));
-      },
-
-      deleteItemTemplate: (id) => {
-        set((state) => ({
-          itemDatabase: (() => {
-            const itemDatabase = state.itemDatabase.filter((item) => item.id !== id);
-            void saveJsonSetting('itemDatabase', itemDatabase);
-            return itemDatabase;
-          })(),
-        }));
-      },
-
-      // Loadout actions
-      createLoadout: (loadoutData) => {
-        const newLoadout: Loadout = {
-          ...loadoutData,
-          id: generateId(),
-        };
-        set((state) => {
-          const loadouts = ensureSingleLoadoutPrimary([newLoadout, ...state.loadouts]);
-          void saveJsonSetting('loadouts', loadouts);
-          return { loadouts };
-        });
-      },
-
-      updateLoadout: (id, updates) => {
-        set((state) => ({
-          loadouts: (() => {
-            const loadouts = state.loadouts.map((loadout) =>
-              loadout.id === id ? { ...loadout, ...updates } : loadout
-            );
-            void saveJsonSetting('loadouts', loadouts);
-            return loadouts;
-          })(),
-        }));
-      },
-
-      deleteLoadout: (id) => {
-        set((state) => ({
-          loadouts: (() => {
-            const loadouts = ensureSingleLoadoutPrimary(
-              state.loadouts.filter((loadout) => loadout.id !== id)
-            );
-            void saveJsonSetting('loadouts', loadouts);
-            return loadouts;
-          })(),
-        }));
-      },
-
-      duplicateLoadout: (id) => {
-        const loadout = get().loadouts.find((l) => l.id === id);
-        if (loadout) {
-          const duplicate: Loadout = {
-            ...loadout,
-            id: generateId(),
-            name: `${loadout.name} (Copy)`,
-            isPrimary: false,
+  removeLoot: (sessionId, lootId) => {
+    set((state) => ({
+      sessions: state.sessions.map((session) => {
+        if (session.id === sessionId) {
+          const updated = {
+            ...session,
+            loot: session.loot.filter((item) => item.id !== lootId),
           };
-          set((state) => {
-            const loadouts = [duplicate, ...state.loadouts];
-            void saveJsonSetting('loadouts', loadouts);
-            return { loadouts };
-          });
+          updated.stats = calculateStats(updated);
+          return updated;
         }
-      },
+        return session;
+      }),
+    }));
 
-      toggleLoadoutFavorite: (id) => {
-        set((state) => ({
-          loadouts: (() => {
-            const loadouts = state.loadouts.map((loadout) =>
-              loadout.id === id ? { ...loadout, favorite: !loadout.favorite } : loadout
-            );
-            void saveJsonSetting('loadouts', loadouts);
-            return loadouts;
-          })(),
-        }));
-      },
+    void safeInvoke('db_delete_loot', { uuid: lootId });
+  },
 
-      setPrimaryLoadout: (id) => {
-        set((state) => ({
-          loadouts: (() => {
-            const loadouts = state.loadouts.map((loadout) => ({
-              ...loadout,
-              isPrimary: loadout.id === id,
-            }));
-            void saveJsonSetting('loadouts', loadouts);
-            return loadouts;
-          })(),
-        }));
-      },
+  addSkillGain: (sessionId, skillData) => {
+    const newSkill: SkillGain = {
+      ...skillData,
+      id: generateId(),
+      timestamp: Date.now(),
+    };
 
-      getPrimaryLoadout: () => {
-        const state = get();
-        return state.loadouts.find((l) => l.isPrimary) || null;
-      },
+    get().updateSession(sessionId, {
+      skills: [...(get().sessions.find((s) => s.id === sessionId)?.skills || []), newSkill],
+    });
 
-      updateSettings: (updates) => {
-        set((state) => ({
-          settings: (() => {
-            const settings = { ...state.settings, ...updates };
-            void saveJsonSetting('settings', settings);
-            return settings;
-          })(),
-        }));
-      },
+    void safeInvoke('db_add_skill', {
+      uuid: newSkill.id,
+      sessionUuid: sessionId,
+      skillName: newSkill.skillName,
+      gainAmount: newSkill.gainAmount,
+      timestamp: newSkill.timestamp,
+    });
+  },
 
-      getActiveSession: () => {
-        const state = get();
-        return state.sessions.find((s) => s.id === state.activeSessionId) || null;
-      },
+  addGlobal: (sessionId, globalData) => {
+    const newGlobal: Global = {
+      ...globalData,
+      id: generateId(),
+      timestamp: Date.now(),
+    };
 
-      calculateSessionStats: (sessionId) => {
-        const session = get().sessions.find((s) => s.id === sessionId);
-        if (!session) {
-          return emptySessionStats();
+    set((state) => ({
+      sessions: state.sessions.map((session) => {
+        if (session.id === sessionId) {
+          const updated = { ...session, globals: [...session.globals, newGlobal] };
+          updated.stats = calculateStats(updated);
+          return updated;
         }
-        return calculateStats(session);
-      },
-    })
+        return session;
+      }),
+    }));
+
+    void safeInvoke('db_add_global', {
+      uuid: newGlobal.id,
+      sessionUuid: sessionId,
+      creature: newGlobal.creature,
+      value: newGlobal.value,
+      isHof: newGlobal.isHoF,
+      timestamp: newGlobal.timestamp,
+    });
+  },
+
+  addDamageEvent: (sessionId, damage, isCritical = false) => {
+    const newDamageEvent: DamageEvent = {
+      id: generateId(),
+      damage,
+      timestamp: Date.now(),
+      isCritical,
+    };
+
+    set((state) => ({
+      sessions: state.sessions.map((s) => {
+        if (s.id === sessionId) {
+          const updated = {
+            ...s,
+            damageEvents: [...(s.damageEvents || []), newDamageEvent],
+          };
+          updated.stats = calculateStats(updated);
+          return updated;
+        }
+        return s;
+      }),
+    }));
+
+    void safeInvoke('db_add_damage_event', {
+      uuid: newDamageEvent.id,
+      sessionUuid: sessionId,
+      damage: newDamageEvent.damage,
+      isCritical: newDamageEvent.isCritical,
+      timestamp: newDamageEvent.timestamp,
+    });
+  },
+
+  addCombatEvent: (sessionId, eventType) => {
+    // Skip incoming attack events - they're not player shots
+    if (eventType === 'incoming_miss' || eventType === 'incoming_evade') {
+      return;
+    }
+
+    const newCombatEvent: CombatEvent = {
+      id: generateId(),
+      type: eventType,
+      timestamp: Date.now(),
+    };
+
+    set((state) => {
+      const session = state.sessions.find((s) => s.id === sessionId);
+      if (!session) {
+        console.warn('Session not found:', sessionId);
+        return state;
+      }
+
+      // Find loadout by matching loadoutId or weapon name
+      const loadout = session.loadoutId
+        ? state.loadouts.find((l) => l.id === session.loadoutId)
+        : state.loadouts.find((l) => l.name === session.weapon);
+
+      // Apply shot costs only for player shots (hit/crit/miss/dodge/evade where player attacked)
+      const ammoCostPerShot = (loadout?.ammoBurn || 0) / 10000;
+      const decayCostPerShot = (loadout?.decay || 0) / 100;
+
+      return {
+        sessions: state.sessions.map((s) => {
+          if (s.id === sessionId) {
+            const updated = {
+              ...s,
+              combatEvents: [...(s.combatEvents || []), newCombatEvent],
+              ammoCost: s.ammoCost + ammoCostPerShot,
+              repairCost: s.repairCost + decayCostPerShot,
+            };
+            updated.stats = calculateStats(updated);
+            return updated;
+          }
+          return s;
+        }),
+      };
+    });
+
+    void safeInvoke('db_add_combat_event', {
+      uuid: newCombatEvent.id,
+      sessionUuid: sessionId,
+      eventType: newCombatEvent.type,
+      timestamp: newCombatEvent.timestamp,
+    });
+  },
+
+  addHealingEvent: (sessionId, amount) => {
+    const newHealingEvent: HealingEvent = {
+      id: generateId(),
+      amount,
+      timestamp: Date.now(),
+    };
+
+    set((state) => ({
+      sessions: state.sessions.map((s) => {
+        if (s.id === sessionId) {
+          const updated = {
+            ...s,
+            healingEvents: [...(s.healingEvents || []), newHealingEvent],
+          };
+          updated.stats = calculateStats(updated);
+          return updated;
+        }
+        return s;
+      }),
+    }));
+
+    void safeInvoke('db_add_healing_event', {
+      uuid: newHealingEvent.id,
+      sessionUuid: sessionId,
+      amount: newHealingEvent.amount,
+      timestamp: newHealingEvent.timestamp,
+    });
+  },
+
+  addDamageTakenEvent: (sessionId, damage, isCritical = false) => {
+    const newDamageTakenEvent: DamageTakenEvent = {
+      id: generateId(),
+      damage,
+      timestamp: Date.now(),
+      isCritical,
+    };
+
+    set((state) => ({
+      sessions: state.sessions.map((s) => {
+        if (s.id === sessionId) {
+          const updated = {
+            ...s,
+            damageTakenEvents: [...(s.damageTakenEvents || []), newDamageTakenEvent],
+          };
+          updated.stats = calculateStats(updated);
+          return updated;
+        }
+        return s;
+      }),
+    }));
+
+    void safeInvoke('db_add_damage_taken_event', {
+      uuid: newDamageTakenEvent.id,
+      sessionUuid: sessionId,
+      damage: newDamageTakenEvent.damage,
+      isCritical: newDamageTakenEvent.isCritical,
+      timestamp: newDamageTakenEvent.timestamp,
+    });
+  },
+
+  addItemTemplate: (itemData) => {
+    const newItem: ItemTemplate = {
+      ...itemData,
+      id: generateId(),
+    };
+    set((state) => {
+      const itemDatabase = [...state.itemDatabase, newItem];
+      void saveJsonSetting('itemDatabase', itemDatabase);
+      return { itemDatabase };
+    });
+  },
+
+  updateItemTemplate: (id, updates) => {
+    set((state) => ({
+      itemDatabase: (() => {
+        const itemDatabase = state.itemDatabase.map((item) =>
+          item.id === id ? { ...item, ...updates } : item
+        );
+        void saveJsonSetting('itemDatabase', itemDatabase);
+        return itemDatabase;
+      })(),
+    }));
+  },
+
+  deleteItemTemplate: (id) => {
+    set((state) => ({
+      itemDatabase: (() => {
+        const itemDatabase = state.itemDatabase.filter((item) => item.id !== id);
+        void saveJsonSetting('itemDatabase', itemDatabase);
+        return itemDatabase;
+      })(),
+    }));
+  },
+
+  // Loadout actions
+  createLoadout: (loadoutData) => {
+    const newLoadout: Loadout = {
+      ...loadoutData,
+      id: generateId(),
+    };
+    set((state) => {
+      const loadouts = ensureSingleLoadoutPrimary([newLoadout, ...state.loadouts]);
+      void saveJsonSetting('loadouts', loadouts);
+      return { loadouts };
+    });
+  },
+
+  updateLoadout: (id, updates) => {
+    set((state) => ({
+      loadouts: (() => {
+        const loadouts = state.loadouts.map((loadout) =>
+          loadout.id === id ? { ...loadout, ...updates } : loadout
+        );
+        void saveJsonSetting('loadouts', loadouts);
+        return loadouts;
+      })(),
+    }));
+  },
+
+  deleteLoadout: (id) => {
+    set((state) => ({
+      loadouts: (() => {
+        const loadouts = ensureSingleLoadoutPrimary(
+          state.loadouts.filter((loadout) => loadout.id !== id)
+        );
+        void saveJsonSetting('loadouts', loadouts);
+        return loadouts;
+      })(),
+    }));
+  },
+
+  duplicateLoadout: (id) => {
+    const loadout = get().loadouts.find((l) => l.id === id);
+    if (loadout) {
+      const duplicate: Loadout = {
+        ...loadout,
+        id: generateId(),
+        name: `${loadout.name} (Copy)`,
+        isPrimary: false,
+      };
+      set((state) => {
+        const loadouts = [duplicate, ...state.loadouts];
+        void saveJsonSetting('loadouts', loadouts);
+        return { loadouts };
+      });
+    }
+  },
+
+  toggleLoadoutFavorite: (id) => {
+    set((state) => ({
+      loadouts: (() => {
+        const loadouts = state.loadouts.map((loadout) =>
+          loadout.id === id ? { ...loadout, favorite: !loadout.favorite } : loadout
+        );
+        void saveJsonSetting('loadouts', loadouts);
+        return loadouts;
+      })(),
+    }));
+  },
+
+  setPrimaryLoadout: (id) => {
+    set((state) => ({
+      loadouts: (() => {
+        const loadouts = state.loadouts.map((loadout) => ({
+          ...loadout,
+          isPrimary: loadout.id === id,
+        }));
+        void saveJsonSetting('loadouts', loadouts);
+        return loadouts;
+      })(),
+    }));
+  },
+
+  getPrimaryLoadout: () => {
+    const state = get();
+    return state.loadouts.find((l) => l.isPrimary) || null;
+  },
+
+  updateSettings: (updates) => {
+    set((state) => ({
+      settings: (() => {
+        const settings = { ...state.settings, ...updates };
+        void saveJsonSetting('settings', settings);
+        return settings;
+      })(),
+    }));
+  },
+
+  getActiveSession: () => {
+    const state = get();
+    return state.sessions.find((s) => s.id === state.activeSessionId) || null;
+  },
+
+  calculateSessionStats: (sessionId) => {
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session) {
+      return emptySessionStats();
+    }
+    return calculateStats(session);
+  },
+})
 );
 
 let dbStoreInitialized = false;
@@ -1018,7 +1018,7 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
         // Silently fail if emit is not available
       });
     }, 100);
-    
+
     // Periodically request state if we don't have an active session
     // This handles edge cases: initial request fails, main window starts session
     // after overlay opens, or sync is lost for any reason
