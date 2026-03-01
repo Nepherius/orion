@@ -96,9 +96,12 @@ export function Analytics() {
     lifetimeStats.totalCost > 0 ? (lifetimeStats.totalLoot / lifetimeStats.totalCost) * 100 : 0;
   const lifetimeHitRate = useMemo(() => {
     return lifetimeStats.totalShotsFired > 0
-      ? (filteredSessions.reduce((sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0), 0) /
-        lifetimeStats.totalShotsFired) *
-      100
+      ? (filteredSessions.reduce(
+          (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
+          0
+        ) /
+          lifetimeStats.totalShotsFired) *
+          100
       : 0;
   }, [filteredSessions, lifetimeStats.totalShotsFired]);
 
@@ -392,7 +395,11 @@ export function Analytics() {
           <h1 className="text-2xl font-bold">Analytics</h1>
           <select
             value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom')}
+            onChange={(e) =>
+              setTimeRange(
+                e.target.value as '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom'
+              )
+            }
             className="input bg-gray-900 border-gray-700 text-sm py-1.5"
           >
             <option value="24h">Last 24 Hours</option>

@@ -30,7 +30,7 @@ export function ItemDatabase() {
     loading: _entropyLoading,
   } = useItemBrowser();
   const [entropyMarkups, setEntropyMarkups] = useState<{ [key: number]: number }>({});
-  
+
   // Get ignore list from store
   const ignoreList = useHuntStore((state) => state.settings.ignoreListItems || []);
   const addToIgnoreList = useHuntStore((state) => state.addToIgnoreList);
@@ -208,7 +208,9 @@ export function ItemDatabase() {
       {/* Ignore List */}
       <div>
         <h3 className="text-lg font-semibold mb-3">Ignore List</h3>
-        <p className="text-sm text-gray-400 mb-4">Items in this list will be skipped by ChatLogMonitor</p>
+        <p className="text-sm text-gray-400 mb-4">
+          Items in this list will be skipped by ChatLogMonitor
+        </p>
         <div className="space-y-3">
           {ignoreList.length > 0 ? (
             <div className="border border-gray-700 rounded p-3 bg-gray-800">

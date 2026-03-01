@@ -221,7 +221,6 @@ export function Loot() {
                 <option value="qty">⬇ Qty</option>
                 <option value="name">⬇ Name</option>
               </select>
-
             </div>
           </div>
 
@@ -274,7 +273,9 @@ export function Loot() {
                       <td className="py-2 px-3 text-right">{share.toFixed(1)}%</td>
                       <td className="py-2 px-3 text-right">
                         <button
-                          onClick={() => activeSession && removeLootByName(activeSession.id, item.name)}
+                          onClick={() =>
+                            activeSession && removeLootByName(activeSession.id, item.name)
+                          }
                           className="text-red-400 hover:text-red-300"
                           title="Delete all entries for this item"
                         >

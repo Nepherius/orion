@@ -36,7 +36,9 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
   const critRate = shotsFired > 0 ? (critHits / shotsFired) * 100 : 0;
   const missRate = shotsFired > 0 ? (misses / shotsFired) * 100 : 0;
   const evasionRate =
-    shotsFired > 0 ? ((session.stats.enemyDodges + session.stats.enemyEvades) / shotsFired) * 100 : 0;
+    shotsFired > 0
+      ? ((session.stats.enemyDodges + session.stats.enemyEvades) / shotsFired) * 100
+      : 0;
 
   // Hit distribution
   const hitDistribution = [

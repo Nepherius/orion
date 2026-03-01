@@ -212,7 +212,12 @@ export function OverlayWindow() {
         const hotkeyMatchIndex = loadouts.findIndex((l) => l.hotkey === numericKey);
         const targetIndex = hotkeyMatchIndex >= 0 ? hotkeyMatchIndex : numericKey - 1;
 
-        if (targetIndex < 0 || targetIndex >= loadouts.length || currentIndex < 0 || currentIndex === targetIndex) {
+        if (
+          targetIndex < 0 ||
+          targetIndex >= loadouts.length ||
+          currentIndex < 0 ||
+          currentIndex === targetIndex
+        ) {
           return;
         }
 
@@ -235,11 +240,14 @@ export function OverlayWindow() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeSession, loadouts.length]);
+  }, [activeSession, loadouts]);
 
   if (!activeSession) {
     return (
-      <div className="h-screen w-full flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}>
+      <div
+        className="h-screen w-full flex items-center justify-center backdrop-blur-sm"
+        style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}
+      >
         <div className="flex items-center gap-2 text-gray-400 text-sm">
           <span>No Active Session</span>
           <button
@@ -266,7 +274,10 @@ export function OverlayWindow() {
   const loadoutName = loadout?.name || activeSession.weapon || 'No Loadout';
 
   return (
-    <div className="h-screen w-full backdrop-blur-sm border border-gray-700 rounded-2xl overflow-hidden select-none" style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}>
+    <div
+      className="h-screen w-full backdrop-blur-sm border border-gray-700 rounded-2xl overflow-hidden select-none"
+      style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}
+    >
       {/* Main Content - Horizontal Layout */}
       <div className="h-full flex items-center px-2 gap-2 text-sm">
         {/* Drag Handle - This makes the window draggable */}

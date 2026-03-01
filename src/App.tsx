@@ -38,7 +38,15 @@ function App() {
   const showWelcome = dataLoaded && !avatarName;
 
   useEffect(() => {
-    console.debug('[App] avatarName:', avatarName, 'dataLoaded:', dataLoaded, 'showWelcome:', showWelcome);
+    // eslint-disable-next-line no-console
+    console.debug(
+      '[App] avatarName:',
+      avatarName,
+      'dataLoaded:',
+      dataLoaded,
+      'showWelcome:',
+      showWelcome
+    );
   }, [avatarName, dataLoaded, showWelcome]);
 
   // Setup cross-window sync on mount
@@ -68,11 +76,14 @@ function App() {
 
       {/* Loading screen while database initializes */}
       {!dataLoaded && (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#060607' }}>
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{ backgroundColor: '#060607' }}
+        >
           <div className="text-center flex flex-col items-center">
-            <img 
-              src="/assets/images/orion_full_alt.svg" 
-              alt="Orion" 
+            <img
+              src="/assets/images/orion_full_alt.svg"
+              alt="Orion"
               className="mb-8"
               style={{ marginLeft: '100px' }}
             />
@@ -86,7 +97,10 @@ function App() {
       {dataLoaded && (
         <>
           {/* Header */}
-          <header className="border-b border-gray-700 px-6 py-4" style={{ backgroundColor: '#0a0a0b' }}>
+          <header
+            className="border-b border-gray-700 px-6 py-4"
+            style={{ backgroundColor: '#0a0a0b' }}
+          >
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="font-bold text-primary-400 text-lg tracking-widest">ORION</div>
@@ -221,9 +235,15 @@ function App() {
           </main>
 
           {/* Footer */}
-          <footer className="border-t border-gray-700 px-6 py-4 mt-12" style={{ backgroundColor: '#0a0a0b' }}>
+          <footer
+            className="border-t border-gray-700 px-6 py-4 mt-12"
+            style={{ backgroundColor: '#0a0a0b' }}
+          >
             <div className="max-w-7xl mx-auto text-center text-sm text-gray-400">
-              <p>Orion Loot Tracker v{packageJson.version} - Track your Entropia Universe hunting sessions</p>
+              <p>
+                Orion Loot Tracker v{packageJson.version} - Track your Entropia Universe hunting
+                sessions
+              </p>
               <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
             </div>
           </footer>

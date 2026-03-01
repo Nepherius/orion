@@ -20,7 +20,14 @@ interface DamageEvent {
 
 interface CombatEvent {
   timestamp: string;
-  event_type: 'hit' | 'crit' | 'player_miss' | 'player_dodge' | 'player_evade' | 'enemy_miss' | 'enemy_evade';
+  event_type:
+    | 'hit'
+    | 'crit'
+    | 'player_miss'
+    | 'player_dodge'
+    | 'player_evade'
+    | 'enemy_miss'
+    | 'enemy_evade';
 }
 
 interface HealingEvent {
@@ -260,7 +267,9 @@ export function ChatLogMonitor() {
           debugLog('[ChatLogMonitor] Active session detected, watcher already running');
         }
       } else if (watching) {
-        debugLog('[ChatLogMonitor] No active session (or paused) and auto-start disabled, stopping watcher');
+        debugLog(
+          '[ChatLogMonitor] No active session (or paused) and auto-start disabled, stopping watcher'
+        );
         stopWatching();
       } else {
         debugLog('[ChatLogMonitor] No active session and watcher is already stopped');
