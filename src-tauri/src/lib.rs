@@ -433,7 +433,7 @@ async fn get_overlay_geometry(
 
     if let Some(window) = app_handle.get_webview_window("overlay") {
         let position = window.outer_position().map_err(|e| e.to_string())?;
-        let size = window.outer_size().map_err(|e| e.to_string())?;
+        let size = window.inner_size().map_err(|e| e.to_string())?;
 
         Ok(Some(OverlayGeometry {
             x: position.x as f64,

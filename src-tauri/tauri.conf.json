@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Orion",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "identifier": "com.nepherius.orion",
   "build": {
     "frontendDist": "../dist",
@@ -18,7 +18,8 @@
         "minWidth": 1200,
         "minHeight": 700,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "backgroundColor": "#060607"
       }
     ],
     "security": {

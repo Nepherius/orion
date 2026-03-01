@@ -239,15 +239,15 @@ export function OverlayWindow() {
 
   if (!activeSession) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-gray-900/95 backdrop-blur-sm">
-        <div className="flex items-center gap-4 text-gray-400">
+      <div className="h-screen w-full flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}>
+        <div className="flex items-center gap-2 text-gray-400 text-sm">
           <span>No Active Session</span>
           <button
             onClick={handleCloseOverlay}
-            className="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-500 hover:text-gray-300"
+            className="p-1 rounded-lg hover:bg-gray-800 transition-colors text-gray-500 hover:text-gray-300"
             title="Close Overlay"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -266,93 +266,93 @@ export function OverlayWindow() {
   const loadoutName = loadout?.name || activeSession.weapon || 'No Loadout';
 
   return (
-    <div className="h-screen w-full bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-2xl overflow-hidden select-none">
+    <div className="h-screen w-full backdrop-blur-sm border border-gray-700 rounded-2xl overflow-hidden select-none" style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}>
       {/* Main Content - Horizontal Layout */}
-      <div className="h-full flex items-center px-4 gap-4">
+      <div className="h-full flex items-center px-2 gap-2 text-sm">
         {/* Drag Handle - This makes the window draggable */}
         <div
           data-tauri-drag-region
           onMouseDown={handleStartDrag}
           className="cursor-move flex items-center justify-center hover:bg-gray-800 rounded p-1 transition-colors shrink-0"
         >
-          <GripVertical className="w-4 h-4 text-gray-500" />
+          <GripVertical className="w-3 h-3 text-gray-500" />
         </div>
 
         {/* Orion Logo */}
-        <div className="font-bold text-primary-400 text-sm tracking-widest shrink-0">ORION</div>
+        <div className="font-bold text-primary-400 text-xs tracking-widest shrink-0">ORION</div>
 
-        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
 
         {/* Timer */}
-        <div className="flex flex-col items-center leading-tight shrink-0">
-          <span className="text-gray-400 text-xs">Time</span>
+        <div className="flex flex-col items-center leading-none flex-[0.7]">
+          <span className="text-gray-400 text-[10px]">Time</span>
           <LiveTimer
             startTime={activeSession.startTime}
             isRunning={activeSession.status === 'active'}
             pausedAt={activeSession.pausedAt}
             pausedDurationMs={activeSession.totalPausedMs || 0}
-            className="font-mono text-sm font-bold"
+            className="font-mono text-xs font-bold"
           />
         </div>
 
-        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
 
         {/* Loadout - Double size */}
-        <div className="flex flex-col items-center leading-tight flex-[2] min-w-0">
-          <span className="text-gray-400 text-xs whitespace-nowrap text-center">Loadout</span>
+        <div className="flex flex-col items-center leading-none flex-[1.4] min-w-0">
+          <span className="text-gray-400 text-[10px] whitespace-nowrap text-center">Loadout</span>
           <span
-            className="font-medium text-sm truncate text-center w-full"
+            className="font-medium text-xs truncate text-center w-full"
             title={`${loadoutName} (Ctrl+Left/Right, Ctrl+1..9 to switch)`}
           >
             {loadoutName}
           </span>
         </div>
 
-        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
 
         {/* Loot Value */}
-        <div className="flex flex-col items-center leading-tight flex-1">
-          <span className="text-gray-400 text-xs text-center whitespace-nowrap">Loot</span>
-          <span className="font-bold text-green-400 text-sm whitespace-nowrap">
+        <div className="flex flex-col items-center leading-none flex-1">
+          <span className="text-gray-400 text-[10px] text-center whitespace-nowrap">Loot</span>
+          <span className="font-bold text-green-400 text-xs whitespace-nowrap">
             {activeSession.stats.totalLoot.toFixed(2)} PED
           </span>
         </div>
 
-        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
 
         {/* Profit */}
-        <div className="flex flex-col items-center leading-tight flex-1">
-          <span className="text-gray-400 text-xs text-center whitespace-nowrap">Profit</span>
+        <div className="flex flex-col items-center leading-none flex-1">
+          <span className="text-gray-400 text-[10px] text-center whitespace-nowrap">Profit</span>
           <span
-            className={`font-bold text-sm whitespace-nowrap ${isProfitable ? 'text-green-400' : 'text-red-400'}`}
+            className={`font-bold text-xs whitespace-nowrap ${isProfitable ? 'text-green-400' : 'text-red-400'}`}
           >
             {isProfitable ? '+' : ''}
             {profit.toFixed(2)} PED
           </span>
         </div>
 
-        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
 
         {/* Returns */}
-        <div className="flex flex-col items-center leading-tight flex-1">
-          <span className="text-gray-400 text-xs text-center whitespace-nowrap">Returns</span>
+        <div className="flex flex-col items-center leading-none flex-1">
+          <span className="text-gray-400 text-[10px] text-center whitespace-nowrap">Returns</span>
           <div className="flex items-center gap-1 whitespace-nowrap">
             <span
-              className={`font-bold text-sm ${returnsPositive ? 'text-green-400' : 'text-red-400'}`}
+              className={`font-bold text-xs ${returnsPositive ? 'text-green-400' : 'text-red-400'}`}
             >
               {returnsPositive ? '+' : ''}
               {(returns - 100).toFixed(1)}%
             </span>
-            <span className="text-gray-500 text-xs">({returns.toFixed(1)}%)</span>
+            <span className="text-gray-500 text-[10px]">({returns.toFixed(1)}%)</span>
           </div>
         </div>
 
-        <div className="h-8 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
 
         {/* Pause/Resume Button */}
         <button
           onClick={handleTogglePause}
-          className={`p-2 rounded-lg transition-colors shrink-0 ${
+          className={`p-1.5 rounded-lg transition-colors shrink-0 ${
             activeSession.status === 'active'
               ? 'text-orange-400 hover:bg-orange-500/20'
               : 'text-green-400 hover:bg-green-500/20'
@@ -360,9 +360,9 @@ export function OverlayWindow() {
           title={activeSession.status === 'active' ? 'Pause' : 'Resume'}
         >
           {activeSession.status === 'active' ? (
-            <Pause className="w-4 h-4" />
+            <Pause className="w-3 h-3" />
           ) : (
-            <Play className="w-4 h-4" />
+            <Play className="w-3 h-3" />
           )}
         </button>
       </div>

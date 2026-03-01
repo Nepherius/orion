@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
+import packageJson from '../package.json';
 import { SessionList } from './components/sessions/SessionList';
 import { SessionDetails } from './components/sessions/SessionDetails';
 import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
@@ -53,14 +54,28 @@ function App() {
     init();
   }, []);
 
+  // Remove splash screen once React has mounted
+  useEffect(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+      splash.remove();
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen text-white" style={{ backgroundColor: '#060607' }}>
       {showWelcome && <WelcomeModal />}
 
       {/* Loading screen while database initializes */}
       {!dataLoaded && (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#060607' }}>
+          <div className="text-center flex flex-col items-center">
+            <img 
+              src="/assets/images/orion_full_alt.svg" 
+              alt="Orion" 
+              className="mb-8"
+              style={{ marginLeft: '100px' }}
+            />
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4"></div>
             <p className="text-gray-400">Loading...</p>
           </div>
@@ -71,7 +86,7 @@ function App() {
       {dataLoaded && (
         <>
           {/* Header */}
-          <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+          <header className="border-b border-gray-700 px-6 py-4" style={{ backgroundColor: '#0a0a0b' }}>
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="font-bold text-primary-400 text-lg tracking-widest">ORION</div>
@@ -206,9 +221,9 @@ function App() {
           </main>
 
           {/* Footer */}
-          <footer className="bg-gray-800 border-t border-gray-700 px-6 py-4 mt-12">
+          <footer className="border-t border-gray-700 px-6 py-4 mt-12" style={{ backgroundColor: '#0a0a0b' }}>
             <div className="max-w-7xl mx-auto text-center text-sm text-gray-400">
-              <p>Orion Loot Tracker v0.1.0 - Track your Entropia Universe hunting sessions</p>
+              <p>Orion Loot Tracker v{packageJson.version} - Track your Entropia Universe hunting sessions</p>
               <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
             </div>
           </footer>
