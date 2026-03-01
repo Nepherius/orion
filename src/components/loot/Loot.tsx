@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useHuntStore } from '../../store';
-import { Info, Search, ArrowUpDown, ExternalLink } from 'lucide-react';
+import { Info, Search, ArrowUpDown, ExternalLink, Trash2 } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 
 export function Loot() {
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
+  const removeLootByName = useHuntStore((state) => state.removeLootByName);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'value' | 'qty' | 'name'>('value');
 
@@ -275,8 +276,15 @@ export function Loot() {
                       </td>
                       <td className="py-2 px-3 text-right">{share.toFixed(1)}%</td>
                       <td className="py-2 px-3 text-right">
-                        <button className="text-blue-400 hover:text-blue-300">
+                        <button className="text-blue-400 hover:text-blue-300 mr-3">
                           <ExternalLink className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => activeSession && removeLootByName(activeSession.id, item.name)}
+                          className="text-red-400 hover:text-red-300"
+                          title="Delete all entries for this item"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>

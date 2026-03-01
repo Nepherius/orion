@@ -86,7 +86,7 @@ impl ChatLogParser {
         // `You received [Item] x (N) Value: X PED` or
         // `You received Item x (N) Value: X PED` (no brackets).
         let system_receive_regex = Regex::new(
-            r"You received (?:\[(?P<item_br>.+?)\]|(?P<item_plain>.+?)) x \([\d,]+\) Value: (?P<value>[\d.]+) PED"
+            r"\[System\](?: \[\])? You received (?:\[(?P<item_br>.+?)\]|(?P<item_plain>.+?)) x \([\d,]+\) Value: (?P<value>[\d.]+) PED\s*$"
         ).unwrap();
 
         Self {
@@ -644,6 +644,19 @@ mod tests {
         assert_eq!(event.creature, "Animal Eye Oil");
         assert_eq!(event.value, 0.27);
         assert!(!event.is_hof);
+    }
+
+    #[test]
+    fn test_parse_system_pickup_rejects_spoofing() {
+        let parser = ChatLogParser::new();
+        // A player saying they received loot should NOT be parsed
+        let spoof_line = "2026-02-28 22:54:52 [Rookie] [axedude axe woodpile] [System]: You received [Energy Matter Residue] x (1681) Value: 16.81 PED bo000owl";
+        
+        let result = parser.parse_line(spoof_line);
+        assert!(
+            result.is_none(),
+            "Parser incorrectly matched a player chat message as a system loot event"
+        );
     }
 
     #[test]

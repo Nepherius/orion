@@ -3,6 +3,26 @@ import { useSettingsModel } from '../../hooks/useSettingsModel';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { open } from '@tauri-apps/plugin-shell';
 
+interface SettingSectionProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}
+
+const SettingSection = ({ icon: Icon, title, description, children }: SettingSectionProps) => (
+  <div className="card p-5">
+    <div className="flex items-center gap-3 mb-4">
+      <Icon className="w-5 h-5 text-primary-500" />
+      <div>
+        <h3 className="font-semibold text-white">{title}</h3>
+        <p className="text-xs text-gray-400">{description}</p>
+      </div>
+    </div>
+    <div className="space-y-3">{children}</div>
+  </div>
+);
+
 export function Settings() {
   const {
     settings,
@@ -16,29 +36,6 @@ export function Settings() {
     showClearDataConfirm,
     setShowClearDataConfirm,
   } = useSettingsModel();
-
-  const SettingSection = ({
-    icon: Icon,
-    title,
-    description,
-    children,
-  }: {
-    icon: React.ElementType;
-    title: string;
-    description: string;
-    children: React.ReactNode;
-  }) => (
-    <div className="card p-5">
-      <div className="flex items-center gap-3 mb-4">
-        <Icon className="w-5 h-5 text-primary-500" />
-        <div>
-          <h3 className="font-semibold text-white">{title}</h3>
-          <p className="text-xs text-gray-400">{description}</p>
-        </div>
-      </div>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-6">

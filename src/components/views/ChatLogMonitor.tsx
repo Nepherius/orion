@@ -220,6 +220,15 @@ export function ChatLogMonitor() {
       const currentPrimaryLoadout = useHuntStore.getState().getPrimaryLoadout();
 
       if (autoStartSession) {
+        // If we have an active session that is paused, we should NOT be watching
+        if (activeSession && activeSession.status === 'paused') {
+          if (watching) {
+            debugLog('[ChatLogMonitor] Session paused, stopping watcher (auto-start enabled)');
+            stopWatching();
+          }
+          return;
+        }
+
         // Check if there's a primary loadout before auto-starting
         if (!currentPrimaryLoadout) {
           debugLog('[ChatLogMonitor] Auto-start disabled: No primary loadout set');
@@ -230,7 +239,7 @@ export function ChatLogMonitor() {
           return;
         }
 
-        // Always watch when auto-start is enabled
+        // Always watch when auto-start is enabled and session isn't paused
         if (!watching) {
           debugLog('[ChatLogMonitor] Auto-start enabled, starting watcher');
           startWatching();
@@ -251,7 +260,7 @@ export function ChatLogMonitor() {
           debugLog('[ChatLogMonitor] Active session detected, watcher already running');
         }
       } else if (watching) {
-        debugLog('[ChatLogMonitor] No active session and auto-start disabled, stopping watcher');
+        debugLog('[ChatLogMonitor] No active session (or paused) and auto-start disabled, stopping watcher');
         stopWatching();
       } else {
         debugLog('[ChatLogMonitor] No active session and watcher is already stopped');

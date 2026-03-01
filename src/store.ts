@@ -65,6 +65,7 @@ interface HuntStore {
   ) => void;
   updateLoot: (sessionId: string, lootId: string, updates: Partial<LootItem>) => void;
   removeLoot: (sessionId: string, lootId: string) => void;
+  removeLootByName: (sessionId: string, itemName: string) => void;
 
   // Skill actions
   addSkillGain: (
@@ -543,6 +544,29 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     }));
 
     void safeInvoke('db_delete_loot', { uuid: lootId });
+  },
+
+  removeLootByName: (sessionId, itemName) => {
+    let itemsToDelete: any[] = [];
+
+    set((state) => ({
+      sessions: state.sessions.map((session) => {
+        if (session.id === sessionId) {
+          itemsToDelete = session.loot.filter((item) => item.name === itemName);
+          const updated = {
+            ...session,
+            loot: session.loot.filter((item) => item.name !== itemName),
+          };
+          updated.stats = calculateStats(updated);
+          return updated;
+        }
+        return session;
+      }),
+    }));
+
+    itemsToDelete.forEach((item) => {
+      void safeInvoke('db_delete_loot', { uuid: item.id });
+    });
   },
 
   addSkillGain: (sessionId, skillData) => {
