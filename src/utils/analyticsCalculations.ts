@@ -496,6 +496,19 @@ export function calculateSkillValuePerCost(sessions: HuntSession[]): number {
 }
 
 /**
+ * Get all unique skill names from sessions (for debugging)
+ */
+export function getAllSkillNames(sessions: HuntSession[]): string[] {
+  const skillSet = new Set<string>();
+  sessions.forEach((session) => {
+    session.skills.forEach((skill) => {
+      skillSet.add(skill.skillName);
+    });
+  });
+  return Array.from(skillSet).sort();
+}
+
+/**
  * Attribute skill list
  */
 const ATTRIBUTES = ['Agility', 'Health', 'Intelligence', 'Psyche', 'Stamina', 'Strength'] as const;

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useHuntStore } from '../../store';
+import { AutocompleteInput } from '../common/AutocompleteInput';
 import { X } from 'lucide-react';
 
 interface EditSessionModalProps {
@@ -20,9 +21,25 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
     loadoutId: sessionLoadout?.id || '',
     weapon: session?.weapon || '',
     armor: session?.armor || '',
+    creature: session?.creature || '',
     location: session?.location || '',
     notes: session?.notes || '',
   });
+
+  const [creatures, setCreatures] = useState<string[]>([]);
+  const [planets, setPlanets] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Load creatures and planets data
+    Promise.all([
+      fetch('/assets/creatures/creatures.json')
+        .then((res) => res.json())
+        .then((data) => setCreatures(data.creatures || [])),
+      fetch('/assets/creatures/planets.json')
+        .then((res) => res.json())
+        .then((data) => setPlanets(data.planets || [])),
+    ]).catch((err) => console.error('Failed to load autocomplete data:', err));
+  }, []);
 
   if (!session) {
     return null;
@@ -88,16 +105,21 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
             />
           </div>
 
-          <div>
-            <label className="label">Location</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="e.g., Port Atlantis"
-              className="input w-full"
-            />
-          </div>
+          <AutocompleteInput
+            label="Creature"
+            value={formData.creature}
+            onChange={(creature) => setFormData({ ...formData, creature })}
+            options={creatures}
+            placeholder="e.g., Atrox Adolescent"
+          />
+
+          <AutocompleteInput
+            label="Location"
+            value={formData.location}
+            onChange={(location) => setFormData({ ...formData, location })}
+            options={planets}
+            placeholder="e.g., Port Atlantis"
+          />
 
           <div>
             <label className="label">Notes</label>

@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Orion",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "identifier": "com.nepherius.orion",
   "build": {
     "frontendDist": "../dist",

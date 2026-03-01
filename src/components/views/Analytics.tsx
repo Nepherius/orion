@@ -34,6 +34,7 @@ import {
   calculateCreatureStats,
   calculateStdDev,
   calculateLifetimeAttributeGains,
+  getAllSkillNames,
 } from '../../utils/analyticsCalculations';
 
 export function Analytics() {
@@ -502,6 +503,10 @@ export function Analytics() {
 
   const lifetimeAttributeGains = useMemo(() => {
     return calculateLifetimeAttributeGains(filteredSessions);
+  }, [filteredSessions]);
+
+  const allSkillNames = useMemo(() => {
+    return getAllSkillNames(filteredSessions);
   }, [filteredSessions]);
 
   // Category 12: Predictive Metrics
@@ -1358,6 +1363,25 @@ export function Analytics() {
         ) : (
           <div className="text-center text-muted py-8">No attribute gains recorded</div>
         )}
+      </div>
+
+      {/* Debug: Show all skill names for attribute identification */}
+      <div className="card p-6 border-yellow-500/30">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-sm font-bold text-yellow-400">All Skills Tracked</h3>
+          <InfoTooltip tooltip="Complete list of skill names in your data. Use this to identify which are attributes." />
+        </div>
+        <div className="text-xs text-muted space-y-1 max-h-32 overflow-y-auto">
+          {allSkillNames.length === 0 ? (
+            <span>No skills tracked</span>
+          ) : (
+            allSkillNames.map((skill) => (
+              <div key={skill} className="p-1 bg-gray-700/20 rounded px-2">
+                {skill}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="card p-6">

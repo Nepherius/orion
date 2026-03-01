@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useHuntStore } from '../../store';
+import { AutocompleteInput } from '../common/AutocompleteInput';
 import { X } from 'lucide-react';
 
 interface NewSessionModalProps {
@@ -20,6 +21,21 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
     creature: '',
     notes: '',
   });
+
+  const [creatures, setCreatures] = useState<string[]>([]);
+  const [planets, setPlanets] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Load creatures and planets data
+    Promise.all([
+      fetch('/assets/creatures/creatures.json')
+        .then((res) => res.json())
+        .then((data) => setCreatures(data.creatures || [])),
+      fetch('/assets/creatures/planets.json')
+        .then((res) => res.json())
+        .then((data) => setPlanets(data.planets || [])),
+    ]).catch((err) => console.error('Failed to load autocomplete data:', err));
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,28 +108,21 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
             />
           </div>
 
-          <div>
-            <label className="label">Location</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="e.g., Port Atlantis"
-              className="input w-full"
-            />
-          </div>
+          <AutocompleteInput
+            label="Location"
+            value={formData.location}
+            onChange={(location) => setFormData({ ...formData, location })}
+            options={planets}
+            placeholder="e.g., Port Atlantis"
+          />
 
-          <div>
-            <label className="label">Creature</label>
-            <input
-              type="text"
-              value={formData.creature}
-              onChange={(e) => setFormData({ ...formData, creature: e.target.value })}
-              placeholder="e.g., Atrox (used for analytics)"
-              className="input w-full bg-surface-hover"
-            />
-            <p className="text-xs text-muted mt-1">Used for creature-specific analytics</p>
-          </div>
+          <AutocompleteInput
+            label="Creature"
+            value={formData.creature}
+            onChange={(creature) => setFormData({ ...formData, creature })}
+            options={creatures}
+            placeholder="e.g., Atrox Adolescent"
+          />
 
           <div>
             <label className="label">Notes</label>

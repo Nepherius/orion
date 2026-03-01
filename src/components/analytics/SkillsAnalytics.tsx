@@ -219,6 +219,28 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         )}
       </div>
 
+      {/* Debug: Show all skill names for attribute identification */}
+      <div className="card p-6 border-yellow-500/30">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-sm font-bold text-yellow-400">All Skills This Session</h3>
+        </div>
+        {skillsByType.length > 0 ? (
+          <div className="text-xs text-muted space-y-1 max-h-32 overflow-y-auto">
+            {skillsByType.map((skill) => (
+              <div
+                key={skill.name}
+                className="p-1 bg-gray-700/20 rounded px-2 flex justify-between"
+              >
+                <span>{skill.name}</span>
+                <span className="text-gray-500">({skill.gains.toFixed(2)})</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-xs text-muted">No skills recorded</span>
+        )}
+      </div>
+
       {/* Metrics Grid */}
       <div className="grid grid-cols-3 gap-6">
         <div className="card p-6">

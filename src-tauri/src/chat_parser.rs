@@ -64,6 +64,7 @@ pub struct ChatLogParser {
     damage_taken_regex: Regex,
     skill_gain_exp_regex: Regex,
     skill_gain_simple_regex: Regex,
+    attribute_improved_regex: Regex,
     language_patterns: LanguagePatterns,
 }
 
@@ -81,6 +82,7 @@ impl ChatLogParser {
         let skill_gain_exp_regex =
             Regex::new(r"You have gained ([\d.]+) experience in your (.+?) skill").unwrap();
         let skill_gain_simple_regex = Regex::new(r"You have gained ([\d.]+) (.+)").unwrap();
+        let attribute_improved_regex = Regex::new(r"Your (.+?) has improved by ([\d.]+)").unwrap();
 
         // Pattern for system "You received" loot lines. Match either
         // `You received [Item] x (N) Value: X PED` or
@@ -99,6 +101,7 @@ impl ChatLogParser {
             damage_taken_regex,
             skill_gain_exp_regex,
             skill_gain_simple_regex,
+            attribute_improved_regex,
             language_patterns,
         }
     }
@@ -273,6 +276,21 @@ impl ChatLogParser {
     pub fn parse_skill_gain(&self, line: &str) -> Option<SkillGain> {
         let timestamp = Self::extract_timestamp(line);
 
+        // Try attribute pattern first: "Your AttributeName has improved by X"
+        if line.contains("has improved by") {
+            if let Some(caps) = self.attribute_improved_regex.captures(line) {
+                let skill_name = caps.get(1)?.as_str().trim().to_string();
+                let gain: f64 = caps.get(2)?.as_str().parse().ok()?;
+
+                return Some(SkillGain {
+                    timestamp,
+                    skill_name,
+                    gain,
+                });
+            }
+        }
+
+        // Try standard skill gain patterns
         if !line.contains("You have gained") {
             return None;
         }
@@ -585,6 +603,19 @@ mod tests {
         let event = result.unwrap();
         assert_eq!(event.damage, 7.2);
         assert!(event.is_critical);
+    }
+
+    #[test]
+    fn test_parse_attribute_improved() {
+        let parser = ChatLogParser::new();
+        let line = "2026-02-28 17:19:07 [System] [] Your Intelligence has improved by 0.0775";
+
+        let result = parser.parse_skill_gain(line);
+        assert!(result.is_some());
+
+        let event = result.unwrap();
+        assert_eq!(event.gain, 0.0775);
+        assert_eq!(event.skill_name, "Intelligence");
     }
 
     #[test]
