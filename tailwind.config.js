@@ -18,7 +18,15 @@ export default {
           700: '#0369a1',
           800: '#075985',
           900: '#0c4a6e',
-        }
+        },
+        // Semantic theme variables
+        background: 'var(--color-bg)',
+        surface: 'var(--color-surface)',
+        'surface-hover': 'var(--color-surface-hover)',
+        'surface-active': 'var(--color-surface-active)',
+        border: 'var(--color-border)',
+        body: 'var(--color-text)',
+        muted: 'var(--color-text-muted)',
       }
     },
   },

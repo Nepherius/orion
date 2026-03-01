@@ -49,9 +49,9 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-surface rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-surface border-b border-border p-4 flex items-center justify-between">
           <input
             type="text"
             value={name}
@@ -59,20 +59,20 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
             placeholder="New Loadout"
             className="text-xl font-bold bg-transparent border-none outline-none text-white flex-1"
           />
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={onClose} className="text-muted hover:text-white">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <div className="p-4 space-y-4">
           <div>
-            <label className="text-xs text-gray-400 uppercase block mb-1">Hotkey</label>
+            <label className="text-xs text-muted uppercase block mb-1">Hotkey</label>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-300">Hotkey:</span>
-              <kbd className="px-2 py-1 rounded border border-gray-600 bg-gray-700 text-xs font-semibold text-gray-200">
+              <kbd className="px-2 py-1 rounded border border-border bg-surface text-xs font-semibold text-gray-200">
                 CTRL
               </kbd>
-              <span className="text-gray-400">+</span>
+              <span className="text-muted">+</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -85,7 +85,7 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                 placeholder="1-9"
                 className="input w-20 text-center font-mono"
               />
-              <span className="text-xs text-gray-500">Assign Ctrl+1 to Ctrl+9</span>
+              <span className="text-xs text-muted">Assign Ctrl+1 to Ctrl+9</span>
             </div>
           </div>
 
@@ -109,21 +109,21 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
 
           {/* Stats Display */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <div className="text-xs text-gray-400 uppercase mb-1">Cost/Shot</div>
+            <div className="bg-surface rounded-lg p-3 text-center">
+              <div className="text-xs text-muted uppercase mb-1">Cost/Shot</div>
               <div className="text-2xl font-bold text-blue-400">
                 {stats.costPerShot.toFixed(4)} <span className="text-xs">PED</span>
               </div>
             </div>
-            <div className="bg-gray-700 rounded-lg p-3 text-center">
-              <div className="text-xs text-gray-400 uppercase mb-1">DPP</div>
+            <div className="bg-surface rounded-lg p-3 text-center">
+              <div className="text-xs text-muted uppercase mb-1">DPP</div>
               <div className="text-2xl font-bold text-green-400">{stats.dpp.toFixed(4)}</div>
             </div>
           </div>
 
           {/* Equipment Section */}
           <div className="space-y-3">
-            <div className="text-sm font-bold text-gray-400 uppercase">Equipment</div>
+            <div className="text-sm font-bold text-muted uppercase">Equipment</div>
 
             <EquipmentSelector
               label="Weapon"
@@ -180,7 +180,7 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
           {/* Professions */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-gray-400 uppercase block mb-1">Hit Profession</label>
+              <label className="text-xs text-muted uppercase block mb-1">Hit Profession</label>
               <input
                 type="number"
                 value={hitProfession}
@@ -189,7 +189,7 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
               />
             </div>
             <div>
-              <label className="text-xs text-gray-400 uppercase block mb-1">Dmg Profession</label>
+              <label className="text-xs text-muted uppercase block mb-1">Dmg Profession</label>
               <input
                 type="number"
                 value={dmgProfession}

@@ -32,6 +32,7 @@ function App() {
   );
 
   const avatarName = useHuntStore((state) => state.settings.avatarName);
+  const theme = useHuntStore((state) => state.settings.theme);
   const [dataLoaded, setDataLoaded] = useState(false);
 
   // Show welcome modal only after data is loaded and avatar name is still empty
@@ -70,16 +71,21 @@ function App() {
     }
   }, []);
 
+  // Sync Tailwind CSS theme classes dynamically
+  useEffect(() => {
+    document.documentElement.className = '';
+    if (theme !== 'dark') {
+      document.documentElement.classList.add(`theme-${theme}`);
+    }
+  }, [theme]);
+
   return (
-    <div className="min-h-screen text-white" style={{ backgroundColor: '#060607' }}>
+    <div className="min-h-screen text-body bg-background">
       {showWelcome && <WelcomeModal />}
 
       {/* Loading screen while database initializes */}
       {!dataLoaded && (
-        <div
-          className="min-h-screen flex items-center justify-center"
-          style={{ backgroundColor: '#060607' }}
-        >
+        <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center flex flex-col items-center">
             <img
               src="/assets/images/orion_full_alt.svg"
@@ -88,7 +94,7 @@ function App() {
               style={{ marginLeft: '100px' }}
             />
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4"></div>
-            <p className="text-gray-400">Loading...</p>
+            <p className="text-muted">Loading...</p>
           </div>
         </div>
       )}
@@ -97,14 +103,11 @@ function App() {
       {dataLoaded && (
         <>
           {/* Header */}
-          <header
-            className="border-b border-gray-700 px-6 py-4"
-            style={{ backgroundColor: '#0a0a0b' }}
-          >
+          <header className="border-b border-border px-6 py-4 bg-surface">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="font-bold text-primary-400 text-lg tracking-widest">ORION</div>
-                <span className="text-sm text-gray-400">Entropia Universe Loot Tracker</span>
+                <span className="text-sm text-muted">Entropia Universe Loot Tracker</span>
               </div>
 
               {/* Navigation */}
@@ -170,7 +173,7 @@ function App() {
 
           {/* Active Session Banner */}
           {activeSession && (
-            <div className="bg-primary-900 border-b border-primary-700">
+            <div className="bg-[var(--color-banner-bg)] border-b border-[var(--color-banner-border)] shadow-md">
               <div className="max-w-7xl mx-auto px-6 py-3">
                 <ActiveSessionPanel
                   session={activeSession}
@@ -212,12 +215,7 @@ function App() {
                       onSessionResumed={() => setCurrentView('dashboard')}
                     />
                   ) : (
-                    <div className="card p-8 text-center text-gray-400">
-                      <img
-                        src="/icon.png"
-                        alt="Orion"
-                        className="w-16 h-16 mx-auto mb-4 opacity-50 object-contain"
-                      />
+                    <div className="card p-8 text-center text-muted">
                       <p>Select a session to view details</p>
                     </div>
                   )}
@@ -235,11 +233,8 @@ function App() {
           </main>
 
           {/* Footer */}
-          <footer
-            className="border-t border-gray-700 px-6 py-4 mt-12"
-            style={{ backgroundColor: '#0a0a0b' }}
-          >
-            <div className="max-w-7xl mx-auto text-center text-sm text-gray-400">
+          <footer className="border-t border-border px-6 py-4 mt-12 bg-surface">
+            <div className="max-w-7xl mx-auto text-center text-sm text-muted">
               <p>
                 Orion Loot Tracker v{packageJson.version} - Track your Entropia Universe hunting
                 sessions

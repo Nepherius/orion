@@ -51,7 +51,7 @@ export function AlertModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-surface rounded-lg p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className={`${config.bgClass} p-2 rounded-lg`}>
@@ -59,14 +59,14 @@ export function AlertModal({
             </div>
             <h2 className="text-xl font-bold">{title}</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={onClose} className="text-muted hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <p className="text-gray-300 mb-4">{message}</p>
 
-        {detail && <p className="text-sm text-gray-400 mb-6">{detail}</p>}
+        {detail && <p className="text-sm text-muted mb-6">{detail}</p>}
 
         <button onClick={onClose} className="btn-primary w-full">
           {confirmText}

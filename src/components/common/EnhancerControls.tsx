@@ -26,12 +26,12 @@ export function EnhancerControls({ enhancers, onUpdate, maxPerType = 100 }: Enha
 
   return (
     <div>
-      <div className="text-xs text-gray-400 mb-2">Enhancers ({total}/100)</div>
+      <div className="text-xs text-muted mb-2">Enhancers ({total}/100)</div>
       <div className="grid grid-cols-2 gap-2">
         {(['dmg', 'acc', 'rng', 'eco'] as const).map((type) => (
-          <div key={type} className="bg-gray-700 rounded-lg p-2">
+          <div key={type} className="bg-surface rounded-lg p-2">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs uppercase text-gray-400">{type}</span>
+              <span className="text-xs uppercase text-muted">{type}</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleDecrement(type)}

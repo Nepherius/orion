@@ -122,7 +122,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold mb-2">{session.name}</h2>
-            <div className="flex items-center gap-4 text-sm text-gray-400">
+            <div className="flex items-center gap-4 text-sm text-muted">
               <span>Weapon: {session.weapon}</span>
               {session.armor && (
                 <>
@@ -186,11 +186,11 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
               </button>
             </div>
             <div className="text-right text-sm">
-              <div className="text-xs text-gray-400">Started</div>
+              <div className="text-xs text-muted">Started</div>
               <div className="font-medium text-gray-300">{format(session.startTime, 'PPpp')}</div>
               {session.endTime && (
                 <>
-                  <div className="text-xs text-gray-400 mt-1">Ended</div>
+                  <div className="text-xs text-muted mt-1">Ended</div>
                   <div className="font-medium text-gray-300">{format(session.endTime, 'PPpp')}</div>
                 </>
               )}
@@ -200,20 +200,20 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
 
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-4 mt-6">
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">Total Loot</div>
+          <div className="bg-surface rounded-lg p-4">
+            <div className="text-sm text-muted mb-1">Total Loot</div>
             <div className="text-2xl font-bold text-green-400">
               {session.stats.totalLoot.toFixed(2)} PED
             </div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">Total Cost</div>
+          <div className="bg-surface rounded-lg p-4">
+            <div className="text-sm text-muted mb-1">Total Cost</div>
             <div className="text-2xl font-bold text-red-400">
               {session.stats.totalCost.toFixed(2)} PED
             </div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">Profit/Loss</div>
+          <div className="bg-surface rounded-lg p-4">
+            <div className="text-sm text-muted mb-1">Profit/Loss</div>
             <div
               className={`text-2xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
             >
@@ -221,8 +221,8 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
               {profit.toFixed(2)} PED
             </div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">Returns</div>
+          <div className="bg-surface rounded-lg p-4">
+            <div className="text-sm text-muted mb-1">Returns</div>
             <div
               className={`text-2xl font-bold flex items-center gap-2 ${
                 session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
@@ -240,20 +240,20 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
 
         {/* Additional Stats */}
         <div className="grid grid-cols-4 gap-4 mt-4">
-          <div className="bg-gray-700 rounded-lg p-3 text-center">
-            <div className="text-xs text-gray-400">Loot Events</div>
+          <div className="bg-surface rounded-lg p-3 text-center">
+            <div className="text-xs text-muted">Loot Events</div>
             <div className="text-lg font-semibold">{session.stats.lootEvents}</div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-3 text-center">
-            <div className="text-xs text-gray-400">Globals</div>
+          <div className="bg-surface rounded-lg p-3 text-center">
+            <div className="text-xs text-muted">Globals</div>
             <div className="text-lg font-semibold text-yellow-400">{session.stats.globals}</div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-3 text-center">
-            <div className="text-xs text-gray-400">HoFs</div>
+          <div className="bg-surface rounded-lg p-3 text-center">
+            <div className="text-xs text-muted">HoFs</div>
             <div className="text-lg font-semibold text-purple-400">{session.stats.hofs}</div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-3 text-center">
-            <div className="text-xs text-gray-400">Duration</div>
+          <div className="bg-surface rounded-lg p-3 text-center">
+            <div className="text-xs text-muted">Duration</div>
             <div className="text-lg font-semibold">
               {Math.floor(session.stats.duration / 3600)}h{' '}
               {Math.floor((session.stats.duration % 3600) / 60)}m
@@ -300,12 +300,12 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
         </div>
 
         {session.loot.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">No loot recorded yet</p>
+          <p className="text-center text-muted py-8">No loot recorded yet</p>
         ) : isLootExpanded ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700">
+                <tr className="border-b border-border">
                   <th className="text-left py-2 px-3">Time</th>
                   <th className="text-left py-2 px-3">Item</th>
                   <th className="text-right py-2 px-3">Qty</th>
@@ -317,8 +317,8 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
               </thead>
               <tbody>
                 {session.loot.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-800 hover:bg-gray-700">
-                    <td className="py-2 px-3 text-sm text-gray-400">
+                  <tr key={item.id} className="border-b border-gray-800 hover:bg-surface">
+                    <td className="py-2 px-3 text-sm text-muted">
                       {format(item.timestamp, 'HH:mm:ss')}
                     </td>
                     <td className="py-2 px-3 font-medium">{item.name}</td>
@@ -345,7 +345,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700">
+                <tr className="border-b border-border">
                   <th className="text-left py-2 px-3">Item</th>
                   <th className="text-right py-2 px-3">Qty</th>
                   <th className="text-right py-2 px-3">TT Value</th>
@@ -356,7 +356,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
               </thead>
               <tbody>
                 {groupedLoot.map((stackedItem) => (
-                  <tr key={stackedItem.name} className="border-b border-gray-800 hover:bg-gray-700">
+                  <tr key={stackedItem.name} className="border-b border-gray-800 hover:bg-surface">
                     <td className="py-2 px-3 font-medium">{stackedItem.name}</td>
                     <td className="py-2 px-3 text-right">{stackedItem.quantity}</td>
                     <td className="py-2 px-3 text-right">{stackedItem.value.toFixed(2)}</td>
@@ -364,7 +364,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
                     <td className="py-2 px-3 text-right font-semibold text-green-400">
                       {stackedItem.totalValue.toFixed(2)} PED
                     </td>
-                    <td className="py-2 px-3 text-right text-sm text-gray-400">
+                    <td className="py-2 px-3 text-right text-sm text-muted">
                       {stackedItem.count}x
                     </td>
                   </tr>
@@ -392,7 +392,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
         </div>
 
         {session.globals.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">No globals recorded yet</p>
+          <p className="text-center text-muted py-8">No globals recorded yet</p>
         ) : (
           <div className="space-y-2">
             {session.globals.map((global) => (
@@ -428,11 +428,11 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
             {groupedSkills.map((skill) => (
               <div
                 key={skill.skillName}
-                className="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
+                className="flex items-center justify-between p-3 bg-surface rounded-lg"
               >
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{skill.skillName}</span>
-                  <span className="text-xs text-gray-400">({skill.count}x)</span>
+                  <span className="text-xs text-muted">({skill.count}x)</span>
                 </div>
                 <span className="text-green-400">+{skill.gainAmount.toFixed(4)}</span>
               </div>

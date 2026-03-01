@@ -31,9 +31,9 @@ export function EquipmentSelector({
 
   return (
     <div className="relative">
-      <label className="text-xs text-gray-400 uppercase block mb-1">{label}</label>
+      <label className="text-xs text-muted uppercase block mb-1">{label}</label>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
         <input
           type="text"
           placeholder={selected?.Name || placeholder}
@@ -48,7 +48,7 @@ export function EquipmentSelector({
       </div>
 
       {isOpen && filtered.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-surface rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {filtered.map((item: EquipmentItem) => (
             <button
               key={item.Id}

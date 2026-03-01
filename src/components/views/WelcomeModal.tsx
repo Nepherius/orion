@@ -19,11 +19,11 @@ export function WelcomeModal({ onComplete }: WelcomeModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 text-center">
+      <div className="bg-surface rounded-lg p-8 max-w-md w-full mx-4 text-center">
         <div className="mb-6">
           <img src="/assets/images/orion_icon.png" alt="Orion" className="w-16 h-16 mx-auto mb-4" />
           <h2 className="text-3xl font-bold mb-2">Welcome to ORION</h2>
-          <p className="text-gray-400">Enter your Entropia Universe Avatar name to get started.</p>
+          <p className="text-muted">Enter your Entropia Universe Avatar name to get started.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

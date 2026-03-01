@@ -13,13 +13,13 @@ export function AnalyticsModal({ isOpen, onClose, title, children }: AnalyticsMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="bg-gray-800 rounded-lg shadow-2xl w-[90vw] h-[85vh] flex flex-col">
+      <div className="bg-surface rounded-lg shadow-2xl w-[90vw] h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-2xl font-bold text-blue-400 uppercase">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-muted hover:text-white transition-colors"
             aria-label="Close"
           >
             <X className="w-6 h-6" />

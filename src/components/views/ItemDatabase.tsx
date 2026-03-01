@@ -77,7 +77,7 @@ export function ItemDatabase() {
 
       {/* Search */}
       <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
         <input
           type="text"
           placeholder="Search local items or Entropia database..."
@@ -100,16 +100,16 @@ export function ItemDatabase() {
       <div>
         <h3 className="text-lg font-semibold mb-3">Your Items</h3>
         {filteredItems.length === 0 && !searchQuery ? (
-          <p className="text-center text-gray-400 py-8">
+          <p className="text-center text-muted py-8">
             No items in database. Add item templates to quickly add loot with default values.
           </p>
         ) : filteredItems.length === 0 ? (
-          <p className="text-center text-gray-400 py-4 text-sm">No matching items</p>
+          <p className="text-center text-muted py-4 text-sm">No matching items</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700">
+                <tr className="border-b border-border">
                   <th className="text-left py-2 px-3">Item Name</th>
                   <th className="text-left py-2 px-3">Category</th>
                   <th className="text-right py-2 px-3">Default TT Value</th>
@@ -120,14 +120,14 @@ export function ItemDatabase() {
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-800 hover:bg-gray-700">
+                  <tr key={item.id} className="border-b border-gray-800 hover:bg-surface">
                     <td className="py-2 px-3 font-medium">{item.name}</td>
                     <td className="py-2 px-3">
                       <span className="px-2 py-1 text-xs rounded bg-gray-600">{item.category}</span>
                     </td>
                     <td className="py-2 px-3 text-right">{item.defaultTTValue.toFixed(2)} PED</td>
                     <td className="py-2 px-3 text-right">{item.defaultMarkup}%</td>
-                    <td className="py-2 px-3 text-sm text-gray-400">{item.description || '-'}</td>
+                    <td className="py-2 px-3 text-sm text-muted">{item.description || '-'}</td>
                     <td className="py-2 px-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
@@ -160,19 +160,19 @@ export function ItemDatabase() {
             {filteredEntropyItems.map((item) => (
               <div
                 key={item.Id}
-                className="border border-gray-700 rounded p-4 bg-gray-800 hover:bg-gray-700 transition"
+                className="border border-border rounded p-4 bg-surface hover:bg-surface transition"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <h4 className="font-medium">{item.Name}</h4>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted mt-1">
                       Type: {item.Properties?.Type || 'Unknown'} • TT: {getTTValue(item).toFixed(2)}{' '}
                       PED
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <label className="text-sm text-gray-400">Markup %:</label>
+                      <label className="text-sm text-muted">Markup %:</label>
                       <input
                         type="number"
                         min="100"
@@ -208,17 +208,17 @@ export function ItemDatabase() {
       {/* Ignore List */}
       <div>
         <h3 className="text-lg font-semibold mb-3">Ignore List</h3>
-        <p className="text-sm text-gray-400 mb-4">
+        <p className="text-sm text-muted mb-4">
           Items in this list will be skipped by ChatLogMonitor
         </p>
         <div className="space-y-3">
           {ignoreList.length > 0 ? (
-            <div className="border border-gray-700 rounded p-3 bg-gray-800">
+            <div className="border border-border rounded p-3 bg-surface">
               <div className="flex flex-wrap gap-2">
                 {ignoreList.map((item) => (
                   <div
                     key={item}
-                    className="flex items-center gap-2 bg-gray-700 px-3 py-1 rounded text-sm"
+                    className="flex items-center gap-2 bg-surface px-3 py-1 rounded text-sm"
                   >
                     <span>{item}</span>
                     <button
@@ -232,7 +232,7 @@ export function ItemDatabase() {
               </div>
             </div>
           ) : (
-            <p className="text-center text-gray-500 py-4 text-sm">No items in ignore list</p>
+            <p className="text-center text-muted py-4 text-sm">No items in ignore list</p>
           )}
         </div>
       </div>
@@ -283,10 +283,10 @@ function ItemModal({ item, onClose, onSave }: ItemModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-surface rounded-lg p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">{item ? 'Edit' : 'Add'} Item Template</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={onClose} className="text-muted hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>

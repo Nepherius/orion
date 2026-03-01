@@ -104,25 +104,25 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">LOOT/HOUR</div>
+          <div className="text-sm text-muted mb-2">LOOT/HOUR</div>
           <div className="text-3xl font-bold text-green-400">
             <DollarSign className="w-5 h-5 inline mr-2" />
             {formatSmallValue(lootPerHour)}
           </div>
-          <div className="text-xs text-gray-500 mt-1">PED</div>
+          <div className="text-xs text-muted mt-1">PED</div>
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">SPEND/HOUR</div>
+          <div className="text-sm text-muted mb-2">SPEND/HOUR</div>
           <div className="text-3xl font-bold text-red-400">
             <DollarSign className="w-5 h-5 inline mr-2" />
             {formatSmallValue(spendPerHour)}
           </div>
-          <div className="text-xs text-gray-500 mt-1">PED</div>
+          <div className="text-xs text-muted mt-1">PED</div>
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">PROFIT/HOUR</div>
+          <div className="text-sm text-muted mb-2">PROFIT/HOUR</div>
           <div
             className={`text-3xl font-bold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}
           >
@@ -130,12 +130,12 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
             {profitPerHour >= 0 ? '+' : ''}
             {formatSmallValue(profitPerHour)}
           </div>
-          <div className="text-xs text-gray-500 mt-1">PED</div>
+          <div className="text-xs text-muted mt-1">PED</div>
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">KILLS/HOUR</div>
-          <div className="text-3xl font-bold text-white">
+          <div className="text-sm text-muted mb-2">KILLS/HOUR</div>
+          <div className="text-3xl font-bold text-body">
             <Target className="w-5 h-5 inline mr-2" />
             {killsPerHour.toFixed(1)}
           </div>
@@ -150,10 +150,10 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={hourlyMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
+              <XAxis dataKey="name" stroke="var(--color-text-muted)" />
+              <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid #374151' }}
                 formatter={(value: number) => [`${formatSmallValue(value)} PED`, '']}
               />
               <Bar dataKey="value">
@@ -171,10 +171,10 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={activityMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
+              <XAxis dataKey="name" stroke="var(--color-text-muted)" />
+              <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid #374151' }}
                 formatter={(value: number) => formatSmallValue(value)}
               />
               <Bar dataKey="value" fill="#3B82F6" />
@@ -189,7 +189,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-700">
+              <tr className="border-b border-border">
                 <th className="text-left py-3 px-4">Metric</th>
                 <th className="text-right py-3 px-4">Per Hour</th>
                 <th className="text-right py-3 px-4">Per Minute</th>
@@ -197,7 +197,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-800 hover:bg-gray-700">
+              <tr className="border-b border-gray-800 hover:bg-surface">
                 <td className="py-3 px-4">Loot</td>
                 <td className="py-3 px-4 text-right text-green-400 font-semibold">
                   {formatSmallValue(lootPerHour)} PED
@@ -205,7 +205,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                 <td className="py-3 px-4 text-right">{formatSmallValue(lootPerMin)} PED</td>
                 <td className="py-3 px-4 text-right">{session.stats.totalLoot.toFixed(2)} PED</td>
               </tr>
-              <tr className="border-b border-gray-800 hover:bg-gray-700">
+              <tr className="border-b border-gray-800 hover:bg-surface">
                 <td className="py-3 px-4">Spend</td>
                 <td className="py-3 px-4 text-right text-red-400 font-semibold">
                   {formatSmallValue(spendPerHour)} PED
@@ -213,7 +213,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                 <td className="py-3 px-4 text-right">{formatSmallValue(spendPerMin)} PED</td>
                 <td className="py-3 px-4 text-right">{session.stats.totalCost.toFixed(2)} PED</td>
               </tr>
-              <tr className="border-b border-gray-800 hover:bg-gray-700">
+              <tr className="border-b border-gray-800 hover:bg-surface">
                 <td className="py-3 px-4">Profit/Loss</td>
                 <td
                   className={`py-3 px-4 text-right font-semibold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}
@@ -226,21 +226,21 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                   {(session.stats.totalLoot - session.stats.totalCost).toFixed(2)} PED
                 </td>
               </tr>
-              <tr className="border-b border-gray-800 hover:bg-gray-700">
+              <tr className="border-b border-gray-800 hover:bg-surface">
                 <td className="py-3 px-4">Kills</td>
-                <td className="py-3 px-4 text-right text-white font-semibold">
+                <td className="py-3 px-4 text-right text-body font-semibold">
                   {killsPerHour.toFixed(1)}
                 </td>
                 <td className="py-3 px-4 text-right">{killsPerMin.toFixed(2)}</td>
                 <td className="py-3 px-4 text-right">{session.stats.kills}</td>
               </tr>
-              <tr className="border-b border-gray-800 hover:bg-gray-700">
+              <tr className="border-b border-gray-800 hover:bg-surface">
                 <td className="py-3 px-4">Loot Events</td>
                 <td className="py-3 px-4 text-right font-semibold">{eventsPerHour.toFixed(1)}</td>
                 <td className="py-3 px-4 text-right">{eventsPerMin.toFixed(2)}</td>
                 <td className="py-3 px-4 text-right">{session.stats.lootEvents}</td>
               </tr>
-              <tr className="border-b border-gray-800 hover:bg-gray-700">
+              <tr className="border-b border-gray-800 hover:bg-surface">
                 <td className="py-3 px-4">Damage Dealt</td>
                 <td className="py-3 px-4 text-right font-semibold">{dmgPerHour.toFixed(0)}</td>
                 <td className="py-3 px-4 text-right">
@@ -250,7 +250,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                 </td>
                 <td className="py-3 px-4 text-right">{session.stats.damageDealt.toFixed(0)}</td>
               </tr>
-              <tr className="border-b border-gray-800 hover:bg-gray-700">
+              <tr className="border-b border-gray-800 hover:bg-surface">
                 <td className="py-3 px-4">Skill Gains</td>
                 <td className="py-3 px-4 text-right text-purple-400 font-semibold">
                   {formatSmallValue(skillsPerHour)}
@@ -271,16 +271,16 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
             Time Summary
           </h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Total Time</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Total Time</span>
               <span className="font-semibold">{formatDuration(duration)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Paused Time</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Paused Time</span>
               <span className="font-semibold">{formatDuration(pausedMs)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Active Time</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Active Time</span>
               <span className="font-semibold">{formatDuration(duration)}</span>
             </div>
           </div>
@@ -289,16 +289,16 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4 text-green-400">ROI Metrics</h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Return Rate</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Return Rate</span>
               <span
                 className={`font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
               >
                 {session.stats.returns.toFixed(1)}%
               </span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Loot/Spend</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Loot/Spend</span>
               <span className="font-semibold">
                 {(session.stats.totalCost > 0
                   ? session.stats.totalLoot / session.stats.totalCost
@@ -306,8 +306,8 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                 ).toFixed(2)}
               </span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Net/Hour</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Net/Hour</span>
               <span
                 className={`font-semibold ${profitPerHour >= 0 ? 'text-green-400' : 'text-red-400'}`}
               >
@@ -321,20 +321,20 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4 text-yellow-400">Peak Rates</h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Best Hour Est.</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Best Hour Est.</span>
               <span className="font-semibold text-green-400">
                 {formatSmallValue(lootPerHour * 1.2)} PED
               </span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Efficiency</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Efficiency</span>
               <span className="font-semibold">
                 {(session.stats.returns >= 100 ? 100 : session.stats.returns).toFixed(0)}%
               </span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Pace</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Pace</span>
               <span className="font-semibold">{eventsPerHour.toFixed(1)} events/hr</span>
             </div>
           </div>

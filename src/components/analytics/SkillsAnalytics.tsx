@@ -92,7 +92,7 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">TOTAL GAINS</div>
+          <div className="text-sm text-muted mb-2">TOTAL GAINS</div>
           <div className="text-3xl font-bold text-purple-400">
             <TrendingUp className="w-5 h-5 inline mr-2" />
             {totalGains.toFixed(2)}
@@ -100,7 +100,7 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">SKILL EVENTS</div>
+          <div className="text-sm text-muted mb-2">SKILL EVENTS</div>
           <div className="text-3xl font-bold text-blue-400">
             <Award className="w-5 h-5 inline mr-2" />
             {skillEvents}
@@ -108,12 +108,12 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">SKILLS/HOUR</div>
+          <div className="text-sm text-muted mb-2">SKILLS/HOUR</div>
           <div className="text-3xl font-bold text-green-400">{skillsPerHour.toFixed(2)}</div>
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">AVG GAIN</div>
+          <div className="text-sm text-muted mb-2">AVG GAIN</div>
           <div className="text-3xl font-bold text-yellow-400">
             <BookOpen className="w-5 h-5 inline mr-2" />
             {avgSkillValue.toFixed(2)}
@@ -127,17 +127,17 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Cumulative Skill Gains</h3>
           {skillsChart.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400">
+            <div className="h-64 flex items-center justify-center text-muted">
               No skill gains yet
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={skillsChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="index" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="index" stroke="var(--color-text-muted)" />
+                <YAxis stroke="var(--color-text-muted)" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                   formatter={(value: number) => value.toFixed(2)}
                   labelFormatter={(label) => `Event #${label}`}
                 />
@@ -157,17 +157,17 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Skills by Type</h3>
           {skillsByType.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400">
+            <div className="h-64 flex items-center justify-center text-muted">
               No skills recorded
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={skillsByType.slice(0, 10)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="name" stroke="#9CA3AF" angle={-45} textAnchor="end" height={100} />
-                <YAxis stroke="#9CA3AF" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="name" stroke="var(--color-text-muted)" angle={-45} textAnchor="end" height={100} />
+                <YAxis stroke="var(--color-text-muted)" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                   formatter={(value: number) => value.toFixed(2)}
                 />
                 <Bar dataKey="gains" fill="#A855F7" />
@@ -186,24 +186,24 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         {sortedAttributes.some((attr) => attr.gains > 0) ? (
           <div className="grid grid-cols-2 gap-4 mb-4">
             {sortedAttributes.map((attr) => (
-              <div key={attr.name} className="border border-gray-700 rounded p-4">
+              <div key={attr.name} className="border border-border rounded p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <div className="font-bold text-lg mb-1">{attr.name}</div>
-                    <div className="text-xs text-gray-400 mb-2">
+                    <div className="text-xs text-muted mb-2">
                       {attributeDescriptions[attr.name]}
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-between items-end pt-2 border-t border-gray-700">
+                <div className="flex justify-between items-end pt-2 border-t border-border">
                   <div className="text-3xl font-bold text-cyan-400">{attr.gains.toFixed(2)}</div>
-                  <div className="text-sm text-gray-400">{attr.count} events</div>
+                  <div className="text-sm text-muted">{attr.count} events</div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center text-gray-400 py-8">No attribute gains recorded</div>
+          <div className="text-center text-muted py-8">No attribute gains recorded</div>
         )}
       </div>
 
@@ -212,16 +212,16 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4 text-purple-400">Performance Metrics</h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Total Gains</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Total Gains</span>
               <span className="font-semibold">{totalGains.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Skill Events</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Skill Events</span>
               <span className="font-semibold">{skillEvents}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Avg Skill Value</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Avg Skill Value</span>
               <span className="font-semibold">{avgSkillValue.toFixed(2)}</span>
             </div>
           </div>
@@ -230,16 +230,16 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4 text-blue-400">Efficiency Metrics</h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Skills/PED</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Skills/PED</span>
               <span className="font-semibold">{skillsPerPED.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Skills/Hour</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Skills/Hour</span>
               <span className="font-semibold">{skillsPerHour.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Skills/Kill</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Skills/Kill</span>
               <span className="font-semibold">{skillsPerKill.toFixed(2)}</span>
             </div>
           </div>
@@ -248,18 +248,18 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4 text-green-400">Variety Metrics</h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Unique Skills</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Unique Skills</span>
               <span className="font-semibold">{skillsByType.length}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Most Gained</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Most Gained</span>
               <span className="font-semibold text-sm">
                 {skillsByType[0]?.name.substring(0, 15) || 'N/A'}
               </span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Top Skill Value</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Top Skill Value</span>
               <span className="font-semibold">{skillsByType[0]?.gains.toFixed(2) || '0.00'}</span>
             </div>
           </div>
@@ -270,12 +270,12 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
       <div className="card p-6">
         <h3 className="text-lg font-bold mb-4">Skill Breakdown</h3>
         {skillsByType.length === 0 ? (
-          <div className="text-center text-gray-400 py-8">No skills recorded</div>
+          <div className="text-center text-muted py-8">No skills recorded</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700">
+                <tr className="border-b border-border">
                   <th className="text-left py-3 px-4">Skill Name</th>
                   <th className="text-right py-3 px-4">Total Gains</th>
                   <th className="text-right py-3 px-4">Event Count</th>
@@ -285,7 +285,7 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
               </thead>
               <tbody>
                 {skillsByType.map((skill, index) => (
-                  <tr key={index} className="border-b border-gray-800 hover:bg-gray-700">
+                  <tr key={index} className="border-b border-gray-800 hover:bg-surface">
                     <td className="py-3 px-4 font-medium">{skill.name}</td>
                     <td className="py-3 px-4 text-right text-purple-400 font-semibold">
                       {skill.gains.toFixed(2)}

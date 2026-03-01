@@ -22,10 +22,10 @@ export function LoadoutDetailsPanel({
   if (!loadout) {
     return (
       <div
-        className="col-span-3 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center"
+        className="col-span-3 bg-surface rounded-lg overflow-hidden flex items-center justify-center"
         style={{ minHeight: 'calc(100vh - 200px)' }}
       >
-        <div className="text-center text-gray-400">
+        <div className="text-center text-muted">
           <Circle className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p>Select a loadout to view details</p>
         </div>
@@ -35,11 +35,11 @@ export function LoadoutDetailsPanel({
 
   return (
     <div
-      className="col-span-3 bg-gray-800 rounded-lg overflow-hidden"
+      className="col-span-3 bg-surface rounded-lg overflow-hidden"
       style={{ minHeight: 'calc(100vh - 200px)' }}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-border">
         <h3 className="text-xl font-bold mb-1">{loadout.name}</h3>
         <div className="flex items-center gap-2 text-xs">
           {loadout.isPrimary && (
@@ -55,7 +55,7 @@ export function LoadoutDetailsPanel({
           {!loadout.favorite && (
             <button
               onClick={() => onToggleFavorite(loadout.id)}
-              className="p-1 text-gray-500 hover:text-yellow-400"
+              className="p-1 text-muted hover:text-yellow-400"
             >
               <Star className="w-4 h-4" />
             </button>
@@ -64,7 +64,7 @@ export function LoadoutDetailsPanel({
       </div>
 
       {/* Action Buttons */}
-      <div className="p-4 border-b border-gray-700 space-y-2">
+      <div className="p-4 border-b border-border space-y-2">
         {!loadout.isPrimary && (
           <button
             onClick={() => onSetPrimary(loadout.id)}

@@ -45,10 +45,10 @@ export function AddLootModal({ sessionId, onClose }: AddLootModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-surface rounded-lg p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Add Loot</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={onClose} className="text-muted hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -104,11 +104,11 @@ export function AddLootModal({ sessionId, onClose }: AddLootModalProps) {
               onChange={(e) => setFormData({ ...formData, markup: Number(e.target.value) })}
               className="input w-full"
             />
-            <p className="text-xs text-gray-400 mt-1">100% = TT value, 150% = TT + 50%</p>
+            <p className="text-xs text-muted mt-1">100% = TT value, 150% = TT + 50%</p>
           </div>
 
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-400">Total Value</div>
+          <div className="bg-surface rounded-lg p-4">
+            <div className="text-sm text-muted">Total Value</div>
             <div className="text-2xl font-bold text-green-400">{totalValue.toFixed(2)} PED</div>
           </div>
 

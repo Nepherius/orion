@@ -63,7 +63,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
   const hitDistribution = [
     { name: 'Hits', value: session.stats.hits, color: '#22C55E' },
     { name: 'Critical Hits', value: session.stats.criticalHits, color: '#FBBF24' },
-    { name: 'Misses', value: session.stats.misses, color: '#9CA3AF' },
+    { name: 'Misses', value: session.stats.misses, color: 'var(--color-text-muted)' },
   ].filter((item) => item.value > 0);
 
   // Performance breakdown
@@ -88,11 +88,10 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">RETURN RATE</div>
+          <div className="text-sm text-muted mb-2">RETURN RATE</div>
           <div
-            className={`text-3xl font-bold flex items-center gap-2 ${
-              session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-            }`}
+            className={`text-3xl font-bold flex items-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+              }`}
           >
             {session.stats.returns >= 100 ? (
               <TrendingUp className="w-5 h-5" />
@@ -104,7 +103,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">NET PROFIT/LOSS</div>
+          <div className="text-sm text-muted mb-2">NET PROFIT/LOSS</div>
           <div className={`text-3xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             {profit >= 0 ? '+' : ''}
             {profit.toFixed(2)} PED
@@ -112,7 +111,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">HIT RATE</div>
+          <div className="text-sm text-muted mb-2">HIT RATE</div>
           <div
             className={`text-3xl font-bold ${hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'}`}
           >
@@ -122,7 +121,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">CRIT RATE</div>
+          <div className="text-sm text-muted mb-2">CRIT RATE</div>
           <div className={`text-3xl font-bold ${critRate >= 5 ? 'text-yellow-400' : 'text-white'}`}>
             <Award className="w-5 h-5 inline mr-2" />
             {critRate.toFixed(1)}%
@@ -136,17 +135,17 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Return Rate Over Time</h3>
           {returnRateChart.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400">
+            <div className="h-64 flex items-center justify-center text-muted">
               No loot data yet
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={returnRateChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="index" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="index" stroke="var(--color-text-muted)" />
+                <YAxis stroke="var(--color-text-muted)" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                   formatter={(value: number) => [`${value}%`, 'Return Rate']}
                   labelFormatter={(label) => `Event #${label}`}
                 />
@@ -166,17 +165,17 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Profit/Loss Over Time</h3>
           {plChart.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400">
+            <div className="h-64 flex items-center justify-center text-muted">
               No loot data yet
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={plChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="index" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="index" stroke="var(--color-text-muted)" />
+                <YAxis stroke="var(--color-text-muted)" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                   formatter={(value: number) => [`${value.toFixed(2)} PED`, 'P/L']}
                   labelFormatter={(label) => `Event #${label}`}
                 />
@@ -199,7 +198,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Hit Distribution</h3>
           {hitDistribution.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400">
+            <div className="h-64 flex items-center justify-center text-muted">
               No combat data yet
             </div>
           ) : (
@@ -220,7 +219,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -234,7 +233,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
             {performanceMetrics.map((metric, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-gray-700 rounded"
+                className="flex items-center justify-between p-3 bg-surface rounded"
               >
                 <span className="text-gray-300">{metric.label}</span>
                 <span

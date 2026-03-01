@@ -13,7 +13,7 @@ export function Loot() {
 
   if (!activeSession) {
     return (
-      <div className="card p-8 text-center text-gray-400">
+      <div className="card p-8 text-center text-muted">
         <Info className="w-16 h-16 mx-auto mb-4 opacity-50" />
         <p>No active session. Start or resume a session to view loot.</p>
       </div>
@@ -96,9 +96,9 @@ export function Loot() {
         {/* Header with Grade */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-400 uppercase">Session Grade</div>
+            <div className="text-sm text-muted uppercase">Session Grade</div>
             <div className={`text-5xl font-bold ${gradeColor}`}>{grade}</div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-muted">
               <div>Return {returns.toFixed(1)}%</div>
               <div>Cost {activeSession.stats.totalCost.toFixed(2)}</div>
             </div>
@@ -107,14 +107,14 @@ export function Loot() {
 
         {/* Value Composition */}
         <div className="card p-6">
-          <div className="text-xs text-gray-400 uppercase mb-4">VALUE</div>
+          <div className="text-xs text-muted uppercase mb-4">VALUE</div>
           <div className="flex items-center gap-2 mb-2">
             <div className="text-2xl font-bold">
               TT {totalTTValue.toFixed(2)} •{' '}
               <span className="text-green-400">{totalMarkup.toFixed(2)}</span>
             </div>
           </div>
-          <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
+          <div className="relative h-2 bg-surface rounded-full overflow-hidden">
             <div
               className="absolute top-0 left-0 h-full bg-blue-500"
               style={{
@@ -148,7 +148,7 @@ export function Loot() {
 
         {/* Composition */}
         <div className="card p-6">
-          <div className="text-xs text-gray-400 uppercase mb-4">COMPOSITION</div>
+          <div className="text-xs text-muted uppercase mb-4">COMPOSITION</div>
           <div className="space-y-2">
             {topItems.slice(0, 5).map((item, idx) => {
               const percent = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
@@ -160,13 +160,13 @@ export function Loot() {
                       <span>{item.name}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-gray-400">{item.quantity}</span>
-                      <span className="text-gray-400">{item.markup}%</span>
+                      <span className="text-muted">{item.quantity}</span>
+                      <span className="text-muted">{item.markup}%</span>
                       <span className="font-medium">{item.value.toFixed(2)}</span>
-                      <span className="text-gray-400">{percent.toFixed(1)}%</span>
+                      <span className="text-muted">{percent.toFixed(1)}%</span>
                     </div>
                   </div>
-                  <div className="relative h-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="relative h-1 bg-surface rounded-full overflow-hidden">
                     <div
                       className="absolute top-0 left-0 h-full bg-yellow-500"
                       style={{ width: `${percent}%` }}
@@ -182,19 +182,19 @@ export function Loot() {
         <div className="grid grid-cols-4 gap-4">
           <div className="card p-4 text-center">
             <div className="text-2xl font-bold">{uniqueItems}</div>
-            <div className="text-xs text-gray-400">Unlocks</div>
+            <div className="text-xs text-muted">Unlocks</div>
           </div>
           <div className="card p-4 text-center">
             <div className="text-2xl font-bold">{avgMarkup.toFixed(1)}%</div>
-            <div className="text-xs text-gray-400">Avg MU</div>
+            <div className="text-xs text-muted">Avg MU</div>
           </div>
           <div className="card p-4 text-center">
             <div className="text-2xl font-bold text-green-400">+{totalMarkup.toFixed(2)}</div>
-            <div className="text-xs text-gray-400">MU Gain</div>
+            <div className="text-xs text-muted">MU Gain</div>
           </div>
           <div className="card p-4 text-center">
             <div className="text-2xl font-bold">{pedPerItem.toFixed(3)}</div>
-            <div className="text-xs text-gray-400">PED/Item</div>
+            <div className="text-xs text-muted">PED/Item</div>
           </div>
         </div>
 
@@ -202,7 +202,7 @@ export function Loot() {
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="relative flex-1 mr-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
               <input
                 type="text"
                 placeholder="Search items..."
@@ -227,7 +227,7 @@ export function Loot() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700 text-xs text-gray-400">
+                <tr className="border-b border-border text-xs text-muted">
                   <th className="text-left py-2 px-3">
                     <button className="flex items-center gap-1 hover:text-white">
                       <ArrowUpDown className="w-3 h-3" />
@@ -257,10 +257,10 @@ export function Loot() {
                   const share = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
                   const isMaterial = item.name.includes('Oil') || item.name.includes('Shrapnel');
                   return (
-                    <tr key={idx} className="border-b border-gray-800 hover:bg-gray-700">
+                    <tr key={idx} className="border-b border-gray-800 hover:bg-surface">
                       <td className="py-2 px-3">
                         <div className="font-medium">{item.value.toFixed(2)}</div>
-                        <div className="text-xs text-gray-400">{item.totalValue.toFixed(2)}</div>
+                        <div className="text-xs text-muted">{item.totalValue.toFixed(2)}</div>
                       </td>
                       <td className="py-2 px-3">{item.quantity}</td>
                       <td className="py-2 px-3 font-medium">{item.name}</td>
@@ -293,11 +293,11 @@ export function Loot() {
         {/* Highlights */}
         {topValueItem && (
           <div className="card p-6">
-            <div className="text-xs text-gray-400 uppercase mb-4">HIGHLIGHTS</div>
+            <div className="text-xs text-muted uppercase mb-4">HIGHLIGHTS</div>
             <div className="flex items-center gap-4">
               <div className="text-lg">🏆</div>
               <div>
-                <div className="text-sm text-gray-400">Top Value</div>
+                <div className="text-sm text-muted">Top Value</div>
                 <div className="font-bold">{topValueItem.name}</div>
                 <div className="text-green-400">{topValueItem.value.toFixed(2)} PED</div>
               </div>
@@ -307,14 +307,14 @@ export function Loot() {
 
         {/* Top Items */}
         <div className="card p-6">
-          <div className="text-xs text-gray-400 uppercase mb-4">TOP ITEMS</div>
+          <div className="text-xs text-muted uppercase mb-4">TOP ITEMS</div>
           <div className="space-y-2">
             {topItems.map((item, idx) => {
               const share = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
               return (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 bg-gray-700 rounded"
+                  className="flex items-center justify-between p-2 bg-surface rounded"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 flex items-center justify-center bg-gray-600 rounded font-bold text-sm">
@@ -322,14 +322,14 @@ export function Loot() {
                     </div>
                     <div>
                       <div className="font-medium">{item.name}</div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-muted">
                         {item.value.toFixed(2)} PED • {share.toFixed(1)}%
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold">{item.value.toFixed(2)} PED</div>
-                    <div className="text-xs text-gray-400">{share.toFixed(1)}%</div>
+                    <div className="text-xs text-muted">{share.toFixed(1)}%</div>
                   </div>
                 </div>
               );

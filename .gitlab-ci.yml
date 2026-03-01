@@ -57,11 +57,19 @@ build:linux:
 # Build for Windows (when tagged)
 build:windows:
   stage: build
-  image: mcr.microsoft.com/windows/servercore:ltsc2022
+  tags:
+    - saas-windows-medium-amd64
+  variables:
+    ErrorActionPreference: STOP
   before_script:
+    - Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    - choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --quiet --norestart" -y
     - choco install nodejs -y --version=20.0.0
-    - choco install rust -y
-    - refreshenv
+    - Invoke-WebRequest -Uri https://win.rustup.rs/x86_64 -OutFile rustup-init.exe
+    - .\rustup-init.exe -y --default-host x86_64-pc-windows-msvc --default-toolchain stable
+    - $env:PATH += ";C:\Users\gitlab-runner\.cargo\bin"
+    - rustc -V
+    - node -v
   script:
     - npm install
     - npm run tauri:build

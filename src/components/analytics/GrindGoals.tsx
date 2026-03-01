@@ -39,7 +39,7 @@ export function GrindGoals() {
         </div>
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="text-gray-400 hover:text-white transition-colors"
+          className="text-muted hover:text-body transition-colors"
           title="Add New Target"
         >
           <Plus className="w-4 h-4" />
@@ -51,7 +51,7 @@ export function GrindGoals() {
           <input
             type="text"
             placeholder="Goal Name (e.g., Improved Fap)"
-            className="input bg-gray-900 w-full text-sm border-gray-700 min-w-0"
+            className="input bg-surface-active w-full text-sm border-border min-w-0"
             value={newGoalName}
             onChange={(e) => setNewGoalName(e.target.value)}
           />
@@ -59,7 +59,7 @@ export function GrindGoals() {
             <input
               type="number"
               placeholder="Target PED"
-              className="input bg-gray-900 w-full min-w-0 text-sm border-gray-700"
+              className="input bg-surface-active w-full min-w-0 text-sm border-border"
               value={newGoalTarget}
               onChange={(e) => setNewGoalTarget(e.target.value)}
             />
@@ -74,7 +74,7 @@ export function GrindGoals() {
       )}
 
       {goals?.length === 0 && !isAdding ? (
-        <div className="text-sm text-gray-500 text-center py-8">
+        <div className="text-sm text-muted text-center py-8">
           No active financial goals. Set a target!
         </div>
       ) : (
@@ -89,14 +89,14 @@ export function GrindGoals() {
               <div key={goal.id} className="space-y-1.5 group w-full">
                 <div className="flex justify-between items-baseline text-sm gap-2">
                   <span
-                    className={`truncate ${isCompleted ? 'text-green-400 font-semibold flex items-center gap-1' : 'text-gray-200 font-medium'}`}
+                    className={`truncate ${isCompleted ? 'text-green-400 font-semibold flex items-center gap-1' : 'text-body font-medium'}`}
                     title={goal.name}
                   >
                     {isCompleted && '★ '}
                     {goal.name}
                   </span>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs font-mono text-gray-400">
+                    <span className="text-xs font-mono text-muted">
                       {amount.toFixed(0)} / {goal.targetAmount}
                     </span>
                     <button
@@ -107,7 +107,7 @@ export function GrindGoals() {
                     </button>
                   </div>
                 </div>
-                <div className="h-2.5 bg-gray-800 rounded-full overflow-hidden border border-gray-700/50">
+                <div className="h-2.5 bg-surface rounded-full overflow-hidden border border-border/50">
                   <div
                     className={`h-full transition-all duration-1000 ease-out ${isCompleted ? 'bg-green-500' : 'bg-gradient-to-r from-purple-600 to-purple-400'}`}
                     style={{ width: `${progress}%` }}

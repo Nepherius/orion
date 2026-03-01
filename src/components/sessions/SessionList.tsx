@@ -67,12 +67,12 @@ export function SessionList({
 
   return (
     <div
-      className="bg-gray-800 rounded-lg p-4 flex flex-col"
+      className="bg-surface rounded-lg p-4 flex flex-col"
       style={{ maxHeight: 'calc(100vh - 250px)' }}
     >
       {/* Search */}
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
         <input
           type="text"
           placeholder="Search sessions..."
@@ -84,56 +84,56 @@ export function SessionList({
 
       {/* Status Filters */}
       <div className="mb-4">
-        <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Status</div>
+        <div className="text-xs text-muted uppercase tracking-wider mb-2">Status</div>
         <div className="space-y-1">
           <button
             onClick={() => setStatusFilter('all')}
             className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
               statusFilter === 'all'
                 ? 'bg-primary-900 text-primary-300'
-                : 'text-gray-400 hover:bg-gray-700'
+                : 'text-muted hover:bg-surface'
             }`}
           >
             <div className="flex items-center gap-2">
               <Circle className="w-4 h-4" />
               <span>All Sessions</span>
             </div>
-            <span className="text-gray-500">{sessions.length}</span>
+            <span className="text-muted">{sessions.length}</span>
           </button>
           <button
             onClick={() => setStatusFilter('active')}
             className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
               statusFilter === 'active'
                 ? 'bg-primary-900 text-primary-300'
-                : 'text-gray-400 hover:bg-gray-700'
+                : 'text-muted hover:bg-surface'
             }`}
           >
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               <span>Active</span>
             </div>
-            <span className="text-gray-500">{activeCount}</span>
+            <span className="text-muted">{activeCount}</span>
           </button>
           <button
             onClick={() => setStatusFilter('completed')}
             className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
               statusFilter === 'completed'
                 ? 'bg-primary-900 text-primary-300'
-                : 'text-gray-400 hover:bg-gray-700'
+                : 'text-muted hover:bg-surface'
             }`}
           >
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
               <span>Completed</span>
             </div>
-            <span className="text-gray-500">{completedCount}</span>
+            <span className="text-muted">{completedCount}</span>
           </button>
         </div>
       </div>
 
       {/* Sort By */}
       <div className="mb-4">
-        <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Sort By</div>
+        <div className="text-xs text-muted uppercase tracking-wider mb-2">Sort By</div>
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -164,7 +164,7 @@ export function SessionList({
       {/* Session List */}
       <div className="flex-1 overflow-y-auto space-y-2">
         {filteredSessions.length === 0 ? (
-          <p className="text-center text-gray-400 py-8 text-sm">
+          <p className="text-center text-muted py-8 text-sm">
             No sessions found. Create your first hunt session!
           </p>
         ) : (
@@ -180,14 +180,14 @@ export function SessionList({
                 onClick={() => onSelectSession(session.id)}
                 className={`w-full text-left p-3 rounded-lg transition-colors border ${
                   selectedSessionId === session.id
-                    ? 'bg-gray-700 border-primary-500'
-                    : 'bg-gray-750 border-gray-700 hover:border-gray-600'
+                    ? 'bg-surface border-primary-500'
+                    : 'bg-surface-hover border-border hover:border-border'
                 }`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="font-semibold text-white mb-1">{session.name}</div>
-                    <div className="text-xs text-gray-400">
+                    <div className="font-semibold text-body mb-1">{session.name}</div>
+                    <div className="text-xs text-muted">
                       {format(session.startTime, 'MMM dd')} · {formatDuration(duration)}
                     </div>
                   </div>
@@ -198,7 +198,7 @@ export function SessionList({
                       {profit >= 0 ? '+' : ''}
                       {profit.toFixed(2)} PED
                     </div>
-                    <div className="text-xs text-gray-400">PROFIT</div>
+                    <div className="text-xs text-muted">PROFIT</div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
@@ -208,7 +208,7 @@ export function SessionList({
                         ? 'bg-green-900 text-green-300'
                         : session.status === 'paused'
                           ? 'bg-yellow-900 text-yellow-300'
-                          : 'bg-gray-700 text-gray-400'
+                          : 'bg-surface text-muted'
                     }`}
                   >
                     {session.status}
@@ -219,7 +219,7 @@ export function SessionList({
                     >
                       {session.stats.returns.toFixed(2)}%
                     </div>
-                    <div className="text-xs text-gray-400">TT%</div>
+                    <div className="text-xs text-muted">TT%</div>
                   </div>
                 </div>
               </button>

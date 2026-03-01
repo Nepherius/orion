@@ -115,11 +115,11 @@ export function Analytics() {
   const lifetimeHitRate = useMemo(() => {
     return lifetimeStats.totalShotsFired > 0
       ? (filteredSessions.reduce(
-          (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
-          0
-        ) /
-          lifetimeStats.totalShotsFired) *
-          100
+        (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
+        0
+      ) /
+        lifetimeStats.totalShotsFired) *
+      100
       : 0;
   }, [filteredSessions, lifetimeStats.totalShotsFired]);
 
@@ -392,7 +392,7 @@ export function Analytics() {
   const avgLootValue = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateAverageDropValue(s), 0) /
-          filteredSessions.length
+      filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -405,7 +405,7 @@ export function Analytics() {
   const avgMinutesPerLoot = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateMinutesPerLootEvent(s), 0) /
-          filteredSessions.length
+      filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -596,7 +596,7 @@ export function Analytics() {
   if (sessions.length === 0) {
     return (
       <div className="p-6">
-        <div className="card p-8 text-center text-gray-400">
+        <div className="card p-8 text-center text-muted">
           <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p>No session data available. Complete some hunting sessions to see analytics.</p>
         </div>
@@ -616,7 +616,7 @@ export function Analytics() {
                 e.target.value as '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom'
               )
             }
-            className="input bg-gray-900 border-gray-700 text-sm py-1.5"
+            className="input bg-surface-active border-border text-sm py-1.5"
           >
             <option value="24h">Last 24 Hours</option>
             <option value="7d">Last 7 Days</option>
@@ -632,19 +632,19 @@ export function Analytics() {
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="input bg-gray-900 border-gray-700 text-sm py-1.5"
+                className="input bg-surface-active border-border text-sm py-1.5"
               />
-              <span className="text-gray-500">-</span>
+              <span className="text-muted">-</span>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="input bg-gray-900 border-gray-700 text-sm py-1.5"
+                className="input bg-surface-active border-border text-sm py-1.5"
               />
             </div>
           )}
         </div>
-        <div className="text-sm text-gray-400">
+        <div className="text-sm text-muted">
           Across {lifetimeStats.totalSessions} session{lifetimeStats.totalSessions !== 1 ? 's' : ''}
         </div>
       </div>
@@ -652,19 +652,19 @@ export function Analytics() {
       {/* Lifetime Stats Cards */}
       <div className="grid grid-cols-6 gap-4">
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Total Loot</div>
+          <div className="text-sm text-muted mb-1">Total Loot</div>
           <div className="text-2xl font-bold text-green-400">
             {lifetimeStats.totalLoot.toFixed(2)} PED
           </div>
         </div>
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Total Cost</div>
+          <div className="text-sm text-muted mb-1">Total Cost</div>
           <div className="text-2xl font-bold text-red-400">
             {lifetimeStats.totalCost.toFixed(2)} PED
           </div>
         </div>
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Net Profit</div>
+          <div className="text-sm text-muted mb-1">Net Profit</div>
           <div
             className={`text-2xl font-bold ${lifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}
           >
@@ -673,7 +673,7 @@ export function Analytics() {
           </div>
         </div>
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Return Rate</div>
+          <div className="text-sm text-muted mb-1">Return Rate</div>
           <div
             className={`text-2xl font-bold ${lifetimeReturnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
           >
@@ -681,14 +681,14 @@ export function Analytics() {
           </div>
         </div>
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Total Kills</div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-sm text-muted mb-1">Total Kills</div>
+          <div className="text-2xl font-bold text-body">
             {lifetimeStats.totalKills.toLocaleString()}
           </div>
         </div>
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Total Time</div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-sm text-muted mb-1">Total Time</div>
+          <div className="text-2xl font-bold text-body">
             {formatDuration(lifetimeStats.totalDuration)}
           </div>
         </div>
@@ -696,20 +696,20 @@ export function Analytics() {
 
       <div className="grid grid-cols-4 gap-4">
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Globals</div>
+          <div className="text-sm text-muted mb-1">Globals</div>
           <div className="text-2xl font-bold text-yellow-400">{lifetimeStats.totalGlobals}</div>
         </div>
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Hall of Fame</div>
+          <div className="text-sm text-muted mb-1">Hall of Fame</div>
           <div className="text-2xl font-bold text-purple-400">{lifetimeStats.totalHofs}</div>
         </div>
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Hit Rate</div>
+          <div className="text-sm text-muted mb-1">Hit Rate</div>
           <div className="text-2xl font-bold text-blue-400">{lifetimeHitRate.toFixed(2)}%</div>
         </div>
         <div className="card p-4">
-          <div className="text-sm text-gray-400 mb-1">Avg Kill Value</div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-sm text-muted mb-1">Avg Kill Value</div>
+          <div className="text-2xl font-bold text-body">
             {lifetimeStats.totalKills > 0
               ? (lifetimeStats.totalLoot / lifetimeStats.totalKills).toFixed(2)
               : '0.00'}{' '}
@@ -724,11 +724,11 @@ export function Analytics() {
           <h3 className="text-lg font-bold mb-4">Performance Trend (Last 30 Sessions)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={recentSessions}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="date" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="date" stroke="var(--color-text-muted)" />
+              <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                 labelStyle={{ color: '#F3F4F6' }}
                 formatter={(value: number) => value.toFixed(2)}
               />
@@ -759,7 +759,7 @@ export function Analytics() {
           <div className="card p-6">
             <h3 className="text-lg font-bold mb-4">Performance by Location</h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              <div className="grid grid-cols-5 gap-2 text-xs font-bold text-gray-400 pb-2 border-b border-gray-700">
+              <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted pb-2 border-b border-border">
                 <div>Location</div>
                 <div className="text-right">Sessions</div>
                 <div className="text-right">Return %</div>
@@ -769,12 +769,12 @@ export function Analytics() {
               {locationData.map((loc) => (
                 <div
                   key={loc.location}
-                  className="grid grid-cols-5 gap-2 text-sm py-1 hover:bg-gray-750"
+                  className="grid grid-cols-5 gap-2 text-sm py-1 hover:bg-surface-hover"
                 >
                   <div className="truncate" title={loc.location}>
                     {loc.location}
                   </div>
-                  <div className="text-right text-gray-400">{loc.sessions}</div>
+                  <div className="text-right text-muted">{loc.sessions}</div>
                   <div
                     className={`text-right font-semibold ${loc.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                   >
@@ -814,7 +814,7 @@ export function Analytics() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                   formatter={(value: number) => `${value.toFixed(2)} PED`}
                 />
               </PieChart>
@@ -829,11 +829,11 @@ export function Analytics() {
           <h3 className="text-lg font-bold mb-4">Weapon Performance</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={weaponData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="weapon" stroke="#9CA3AF" angle={-45} textAnchor="end" height={100} />
-              <YAxis stroke="#9CA3AF" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="weapon" stroke="var(--color-text-muted)" angle={-45} textAnchor="end" height={100} />
+              <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                 labelStyle={{ color: '#F3F4F6' }}
               />
               <Legend />
@@ -849,7 +849,7 @@ export function Analytics() {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Loadout Performance</h3>
           <div className="space-y-2">
-            <div className="grid grid-cols-5 gap-2 text-xs font-bold text-gray-400 pb-2 border-b border-gray-700">
+            <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted pb-2 border-b border-border">
               <div>Loadout</div>
               <div className="text-right">Sessions</div>
               <div className="text-right">Return %</div>
@@ -859,12 +859,12 @@ export function Analytics() {
             {loadoutData.map((loadout) => (
               <div
                 key={loadout.name}
-                className="grid grid-cols-5 gap-2 text-sm py-2 hover:bg-gray-750"
+                className="grid grid-cols-5 gap-2 text-sm py-2 hover:bg-surface-hover"
               >
                 <div className="font-semibold truncate" title={loadout.name}>
                   {loadout.name}
                 </div>
-                <div className="text-right text-gray-400">{loadout.sessions}</div>
+                <div className="text-right text-muted">{loadout.sessions}</div>
                 <div
                   className={`text-right font-bold ${loadout.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                 >
@@ -890,7 +890,7 @@ export function Analytics() {
             Top Globals {allGlobals.some((g) => g.isHoF) && '& Hall of Fame'}
           </h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            <div className="grid grid-cols-5 gap-2 text-xs font-bold text-gray-400 pb-2 border-b border-gray-700 sticky top-0 bg-gray-800">
+            <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted pb-2 border-b border-border sticky top-0 bg-surface">
               <div>Creature</div>
               <div className="text-right">Value</div>
               <div>Session</div>
@@ -900,7 +900,7 @@ export function Analytics() {
             {allGlobals.map((global) => (
               <div
                 key={global.id}
-                className={`grid grid-cols-5 gap-2 text-sm py-2 hover:bg-gray-750 ${global.isHoF ? 'bg-purple-900/20' : ''}`}
+                className={`grid grid-cols-5 gap-2 text-sm py-2 hover:bg-surface-hover ${global.isHoF ? 'bg-purple-900/20' : ''}`}
               >
                 <div className="font-semibold text-yellow-400 flex items-center gap-1">
                   {global.isHoF && <span className="text-purple-400">★</span>}
@@ -909,13 +909,13 @@ export function Analytics() {
                 <div className="text-right font-bold text-green-400">
                   {global.value.toFixed(2)} PED
                 </div>
-                <div className="truncate text-gray-400" title={global.sessionName}>
+                <div className="truncate text-muted" title={global.sessionName}>
                   {global.sessionName}
                 </div>
-                <div className="truncate text-gray-400" title={global.location || 'Unknown'}>
+                <div className="truncate text-muted" title={global.location || 'Unknown'}>
                   {global.location || 'Unknown'}
                 </div>
-                <div className="text-right text-gray-400">
+                <div className="text-right text-muted">
                   {format(global.timestamp, 'MM/dd/yy')}
                 </div>
               </div>
@@ -928,21 +928,21 @@ export function Analytics() {
       <div className="card p-6">
         <h3 className="text-lg font-bold mb-4">Top Loot Items by Value</h3>
         <div className="space-y-2 max-h-96 overflow-y-auto">
-          <div className="grid grid-cols-5 gap-2 text-xs font-bold text-gray-400 pb-2 border-b border-gray-700">
+          <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted pb-2 border-b border-border">
             <div className="col-span-2">Item Name</div>
             <div className="text-right">Total Value</div>
             <div className="text-right">Drops</div>
             <div className="text-right">Avg/Drop</div>
           </div>
           {topLootItems.map((item) => (
-            <div key={item.name} className="grid grid-cols-5 gap-2 text-sm py-1 hover:bg-gray-750">
+            <div key={item.name} className="grid grid-cols-5 gap-2 text-sm py-1 hover:bg-surface-hover">
               <div className="col-span-2 truncate" title={item.name}>
                 {item.name}
               </div>
               <div className="text-right font-semibold text-green-400">
                 {item.totalValue.toFixed(2)} PED
               </div>
-              <div className="text-right text-gray-400">{item.drops}</div>
+              <div className="text-right text-muted">{item.drops}</div>
               <div className="text-right">{item.avgValue.toFixed(2)}</div>
             </div>
           ))}
@@ -955,11 +955,11 @@ export function Analytics() {
           <h3 className="text-lg font-bold mb-4">Top Skills Gained</h3>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={topSkills} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis type="number" stroke="#9CA3AF" />
-              <YAxis dataKey="name" type="category" stroke="#9CA3AF" width={150} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis type="number" stroke="var(--color-text-muted)" />
+              <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" width={150} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                 labelStyle={{ color: '#F3F4F6' }}
                 formatter={(value: number) => value.toFixed(2)}
               />
@@ -974,7 +974,7 @@ export function Analytics() {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Armor Performance</h3>
           <div className="space-y-2">
-            <div className="grid grid-cols-4 gap-2 text-xs font-bold text-gray-400 pb-2 border-b border-gray-700">
+            <div className="grid grid-cols-4 gap-2 text-xs font-bold text-muted pb-2 border-b border-border">
               <div>Armor</div>
               <div className="text-right">Sessions</div>
               <div className="text-right">Return %</div>
@@ -983,12 +983,12 @@ export function Analytics() {
             {armorData.map((armor) => (
               <div
                 key={armor.armor}
-                className="grid grid-cols-4 gap-2 text-sm py-2 hover:bg-gray-750"
+                className="grid grid-cols-4 gap-2 text-sm py-2 hover:bg-surface-hover"
               >
                 <div className="truncate" title={armor.armor}>
                   {armor.armor}
                 </div>
-                <div className="text-right text-gray-400">{armor.sessions}</div>
+                <div className="text-right text-muted">{armor.sessions}</div>
                 <div
                   className={`text-right font-semibold ${armor.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                 >
@@ -1008,32 +1008,32 @@ export function Analytics() {
           <InfoTooltip tooltip="Analyzes loot value distribution and drop frequency" />
         </div>
         <div className="grid grid-cols-5 gap-4">
-          <div className="border border-gray-700 rounded p-4">
-            <div className="text-sm text-gray-400 mb-2">Average Drop Value</div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Average Drop Value</div>
             <div className="text-2xl font-bold text-green-400">{avgLootValue.toFixed(2)} PED</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Loot Consistency (Std Dev)
               <InfoTooltip tooltip="Std dev of all filtered loot values; lower means more consistent drops" />
             </div>
             <div className="text-2xl font-bold text-blue-400">{overallLootStdDev.toFixed(1)}</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="text-sm text-gray-400 mb-2">Largest Drop</div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Largest Drop</div>
             <div className="text-2xl font-bold text-yellow-400">
               {largestDropValue.toFixed(2)} PED
             </div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Minutes Per Loot
               <InfoTooltip tooltip="Average time between loot drops" />
             </div>
-            <div className="text-2xl font-bold text-white">{avgMinutesPerLoot.toFixed(1)}</div>
+            <div className="text-2xl font-bold text-body">{avgMinutesPerLoot.toFixed(1)}</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="text-sm text-gray-400 mb-2">Total Loot Events</div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Total Loot Events</div>
             <div className="text-2xl font-bold text-purple-400">
               {filteredSessions.reduce((sum, s) => sum + s.loot.length, 0)}
             </div>
@@ -1048,34 +1048,34 @@ export function Analytics() {
           <InfoTooltip tooltip="Tracks global drop rates and HoF occurrences" />
         </div>
         <div className="grid grid-cols-6 gap-4">
-          <div className="border border-gray-700 rounded p-4">
-            <div className="text-sm text-gray-400 mb-2">Total Globals</div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Total Globals</div>
             <div className="text-2xl font-bold text-yellow-400">{totalGlobalsCount}</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="text-sm text-gray-400 mb-2">Total HoFs</div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Total HoFs</div>
             <div className="text-2xl font-bold text-purple-400">{totalHoFsCount}</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Global/Kill
               <InfoTooltip tooltip="Number of globals per kill" />
             </div>
-            <div className="text-2xl font-bold text-white">{globalDropRatePerKill.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-body">{globalDropRatePerKill.toFixed(2)}</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Global/Hour
               <InfoTooltip tooltip="Globals per hour of hunting" />
             </div>
-            <div className="text-2xl font-bold text-white">{globalDropRatePerHour.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-body">{globalDropRatePerHour.toFixed(2)}</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="text-sm text-gray-400 mb-2">Avg Global Value</div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Avg Global Value</div>
             <div className="text-2xl font-bold text-green-400">{avgGlobalValue.toFixed(2)} PED</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="text-sm text-gray-400 mb-2">Best Global</div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Best Global</div>
             <div className="text-2xl font-bold text-green-400">
               {bestGlobalValue.toFixed(2)} PED
             </div>
@@ -1090,15 +1090,15 @@ export function Analytics() {
           <InfoTooltip tooltip="Session profitability patterns and consistency" />
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Win Rate
               <InfoTooltip tooltip="Percentage of profitable sessions" />
             </div>
             <div className="text-3xl font-bold text-green-400">{sessionWinRate.toFixed(1)}%</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Current Streak
               <InfoTooltip tooltip="Consecutive profitable sessions (most recent first)" />
             </div>
@@ -1106,8 +1106,8 @@ export function Analytics() {
               {profitableStreaks.currentStreak}
             </div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Longest Streak
               <InfoTooltip tooltip="Best consecutive profitable sessions" />
             </div>
@@ -1125,8 +1125,8 @@ export function Analytics() {
           <InfoTooltip tooltip="Best performing setup comparisons" />
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Best Weapon
               <InfoTooltip tooltip="Highest return rate weapon with existing data" />
             </div>
@@ -1136,12 +1136,12 @@ export function Analytics() {
             >
               {bestWeapon?.weapon || 'N/A'}
             </div>
-            <div className="text-sm text-gray-400 mt-1">
+            <div className="text-sm text-muted mt-1">
               {bestWeapon ? `${bestWeapon.returnRate.toFixed(1)}% return` : 'Not enough data'}
             </div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Best Location
               <InfoTooltip tooltip="Highest return location with at least 2 sessions" />
             </div>
@@ -1151,12 +1151,12 @@ export function Analytics() {
             >
               {bestLocation?.location || 'N/A'}
             </div>
-            <div className="text-sm text-gray-400 mt-1">
+            <div className="text-sm text-muted mt-1">
               {bestLocation ? `${bestLocation.returnRate.toFixed(1)}% return` : 'Need 2+ sessions'}
             </div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Best Loadout
               <InfoTooltip tooltip="Highest return loadout with at least 2 sessions" />
             </div>
@@ -1166,7 +1166,7 @@ export function Analytics() {
             >
               {bestLoadout?.name || 'N/A'}
             </div>
-            <div className="text-sm text-gray-400 mt-1">
+            <div className="text-sm text-muted mt-1">
               {bestLoadout ? `${bestLoadout.returnRate.toFixed(1)}% return` : 'Need 2+ sessions'}
             </div>
           </div>
@@ -1180,27 +1180,27 @@ export function Analytics() {
           <InfoTooltip tooltip="Time-based behavior and performance patterns" />
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Avg Session Duration
               <InfoTooltip tooltip="Average active session length in hours" />
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-body">
               {temporalInsights.avgSessionHours.toFixed(2)}h
             </div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Peak Performance Window
               <InfoTooltip tooltip="Start-hour window with highest average return rate" />
             </div>
             <div className="text-lg font-bold text-green-400">{temporalInsights.bestHourLabel}</div>
-            <div className="text-sm text-gray-400 mt-1">
+            <div className="text-sm text-muted mt-1">
               {temporalInsights.bestHourReturnRate.toFixed(1)}% avg return
             </div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Avg Cooldown Gap
               <InfoTooltip tooltip="Average hours between session starts" />
             </div>
@@ -1219,7 +1219,7 @@ export function Analytics() {
             <InfoTooltip tooltip="Profitability and frequency by creature type" />
           </div>
           <div className="space-y-2 max-h-80 overflow-y-auto">
-            <div className="grid grid-cols-6 gap-2 text-xs font-bold text-gray-400 pb-2 border-b border-gray-700 sticky top-0 bg-gray-800">
+            <div className="grid grid-cols-6 gap-2 text-xs font-bold text-muted pb-2 border-b border-border sticky top-0 bg-surface">
               <div>Creature</div>
               <div className="text-right">Sessions</div>
               <div className="text-right">Return %</div>
@@ -1230,10 +1230,10 @@ export function Analytics() {
             {creatureAnalysis.map((creature) => (
               <div
                 key={creature.creature}
-                className="grid grid-cols-6 gap-2 text-sm py-2 hover:bg-gray-750"
+                className="grid grid-cols-6 gap-2 text-sm py-2 hover:bg-surface-hover"
               >
                 <div className="font-semibold truncate">{creature.creature}</div>
-                <div className="text-right text-gray-400">{creature.count}</div>
+                <div className="text-right text-muted">{creature.count}</div>
                 <div
                   className={`text-right ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                 >
@@ -1265,7 +1265,7 @@ export function Analytics() {
               {skillsByLocation.slice(0, 10).map((item) => (
                 <div
                   key={item.location}
-                  className="flex justify-between p-2 border-b border-gray-700"
+                  className="flex justify-between p-2 border-b border-border"
                 >
                   <span className="text-gray-300 truncate">{item.location || 'Unknown'}</span>
                   <span className="font-semibold text-blue-400">{item.skillGains.toFixed(2)}</span>
@@ -1285,7 +1285,7 @@ export function Analytics() {
               {skillsByWeapon.slice(0, 10).map((item) => (
                 <div
                   key={item.weapon}
-                  className="flex justify-between p-2 border-b border-gray-700"
+                  className="flex justify-between p-2 border-b border-border"
                 >
                   <span className="text-gray-300 truncate">{item.weapon}</span>
                   <span className="font-semibold text-purple-400">
@@ -1320,27 +1320,27 @@ export function Analytics() {
                   Strength: 'Governs raw muscle power, lifting capacity, and brute force.',
                 };
                 return (
-                  <div key={attr.name} className="border border-gray-700 rounded p-4">
+                  <div key={attr.name} className="border border-border rounded p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <div className="font-bold text-sm mb-1">{attr.name}</div>
-                        <div className="text-xs text-gray-400 mb-2">
+                        <div className="text-xs text-muted mb-2">
                           {attributeDescriptions[attr.name]}
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-between items-end pt-2 border-t border-gray-700">
+                    <div className="flex justify-between items-end pt-2 border-t border-border">
                       <div className="text-2xl font-bold text-cyan-400">
                         {attr.gains.toFixed(2)}
                       </div>
-                      <div className="text-xs text-gray-400">{attr.count} events</div>
+                      <div className="text-xs text-muted">{attr.count} events</div>
                     </div>
                   </div>
                 );
               })}
           </div>
         ) : (
-          <div className="text-center text-gray-400 py-8">No attribute gains recorded</div>
+          <div className="text-center text-muted py-8">No attribute gains recorded</div>
         )}
       </div>
 
@@ -1350,22 +1350,22 @@ export function Analytics() {
           <InfoTooltip tooltip="Overall skill efficiency and consistency" />
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Skill Gain Variance
               <InfoTooltip tooltip="Variability in skill gains per session. Lower = consistent" />
             </div>
-            <div className="text-2xl font-bold text-white">{skillGainVariance.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-body">{skillGainVariance.toFixed(2)}</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Skills Per PED
               <InfoTooltip tooltip="Skill gains per PED spent. Efficiency metric" />
             </div>
             <div className="text-2xl font-bold text-blue-400">{skillValuePerCost.toFixed(2)}</div>
           </div>
-          <div className="border border-gray-700 rounded p-4">
-            <div className="text-sm text-gray-400 mb-2">Total Skill Gains</div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Total Skill Gains</div>
             <div className="text-2xl font-bold text-green-400">
               {filteredSessions
                 .reduce((sum, s) => sum + s.skills.reduce((ss, sk) => ss + sk.gainAmount, 0), 0)
@@ -1382,8 +1382,8 @@ export function Analytics() {
           <InfoTooltip tooltip="Based on recent session trends (last 10 sessions)" />
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Projected Lifetime Profit
               <InfoTooltip tooltip="Projection = all-time total + average recent trend" />
             </div>
@@ -1395,20 +1395,20 @@ export function Analytics() {
             </div>
           </div>
           {sessionsToBreakEven !== null && (
-            <div className="border border-gray-700 rounded p-4">
-              <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+            <div className="border border-border rounded p-4">
+              <div className="flex items-center gap-1 text-sm text-muted mb-2">
                 Sessions to Break Even
                 <InfoTooltip tooltip="Sessions needed at current avg profit to reach 0" />
               </div>
               <div className="text-2xl font-bold text-orange-400">{sessionsToBreakEven}</div>
             </div>
           )}
-          <div className="border border-gray-700 rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-2">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
               Data Points
               <InfoTooltip tooltip="Number of sessions analyzed" />
             </div>
-            <div className="text-2xl font-bold text-white">{filteredSessions.length}</div>
+            <div className="text-2xl font-bold text-body">{filteredSessions.length}</div>
           </div>
         </div>
       </div>

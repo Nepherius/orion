@@ -79,15 +79,15 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">DPP (Damage Per PED)</div>
-          <div className="text-3xl font-bold text-white">
+          <div className="text-sm text-muted mb-2">DPP (Damage Per PED)</div>
+          <div className="text-3xl font-bold text-body">
             <Zap className="w-5 h-5 inline mr-2" />
             {dpp.toFixed(2)}
           </div>
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">KILLS/HOUR</div>
+          <div className="text-sm text-muted mb-2">KILLS/HOUR</div>
           <div className="text-3xl font-bold text-blue-400">
             <Clock className="w-5 h-5 inline mr-2" />
             {killsPerHour.toFixed(1)}
@@ -95,7 +95,7 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">AVG DMG/HIT</div>
+          <div className="text-sm text-muted mb-2">AVG DMG/HIT</div>
           <div className="text-3xl font-bold text-yellow-400">
             <Target className="w-5 h-5 inline mr-2" />
             {avgDmgPerHit.toFixed(1)}
@@ -103,8 +103,8 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
         </div>
 
         <div className="card p-6">
-          <div className="text-sm text-gray-400 mb-2">SHOTS/KILL</div>
-          <div className="text-3xl font-bold text-white">{shotsPerKill.toFixed(1)}</div>
+          <div className="text-sm text-muted mb-2">SHOTS/KILL</div>
+          <div className="text-3xl font-bold text-body">{shotsPerKill.toFixed(1)}</div>
         </div>
       </div>
 
@@ -115,9 +115,9 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
           <h3 className="text-lg font-bold mb-4">Efficiency Overview</h3>
           <ResponsiveContainer width="100%" height={350}>
             <RadarChart data={efficiencyRadar}>
-              <PolarGrid stroke="#374151" />
-              <PolarAngleAxis dataKey="category" stroke="#9CA3AF" />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="#9CA3AF" />
+              <PolarGrid stroke="var(--color-border)" />
+              <PolarAngleAxis dataKey="category" stroke="var(--color-text-muted)" />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="var(--color-text-muted)" />
               <Radar
                 name="Efficiency"
                 dataKey="value"
@@ -126,7 +126,7 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
                 fillOpacity={0.6}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                 formatter={(value: number) => value.toFixed(1)}
               />
             </RadarChart>
@@ -138,11 +138,11 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
           <h3 className="text-lg font-bold mb-4">Time Efficiency</h3>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={timeMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="name" stroke="var(--color-text-muted)" />
+              <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                 formatter={(value: number) => value.toFixed(2)}
               />
               <Bar dataKey="value" fill="#3B82F6" />
@@ -156,20 +156,20 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4 text-blue-400">Resource Efficiency</h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">DPP</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">DPP</span>
               <span className="font-semibold">{dpp.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">DPS</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">DPS</span>
               <span className="font-semibold">{dps.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Kills/PED</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Kills/PED</span>
               <span className="font-semibold">{killsPerPED.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Loot/PED</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Loot/PED</span>
               <span className="font-semibold">
                 {(session.stats.totalCost > 0
                   ? session.stats.totalLoot / session.stats.totalCost
@@ -183,16 +183,16 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4 text-green-400">Combat Efficiency</h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Avg Dmg/Hit</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Avg Dmg/Hit</span>
               <span className="font-semibold">{avgDmgPerHit.toFixed(1)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Shots/Kill</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Shots/Kill</span>
               <span className="font-semibold">{shotsPerKill.toFixed(1)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Dmg/PED</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Dmg/PED</span>
               <span className="font-semibold">
                 {(session.stats.totalCost > 0
                   ? session.stats.damageDealt / session.stats.totalCost
@@ -200,8 +200,8 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
                 ).toFixed(1)}
               </span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Hit Rate</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Hit Rate</span>
               <span className="font-semibold">
                 {(session.stats.shotsFired > 0
                   ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) *
@@ -217,24 +217,24 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4 text-yellow-400">Time Efficiency</h3>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Kills/Hour</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Kills/Hour</span>
               <span className="font-semibold">{killsPerHour.toFixed(1)}</span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Loot/Hour</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Loot/Hour</span>
               <span className="font-semibold">
                 {(durationHours > 0 ? session.stats.totalLoot / durationHours : 0).toFixed(2)} PED
               </span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Spend/Hour</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Spend/Hour</span>
               <span className="font-semibold">
                 {(durationHours > 0 ? session.stats.totalCost / durationHours : 0).toFixed(2)} PED
               </span>
             </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Events/Hour</span>
+            <div className="flex justify-between p-2 border-b border-border">
+              <span className="text-muted">Events/Hour</span>
               <span className="font-semibold">
                 {(durationHours > 0 ? session.stats.lootEvents / durationHours : 0).toFixed(1)}
               </span>

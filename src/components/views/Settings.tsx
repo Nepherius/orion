@@ -16,7 +16,7 @@ const SettingSection = ({ icon: Icon, title, description, children }: SettingSec
       <Icon className="w-5 h-5 text-primary-500" />
       <div>
         <h3 className="font-semibold text-white">{title}</h3>
-        <p className="text-xs text-gray-400">{description}</p>
+        <p className="text-xs text-muted">{description}</p>
       </div>
     </div>
     <div className="space-y-3">{children}</div>
@@ -41,7 +41,7 @@ export function Settings() {
     <div className="max-w-4xl mx-auto space-y-6 pb-6">
       <div>
         <h2 className="text-3xl font-bold mb-2">Settings</h2>
-        <p className="text-gray-400">Configure your hunt tracking preferences</p>
+        <p className="text-muted">Configure your hunt tracking preferences</p>
       </div>
 
       {/* Profile Section */}
@@ -55,7 +55,7 @@ export function Settings() {
             placeholder="Enter your character name"
             className="input w-full"
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted mt-1">
             Used for automatic player filtering in chat logs
           </p>
         </div>
@@ -85,8 +85,8 @@ export function Settings() {
             </button>
           </div>
           {detectedPath && (
-            <div className="mt-3 p-2 bg-gray-700 rounded">
-              <p className="text-xs text-gray-400 mb-1">Default Location:</p>
+            <div className="mt-3 p-2 bg-surface rounded">
+              <p className="text-xs text-muted mb-1">Default Location:</p>
               <p className="text-xs text-gray-300 font-mono break-all">{detectedPath}</p>
             </div>
           )}
@@ -99,11 +99,14 @@ export function Settings() {
           <label className="label">Color Scheme</label>
           <select
             value={settings.theme}
-            onChange={(e) => updateSettings({ theme: e.target.value as 'light' | 'dark' })}
+            onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'high-contrast' | 'calypso' | 'arkadia' })}
             className="input w-full"
           >
             <option value="dark">Dark</option>
-            <option value="light">Light (Coming Soon)</option>
+            <option value="light">Light</option>
+            <option value="high-contrast">High Contrast</option>
+            <option value="calypso">Calypso</option>
+            <option value="arkadia">Arkadia</option>
           </select>
         </div>
       </SettingSection>
@@ -120,12 +123,12 @@ export function Settings() {
             onChange={(e) => updateSettings({ defaultMarkup: Number(e.target.value) })}
             className="input w-full"
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted mt-1">
             Default markup for new loot items (100% = TT value)
           </p>
         </div>
 
-        <div className="border-t border-gray-600 pt-3">
+        <div className="border-t border-border pt-3">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -165,11 +168,11 @@ export function Settings() {
             </button>
             .
           </p>
-          <p className="text-gray-400">
+          <p className="text-muted">
             Track your hunting sessions, loot, costs, globals, and statistics. All data is stored
             locally.
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted">
             Not affiliated with MindArk PE AB or Entropia Universe.
           </p>
         </div>
@@ -181,7 +184,7 @@ export function Settings() {
         <button onClick={requestClearData} className="btn-danger w-full">
           Clear All Data
         </button>
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-muted mt-2">
           This will permanently delete all sessions, loot data, and settings.
         </p>
       </div>

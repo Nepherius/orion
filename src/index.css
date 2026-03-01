@@ -7,14 +7,97 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0a0a0a;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* DEFAULT THEME: Dark (Orion) */
+  --color-bg: #060607;
+  --color-surface: #1f2937;
+  /* gray-800 */
+  --color-surface-hover: #374151;
+  /* gray-700 */
+  --color-surface-active: #4b5563;
+  /* gray-600 */
+  --color-border: rgba(255, 255, 255, 0.08);
+  /* slight white for depth */
+  --color-text: #ffffff;
+  --color-text-muted: #9ca3af;
+  /* gray-400 */
+
+  /* Banner specific */
+  --color-banner-bg: #1e3a8a;
+  /* primary-900 originally */
+  --color-banner-border: #1d4ed8;
+}
+
+/* Light Theme */
+:root.theme-light {
+  color-scheme: light;
+  background-color: #ffffff;
+  --color-bg: #f3f4f6;
+  /* gray-100 */
+  --color-surface: #ffffff;
+  --color-surface-hover: #f9fafb;
+  /* gray-50 */
+  --color-surface-active: #e5e7eb;
+  /* gray-200 */
+  --color-border: #d1d5db;
+  /* gray-300 */
+  --color-text: #111827;
+  /* gray-900 */
+  --color-text-muted: #6b7280;
+  /* gray-500 */
+  --color-banner-bg: #e5e7eb;
+  /* match light active surface */
+  --color-banner-border: #d1d5db;
+  /* border-gray-300 */
+}
+
+/* High Contrast Theme */
+:root.theme-high-contrast {
+  color-scheme: dark;
+  background-color: #000000;
+  --color-bg: #000000;
+  --color-surface: #000000;
+  --color-surface-hover: #111111;
+  --color-surface-active: #222222;
+  --color-border: #ffffff;
+  --color-text: #ffffff;
+  --color-text-muted: #cccccc;
+  --color-banner-bg: #1e3a8a;
+  --color-banner-border: #1d4ed8;
+}
+
+/* Calypso Theme (Desert / Sand / Bronze base) */
+:root.theme-calypso {
+  color-scheme: dark;
+  background-color: #17120e;
+  --color-bg: #17120e;
+  --color-surface: #261f18;
+  --color-surface-hover: #352b22;
+  --color-surface-active: #45382b;
+  --color-border: #4d3a24;
+  --color-text: #f5eedc;
+  --color-text-muted: #bdae93;
+  --color-banner-bg: #1e3a8a;
+  --color-banner-border: #1d4ed8;
+}
+
+/* Arkadia Theme (Jungle / Deep Forest base) */
+:root.theme-arkadia {
+  color-scheme: dark;
+  background-color: #07100b;
+  --color-bg: #07100b;
+  --color-surface: #122117;
+  --color-surface-hover: #1c3324;
+  --color-surface-active: #264230;
+  --color-border: #2c4d36;
+  --color-text: #e2f5e8;
+  --color-text-muted: #8eb39d;
+  --color-banner-bg: #1e3a8a;
+  --color-banner-border: #1d4ed8;
 }
 
 body {
@@ -23,6 +106,8 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 #root {
@@ -32,7 +117,7 @@ body {
 
 @layer components {
   .card {
-    @apply bg-gray-800 rounded-lg shadow-lg border border-gray-700;
+    @apply bg-surface text-body rounded-lg shadow-lg border border-border;
   }
 
   .btn {
@@ -44,7 +129,7 @@ body {
   }
 
   .btn-secondary {
-    @apply btn bg-gray-700 hover:bg-gray-600 text-white;
+    @apply btn bg-surface hover:bg-surface-hover text-body border border-border;
   }
 
   .btn-danger {
@@ -56,10 +141,10 @@ body {
   }
 
   .input {
-    @apply px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply px-3 py-2 bg-surface border border-border rounded-lg text-body placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-300 mb-1;
+    @apply block text-sm font-medium text-muted mb-1;
   }
 }

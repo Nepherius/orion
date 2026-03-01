@@ -103,7 +103,7 @@ export function ChatLogMonitorPanel() {
   }, [activeSession?.id]);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
+    <div className="bg-surface rounded-lg p-4">
       <div className="flex items-center gap-2 mb-4">
         <FileText className="w-5 h-5 text-primary-500" />
         <h3 className="text-sm font-bold">Chat Log Monitor</h3>
@@ -111,7 +111,7 @@ export function ChatLogMonitorPanel() {
 
       <div className="space-y-3">
         {/* Status Indicator */}
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-700">
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-surface">
           {status === 'watching' && (
             <>
               <CheckCircle className="w-4 h-4 text-green-400" />
@@ -120,8 +120,8 @@ export function ChatLogMonitorPanel() {
           )}
           {status === 'idle' && (
             <>
-              <AlertCircle className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-400">Not Monitoring</span>
+              <AlertCircle className="w-4 h-4 text-muted" />
+              <span className="text-sm text-muted">Not Monitoring</span>
             </>
           )}
           {status === 'error' && (
@@ -150,20 +150,20 @@ export function ChatLogMonitorPanel() {
         )}
 
         {/* Auto-start Toggle */}
-        <label className="flex items-center justify-between p-2 rounded-lg bg-gray-700 cursor-pointer hover:bg-gray-600 transition-colors">
+        <label className="flex items-center justify-between p-2 rounded-lg bg-surface cursor-pointer hover:bg-gray-600 transition-colors">
           <span className="text-sm text-gray-300">Auto-start session</span>
           <input
             type="checkbox"
             checked={settings.autoStartSession}
             onChange={toggleAutoStart}
-            className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary-600 focus:ring-primary-500 focus:ring-offset-gray-800"
+            className="w-4 h-4 rounded border-border bg-surface text-primary-600 focus:ring-primary-500 focus:ring-offset-gray-800"
           />
         </label>
       </div>
 
       {showStopConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4">
+          <div className="bg-surface rounded-lg p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-bold mb-2">Disable Auto-Start?</h3>
             <p className="text-sm text-gray-300 mb-4">
               Auto-start is enabled. Stopping the file monitor will disable auto-start. Do you want

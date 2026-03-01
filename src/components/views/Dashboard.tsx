@@ -46,7 +46,7 @@ export function Dashboard() {
 
   if (!activeSession) {
     return (
-      <div className="card p-8 text-center text-gray-400">
+      <div className="card p-8 text-center text-muted">
         <Info className="w-16 h-16 mx-auto mb-4 opacity-50" />
         <p>No active session. Start or resume a session to view the dashboard.</p>
       </div>
@@ -169,7 +169,7 @@ export function Dashboard() {
 
           <div className="grid grid-cols-3 gap-4">
             <div className="card p-6">
-              <div className="text-sm text-gray-400 mb-2">RETURN RATE</div>
+              <div className="text-sm text-muted mb-2">RETURN RATE</div>
               <div
                 className={`text-4xl font-bold flex items-center gap-2 ${activeSession.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
               >
@@ -182,7 +182,7 @@ export function Dashboard() {
               </div>
             </div>
             <div className="card p-6">
-              <div className="text-sm text-gray-400 mb-2">PROFIT/LOSS</div>
+              <div className="text-sm text-muted mb-2">PROFIT/LOSS</div>
               <div
                 className={`text-4xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
               >
@@ -191,16 +191,16 @@ export function Dashboard() {
               </div>
             </div>
             <div className="card p-6">
-              <div className="text-sm text-gray-400 mb-2">TOTAL KILLS</div>
-              <div className="text-4xl font-bold text-white">{activeSession.stats.kills}</div>
+              <div className="text-sm text-muted mb-2">TOTAL KILLS</div>
+              <div className="text-4xl font-bold text-body">{activeSession.stats.kills}</div>
             </div>
           </div>
 
           {/* Return Rate Chart */}
           <div className="card p-6">
-            <div className="text-xs text-gray-400 uppercase mb-4">RETURN RATE OVER TIME</div>
+            <div className="text-xs text-muted uppercase mb-4">RETURN RATE OVER TIME</div>
             {chartData.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-gray-400">
+              <div className="h-48 flex items-center justify-center text-muted">
                 No loot data yet
               </div>
             ) : (
@@ -217,7 +217,7 @@ export function Dashboard() {
                     stroke="#9CA3AF"
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                    contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid #374151' }}
                     formatter={(value: number) => [`${value}%`, 'Return Rate']}
                     labelFormatter={(label) => `Event #${label}`}
                   />
@@ -238,7 +238,7 @@ export function Dashboard() {
           <div className="grid grid-cols-3 gap-4">
             {/* Performance */}
             <div
-              className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('performance')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -273,7 +273,7 @@ export function Dashboard() {
 
             {/* Economy */}
             <div
-              className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('economy')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -304,7 +304,7 @@ export function Dashboard() {
 
             {/* Efficiency */}
             <div
-              className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('efficiency')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -326,7 +326,7 @@ export function Dashboard() {
           <div className="grid grid-cols-3 gap-4">
             {/* Skills */}
             <div
-              className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('skills')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -345,7 +345,7 @@ export function Dashboard() {
 
             {/* Combat */}
             <div
-              className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('combat')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -375,7 +375,7 @@ export function Dashboard() {
                   value={activeSession.stats.criticalHits || 0}
                   color="text-yellow-400"
                 />
-                <StatCard label="Misses" value={totalMisses} color="text-gray-400" />
+                <StatCard label="Misses" value={totalMisses} color="text-muted" />
                 <StatCard label="Dodges" value={totalDodges} color="text-red-400" />
                 <StatCard label="Evades" value={totalEvades} color="text-blue-400" />
                 <StatCard
@@ -391,14 +391,14 @@ export function Dashboard() {
                 <StatCard
                   label="Evasion Rate"
                   value={`${evasionRate.toFixed(1)}%`}
-                  color={evasionRate >= 20 ? 'text-green-400' : 'text-white'}
+                  color={evasionRate >= 20 ? 'text-green-400' : 'text-body'}
                 />
               </div>
             </div>
 
             {/* Hourly Rates */}
             <div
-              className="card p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('hourly')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -412,8 +412,8 @@ export function Dashboard() {
                 <StatCard label="Kills/Hour" value={killsPerHour.toFixed(1)} />
                 <StatCard label="Dmg/Hour" value={formatSmallValue(dmgPerHour)} />
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-gray-400">Combat Time</div>
-                  <div className="font-semibold text-white">
+                  <div className="flex items-center gap-2 text-sm text-muted">Combat Time</div>
+                  <div className="font-semibold text-body">
                     <LiveTimer
                       startTime={activeSession.startTime}
                       isRunning={activeSession.status === 'active'}

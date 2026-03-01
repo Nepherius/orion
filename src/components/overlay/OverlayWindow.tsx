@@ -256,11 +256,11 @@ export function OverlayWindow() {
         className="h-screen w-full flex items-center justify-center backdrop-blur-sm"
         style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}
       >
-        <div className="flex items-center gap-2 text-gray-400 text-sm">
+        <div className="flex items-center gap-2 text-muted text-sm">
           <span>No Active Session</span>
           <button
             onClick={handleCloseOverlay}
-            className="p-1 rounded-lg hover:bg-gray-800 transition-colors text-gray-500 hover:text-gray-300"
+            className="p-1 rounded-lg hover:bg-surface transition-colors text-muted hover:text-gray-300"
             title="Close Overlay"
           >
             <X className="w-3 h-3" />
@@ -283,7 +283,7 @@ export function OverlayWindow() {
 
   return (
     <div
-      className="h-screen w-full backdrop-blur-sm border border-gray-700 rounded-2xl overflow-hidden select-none"
+      className="h-screen w-full backdrop-blur-sm border border-border rounded-2xl overflow-hidden select-none"
       style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}
     >
       {/* Main Content - Horizontal Layout */}
@@ -292,19 +292,19 @@ export function OverlayWindow() {
         <div
           data-tauri-drag-region
           onMouseDown={handleStartDrag}
-          className="cursor-move flex items-center justify-center hover:bg-gray-800 rounded p-1 transition-colors shrink-0"
+          className="cursor-move flex items-center justify-center hover:bg-surface rounded p-1 transition-colors shrink-0"
         >
-          <GripVertical className="w-3 h-3 text-gray-500" />
+          <GripVertical className="w-3 h-3 text-muted" />
         </div>
 
         {/* Orion Logo */}
         <div className="font-bold text-primary-400 text-xs tracking-widest shrink-0">ORION</div>
 
-        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-surface shrink-0"></div>
 
         {/* Timer */}
         <div className="flex flex-col items-center leading-none flex-[0.7]">
-          <span className="text-gray-400 text-[10px]">Time</span>
+          <span className="text-muted text-[10px]">Time</span>
           <LiveTimer
             startTime={activeSession.startTime}
             isRunning={activeSession.status === 'active'}
@@ -314,11 +314,11 @@ export function OverlayWindow() {
           />
         </div>
 
-        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-surface shrink-0"></div>
 
         {/* Loadout - Double size */}
         <div className="flex flex-col items-center leading-none flex-[1.4] min-w-0">
-          <span className="text-gray-400 text-[10px] whitespace-nowrap text-center">Loadout</span>
+          <span className="text-muted text-[10px] whitespace-nowrap text-center">Loadout</span>
           <span
             className="font-medium text-xs truncate text-center w-full"
             title={`${loadoutName} (Ctrl+Left/Right, Ctrl+1..9 to switch)`}
@@ -327,21 +327,21 @@ export function OverlayWindow() {
           </span>
         </div>
 
-        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-surface shrink-0"></div>
 
         {/* Loot Value */}
         <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-gray-400 text-[10px] text-center whitespace-nowrap">Loot</span>
+          <span className="text-muted text-[10px] text-center whitespace-nowrap">Loot</span>
           <span className="font-bold text-green-400 text-xs whitespace-nowrap">
             {activeSession.stats.totalLoot.toFixed(2)} PED
           </span>
         </div>
 
-        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-surface shrink-0"></div>
 
         {/* Profit */}
         <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-gray-400 text-[10px] text-center whitespace-nowrap">Profit</span>
+          <span className="text-muted text-[10px] text-center whitespace-nowrap">Profit</span>
           <span
             className={`font-bold text-xs whitespace-nowrap ${isProfitable ? 'text-green-400' : 'text-red-400'}`}
           >
@@ -350,11 +350,11 @@ export function OverlayWindow() {
           </span>
         </div>
 
-        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-surface shrink-0"></div>
 
         {/* Returns */}
         <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-gray-400 text-[10px] text-center whitespace-nowrap">Returns</span>
+          <span className="text-muted text-[10px] text-center whitespace-nowrap">Returns</span>
           <div className="flex items-center gap-1 whitespace-nowrap">
             <span
               className={`font-bold text-xs ${returnsPositive ? 'text-green-400' : 'text-red-400'}`}
@@ -362,11 +362,11 @@ export function OverlayWindow() {
               {returnsPositive ? '+' : ''}
               {(returns - 100).toFixed(1)}%
             </span>
-            <span className="text-gray-500 text-[10px]">({returns.toFixed(1)}%)</span>
+            <span className="text-muted text-[10px]">({returns.toFixed(1)}%)</span>
           </div>
         </div>
 
-        <div className="h-6 w-px bg-gray-700 shrink-0"></div>
+        <div className="h-6 w-px bg-surface shrink-0"></div>
 
         {/* Pause/Resume Button */}
         <button

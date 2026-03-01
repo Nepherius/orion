@@ -58,19 +58,19 @@ export function ActiveSessionPanel({
         <div className="h-8 w-px bg-gray-600" />
 
         <div>
-          <div className="text-xs text-gray-400">Loot Value</div>
+          <div className="text-xs text-muted">Loot Value</div>
           <div className="font-semibold text-green-400">
             {session.stats.totalLoot.toFixed(2)} PED
           </div>
         </div>
 
         <div>
-          <div className="text-xs text-gray-400">Total Cost</div>
+          <div className="text-xs text-muted">Total Cost</div>
           <div className="font-semibold text-red-400">{session.stats.totalCost.toFixed(2)} PED</div>
         </div>
 
         <div>
-          <div className="text-xs text-gray-400">Returns</div>
+          <div className="text-xs text-muted">Returns</div>
           <div
             className={`font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
           >
@@ -79,7 +79,7 @@ export function ActiveSessionPanel({
         </div>
 
         <div>
-          <div className="text-xs text-gray-400">Duration</div>
+          <div className="text-xs text-muted">Duration</div>
           <div className="font-semibold">
             {formatDistanceToNow(session.startTime, { addSuffix: false })}
           </div>
