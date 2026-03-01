@@ -210,6 +210,7 @@ const persistSessionToDb = async (session: HuntSession) => {
     weapon: session.weapon,
     armor: session.armor ?? null,
     location: session.location ?? null,
+    creature: session.creature ?? 'Unknown',
     startTime: session.startTime,
     status: session.status,
     loadoutId: session.loadoutId ?? null,
@@ -229,6 +230,7 @@ const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
     weapon: updates.weapon,
     armor: updates.armor,
     location: updates.location,
+    creature: updates.creature,
     endTime: updates.endTime,
     status: updates.status,
     pausedAt: updates.pausedAt,
@@ -311,6 +313,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   createSession: (sessionData) => {
     const newSession: HuntSession = {
       ...sessionData,
+      creature: sessionData.creature || 'Unknown',
       id: generateId(),
       pausedAt: undefined,
       totalPausedMs: 0,

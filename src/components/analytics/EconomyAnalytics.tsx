@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { HuntSession } from '../../types';
 import {
   BarChart,
@@ -13,6 +14,11 @@ import {
 } from 'recharts';
 import { DollarSign, TrendingUp, Coins } from 'lucide-react';
 import { format } from 'date-fns';
+import { InfoTooltip } from '../common/InfoTooltip';
+import {
+  calculateAmmoCostPerKill,
+  calculateRepairCostPerKill,
+} from '../../utils/analyticsCalculations';
 
 interface EconomyAnalyticsProps {
   session: HuntSession;
@@ -26,19 +32,25 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
   const costPerKill = session.stats.kills > 0 ? totalSpend / session.stats.kills : 0;
   const lootPerKill = session.stats.kills > 0 ? totalLoot / session.stats.kills : 0;
 
+  // New metrics (Category 5)
+  const ammoCostPerKill = calculateAmmoCostPerKill(session);
+  const repairCostPerKill = calculateRepairCostPerKill(session);
+
   // Loot vs Spend over time
-  const economyChart = session.loot.map((item, index) => {
-    const cumulativeLoot = session.loot
-      .slice(0, index + 1)
-      .reduce((sum, l) => sum + l.totalValue, 0);
-    const cumulativeCost = totalSpend * ((index + 1) / session.loot.length);
-    return {
-      index: index + 1,
-      loot: cumulativeLoot,
-      spend: cumulativeCost,
-      time: format(item.timestamp, 'HH:mm'),
-    };
-  });
+  const economyChart = useMemo(() => {
+    return session.loot.map((item, index) => {
+      const cumulativeLoot = session.loot
+        .slice(0, index + 1)
+        .reduce((sum, l) => sum + l.totalValue, 0);
+      const cumulativeCost = totalSpend * ((index + 1) / session.loot.length);
+      return {
+        index: index + 1,
+        loot: cumulativeLoot,
+        spend: cumulativeCost,
+        time: format(item.timestamp, 'HH:mm'),
+      };
+    });
+  }, [session.loot, totalSpend]);
 
   // Top loot items by value
   const topLootItems = [...session.loot]
@@ -89,7 +101,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
 
         <div className="card p-6">
           <div className="text-sm text-gray-400 mb-2">LOOT PER PED</div>
-          <div className="text-3xl font-bold text-white">{lootPerPED.toFixed(3)}</div>
+          <div className="text-3xl font-bold text-white">{lootPerPED.toFixed(2)}</div>
         </div>
       </div>
 
@@ -190,6 +202,20 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
               <span className="font-bold text-white">{lootPerKill.toFixed(2)} PED</span>
             </div>
             <div className="flex justify-between p-3 bg-gray-700 rounded">
+              <div className="flex items-center gap-2 text-gray-300">
+                Ammo Cost/Kill
+                <InfoTooltip tooltip="Ammo cost per kill. Shows ammo efficiency" />
+              </div>
+              <span className="font-bold text-white">{ammoCostPerKill.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between p-3 bg-gray-700 rounded">
+              <div className="flex items-center gap-2 text-gray-300">
+                Repair Cost/Kill
+                <InfoTooltip tooltip="Weapon repair cost per kill" />
+              </div>
+              <span className="font-bold text-white">{repairCostPerKill.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between p-3 bg-gray-700 rounded">
               <span className="text-gray-300">Net P/L</span>
               <span className={`font-bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {netPL >= 0 ? '+' : ''}
@@ -198,7 +224,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
             </div>
             <div className="flex justify-between p-3 bg-gray-700 rounded">
               <span className="text-gray-300">Loot/PED</span>
-              <span className="font-bold text-white">{lootPerPED.toFixed(3)}</span>
+              <span className="font-bold text-white">{lootPerPED.toFixed(2)}</span>
             </div>
           </div>
         </div>

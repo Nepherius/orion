@@ -17,6 +17,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
     loadoutId: primaryLoadout?.id || '',
     armor: '',
     location: '',
+    creature: '',
     notes: '',
   });
 
@@ -100,6 +101,18 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
               placeholder="e.g., Port Atlantis"
               className="input w-full"
             />
+          </div>
+
+          <div>
+            <label className="label">Creature</label>
+            <input
+              type="text"
+              value={formData.creature}
+              onChange={(e) => setFormData({ ...formData, creature: e.target.value })}
+              placeholder="e.g., Atrox (used for analytics)"
+              className="input w-full bg-gray-750"
+            />
+            <p className="text-xs text-gray-500 mt-1">Used for creature-specific analytics</p>
           </div>
 
           <div>

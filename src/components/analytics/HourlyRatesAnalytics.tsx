@@ -16,11 +16,24 @@ interface HourlyRatesAnalyticsProps {
 }
 
 export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
+  const normalizeTimestampMs = (timestamp?: number) => {
+    if (!timestamp) return undefined;
+    return timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp;
+  };
+
   const now = Date.now();
+  const startTimeMs = normalizeTimestampMs(session.startTime) ?? now;
+  const pausedAtMs = normalizeTimestampMs(session.pausedAt);
+  const endTimeMs = normalizeTimestampMs(session.endTime);
+  const elapsedReference = session.status === 'completed' && endTimeMs ? endTimeMs : now;
   const pausedMs =
     (session.totalPausedMs || 0) +
-    (session.status === 'paused' && session.pausedAt ? now - session.pausedAt : 0);
-  const duration = Math.max(0, now - session.startTime - pausedMs);
+    (session.status === 'paused' && pausedAtMs ? now - pausedAtMs : 0);
+  const durationFromTimestamps = Math.max(0, elapsedReference - startTimeMs - pausedMs);
+  const duration =
+    session.status === 'completed' && session.stats.duration > 0
+      ? session.stats.duration * 1000
+      : durationFromTimestamps;
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 
@@ -60,11 +73,30 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
   const spendPerMin = durationMinutes > 0 ? session.stats.totalCost / durationMinutes : 0;
   const killsPerMin = durationMinutes > 0 ? session.stats.kills / durationMinutes : 0;
   const eventsPerMin = durationMinutes > 0 ? session.stats.lootEvents / durationMinutes : 0;
+  const profitPerMin =
+    durationMinutes > 0 ? (session.stats.totalLoot - session.stats.totalCost) / durationMinutes : 0;
+  const totalSkillGains = session.skills.reduce((sum, s) => sum + s.gainAmount, 0);
+  const skillsPerMin = durationMinutes > 0 ? totalSkillGains / durationMinutes : 0;
 
   const formatDuration = (ms: number) => {
     const hours = Math.floor(ms / (1000 * 60 * 60));
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
+  };
+
+  const formatSmallValue = (value: number, decimals: number = 2) => {
+    const absolute = Math.abs(value);
+    const threshold = Math.pow(10, -decimals);
+
+    if (absolute === 0) {
+      return value.toFixed(decimals);
+    }
+
+    if (absolute < threshold) {
+      return `${value < 0 ? '-' : ''}<${threshold.toFixed(decimals)}`;
+    }
+
+    return value.toFixed(decimals);
   };
 
   return (
@@ -75,7 +107,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
           <div className="text-sm text-gray-400 mb-2">LOOT/HOUR</div>
           <div className="text-3xl font-bold text-green-400">
             <DollarSign className="w-5 h-5 inline mr-2" />
-            {lootPerHour.toFixed(2)}
+            {formatSmallValue(lootPerHour)}
           </div>
           <div className="text-xs text-gray-500 mt-1">PED</div>
         </div>
@@ -84,7 +116,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
           <div className="text-sm text-gray-400 mb-2">SPEND/HOUR</div>
           <div className="text-3xl font-bold text-red-400">
             <DollarSign className="w-5 h-5 inline mr-2" />
-            {spendPerHour.toFixed(2)}
+            {formatSmallValue(spendPerHour)}
           </div>
           <div className="text-xs text-gray-500 mt-1">PED</div>
         </div>
@@ -96,7 +128,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
           >
             <TrendingUp className="w-5 h-5 inline mr-2" />
             {profitPerHour >= 0 ? '+' : ''}
-            {profitPerHour.toFixed(2)}
+            {formatSmallValue(profitPerHour)}
           </div>
           <div className="text-xs text-gray-500 mt-1">PED</div>
         </div>
@@ -122,7 +154,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               <YAxis stroke="#9CA3AF" />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
-                formatter={(value: number) => [`${value.toFixed(2)} PED`, '']}
+                formatter={(value: number) => [`${formatSmallValue(value)} PED`, '']}
               />
               <Bar dataKey="value">
                 {hourlyMetrics.map((entry, index) => (
@@ -143,7 +175,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               <YAxis stroke="#9CA3AF" />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
-                formatter={(value: number) => value.toFixed(2)}
+                formatter={(value: number) => formatSmallValue(value)}
               />
               <Bar dataKey="value" fill="#3B82F6" />
             </BarChart>
@@ -168,17 +200,17 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               <tr className="border-b border-gray-800 hover:bg-gray-700">
                 <td className="py-3 px-4">Loot</td>
                 <td className="py-3 px-4 text-right text-green-400 font-semibold">
-                  {lootPerHour.toFixed(2)} PED
+                  {formatSmallValue(lootPerHour)} PED
                 </td>
-                <td className="py-3 px-4 text-right">{lootPerMin.toFixed(2)} PED</td>
+                <td className="py-3 px-4 text-right">{formatSmallValue(lootPerMin)} PED</td>
                 <td className="py-3 px-4 text-right">{session.stats.totalLoot.toFixed(2)} PED</td>
               </tr>
               <tr className="border-b border-gray-800 hover:bg-gray-700">
                 <td className="py-3 px-4">Spend</td>
                 <td className="py-3 px-4 text-right text-red-400 font-semibold">
-                  {spendPerHour.toFixed(2)} PED
+                  {formatSmallValue(spendPerHour)} PED
                 </td>
-                <td className="py-3 px-4 text-right">{spendPerMin.toFixed(2)} PED</td>
+                <td className="py-3 px-4 text-right">{formatSmallValue(spendPerMin)} PED</td>
                 <td className="py-3 px-4 text-right">{session.stats.totalCost.toFixed(2)} PED</td>
               </tr>
               <tr className="border-b border-gray-800 hover:bg-gray-700">
@@ -187,15 +219,9 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                   className={`py-3 px-4 text-right font-semibold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}
                 >
                   {profitPerHour >= 0 ? '+' : ''}
-                  {profitPerHour.toFixed(2)} PED
+                  {formatSmallValue(profitPerHour)} PED
                 </td>
-                <td className="py-3 px-4 text-right">
-                  {(durationMinutes > 0
-                    ? (session.stats.totalLoot - session.stats.totalCost) / durationMinutes
-                    : 0
-                  ).toFixed(2)}{' '}
-                  PED
-                </td>
+                <td className="py-3 px-4 text-right">{formatSmallValue(profitPerMin)} PED</td>
                 <td className="py-3 px-4 text-right">
                   {(session.stats.totalLoot - session.stats.totalCost).toFixed(2)} PED
                 </td>
@@ -227,17 +253,10 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               <tr className="border-b border-gray-800 hover:bg-gray-700">
                 <td className="py-3 px-4">Skill Gains</td>
                 <td className="py-3 px-4 text-right text-purple-400 font-semibold">
-                  {skillsPerHour.toFixed(4)}
+                  {formatSmallValue(skillsPerHour)}
                 </td>
-                <td className="py-3 px-4 text-right">
-                  {(durationMinutes > 0
-                    ? session.skills.reduce((sum, s) => sum + s.gainAmount, 0) / durationMinutes
-                    : 0
-                  ).toFixed(4)}
-                </td>
-                <td className="py-3 px-4 text-right">
-                  {session.skills.reduce((sum, s) => sum + s.gainAmount, 0).toFixed(4)}
-                </td>
+                <td className="py-3 px-4 text-right">{formatSmallValue(skillsPerMin)}</td>
+                <td className="py-3 px-4 text-right">{formatSmallValue(totalSkillGains)}</td>
               </tr>
             </tbody>
           </table>
@@ -284,7 +303,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                 {(session.stats.totalCost > 0
                   ? session.stats.totalLoot / session.stats.totalCost
                   : 0
-                ).toFixed(3)}
+                ).toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
@@ -293,7 +312,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                 className={`font-semibold ${profitPerHour >= 0 ? 'text-green-400' : 'text-red-400'}`}
               >
                 {profitPerHour >= 0 ? '+' : ''}
-                {profitPerHour.toFixed(2)} PED
+                {formatSmallValue(profitPerHour)} PED
               </span>
             </div>
           </div>
@@ -305,7 +324,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Best Hour Est.</span>
               <span className="font-semibold text-green-400">
-                {(lootPerHour * 1.2).toFixed(2)} PED
+                {formatSmallValue(lootPerHour * 1.2)} PED
               </span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">

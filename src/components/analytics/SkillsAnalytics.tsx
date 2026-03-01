@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { HuntSession } from '../../types';
 import {
   BarChart,
@@ -12,6 +13,8 @@ import {
 } from 'recharts';
 import { TrendingUp, Award, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
+import { InfoTooltip } from '../common/InfoTooltip';
+import { calculateSessionAttributeGains } from '../../utils/analyticsCalculations';
 
 interface SkillsAnalyticsProps {
   session: HuntSession;
@@ -33,33 +36,56 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
   const skillsPerKill = session.stats.kills > 0 ? totalGains / session.stats.kills : 0;
 
   // Skills over time
-  const skillsChart = session.skills.map((skill, index) => {
-    const cumulativeGains = session.skills
-      .slice(0, index + 1)
-      .reduce((sum, s) => sum + s.gainAmount, 0);
-    return {
-      index: index + 1,
-      gains: cumulativeGains,
-      time: format(skill.timestamp, 'HH:mm:ss'),
-    };
-  });
+  const skillsChart = useMemo(() => {
+    return session.skills.map((skill, index) => {
+      const cumulativeGains = session.skills
+        .slice(0, index + 1)
+        .reduce((sum, s) => sum + s.gainAmount, 0);
+      return {
+        index: index + 1,
+        gains: cumulativeGains,
+        time: format(skill.timestamp, 'HH:mm:ss'),
+      };
+    });
+  }, [session.skills]);
 
   // Skills by type
-  const skillsByType = session.skills.reduce(
-    (acc, skill) => {
-      const existing = acc.find((s) => s.name === skill.skillName);
-      if (existing) {
-        existing.gains += skill.gainAmount;
-        existing.count++;
-      } else {
-        acc.push({ name: skill.skillName, gains: skill.gainAmount, count: 1 });
-      }
-      return acc;
-    },
-    [] as Array<{ name: string; gains: number; count: number }>
-  );
+  const skillsByType = useMemo(() => {
+    const res = session.skills.reduce(
+      (acc, skill) => {
+        const existing = acc.find((s) => s.name === skill.skillName);
+        if (existing) {
+          existing.gains += skill.gainAmount;
+          existing.count++;
+        } else {
+          acc.push({ name: skill.skillName, gains: skill.gainAmount, count: 1 });
+        }
+        return acc;
+      },
+      [] as Array<{ name: string; gains: number; count: number }>
+    );
+    res.sort((a, b) => b.gains - a.gains);
+    return res;
+  }, [session.skills]);
 
-  skillsByType.sort((a, b) => b.gains - a.gains);
+  // Calculate attribute gains
+  const sortedAttributes = useMemo(() => {
+    const attributeGains = calculateSessionAttributeGains(session);
+    return Object.entries(attributeGains)
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.gains - a.gains);
+  }, [session]);
+
+  // Attribute descriptions
+  const attributeDescriptions: Record<string, string> = {
+    Agility:
+      'Affects coordination, finesse, and grace; influences movement speed and is vital for many professions.',
+    Health: 'Determines how much damage your avatar can withstand before dying.',
+    Intelligence: 'Impacts actions involving the mind, memory, and reasoning.',
+    Psyche: 'Influences willpower, mental strength, and mindforce.',
+    Stamina: 'Affects bodily hardiness, constitution, and physical toughness.',
+    Strength: 'Governs raw muscle power, lifting capacity, and brute force.',
+  };
 
   return (
     <div className="space-y-6">
@@ -69,7 +95,7 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
           <div className="text-sm text-gray-400 mb-2">TOTAL GAINS</div>
           <div className="text-3xl font-bold text-purple-400">
             <TrendingUp className="w-5 h-5 inline mr-2" />
-            {totalGains.toFixed(4)}
+            {totalGains.toFixed(2)}
           </div>
         </div>
 
@@ -83,14 +109,14 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
 
         <div className="card p-6">
           <div className="text-sm text-gray-400 mb-2">SKILLS/HOUR</div>
-          <div className="text-3xl font-bold text-green-400">{skillsPerHour.toFixed(4)}</div>
+          <div className="text-3xl font-bold text-green-400">{skillsPerHour.toFixed(2)}</div>
         </div>
 
         <div className="card p-6">
           <div className="text-sm text-gray-400 mb-2">AVG GAIN</div>
           <div className="text-3xl font-bold text-yellow-400">
             <BookOpen className="w-5 h-5 inline mr-2" />
-            {avgSkillValue.toFixed(4)}
+            {avgSkillValue.toFixed(2)}
           </div>
         </div>
       </div>
@@ -112,7 +138,7 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
                 <YAxis stroke="#9CA3AF" />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
-                  formatter={(value: number) => value.toFixed(4)}
+                  formatter={(value: number) => value.toFixed(2)}
                   labelFormatter={(label) => `Event #${label}`}
                 />
                 <Line
@@ -142,12 +168,101 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
                 <YAxis stroke="#9CA3AF" />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
-                  formatter={(value: number) => value.toFixed(4)}
+                  formatter={(value: number) => value.toFixed(2)}
                 />
                 <Bar dataKey="gains" fill="#A855F7" />
               </BarChart>
             </ResponsiveContainer>
           )}
+        </div>
+      </div>
+
+      {/* Attributes Panel */}
+      <div className="card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-lg font-bold">Attributes</h3>
+          <InfoTooltip tooltip="Core character attributes advancement. These are fundamental progression elements." />
+        </div>
+        {sortedAttributes.some((attr) => attr.gains > 0) ? (
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            {sortedAttributes.map((attr) => (
+              <div key={attr.name} className="border border-gray-700 rounded p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="font-bold text-lg mb-1">{attr.name}</div>
+                    <div className="text-xs text-gray-400 mb-2">
+                      {attributeDescriptions[attr.name]}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-end pt-2 border-t border-gray-700">
+                  <div className="text-3xl font-bold text-cyan-400">{attr.gains.toFixed(2)}</div>
+                  <div className="text-sm text-gray-400">{attr.count} events</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-gray-400 py-8">No attribute gains recorded</div>
+        )}
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-3 gap-6">
+        <div className="card p-6">
+          <h3 className="text-lg font-bold mb-4 text-purple-400">Performance Metrics</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Total Gains</span>
+              <span className="font-semibold">{totalGains.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Skill Events</span>
+              <span className="font-semibold">{skillEvents}</span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Avg Skill Value</span>
+              <span className="font-semibold">{avgSkillValue.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <h3 className="text-lg font-bold mb-4 text-blue-400">Efficiency Metrics</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Skills/PED</span>
+              <span className="font-semibold">{skillsPerPED.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Skills/Hour</span>
+              <span className="font-semibold">{skillsPerHour.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Skills/Kill</span>
+              <span className="font-semibold">{skillsPerKill.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <h3 className="text-lg font-bold mb-4 text-green-400">Variety Metrics</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Unique Skills</span>
+              <span className="font-semibold">{skillsByType.length}</span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Most Gained</span>
+              <span className="font-semibold text-sm">
+                {skillsByType[0]?.name.substring(0, 15) || 'N/A'}
+              </span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Top Skill Value</span>
+              <span className="font-semibold">{skillsByType[0]?.gains.toFixed(2) || '0.00'}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -173,81 +288,21 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
                   <tr key={index} className="border-b border-gray-800 hover:bg-gray-700">
                     <td className="py-3 px-4 font-medium">{skill.name}</td>
                     <td className="py-3 px-4 text-right text-purple-400 font-semibold">
-                      {skill.gains.toFixed(4)}
+                      {skill.gains.toFixed(2)}
                     </td>
                     <td className="py-3 px-4 text-right">{skill.count}</td>
                     <td className="py-3 px-4 text-right">
-                      {(skill.gains / skill.count).toFixed(4)}
+                      {(skill.gains / skill.count).toFixed(2)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       {((skill.gains / totalGains) * 100).toFixed(1)}%
                     </td>
                   </tr>
                 ))}
-                \n{' '}
               </tbody>
             </table>
           </div>
         )}
-      </div>
-
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-purple-400">Performance Metrics</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Total Gains</span>
-              <span className="font-semibold">{totalGains.toFixed(4)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Skill Events</span>
-              <span className="font-semibold">{skillEvents}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Avg Skill Value</span>
-              <span className="font-semibold">{avgSkillValue.toFixed(4)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-blue-400">Efficiency Metrics</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Skills/PED</span>
-              <span className="font-semibold">{skillsPerPED.toFixed(4)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Skills/Hour</span>
-              <span className="font-semibold">{skillsPerHour.toFixed(4)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Skills/Kill</span>
-              <span className="font-semibold">{skillsPerKill.toFixed(4)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-green-400">Variety Metrics</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Unique Skills</span>
-              <span className="font-semibold">{skillsByType.length}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Most Gained</span>
-              <span className="font-semibold text-sm">
-                {skillsByType[0]?.name.substring(0, 15) || 'N/A'}
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-gray-700">
-              <span className="text-gray-400">Top Skill Value</span>
-              <span className="font-semibold">{skillsByType[0]?.gains.toFixed(4) || '0.0000'}</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

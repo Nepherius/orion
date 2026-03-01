@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
@@ -21,13 +20,13 @@ interface DamageEvent {
 interface CombatEvent {
   timestamp: string;
   event_type:
-  | 'hit'
-  | 'crit'
-  | 'player_miss'
-  | 'player_dodge'
-  | 'player_evade'
-  | 'enemy_miss'
-  | 'enemy_evade';
+    | 'hit'
+    | 'crit'
+    | 'player_miss'
+    | 'player_dodge'
+    | 'player_evade'
+    | 'enemy_miss'
+    | 'enemy_evade';
 }
 
 interface HealingEvent {

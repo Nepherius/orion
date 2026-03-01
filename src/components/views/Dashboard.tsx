@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHuntStore } from '../../store';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
@@ -36,6 +36,14 @@ export function Dashboard() {
     | null;
   const [analyticsView, setAnalyticsView] = useState<AnalyticsView>(null);
 
+  // Force a re-render every minute for live sessions to update hourly rates
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (activeSession?.status !== 'active') return;
+    const interval = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, [activeSession?.status]);
+
   if (!activeSession) {
     return (
       <div className="card p-8 text-center text-gray-400">
@@ -45,14 +53,25 @@ export function Dashboard() {
     );
   }
 
+  const normalizeTimestampMs = (timestamp?: number) => {
+    if (!timestamp) return undefined;
+    return timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp;
+  };
+
   const profit = activeSession.stats.totalLoot - activeSession.stats.totalCost;
   const now = Date.now();
+  const startTimeMs = normalizeTimestampMs(activeSession.startTime) ?? now;
+  const pausedAtMs = normalizeTimestampMs(activeSession.pausedAt);
+  const endTimeMs = normalizeTimestampMs(activeSession.endTime);
+  const elapsedReference = activeSession.status === 'completed' && endTimeMs ? endTimeMs : now;
   const pausedMs =
     (activeSession.totalPausedMs || 0) +
-    (activeSession.status === 'paused' && activeSession.pausedAt
-      ? now - activeSession.pausedAt
-      : 0);
-  const duration = Math.max(0, now - activeSession.startTime - pausedMs);
+    (activeSession.status === 'paused' && pausedAtMs ? now - pausedAtMs : 0);
+  const durationFromTimestamps = Math.max(0, elapsedReference - startTimeMs - pausedMs);
+  const duration =
+    activeSession.status === 'completed' && activeSession.stats.duration > 0
+      ? activeSession.stats.duration * 1000
+      : durationFromTimestamps;
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 
@@ -123,7 +142,20 @@ export function Dashboard() {
     activeSession.stats.kills > 0 ? totalSkillGains / activeSession.stats.kills : 0;
   const avgSkillValue = totalSkillEvents > 0 ? totalSkillGains / totalSkillEvents : 0;
 
+  const formatSmallValue = (value: number, decimals: number = 2) => {
+    const absolute = Math.abs(value);
+    const threshold = Math.pow(10, -decimals);
 
+    if (absolute === 0) {
+      return value.toFixed(decimals);
+    }
+
+    if (absolute < threshold) {
+      return `${value < 0 ? '-' : ''}<${threshold.toFixed(decimals)}`;
+    }
+
+    return value.toFixed(decimals);
+  };
 
   return (
     <>
@@ -374,11 +406,11 @@ export function Dashboard() {
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
-                <StatCard label="Loot/Hour" value={`${lootPerHour.toFixed(2)} PED`} />
-                <StatCard label="Spend/Hour" value={`${spendPerHour.toFixed(2)} PED`} />
-                <StatCard label="Skills/Hour" value={skillsPerHour.toFixed(2)} />
+                <StatCard label="Loot/Hour" value={`${formatSmallValue(lootPerHour)} PED`} />
+                <StatCard label="Spend/Hour" value={`${formatSmallValue(spendPerHour)} PED`} />
+                <StatCard label="Skills/Hour" value={formatSmallValue(skillsPerHour)} />
                 <StatCard label="Kills/Hour" value={killsPerHour.toFixed(1)} />
-                <StatCard label="Dmg/Hour" value={dmgPerHour.toFixed(2)} />
+                <StatCard label="Dmg/Hour" value={formatSmallValue(dmgPerHour)} />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm text-gray-400">Combat Time</div>
                   <div className="font-semibold text-white">

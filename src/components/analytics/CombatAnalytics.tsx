@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { HuntSession } from '../../types';
 import {
   BarChart,
@@ -15,6 +16,11 @@ import {
 } from 'recharts';
 import { Crosshair, Shield, Heart, Zap } from 'lucide-react';
 import { format } from 'date-fns';
+import { InfoTooltip } from '../common/InfoTooltip';
+import {
+  calculateDamageConsistency,
+  calculateHealingEfficiency,
+} from '../../utils/analyticsCalculations';
 
 interface CombatAnalyticsProps {
   session: HuntSession;
@@ -54,16 +60,18 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
   ].filter((item) => item.value > 0);
 
   // Damage over time
-  const damageChart = session.damageEvents.slice(0, 100).map((event, index) => {
-    const cumulativeDmg = session.damageEvents
-      .slice(0, index + 1)
-      .reduce((sum, e) => sum + e.damage, 0);
-    return {
-      index: index + 1,
-      damage: cumulativeDmg,
-      time: format(event.timestamp, 'HH:mm:ss'),
-    };
-  });
+  const damageChart = useMemo(() => {
+    return session.damageEvents.slice(0, 100).map((event, index) => {
+      const cumulativeDmg = session.damageEvents
+        .slice(0, index + 1)
+        .reduce((sum, e) => sum + e.damage, 0);
+      return {
+        index: index + 1,
+        damage: cumulativeDmg,
+        time: format(event.timestamp, 'HH:mm:ss'),
+      };
+    });
+  }, [session.damageEvents]);
 
   // Combat comparison
   const combatComparison = [
@@ -71,6 +79,12 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
     { name: 'Damage In', value: dmgTaken, color: '#EF4444' },
     { name: 'Healing', value: totalHealing, color: '#3B82F6' },
   ];
+
+  // New metrics (Category 1, 6, 9)
+  const damageConsistency = calculateDamageConsistency(session);
+  const healingEfficiency = calculateHealingEfficiency(session);
+  const damagePerKill = kills > 0 ? dmgDealt / kills : 0;
+  const damageTakenPerKill = kills > 0 ? dmgTaken / kills : 0;
 
   return (
     <div className="space-y-6">
@@ -307,13 +321,35 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
               </span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
+              <div className="flex items-center gap-2 text-gray-400">
+                Hit Consistency
+                <InfoTooltip tooltip="Std deviation of damage per hit. Lower = more consistent" />
+              </div>
+              <span className="font-semibold">{damageConsistency.toFixed(1)}</span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Dmg/Kill</span>
-              <span className="font-semibold">{(kills > 0 ? dmgDealt / kills : 0).toFixed(0)}</span>
+              <span className="font-semibold">{damagePerKill.toFixed(0)}</span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <span className="text-gray-400">Dmg Taken/Kill</span>
+              <span className="font-semibold text-red-400">{damageTakenPerKill.toFixed(0)}</span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">
               <span className="text-gray-400">Shots/Kill</span>
               <span className="font-semibold">
                 {(kills > 0 ? shotsFired / kills : 0).toFixed(1)}
+              </span>
+            </div>
+            <div className="flex justify-between p-2 border-b border-gray-700">
+              <div className="flex items-center gap-2 text-gray-400">
+                Healing Efficiency
+                <InfoTooltip tooltip="Healing received / damage taken. 1.0 = full recovery" />
+              </div>
+              <span
+                className={`font-semibold ${healingEfficiency >= 1 ? 'text-green-400' : 'text-yellow-400'}`}
+              >
+                {healingEfficiency.toFixed(2)}x
               </span>
             </div>
             <div className="flex justify-between p-2 border-b border-gray-700">

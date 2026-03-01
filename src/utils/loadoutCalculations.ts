@@ -69,5 +69,3 @@ export function filterEquipmentItems(
     .filter((item) => item.Name.toLowerCase().includes(search.toLowerCase()))
     .slice(0, limit);
 }
-
-

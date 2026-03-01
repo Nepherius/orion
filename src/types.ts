@@ -44,14 +44,14 @@ export interface DamageEvent {
 export interface CombatEvent {
   id: string;
   type:
-  | 'hit'
-  | 'crit'
-  | 'player_miss'
-  | 'player_dodge'
-  | 'player_evade'
-  | 'enemy_miss'
-  | 'enemy_evade'
-  | 'enemy_dodge';
+    | 'hit'
+    | 'crit'
+    | 'player_miss'
+    | 'player_dodge'
+    | 'player_evade'
+    | 'enemy_miss'
+    | 'enemy_evade'
+    | 'enemy_dodge';
   timestamp: number;
 }
 
@@ -105,6 +105,7 @@ export interface HuntSession {
   weapon: string;
   armor?: string;
   location?: string;
+  creature?: string;
 
   // Session data
   loot: LootItem[];

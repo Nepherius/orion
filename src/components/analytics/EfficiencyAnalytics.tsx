@@ -174,7 +174,7 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
                 {(session.stats.totalCost > 0
                   ? session.stats.totalLoot / session.stats.totalCost
                   : 0
-                ).toFixed(3)}
+                ).toFixed(2)}
               </span>
             </div>
           </div>

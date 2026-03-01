@@ -22,6 +22,14 @@ export function OverlayWindow() {
   const loadouts = useHuntStore((state) => state.loadouts);
   const syncSetupRef = useRef(false);
 
+  // Remove splash screen on mount
+  useEffect(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+      splash.remove();
+    }
+  }, []);
+
   useEffect(() => {
     initializeStoreFromDb().catch(() => {
       // Silently fail; cross-window sync will still populate state
