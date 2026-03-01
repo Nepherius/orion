@@ -1,6 +1,7 @@
 stages:
   - lint
   - build
+  - release
 
 variables:
   RUST_VERSION: "latest"
@@ -84,3 +85,19 @@ build:windows:
       - node_modules/
       - src-tauri/target/
 
+# Publish Release (when tagged)
+publish:release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - echo "Running Release generation for tag $CI_COMMIT_TAG"
+  release:
+    name: 'Release $CI_COMMIT_TAG'
+    description: 'Automated release including Windows and Linux binaries.'
+    tag_name: '$CI_COMMIT_TAG'
+    ref: '$CI_COMMIT_TAG'
+  dependencies:
+    - build:windows
+    - build:linux
