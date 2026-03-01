@@ -221,7 +221,7 @@ const persistSessionToDb = async (session: HuntSession) => {
       armor_decay: session.armorDecay,
       healing_cost: session.healingCost,
       other_costs: session.otherCosts,
-    }
+    },
   });
 };
 
@@ -245,7 +245,7 @@ const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
       armor_decay: updates.armorDecay,
       healing_cost: updates.healingCost,
       other_costs: updates.otherCosts,
-    }
+    },
   });
 };
 
@@ -391,12 +391,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'active' as const,
-              startTime: now,
-              pausedAt: undefined,
-              totalPausedMs: 0,
-            }
+                ...s,
+                status: 'active' as const,
+                startTime: now,
+                pausedAt: undefined,
+                totalPausedMs: 0,
+              }
             : s
         ),
         activeSessionId: id,
@@ -432,11 +432,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'active' as const,
-              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-              pausedAt: undefined,
-            }
+                ...s,
+                status: 'active' as const,
+                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                pausedAt: undefined,
+              }
             : s
         ),
         activeSessionId: id,
@@ -460,12 +460,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: state.sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'completed' as const,
-              endTime: now,
-              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-              pausedAt: undefined,
-            }
+                ...s,
+                status: 'completed' as const,
+                endTime: now,
+                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                pausedAt: undefined,
+              }
             : s
         ),
         activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
@@ -514,7 +514,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         markup: newLoot.markup,
         total_value: newLoot.totalValue,
         timestamp: newLoot.timestamp,
-      }
+      },
     });
   },
 

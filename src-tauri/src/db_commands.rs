@@ -216,10 +216,7 @@ pub struct AddLootParams {
 }
 
 #[tauri::command]
-pub fn db_add_loot(
-    params: AddLootParams,
-    state: State<'_, DbState>,
-) -> Result<(), String> {
+pub fn db_add_loot(params: AddLootParams, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     conn.execute(
         "INSERT INTO loot_items (uuid, session_uuid, name, quantity, value, markup, total_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
@@ -486,7 +483,7 @@ pub fn db_get_session_stats(
         .unwrap()
         .as_millis() as i64;
     let base_paused_ms = session_info.total_paused_ms.unwrap_or(0);
-    
+
     let active_pause_ms = if session_info.status == "paused" {
         if let Some(p_time) = session_info.paused_at {
             now - p_time
@@ -496,7 +493,7 @@ pub fn db_get_session_stats(
     } else {
         0
     };
-    
+
     let total_paused = base_paused_ms + active_pause_ms;
     let raw_duration = if let Some(end) = session_info.end_time {
         end - session_info.start_time
@@ -505,7 +502,11 @@ pub fn db_get_session_stats(
     };
     let duration_seconds = std::cmp::max(0, raw_duration - total_paused) / 1000;
 
-    let total_cost = session_info.ammo_cost + session_info.repair_cost + session_info.armor_decay + session_info.healing_cost + session_info.other_costs;
+    let total_cost = session_info.ammo_cost
+        + session_info.repair_cost
+        + session_info.armor_decay
+        + session_info.healing_cost
+        + session_info.other_costs;
     let returns = if total_cost > 0.0 {
         (total_loot / total_cost) * 100.0
     } else {
