@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useHuntStore } from '../../store';
-import { Info, Search, ArrowUpDown, ExternalLink, Trash2 } from 'lucide-react';
+import { Info, Search, ArrowUpDown, Trash2 } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 
 export function Loot() {
@@ -221,10 +221,7 @@ export function Loot() {
                 <option value="qty">⬇ Qty</option>
                 <option value="name">⬇ Name</option>
               </select>
-              <button className="btn-secondary flex items-center gap-2">
-                <ExternalLink className="w-4 h-4" />
-                Overlay
-              </button>
+
             </div>
           </div>
 
@@ -276,9 +273,6 @@ export function Loot() {
                       </td>
                       <td className="py-2 px-3 text-right">{share.toFixed(1)}%</td>
                       <td className="py-2 px-3 text-right">
-                        <button className="text-blue-400 hover:text-blue-300 mr-3">
-                          <ExternalLink className="w-4 h-4" />
-                        </button>
                         <button
                           onClick={() => activeSession && removeLootByName(activeSession.id, item.name)}
                           className="text-red-400 hover:text-red-300"

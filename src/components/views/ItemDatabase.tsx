@@ -4,6 +4,7 @@ import { ItemTemplate } from '../../types';
 import { useItemDatabaseModel } from '../../hooks/useItemDatabaseModel';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { useItemBrowser, EntropyItem } from '../../hooks/useItemBrowser';
+import { useHuntStore } from '../../store';
 
 export function ItemDatabase() {
   const {
@@ -29,6 +30,11 @@ export function ItemDatabase() {
     loading: _entropyLoading,
   } = useItemBrowser();
   const [entropyMarkups, setEntropyMarkups] = useState<{ [key: number]: number }>({});
+  
+  // Get ignore list from store
+  const ignoreList = useHuntStore((state) => state.settings.ignoreListItems || []);
+  const addToIgnoreList = useHuntStore((state) => state.addToIgnoreList);
+  const removeFromIgnoreList = useHuntStore((state) => state.removeFromIgnoreList);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -77,8 +83,17 @@ export function ItemDatabase() {
           placeholder="Search local items or Entropia database..."
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="input w-full pl-10"
+          className="input w-full pl-10 pr-10"
         />
+        {searchQuery && (
+          <button
+            onClick={() => handleSearchChange('')}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-400 hover:text-red-300 transition-colors"
+            title="Clear search"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Local Items Table */}
@@ -175,6 +190,13 @@ export function ItemDatabase() {
                     <button onClick={() => handleSaveCustom(item)} className="btn-primary text-sm">
                       Save Custom
                     </button>
+                    <button
+                      onClick={() => addToIgnoreList(item.Name)}
+                      className="btn-secondary text-sm"
+                      title="Add this item to ignore list"
+                    >
+                      Ignore
+                    </button>
                   </div>
                 </div>
               </div>
@@ -182,6 +204,36 @@ export function ItemDatabase() {
           </div>
         </div>
       )}
+
+      {/* Ignore List */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Ignore List</h3>
+        <p className="text-sm text-gray-400 mb-4">Items in this list will be skipped by ChatLogMonitor</p>
+        <div className="space-y-3">
+          {ignoreList.length > 0 ? (
+            <div className="border border-gray-700 rounded p-3 bg-gray-800">
+              <div className="flex flex-wrap gap-2">
+                {ignoreList.map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-2 bg-gray-700 px-3 py-1 rounded text-sm"
+                  >
+                    <span>{item}</span>
+                    <button
+                      onClick={() => removeFromIgnoreList(item)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-gray-500 py-4 text-sm">No items in ignore list</p>
+          )}
+        </div>
+      </div>
 
       {showAddModal && <ItemModal onClose={() => setShowAddModal(false)} onSave={handleAddSave} />}
 

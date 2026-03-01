@@ -1,4 +1,4 @@
-import { useHuntStore } from '../../store';
+import { useHuntStore, initializeStoreFromDb } from '../../store';
 import { LiveTimer } from '../layout/LiveTimer';
 import { Play, Pause, GripVertical, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -19,7 +19,14 @@ export function OverlayWindow() {
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
   const updateSettings = useHuntStore((state) => state.updateSettings);
+  const loadouts = useHuntStore((state) => state.loadouts);
   const syncSetupRef = useRef(false);
+
+  useEffect(() => {
+    initializeStoreFromDb().catch(() => {
+      // Silently fail; cross-window sync will still populate state
+    });
+  }, []);
 
   // Setup overlay to ONLY listen for state from main window
   // Do NOT call setupStoreSync - that would set up bidirectional broadcasting
@@ -32,6 +39,7 @@ export function OverlayWindow() {
 
     let unlistenSync: (() => void) | undefined;
     const requestTimers: number[] = [];
+    let requestInterval: number | undefined;
 
     const setupListeners = async () => {
       try {
@@ -66,6 +74,7 @@ export function OverlayWindow() {
       requestState();
       requestTimers.push(window.setTimeout(() => requestState(), 100));
       requestTimers.push(window.setTimeout(() => requestState(), 300));
+      requestInterval = window.setInterval(() => requestState(), 2000);
     };
 
     setupListeners();
@@ -73,6 +82,9 @@ export function OverlayWindow() {
     return () => {
       unlistenSync?.();
       requestTimers.forEach(clearTimeout);
+      if (requestInterval) {
+        clearInterval(requestInterval);
+      }
     };
   }, []);
 
@@ -152,6 +164,79 @@ export function OverlayWindow() {
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!activeSession) return;
+
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+
+      const isNextLoadout = event.ctrlKey && event.key === 'ArrowRight';
+      const isPrevLoadout = event.ctrlKey && event.key === 'ArrowLeft';
+      const numericKey =
+        event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey
+          ? Number.parseInt(event.key, 10)
+          : NaN;
+      const isNumberShortcut = Number.isInteger(numericKey) && numericKey >= 1 && numericKey <= 9;
+
+      if (!isNextLoadout && !isPrevLoadout && !isNumberShortcut) {
+        return;
+      }
+
+      if (loadouts.length === 0) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const emitLoadoutCommand = (command: 'next_loadout' | 'prev_loadout') => {
+        emit('overlay-session-command', {
+          sessionId: activeSession.id,
+          command,
+        }).catch((error) => {
+          console.error('Failed to send overlay loadout command:', error);
+        });
+      };
+
+      if (isNumberShortcut) {
+        const currentIndex = activeSession.loadoutId
+          ? loadouts.findIndex((l) => l.id === activeSession.loadoutId)
+          : loadouts.findIndex((l) => l.name === activeSession.weapon);
+
+        const hotkeyMatchIndex = loadouts.findIndex((l) => l.hotkey === numericKey);
+        const targetIndex = hotkeyMatchIndex >= 0 ? hotkeyMatchIndex : numericKey - 1;
+
+        if (targetIndex < 0 || targetIndex >= loadouts.length || currentIndex < 0 || currentIndex === targetIndex) {
+          return;
+        }
+
+        const forwardSteps = (targetIndex - currentIndex + loadouts.length) % loadouts.length;
+        const backwardSteps = (currentIndex - targetIndex + loadouts.length) % loadouts.length;
+        const command =
+          forwardSteps <= backwardSteps ? ('next_loadout' as const) : ('prev_loadout' as const);
+        const steps = Math.min(forwardSteps, backwardSteps);
+
+        for (let index = 0; index < steps; index++) {
+          window.setTimeout(() => emitLoadoutCommand(command), index * 40);
+        }
+        return;
+      }
+
+      emitLoadoutCommand(isNextLoadout ? 'next_loadout' : 'prev_loadout');
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeSession, loadouts.length]);
+
   if (!activeSession) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-900/95 backdrop-blur-sm">
@@ -175,7 +260,6 @@ export function OverlayWindow() {
   const returnsPositive = returns >= 100;
 
   // Find loadout name
-  const loadouts = useHuntStore.getState().loadouts;
   const loadout = activeSession.loadoutId
     ? loadouts.find((l) => l.id === activeSession.loadoutId)
     : loadouts.find((l) => l.name === activeSession.weapon);
@@ -216,7 +300,10 @@ export function OverlayWindow() {
         {/* Loadout - Double size */}
         <div className="flex flex-col items-center leading-tight flex-[2] min-w-0">
           <span className="text-gray-400 text-xs whitespace-nowrap text-center">Loadout</span>
-          <span className="font-medium text-sm truncate text-center w-full" title={loadoutName}>
+          <span
+            className="font-medium text-sm truncate text-center w-full"
+            title={`${loadoutName} (Ctrl+Left/Right, Ctrl+1..9 to switch)`}
+          >
             {loadoutName}
           </span>
         </div>

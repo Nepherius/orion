@@ -13,6 +13,8 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
   const {
     name,
     setName,
+    hotkey,
+    setHotkey,
     weapon,
     setWeapon,
     amplifier,
@@ -63,6 +65,30 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
         </div>
 
         <div className="p-4 space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 uppercase block mb-1">Hotkey</label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-300">Hotkey:</span>
+              <kbd className="px-2 py-1 rounded border border-gray-600 bg-gray-700 text-xs font-semibold text-gray-200">
+                CTRL
+              </kbd>
+              <span className="text-gray-400">+</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={hotkey?.toString() || ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^1-9]/g, '');
+                  setHotkey(value ? Number(value) : undefined);
+                }}
+                placeholder="1-9"
+                className="input w-20 text-center font-mono"
+              />
+              <span className="text-xs text-gray-500">Assign Ctrl+1 to Ctrl+9</span>
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-2">
             <button

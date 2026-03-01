@@ -140,6 +140,7 @@ export interface AppSettings {
   overlayY?: number;
   overlayWidth?: number;
   overlayHeight?: number;
+  ignoreListItems?: string[]; // Items to ignore in ChatLogMonitor
 }
 
 // Equipment and Loadout types
@@ -181,6 +182,7 @@ export interface LoadoutEnhancers {
 export interface Loadout {
   id: string;
   name: string;
+  hotkey?: number;
   isPrimary: boolean;
   favorite: boolean;
   weapon?: EquipmentItem;

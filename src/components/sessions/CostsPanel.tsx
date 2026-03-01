@@ -66,7 +66,7 @@ export function CostsPanel({ session }: CostsPanelProps) {
         </div>
 
         <div>
-          <label className="label text-xs">Repair Cost</label>
+          <label className="label text-xs">Weapon decay</label>
           {isEditing ? (
             <input
               type="number"

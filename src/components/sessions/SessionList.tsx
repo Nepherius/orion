@@ -155,7 +155,7 @@ export function SessionList({
             setShowLoadoutError(true);
           }
         }}
-        className="btn-primary w-full mb-4 flex items-center justify-center gap-2"
+        className="btn-success w-full mb-4 flex items-center justify-center gap-2"
       >
         <Plus className="w-4 h-4" />
         New Session

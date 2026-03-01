@@ -7,6 +7,7 @@ export function useLoadoutForm(editLoadout?: Loadout) {
   const { createLoadout, updateLoadout } = useHuntStore();
 
   const [name, setName] = useState(editLoadout?.name || '');
+  const [hotkey, setHotkey] = useState<number | undefined>(editLoadout?.hotkey);
   const [weapon, setWeapon] = useState<EquipmentItem | undefined>(editLoadout?.weapon);
   const [amplifier, setAmplifier] = useState<EquipmentItem | undefined>(editLoadout?.amplifier);
   const [scope, setScope] = useState<EquipmentItem | undefined>(editLoadout?.scope);
@@ -49,6 +50,7 @@ export function useLoadoutForm(editLoadout?: Loadout) {
   const handleSave = () => {
     const loadoutData = {
       name: name || 'Unnamed Loadout',
+      hotkey,
       isPrimary: false,
       favorite: false,
       weapon,
@@ -72,6 +74,8 @@ export function useLoadoutForm(editLoadout?: Loadout) {
 
   return {
     name,
+    hotkey,
+    setHotkey,
     setName,
     weapon,
     setWeapon,

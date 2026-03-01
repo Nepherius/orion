@@ -115,6 +115,8 @@ interface HuntStore {
 
   // Settings actions
   updateSettings: (settings: Partial<AppSettings>) => void;
+  addToIgnoreList: (itemName: string) => void;
+  removeFromIgnoreList: (itemName: string) => void;
 
   // Utility functions
   getActiveSession: () => HuntSession | null;
@@ -137,7 +139,7 @@ type StoreSyncPayload = {
 
 type OverlaySessionCommandPayload = {
   sessionId: string;
-  command: 'pause' | 'resume';
+  command: 'pause' | 'resume' | 'next_loadout' | 'prev_loadout';
 };
 
 const calculateStats = (session: HuntSession): SessionStats => calculateSessionStatsCore(session);
@@ -153,6 +155,7 @@ const defaultSettings: AppSettings = {
   overlayY: 20,
   overlayWidth: 750,
   overlayHeight: 56,
+  ignoreListItems: [],
 };
 
 const safeInvoke = async <T = unknown>(command: string, args?: Record<string, unknown>) => {
@@ -886,6 +889,31 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     }));
   },
 
+  addToIgnoreList: (itemName) => {
+    set((state) => ({
+      settings: (() => {
+        const ignoreList = state.settings.ignoreListItems || [];
+        if (!ignoreList.includes(itemName)) {
+          const updated = { ...state.settings, ignoreListItems: [...ignoreList, itemName] };
+          void saveJsonSetting('settings', updated);
+          return updated;
+        }
+        return state.settings;
+      })(),
+    }));
+  },
+
+  removeFromIgnoreList: (itemName) => {
+    set((state) => ({
+      settings: (() => {
+        const ignoreList = state.settings.ignoreListItems || [];
+        const updated = { ...state.settings, ignoreListItems: ignoreList.filter(i => i !== itemName) };
+        void saveJsonSetting('settings', updated);
+        return updated;
+      })(),
+    }));
+  },
+
   getActiveSession: () => {
     const state = get();
     return state.sessions.find((s) => s.id === state.activeSessionId) || null;
@@ -1090,6 +1118,33 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
 
     if (payload.command === 'resume') {
       state.resumeSession(payload.sessionId);
+      return;
+    }
+
+    if (payload.command === 'next_loadout' || payload.command === 'prev_loadout') {
+      const session = state.sessions.find((s) => s.id === payload.sessionId);
+      if (!session || state.loadouts.length === 0) {
+        return;
+      }
+
+      const currentIndex = session.loadoutId
+        ? state.loadouts.findIndex((l) => l.id === session.loadoutId)
+        : state.loadouts.findIndex((l) => l.name === session.weapon);
+
+      const nextIndex =
+        payload.command === 'next_loadout'
+          ? currentIndex >= 0
+            ? (currentIndex + 1) % state.loadouts.length
+            : 0
+          : currentIndex >= 0
+            ? (currentIndex - 1 + state.loadouts.length) % state.loadouts.length
+            : state.loadouts.length - 1;
+
+      const selectedLoadout = state.loadouts[nextIndex];
+      state.updateSession(payload.sessionId, {
+        weapon: selectedLoadout.name,
+        loadoutId: selectedLoadout.id,
+      });
     }
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)

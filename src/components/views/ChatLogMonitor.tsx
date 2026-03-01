@@ -393,6 +393,14 @@ export function ChatLogMonitor() {
                   const eventKey = `loot:${evt.timestamp}:${evt.creature}:${evt.value}`;
 
                   if (!processedEventsRef.current.has(eventKey)) {
+                    // Check if item is in ignore list
+                    const ignoreList = storeSettings.ignoreListItems || [];
+                    if (ignoreList.includes(evt.creature)) {
+                      debugDetail('[ChatLogMonitor] Skipping ignored item:', evt.creature);
+                      processedEventsRef.current.add(eventKey);
+                      return;
+                    }
+
                     // System pickups should be added as loot items
                     debugDetail('[ChatLogMonitor] Adding system pickup:', evt.creature, evt.value);
 

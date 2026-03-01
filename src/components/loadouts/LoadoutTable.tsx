@@ -62,11 +62,16 @@ export function LoadoutTable({
                           }`}
                         />
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-white">{loadout.name}</span>
                             {loadout.isPrimary && (
                               <span className="px-2 py-0.5 text-[10px] uppercase font-semibold rounded bg-green-900 text-green-300">
                                 PRIMARY
+                              </span>
+                            )}
+                            {loadout.hotkey && (
+                              <span className="px-2 py-0.5 text-[10px] uppercase font-semibold rounded bg-blue-900 text-blue-300">
+                                CTRL+{loadout.hotkey}
                               </span>
                             )}
                           </div>
