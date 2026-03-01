@@ -1,6 +1,6 @@
-import { EquipmentItem, LoadoutEnhancers, Loadout } from '../types';
+import { EquipmentItem, LoadoutEnhancers } from '../types';
 
-export interface LoadoutStats {
+interface LoadoutStats {
   costPerShot: number;
   dpp: number;
   totalDamage: number;
@@ -70,27 +70,4 @@ export function filterEquipmentItems(
     .slice(0, limit);
 }
 
-/**
- * Get equipment cost breakdown
- */
-export function getEquipmentCosts(loadout: Partial<Loadout>): {
-  weapon: number;
-  amplifier: number;
-  scope: number;
-  sight: number;
-  sight2: number;
-  absorber: number;
-  enhancers: number;
-  total: number;
-} {
-  return {
-    weapon: loadout.weapon?.Properties?.Economy?.Decay || 0,
-    amplifier: loadout.amplifier?.Properties?.Economy?.Decay || 0,
-    scope: loadout.scope?.Properties?.Economy?.Decay || 0,
-    sight: loadout.sight?.Properties?.Economy?.Decay || 0,
-    sight2: loadout.sight2?.Properties?.Economy?.Decay || 0,
-    absorber: loadout.absorber?.Properties?.Economy?.Decay || 0,
-    enhancers: 0, // Placeholder
-    total: loadout.costPerShot || 0,
-  };
-}
+

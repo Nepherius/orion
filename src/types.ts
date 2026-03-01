@@ -44,14 +44,14 @@ export interface DamageEvent {
 export interface CombatEvent {
   id: string;
   type:
-    | 'hit'
-    | 'crit'
-    | 'player_miss'
-    | 'player_dodge'
-    | 'player_evade'
-    | 'enemy_miss'
-    | 'enemy_evade'
-    | 'enemy_dodge';
+  | 'hit'
+  | 'crit'
+  | 'player_miss'
+  | 'player_dodge'
+  | 'player_evade'
+  | 'enemy_miss'
+  | 'enemy_evade'
+  | 'enemy_dodge';
   timestamp: number;
 }
 
@@ -152,7 +152,7 @@ export interface AppSettings {
 }
 
 // Equipment and Loadout types
-export interface EquipmentEconomy {
+interface EquipmentEconomy {
   Decay?: number;
   AmmoBurn?: number;
   Efficiency?: number;
@@ -160,11 +160,11 @@ export interface EquipmentEconomy {
   Value?: number;
 }
 
-export interface EquipmentDamage {
+interface EquipmentDamage {
   Penetration?: number;
 }
 
-export interface EquipmentProperties {
+interface EquipmentProperties {
   Type?: string;
   Weight?: number;
   Economy?: EquipmentEconomy;

@@ -3,6 +3,7 @@ import { useHuntStore } from '../../store';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 import { LiveTimer } from '../layout/LiveTimer';
+import { StatCard } from '../common/StatCard';
 import {
   LineChart,
   Line,
@@ -122,25 +123,7 @@ export function Dashboard() {
     activeSession.stats.kills > 0 ? totalSkillGains / activeSession.stats.kills : 0;
   const avgSkillValue = totalSkillEvents > 0 ? totalSkillGains / totalSkillEvents : 0;
 
-  const StatCard = ({
-    label,
-    value,
-    color = 'text-white',
-    info,
-  }: {
-    label: string;
-    value: string | number;
-    color?: string;
-    info?: string;
-  }) => (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2 text-sm text-gray-400">
-        {label}
-        {info && <Info className="w-3 h-3 cursor-help" />}
-      </div>
-      <div className={`font-semibold ${color}`}>{value}</div>
-    </div>
-  );
+
 
   return (
     <>

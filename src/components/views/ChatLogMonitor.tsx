@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+
 import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
@@ -21,13 +21,13 @@ interface DamageEvent {
 interface CombatEvent {
   timestamp: string;
   event_type:
-    | 'hit'
-    | 'crit'
-    | 'player_miss'
-    | 'player_dodge'
-    | 'player_evade'
-    | 'enemy_miss'
-    | 'enemy_evade';
+  | 'hit'
+  | 'crit'
+  | 'player_miss'
+  | 'player_dodge'
+  | 'player_evade'
+  | 'enemy_miss'
+  | 'enemy_evade';
 }
 
 interface HealingEvent {
@@ -81,16 +81,12 @@ export function ChatLogMonitor() {
     return Date.now();
   };
 
-  const debugLog = (...args: unknown[]) => {
-    if (__CHAT_MONITOR_DEBUG__) {
-      console.log(...args);
-    }
+  const debugLog = (..._args: unknown[]) => {
+    // Development debug logs removed
   };
 
-  const debugDetail = (...args: unknown[]) => {
-    if (__CHAT_MONITOR_DEBUG__) {
-      console.debug(...args);
-    }
+  const debugDetail = (..._args: unknown[]) => {
+    // Development debug logs removed
   };
 
   // Use more specific selectors to ensure proper reactivity

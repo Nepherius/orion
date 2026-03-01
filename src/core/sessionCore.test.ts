@@ -161,8 +161,6 @@ describe('calculateSessionStats', () => {
     // Simulates: Shrapnel at 12:45:25, Animal Muscle Oil at 12:45:26
     const ts1 = new Date(2026, 1, 28, 12, 45, 25).getTime();
     const ts2 = new Date(2026, 1, 28, 12, 45, 26).getTime();
-    // eslint-disable-next-line no-console
-    console.log('ts1:', ts1, 'ts2:', ts2, 'diff:', ts2 - ts1);
 
     const session = makeSession({
       loot: [
