@@ -217,7 +217,7 @@ const persistSessionToDb = async (session: HuntSession) => {
       loadout_id: session.loadoutId ?? null,
       notes: session.notes,
       ammo_cost: session.ammoCost,
-      repair_cost: session.repairCost,
+      weapon_decay: session.weaponDecay,
       armor_decay: session.armorDecay,
       healing_cost: session.healingCost,
       other_costs: session.otherCosts,
@@ -241,7 +241,7 @@ const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
       loadout_id: updates.loadoutId,
       notes: updates.notes,
       ammo_cost: updates.ammoCost,
-      repair_cost: updates.repairCost,
+      weapon_decay: updates.weaponDecay,
       armor_decay: updates.armorDecay,
       healing_cost: updates.healingCost,
       other_costs: updates.otherCosts,
@@ -391,12 +391,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'active' as const,
-                startTime: now,
-                pausedAt: undefined,
-                totalPausedMs: 0,
-              }
+              ...s,
+              status: 'active' as const,
+              startTime: now,
+              pausedAt: undefined,
+              totalPausedMs: 0,
+            }
             : s
         ),
         activeSessionId: id,
@@ -416,7 +416,19 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
 
   pauseSession: (id) => {
     const now = Date.now();
-    get().updateSession(id, { status: 'paused', pausedAt: now });
+    const session = get().sessions.find((s) => s.id === id);
+    if (session) {
+      get().updateSession(id, { status: 'paused', pausedAt: now });
+      void updateSessionInDb(id, {
+        status: 'paused',
+        pausedAt: now,
+        ammoCost: session.ammoCost,
+        weaponDecay: session.weaponDecay,
+        armorDecay: session.armorDecay,
+        healingCost: session.healingCost,
+        otherCosts: session.otherCosts,
+      });
+    }
   },
 
   resumeSession: (id) => {
@@ -432,11 +444,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'active' as const,
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
+              ...s,
+              status: 'active' as const,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            }
             : s
         ),
         activeSessionId: id,
@@ -448,6 +460,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         status: 'active',
         pausedAt: undefined,
         totalPausedMs: resumed.totalPausedMs,
+        ammoCost: resumed.ammoCost,
+        weaponDecay: resumed.weaponDecay,
+        armorDecay: resumed.armorDecay,
+        healingCost: resumed.healingCost,
+        otherCosts: resumed.otherCosts,
       });
     }
     void saveJsonSetting('activeSessionId', id);
@@ -460,12 +477,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: state.sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'completed' as const,
-                endTime: now,
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
+              ...s,
+              status: 'completed' as const,
+              endTime: now,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            }
             : s
         ),
         activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
@@ -478,6 +495,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         endTime: now,
         totalPausedMs: ended.totalPausedMs,
         pausedAt: undefined,
+        // Flush running totals back to DB on end
+        ammoCost: ended.ammoCost,
+        weaponDecay: ended.weaponDecay,
+        armorDecay: ended.armorDecay,
+        healingCost: ended.healingCost,
+        otherCosts: ended.otherCosts,
       });
     }
     if (get().activeSessionId === null) {
@@ -704,7 +727,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
               ...s,
               combatEvents: [...(s.combatEvents || []), newCombatEvent],
               ammoCost: s.ammoCost + ammoCostPerShot,
-              repairCost: s.repairCost + decayCostPerShot,
+              weaponDecay: s.weaponDecay + decayCostPerShot,
             };
             updated.stats = calculateStats(updated);
             return updated;
@@ -720,6 +743,15 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       eventType: newCombatEvent.type,
       timestamp: newCombatEvent.timestamp,
     });
+
+    // Also save the accumulated ammo and decay costs to the session summary
+    const updatedSession = get().sessions.find((s) => s.id === sessionId);
+    if (updatedSession) {
+      void updateSessionInDb(sessionId, {
+        ammoCost: updatedSession.ammoCost,
+        weaponDecay: updatedSession.weaponDecay,
+      });
+    }
   },
 
   addHealingEvent: (sessionId, amount, timestamp?: number) => {
@@ -1010,7 +1042,7 @@ export async function initializeStoreFromDb() {
         notes: row.notes ?? '',
         loadoutId: row.loadoutId,
         ammoCost: Number(row.ammoCost ?? 0),
-        repairCost: Number(row.repairCost ?? 0),
+        weaponDecay: Number(row.weaponDecay ?? 0),
         armorDecay: Number(row.armorDecay ?? 0),
         healingCost: Number(row.healingCost ?? 0),
         otherCosts: Number(row.otherCosts ?? 0),
@@ -1076,13 +1108,26 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
 
   // Broadcast relevant store state changes to other windows
   let lastSyncedSnapshot = '';
-  useHuntStore.subscribe((state) => {
+  const unsubscribe = useHuntStore.subscribe((state) => {
     if (isApplyingRemoteSync || !allowBroadcasting) {
       return;
     }
 
+    // The overlay window only needs session stats, weapon name, and timers.
+    const strippedSessions = state.sessions.map((s) => ({
+      ...s,
+      loot: [],
+      skills: [],
+      globals: [],
+      damageEvents: [],
+      combatEvents: [],
+      healingEvents: [],
+      damageTakenEvents: [],
+      notes: '',
+    }));
+
     const snapshot = {
-      sessions: state.sessions,
+      sessions: strippedSessions,
       activeSessionId: state.activeSessionId,
       loadouts: state.loadouts,
     };
@@ -1104,7 +1149,7 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
   });
 
   // Listen for full store sync events from other windows
-  listen('store-sync', (event: Event<StoreSyncPayload>) => {
+  const unlistenSync = await listen('store-sync', (event: Event<StoreSyncPayload>) => {
     const payload = event.payload;
     if (!payload || payload.sourceId === storeSyncSourceId) {
       return;
@@ -1122,15 +1167,29 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
     isApplyingRemoteSync = false;
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)
+    return () => { };
   });
 
   // Listen for state request events (when a new window opens and needs current state)
-  listen('store-sync-request', () => {
+  const unlistenSyncRequest = await listen('store-sync-request', () => {
     // Immediately broadcast current state to the requesting window
     const state = useHuntStore.getState();
+
+    const strippedSessions = state.sessions.map((s) => ({
+      ...s,
+      loot: [],
+      skills: [],
+      globals: [],
+      damageEvents: [],
+      combatEvents: [],
+      healingEvents: [],
+      damageTakenEvents: [],
+      notes: '',
+    }));
+
     const payload: StoreSyncPayload = {
       sourceId: storeSyncSourceId,
-      sessions: state.sessions,
+      sessions: strippedSessions,
       activeSessionId: state.activeSessionId,
       loadouts: state.loadouts,
     };
@@ -1139,56 +1198,62 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
     });
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)
+    return () => { };
   });
 
   // Listen for overlay session commands (overlay is read-only except pause/resume controls)
-  listen('overlay-session-command', (event: Event<OverlaySessionCommandPayload>) => {
-    const payload = event.payload;
-    if (!payload?.sessionId) {
-      return;
-    }
-
-    const state = useHuntStore.getState();
-    if (payload.command === 'pause') {
-      state.pauseSession(payload.sessionId);
-      return;
-    }
-
-    if (payload.command === 'resume') {
-      state.resumeSession(payload.sessionId);
-      return;
-    }
-
-    if (payload.command === 'next_loadout' || payload.command === 'prev_loadout') {
-      const session = state.sessions.find((s) => s.id === payload.sessionId);
-      if (!session || state.loadouts.length === 0) {
+  const unlistenOverlayCommand = await listen(
+    'overlay-session-command',
+    (event: Event<OverlaySessionCommandPayload>) => {
+      const payload = event.payload;
+      if (!payload?.sessionId) {
         return;
       }
 
-      const currentIndex = session.loadoutId
-        ? state.loadouts.findIndex((l) => l.id === session.loadoutId)
-        : state.loadouts.findIndex((l) => l.name === session.weapon);
+      const state = useHuntStore.getState();
+      if (payload.command === 'pause') {
+        state.pauseSession(payload.sessionId);
+        return;
+      }
 
-      const nextIndex =
-        payload.command === 'next_loadout'
-          ? currentIndex >= 0
-            ? (currentIndex + 1) % state.loadouts.length
-            : 0
-          : currentIndex >= 0
-            ? (currentIndex - 1 + state.loadouts.length) % state.loadouts.length
-            : state.loadouts.length - 1;
+      if (payload.command === 'resume') {
+        state.resumeSession(payload.sessionId);
+        return;
+      }
 
-      const selectedLoadout = state.loadouts[nextIndex];
-      state.updateSession(payload.sessionId, {
-        weapon: selectedLoadout.name,
-        loadoutId: selectedLoadout.id,
-      });
+      if (payload.command === 'next_loadout' || payload.command === 'prev_loadout') {
+        const session = state.sessions.find((s) => s.id === payload.sessionId);
+        if (!session || state.loadouts.length === 0) {
+          return;
+        }
+
+        const currentIndex = session.loadoutId
+          ? state.loadouts.findIndex((l) => l.id === session.loadoutId)
+          : state.loadouts.findIndex((l) => l.name === session.weapon);
+
+        const nextIndex =
+          payload.command === 'next_loadout'
+            ? currentIndex >= 0
+              ? (currentIndex + 1) % state.loadouts.length
+              : 0
+            : currentIndex >= 0
+              ? (currentIndex - 1 + state.loadouts.length) % state.loadouts.length
+              : state.loadouts.length - 1;
+
+        const selectedLoadout = state.loadouts[nextIndex];
+        state.updateSession(payload.sessionId, {
+          weapon: selectedLoadout.name,
+          loadoutId: selectedLoadout.id,
+        });
+      }
     }
-  }).catch(() => {
+  ).catch(() => {
     // Silently fail if listen is not available (dev environment)
+    return () => { };
   });
 
   // If this window is loading with a delay (overlay), request current state from other windows
+  let requestInterval: number | undefined;
   if (delayBroadcastMs > 0) {
     // Initial request shortly after opening
     setTimeout(() => {
@@ -1200,7 +1265,7 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
     // Periodically request state if we don't have an active session
     // This handles edge cases: initial request fails, main window starts session
     // after overlay opens, or sync is lost for any reason
-    setInterval(() => {
+    requestInterval = window.setInterval(() => {
       const state = useHuntStore.getState();
       if (!state.activeSessionId) {
         emit('store-sync-request', { sourceId: storeSyncSourceId }).catch(() => {
@@ -1209,4 +1274,15 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
       }
     }, 2000); // Check every 2 seconds
   }
+
+  // Return cleanup function for proper teardown
+  return () => {
+    unsubscribe();
+    unlistenSync();
+    unlistenSyncRequest();
+    unlistenOverlayCommand();
+    if (requestInterval !== undefined) {
+      window.clearInterval(requestInterval);
+    }
+  };
 }

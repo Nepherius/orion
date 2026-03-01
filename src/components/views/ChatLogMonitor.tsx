@@ -20,13 +20,13 @@ interface DamageEvent {
 interface CombatEvent {
   timestamp: string;
   event_type:
-    | 'hit'
-    | 'crit'
-    | 'player_miss'
-    | 'player_dodge'
-    | 'player_evade'
-    | 'enemy_miss'
-    | 'enemy_evade';
+  | 'hit'
+  | 'crit'
+  | 'player_miss'
+  | 'player_dodge'
+  | 'player_evade'
+  | 'enemy_miss'
+  | 'enemy_evade';
 }
 
 interface HealingEvent {
@@ -60,6 +60,10 @@ interface ParseResult {
  * Handles event listening and auto-start functionality
  * UI is in ChatLogMonitorPanel.tsx
  */
+
+// Limit buffer size to prevent memory explosion (10MB max)
+const MAX_PENDING_BUFFER = 10 * 1024 * 1024;
+
 export function ChatLogMonitor() {
   const [listenerReady, setListenerReady] = useState(false);
   // Track processed event timestamps to avoid duplicates - use ref since we don't need re-renders
@@ -296,12 +300,17 @@ export function ChatLogMonitor() {
             return;
           }
 
+          // Limit parsing to recent lines to avoid huge parse operations
+          // This prevents performance degradation with large chat logs
+          const lines = content.split('\n');
+          const recentLines = lines.slice(-100).join('\n'); // Parse only last 100 lines
+
           pendingPayloadRef.current = '';
           parseInProgressRef.current = true;
 
           try {
-            debugDetail('[ChatLogMonitor] Parsing coalesced content. Length:', content.length);
-            const result: ParseResult = await invoke('parse_chat_log', { content });
+            debugDetail('[ChatLogMonitor] Parsing coalesced content. Lines:', recentLines.split('\n').length);
+            const result: ParseResult = await invoke('parse_chat_log', { content: recentLines });
             const events = result.loot_events;
             const damageEvents = result.damage_events;
             const combatEvents = result.combat_events;
@@ -351,7 +360,7 @@ export function ChatLogMonitor() {
                   startTime: Date.now(),
                   status: 'active',
                   ammoCost: 0,
-                  repairCost: 0,
+                  weaponDecay: 0,
                   armorDecay: 0,
                   healingCost: 0,
                   otherCosts: 0,
@@ -605,10 +614,21 @@ export function ChatLogMonitor() {
         // Listen for file updates - await to ensure it's registered before we continue
         debugLog('[ChatLogMonitor] Registering event listener for chat-log-updated...');
         unlistenFn = await listen<string>('chat-log-updated', (event) => {
-          pendingPayloadRef.current += event.payload;
-          if (!event.payload.endsWith('\n')) {
-            pendingPayloadRef.current += '\n';
+          // Only accumulate new content (don't exceed buffer limit)
+          const newContent = event.payload.endsWith('\n') ? event.payload : event.payload + '\n';
+          const totalSize = pendingPayloadRef.current.length + newContent.length;
+
+          if (totalSize > MAX_PENDING_BUFFER) {
+            // If buffer would exceed limit, keep only the most recent content
+            // This prevents memory explosion if file is huge
+            const lines = (pendingPayloadRef.current + newContent).split('\n');
+            const recentLines = lines.slice(-500); // Keep last 500 lines (~100KB)
+            pendingPayloadRef.current = recentLines.join('\n');
+            debugDetail('[ChatLogMonitor] Buffer size limit exceeded, trimmed to recent lines');
+          } else {
+            pendingPayloadRef.current += newContent;
           }
+
           debugDetail(
             '[ChatLogMonitor] Queued payload chunk. Total buffered bytes:',
             pendingPayloadRef.current.length
@@ -625,6 +645,8 @@ export function ChatLogMonitor() {
 
         debugLog('[ChatLogMonitor] Event listener registered successfully');
         debugLog('[ChatLogMonitor] Setting listenerReady to true');
+        // Clear any stale buffered data from previous sessions
+        pendingPayloadRef.current = '';
         setListenerReady(true);
         debugLog('[ChatLogMonitor] listenerReady state updated');
       } catch (error) {

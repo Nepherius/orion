@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('@tauri-apps/api/event', () => ({
   emit: Math.random() ? vi.fn() : vi.fn(), // Provide a mock for emit
-  listen: vi.fn(() => Promise.resolve(() => {})), // Mock listen to return a promise with an unlisten fn
+  listen: vi.fn(() => Promise.resolve(() => { })), // Mock listen to return a promise with an unlisten fn
 }));
 
 describe('HuntStore - addCombatEvent Costs', () => {
@@ -47,7 +47,8 @@ describe('HuntStore - addCombatEvent Costs', () => {
       loot: [],
       globals: [],
       ammoCost: 0,
-      repairCost: 0,
+      weaponDecay: 0,
+      armorDecay: 0,
       stats: {} as SessionStats,
     };
 
@@ -69,8 +70,8 @@ describe('HuntStore - addCombatEvent Costs', () => {
       addCombatEvent(sessionId, eventType as CombatEvent['type']);
 
       const session = useHuntStore.getState().sessions[0];
-      expect(session.ammoCost).toBe(1);
-      expect(session.repairCost).toBe(0.5);
+      expect(session.ammoCost).toBe(1.0);
+      expect(session.weaponDecay).toBe(0.5);
       expect(session.combatEvents?.length).toBe(1);
       expect(session.combatEvents?.[0].type).toBe(eventType);
     });
@@ -87,7 +88,7 @@ describe('HuntStore - addCombatEvent Costs', () => {
 
       const session = useHuntStore.getState().sessions[0];
       expect(session.ammoCost).toBe(0);
-      expect(session.repairCost).toBe(0);
+      expect(session.weaponDecay).toBe(0);
       expect(session.combatEvents?.length).toBe(1);
       expect(session.combatEvents?.[0].type).toBe(eventType);
     });

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useHuntStore } from '../../store';
+import { emptySessionStats } from '../../core/sessionCore';
 import { AutocompleteInput } from '../common/AutocompleteInput';
 import { X } from 'lucide-react';
+import { HuntSession } from '../../types';
 
 interface NewSessionModalProps {
   onClose: () => void;
@@ -40,19 +42,28 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const selectedLoadout = loadouts.find((l) => l.id === formData.loadoutId);
-    createSession({
-      ...formData,
-      weapon: selectedLoadout?.name || 'No Loadout',
+
+    // Define the initial session object for database insertion (without stats, id, etc.)
+    const newSessionInit: Omit<HuntSession, 'id' | 'stats' | 'loot' | 'skills' | 'globals' | 'damageEvents' | 'combatEvents' | 'healingEvents' | 'damageTakenEvents'> = {
+      name: formData.name,
+      location: formData.location || 'Unknown',
       loadoutId: formData.loadoutId || undefined,
+      weapon: selectedLoadout?.name || 'No Loadout',
+      armor: formData.armor || '',
+      creature: formData.creature || '',
+      notes: formData.notes,
       startTime: Date.now(),
       status: 'active',
       ammoCost: 0,
-      repairCost: 0,
+      weaponDecay: 0,
       armorDecay: 0,
       healingCost: 0,
       otherCosts: 0,
-      notes: formData.notes,
-    });
+    };
+
+    // Tauri db insertion function creates the uuid, UI store assigns the full populated stat wrapper locally
+    createSession({ ...newSessionInit, stats: emptySessionStats() } as HuntSession);
+
     onClose();
     onSessionCreated?.();
   };

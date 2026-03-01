@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useHuntStore } from '../../store';
-import { BarChart3 } from 'lucide-react';
+import { usePageVisibility } from '../../hooks/usePageVisibility';
+import { BarChart3, AlertCircle } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -40,12 +41,22 @@ import {
 export function Analytics() {
   const sessions = useHuntStore((state) => state.sessions);
   const loadouts = useHuntStore((state) => state.loadouts);
+  const isPageVisible = usePageVisibility();
 
   const [timeRange, setTimeRange] = useState<
     '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom'
   >('lifetime');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
+
+  if (!isPageVisible) {
+    return (
+      <div className="card p-8 text-center text-muted">
+        <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-60" />
+        <p>Analytics is paused while the app is in the background.</p>
+      </div>
+    );
+  }
 
   const filteredSessions = useMemo(() => {
     if (timeRange === 'lifetime') return sessions;
@@ -116,11 +127,11 @@ export function Analytics() {
   const lifetimeHitRate = useMemo(() => {
     return lifetimeStats.totalShotsFired > 0
       ? (filteredSessions.reduce(
-          (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
-          0
-        ) /
-          lifetimeStats.totalShotsFired) *
-          100
+        (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
+        0
+      ) /
+        lifetimeStats.totalShotsFired) *
+      100
       : 0;
   }, [filteredSessions, lifetimeStats.totalShotsFired]);
 
@@ -357,18 +368,18 @@ export function Analytics() {
     const costBreakdown = filteredSessions.reduce(
       (acc, session) => {
         acc.ammo += session.ammoCost;
-        acc.repair += session.repairCost;
+        acc.weaponDecay += session.weaponDecay;
         acc.armor += session.armorDecay;
         acc.healing += session.healingCost;
         acc.other += session.otherCosts;
         return acc;
       },
-      { ammo: 0, repair: 0, armor: 0, healing: 0, other: 0 }
+      { ammo: 0, weaponDecay: 0, armor: 0, healing: 0, other: 0 }
     );
 
     return [
       { name: 'Ammo', value: costBreakdown.ammo, color: '#EF4444' },
-      { name: 'Repair', value: costBreakdown.repair, color: '#F59E0B' },
+      { name: 'Weapon Decay', value: costBreakdown.weaponDecay, color: '#F59E0B' },
       { name: 'Armor', value: costBreakdown.armor, color: '#3B82F6' },
       { name: 'Healing', value: costBreakdown.healing, color: '#10B981' },
       { name: 'Other', value: costBreakdown.other, color: '#6B7280' },
@@ -393,7 +404,7 @@ export function Analytics() {
   const avgLootValue = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateAverageDropValue(s), 0) /
-          filteredSessions.length
+      filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -406,7 +417,7 @@ export function Analytics() {
   const avgMinutesPerLoot = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateMinutesPerLootEvent(s), 0) /
-          filteredSessions.length
+      filteredSessions.length
       : 0;
   }, [filteredSessions]);
 

@@ -69,7 +69,7 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
   {
     totalCost: number;
     ammoCost: number;
-    repairCost: number;
+    weaponDecay: number;
     armorCost: number;
     healingCost: number;
     otherCost: number;
@@ -83,7 +83,7 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
         acc[location] = {
           totalCost: 0,
           ammoCost: 0,
-          repairCost: 0,
+          weaponDecay: 0,
           armorCost: 0,
           healingCost: 0,
           otherCost: 0,
@@ -92,7 +92,7 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
       }
       acc[location].totalCost += session.stats.totalCost;
       acc[location].ammoCost += session.ammoCost;
-      acc[location].repairCost += session.repairCost;
+      acc[location].weaponDecay += session.weaponDecay;
       acc[location].armorCost += session.armorDecay;
       acc[location].healingCost += session.healingCost;
       acc[location].otherCost += session.otherCosts;
@@ -104,7 +104,7 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
       {
         totalCost: number;
         ammoCost: number;
-        repairCost: number;
+        weaponDecay: number;
         armorCost: number;
         healingCost: number;
         otherCost: number;
@@ -123,11 +123,19 @@ export function calculateAmmoCostPerKill(session: HuntSession): number {
 }
 
 /**
- * Calculate repair cost per kill
+ * Calculate weapon decay cost per kill
  */
-export function calculateRepairCostPerKill(session: HuntSession): number {
+export function calculateWeaponDecayCostPerKill(session: HuntSession): number {
   if (session.stats.kills === 0) return 0;
-  return session.repairCost / session.stats.kills;
+  return session.weaponDecay / session.stats.kills;
+}
+
+/**
+ * Calculate armor decay cost per kill
+ */
+export function calculateArmorDecayCostPerKill(session: HuntSession): number {
+  if (session.stats.kills === 0) return 0;
+  return session.armorDecay / session.stats.kills;
 }
 
 /**

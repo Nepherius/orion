@@ -46,7 +46,7 @@ export function calculateSessionStats(
   const totalLoot = session.loot.reduce((sum, item) => sum + item.totalValue, 0);
   const totalCost =
     session.ammoCost +
-    session.repairCost +
+    session.weaponDecay +
     session.armorDecay +
     session.healingCost +
     session.otherCosts;

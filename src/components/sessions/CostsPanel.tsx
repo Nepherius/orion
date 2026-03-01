@@ -12,7 +12,7 @@ export function CostsPanel({ session }: CostsPanelProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [costs, setCosts] = useState({
     ammoCost: session.ammoCost,
-    repairCost: session.repairCost,
+    weaponDecay: session.weaponDecay,
     armorDecay: session.armorDecay,
     healingCost: session.healingCost,
     otherCosts: session.otherCosts,
@@ -72,12 +72,12 @@ export function CostsPanel({ session }: CostsPanelProps) {
               type="number"
               min="0"
               step="0.01"
-              value={costs.repairCost}
-              onChange={(e) => setCosts({ ...costs, repairCost: Number(e.target.value) })}
+              value={costs.weaponDecay}
+              onChange={(e) => setCosts({ ...costs, weaponDecay: Number(e.target.value) })}
               className="input w-full"
             />
           ) : (
-            <div className="text-lg font-semibold">{costs.repairCost.toFixed(2)} PED</div>
+            <div className="text-lg font-semibold">{costs.weaponDecay.toFixed(2)} PED</div>
           )}
         </div>
 

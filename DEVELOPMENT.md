@@ -56,7 +56,7 @@ The core entity representing a hunting session:
 - Status: active, paused, completed
 - Timestamps: startTime, endTime
 - Collections: loot[], skills[], globals[]
-- Costs: ammoCost, repairCost, armorDecay, healingCost, otherCosts
+- Costs: ammoCost, weaponDecay, armorDecay, healingCost, otherCosts
 - Stats: calculated statistics (returns, profit, duration, etc.)
 
 ### LootItem

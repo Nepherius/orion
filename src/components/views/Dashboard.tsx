@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useHuntStore } from '../../store';
+import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 import { LiveTimer } from '../layout/LiveTimer';
@@ -26,6 +27,8 @@ export function Dashboard() {
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
+  const isPageVisible = usePageVisibility();
+  
   type AnalyticsView =
     | 'performance'
     | 'economy'
@@ -37,12 +40,13 @@ export function Dashboard() {
   const [analyticsView, setAnalyticsView] = useState<AnalyticsView>(null);
 
   // Force a re-render every minute for live sessions to update hourly rates
+  // Only update when the page is visible to avoid unnecessary re-renders
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (activeSession?.status !== 'active') return;
+    if (activeSession?.status !== 'active' || !isPageVisible) return;
     const interval = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(interval);
-  }, [activeSession?.status]);
+  }, [activeSession?.status, isPageVisible]);
 
   if (!activeSession) {
     return (

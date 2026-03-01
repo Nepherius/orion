@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { EquipmentItem } from '../../types';
 import { filterEquipmentItems } from '../../utils/loadoutCalculations';
 
@@ -7,7 +7,7 @@ interface EquipmentSelectorProps {
   label: string;
   items: EquipmentItem[];
   selected: EquipmentItem | undefined;
-  onSelect: (item: EquipmentItem) => void;
+  onSelect: (item: EquipmentItem | undefined) => void;
   placeholder?: string;
 }
 
@@ -23,7 +23,7 @@ export function EquipmentSelector({
 
   const filtered = filterEquipmentItems(items, search);
 
-  const handleSelect = (item: EquipmentItem) => {
+  const handleSelect = (item: EquipmentItem | undefined) => {
     onSelect(item);
     setSearch('');
     setIsOpen(false);
@@ -43,8 +43,17 @@ export function EquipmentSelector({
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          className="input w-full pl-10"
+          className="input w-full pl-10 pr-10"
         />
+        {selected && (
+          <button
+            onClick={() => handleSelect(undefined)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-400 transition-colors"
+            title="Clear selection"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {isOpen && filtered.length > 0 && (

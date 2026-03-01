@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePageVisibility } from '../../hooks/usePageVisibility';
 
 interface LiveTimerProps {
   startTime: number;
@@ -16,9 +17,10 @@ export function LiveTimer({
   className = '',
 }: LiveTimerProps) {
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const isPageVisible = usePageVisibility();
 
   useEffect(() => {
-    if (!isRunning) {
+    if (!isRunning || !isPageVisible) {
       return;
     }
 
@@ -29,7 +31,7 @@ export function LiveTimer({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, isPageVisible]);
 
   const elapsedEnd = isRunning ? currentTime : (pausedAt ?? currentTime);
   const duration = Math.max(0, elapsedEnd - startTime - pausedDurationMs);

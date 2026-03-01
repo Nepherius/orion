@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import { InfoTooltip } from '../common/InfoTooltip';
 import {
   calculateAmmoCostPerKill,
-  calculateRepairCostPerKill,
+  calculateWeaponDecayCostPerKill,
 } from '../../utils/analyticsCalculations';
 
 interface EconomyAnalyticsProps {
@@ -32,9 +32,8 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
   const costPerKill = session.stats.kills > 0 ? totalSpend / session.stats.kills : 0;
   const lootPerKill = session.stats.kills > 0 ? totalLoot / session.stats.kills : 0;
 
-  // New metrics (Category 5)
   const ammoCostPerKill = calculateAmmoCostPerKill(session);
-  const repairCostPerKill = calculateRepairCostPerKill(session);
+  const weaponDecayCostPerKill = calculateWeaponDecayCostPerKill(session);
 
   // Loot vs Spend over time
   const economyChart = useMemo(() => {
@@ -64,7 +63,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
   // Cost breakdown
   const costBreakdown = [
     { name: 'Ammo', value: session.ammoCost },
-    { name: 'Repair', value: session.repairCost },
+    { name: 'Weapon Decay', value: session.weaponDecay },
     { name: 'Armor', value: session.armorDecay },
     { name: 'Healing', value: session.healingCost },
     { name: 'Other', value: session.otherCosts },
@@ -92,7 +91,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
 
         <div className="card p-6">
           <div className="text-sm text-muted mb-2">NET P/L</div>
-          <div className={`text-3xl font-bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <div className={`text - 3xl font - bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'} `}>
             {netPL >= 0 ? <TrendingUp className="w-5 h-5 inline mr-2" /> : null}
             {netPL >= 0 ? '+' : ''}
             {netPL.toFixed(2)} PED
@@ -207,6 +206,10 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
               <span className="text-gray-300">Total Spend</span>
               <span className="font-bold text-red-400">{totalSpend.toFixed(2)} PED</span>
             </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-400">Weapon Decay/Kill</span>
+              <span className="font-bold text-body">{weaponDecayCostPerKill.toFixed(2)}</span>
+            </div>
             <div className="flex justify-between p-3 bg-surface rounded">
               <span className="text-gray-300">Cost/Kill</span>
               <span className="font-bold text-body">{costPerKill.toFixed(2)} PED</span>
@@ -227,11 +230,11 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
                 Repair Cost/Kill
                 <InfoTooltip tooltip="Weapon repair cost per kill" />
               </div>
-              <span className="font-bold text-body">{repairCostPerKill.toFixed(2)}</span>
+              <span className="font-bold text-body">{weaponDecayCostPerKill.toFixed(2)}</span>
             </div>
             <div className="flex justify-between p-3 bg-surface rounded">
               <span className="text-gray-300">Net P/L</span>
-              <span className={`font-bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <span className={`font - bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'} `}>
                 {netPL >= 0 ? '+' : ''}
                 {netPL.toFixed(2)} PED
               </span>

@@ -84,7 +84,7 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             total_paused_ms INTEGER DEFAULT 0,
             loadout_id TEXT,
             ammo_cost REAL DEFAULT 0,
-            repair_cost REAL DEFAULT 0,
+            weapon_decay REAL DEFAULT 0,
             armor_decay REAL DEFAULT 0,
             healing_cost REAL DEFAULT 0,
             other_costs REAL DEFAULT 0

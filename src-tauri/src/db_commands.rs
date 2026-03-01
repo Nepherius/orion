@@ -22,7 +22,7 @@ pub struct CreateSessionParams {
     loadout_id: Option<String>,
     notes: String,
     ammo_cost: f64,
-    repair_cost: f64,
+    weapon_decay: f64,
     armor_decay: f64,
     healing_cost: f64,
     other_costs: f64,
@@ -35,9 +35,9 @@ pub fn db_create_session(
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     let _result = conn.execute(
-        "INSERT INTO sessions (uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs) 
+        "INSERT INTO sessions (uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs) 
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
-        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.repair_cost, params.armor_decay, params.healing_cost, params.other_costs],
+        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.weapon_decay, params.armor_decay, params.healing_cost, params.other_costs],
     )
     .map_err(|e| {
         let err_msg = format!("Failed to insert session: {}", e);
@@ -61,7 +61,7 @@ pub struct UpdateSessionParams {
     loadout_id: Option<String>,
     notes: Option<String>,
     ammo_cost: Option<f64>,
-    repair_cost: Option<f64>,
+    weapon_decay: Option<f64>,
     armor_decay: Option<f64>,
     healing_cost: Option<f64>,
     other_costs: Option<f64>,
@@ -122,8 +122,8 @@ pub fn db_update_session(
         updates.push("ammo_cost = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = params.repair_cost {
-        updates.push("repair_cost = ?");
+    if let Some(v) = params.weapon_decay {
+        updates.push("weapon_decay = ?");
         values.push(Box::new(v));
     }
     if let Some(v) = params.armor_decay {
@@ -167,7 +167,7 @@ pub fn db_delete_session(uuid: String, state: State<'_, DbState>) -> Result<(), 
 pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs FROM sessions ORDER BY start_time DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -186,7 +186,7 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
                 "loadoutId": row.get::<_, Option<String>>(10)?,
                 "notes": row.get::<_, String>(11)?,
                 "ammoCost": row.get::<_, f64>(12)?,
-                "repairCost": row.get::<_, f64>(13)?,
+                "weaponDecay": row.get::<_, f64>(13)?,
                 "armorDecay": row.get::<_, f64>(14)?,
                 "healingCost": row.get::<_, f64>(15)?,
                 "otherCosts": row.get::<_, f64>(16)?,
@@ -359,7 +359,7 @@ pub fn db_get_session_stats(
 
     struct SessionStatsRow {
         ammo_cost: f64,
-        repair_cost: f64,
+        weapon_decay: f64,
         armor_decay: f64,
         healing_cost: f64,
         other_costs: f64,
@@ -372,12 +372,12 @@ pub fn db_get_session_stats(
 
     let session_info: SessionStatsRow = conn
         .query_row(
-            "SELECT ammo_cost, repair_cost, armor_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time FROM sessions WHERE uuid = ?1",
+            "SELECT ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time FROM sessions WHERE uuid = ?1",
             [&session_uuid],
             |row| {
                 Ok(SessionStatsRow {
                     ammo_cost: row.get(0)?,
-                    repair_cost: row.get(1)?,
+                    weapon_decay: row.get(1)?,
                     armor_decay: row.get(2)?,
                     healing_cost: row.get(3)?,
                     other_costs: row.get(4)?,
@@ -503,7 +503,7 @@ pub fn db_get_session_stats(
     let duration_seconds = std::cmp::max(0, raw_duration - total_paused) / 1000;
 
     let total_cost = session_info.ammo_cost
-        + session_info.repair_cost
+        + session_info.weapon_decay
         + session_info.armor_decay
         + session_info.healing_cost
         + session_info.other_costs;
@@ -542,7 +542,7 @@ pub fn db_get_session_stats(
 pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs, notes, loadout_id FROM sessions ORDER BY start_time DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs, notes, loadout_id FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -559,7 +559,7 @@ pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValu
                 "totalPausedMs": row.get::<_, Option<i64>>(8)?,
                 "pausedAt": row.get::<_, Option<i64>>(9)?,
                 "ammoCost": row.get::<_, f64>(10)?,
-                "repairCost": row.get::<_, f64>(11)?,
+                "weaponDecay": row.get::<_, f64>(11)?,
                 "armorDecay": row.get::<_, f64>(12)?,
                 "healingCost": row.get::<_, f64>(13)?,
                 "otherCosts": row.get::<_, f64>(14)?,

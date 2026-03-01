@@ -5,6 +5,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useRef } from 'react';
 import { emit, listen } from '@tauri-apps/api/event';
+import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { HuntSession, Loadout } from '../../types';
 
 interface StoreSyncPayload {
@@ -15,6 +16,7 @@ interface StoreSyncPayload {
 }
 
 export function OverlayWindow() {
+    const isVisible = usePageVisibility();
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
@@ -82,7 +84,9 @@ export function OverlayWindow() {
       requestState();
       requestTimers.push(window.setTimeout(() => requestState(), 100));
       requestTimers.push(window.setTimeout(() => requestState(), 300));
-      requestInterval = window.setInterval(() => requestState(), 2000);
+      if (isVisible) {
+        requestInterval = window.setInterval(() => requestState(), 2000);
+      }
     };
 
     setupListeners();
@@ -94,7 +98,7 @@ export function OverlayWindow() {
         clearInterval(requestInterval);
       }
     };
-  }, []);
+  }, [isVisible]);
 
   // Save overlay geometry when window is moved or resized
   useEffect(() => {

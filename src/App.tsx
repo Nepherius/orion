@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import packageJson from '../package.json';
 import { SessionList } from './components/sessions/SessionList';
 import { SessionDetails } from './components/sessions/SessionDetails';
 import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
-import { ItemDatabase } from './components/views/ItemDatabase';
-import { Settings } from './components/views/Settings';
 import { ChatLogMonitor } from './components/views/ChatLogMonitor';
 import { ChatLogMonitorPanel } from './components/views/ChatLogMonitorPanel';
 import { WelcomeModal } from './components/views/WelcomeModal';
-import { Dashboard } from './components/views/Dashboard';
-import { Loot } from './components/loot/Loot';
-import { Loadouts } from './components/views/Loadouts';
-import { Analytics } from './components/views/Analytics';
+
+// Dynamically imported views to minimize RAM footprint of unfocused tabs
+const Dashboard = lazy(() => import('./components/views/Dashboard').then(m => ({ default: m.Dashboard })));
+const Loot = lazy(() => import('./components/loot/Loot').then(m => ({ default: m.Loot })));
+const Loadouts = lazy(() => import('./components/views/Loadouts').then(m => ({ default: m.Loadouts })));
+const ItemDatabase = lazy(() => import('./components/views/ItemDatabase').then(m => ({ default: m.ItemDatabase })));
+const Analytics = lazy(() => import('./components/views/Analytics').then(m => ({ default: m.Analytics })));
+const Settings = lazy(() => import('./components/views/Settings').then(m => ({ default: m.Settings })));
+
 import {
   Database,
   Settings as SettingsIcon,
@@ -56,11 +59,22 @@ function App() {
   useEffect(() => {
     const init = async () => {
       await initializeStoreFromDb();
-      setupStoreSync();
+      const cleanup = await setupStoreSync();
       // Mark as loaded after DB init completes
       setDataLoaded(true);
+
+      // Return cleanup function for proper teardown
+      return cleanup;
     };
-    init();
+
+    let cleanup: (() => void) | undefined;
+    void init().then((fn) => {
+      cleanup = fn;
+    });
+
+    return () => {
+      cleanup?.();
+    };
   }, []);
 
   // Remove splash screen once React has mounted
@@ -194,42 +208,44 @@ function App() {
 
           {/* Main Content */}
           <main className="max-w-7xl mx-auto px-6 py-6">
-            {currentView === 'dashboard' && <Dashboard />}
+            <Suspense fallback={<div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
+              {currentView === 'dashboard' && <Dashboard />}
 
-            {currentView === 'loot' && <Loot />}
+              {currentView === 'loot' && <Loot />}
 
-            {currentView === 'sessions' && (
-              <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-4 space-y-6">
-                  <SessionList
-                    selectedSessionId={selectedSessionId}
-                    onSelectSession={setSelectedSessionId}
-                    onNavigateToDashboard={() => setCurrentView('dashboard')}
-                  />
-                  <ChatLogMonitorPanel />
-                </div>
-                <div className="col-span-8">
-                  {selectedSessionId ? (
-                    <SessionDetails
-                      sessionId={selectedSessionId}
-                      onSessionResumed={() => setCurrentView('dashboard')}
+              {currentView === 'sessions' && (
+                <div className="grid grid-cols-12 gap-6">
+                  <div className="col-span-4 space-y-6">
+                    <SessionList
+                      selectedSessionId={selectedSessionId}
+                      onSelectSession={setSelectedSessionId}
+                      onNavigateToDashboard={() => setCurrentView('dashboard')}
                     />
-                  ) : (
-                    <div className="card p-8 text-center text-muted">
-                      <p>Select a session to view details</p>
-                    </div>
-                  )}
+                    <ChatLogMonitorPanel />
+                  </div>
+                  <div className="col-span-8">
+                    {selectedSessionId ? (
+                      <SessionDetails
+                        sessionId={selectedSessionId}
+                        onSessionResumed={() => setCurrentView('dashboard')}
+                      />
+                    ) : (
+                      <div className="card p-8 text-center text-muted">
+                        <p>Select a session to view details</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {currentView === 'loadouts' && <Loadouts />}
+              {currentView === 'loadouts' && <Loadouts />}
 
-            {currentView === 'database' && <ItemDatabase />}
+              {currentView === 'database' && <ItemDatabase />}
 
-            {currentView === 'analytics' && <Analytics />}
+              {currentView === 'analytics' && <Analytics />}
 
-            {currentView === 'settings' && <Settings />}
+              {currentView === 'settings' && <Settings />}
+            </Suspense>
           </main>
 
           {/* Footer */}
