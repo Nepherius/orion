@@ -137,7 +137,10 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
                 <XAxis dataKey="index" stroke="var(--color-text-muted)" />
                 <YAxis stroke="var(--color-text-muted)" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
                   formatter={(value: number) => value.toFixed(2)}
                   labelFormatter={(label) => `Event #${label}`}
                 />
@@ -164,10 +167,19 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={skillsByType.slice(0, 10)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="name" stroke="var(--color-text-muted)" angle={-45} textAnchor="end" height={100} />
+                <XAxis
+                  dataKey="name"
+                  stroke="var(--color-text-muted)"
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                />
                 <YAxis stroke="var(--color-text-muted)" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
                   formatter={(value: number) => value.toFixed(2)}
                 />
                 <Bar dataKey="gains" fill="#A855F7" />

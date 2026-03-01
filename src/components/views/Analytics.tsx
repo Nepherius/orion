@@ -115,11 +115,11 @@ export function Analytics() {
   const lifetimeHitRate = useMemo(() => {
     return lifetimeStats.totalShotsFired > 0
       ? (filteredSessions.reduce(
-        (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
-        0
-      ) /
-        lifetimeStats.totalShotsFired) *
-      100
+          (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
+          0
+        ) /
+          lifetimeStats.totalShotsFired) *
+          100
       : 0;
   }, [filteredSessions, lifetimeStats.totalShotsFired]);
 
@@ -392,7 +392,7 @@ export function Analytics() {
   const avgLootValue = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateAverageDropValue(s), 0) /
-      filteredSessions.length
+          filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -405,7 +405,7 @@ export function Analytics() {
   const avgMinutesPerLoot = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateMinutesPerLootEvent(s), 0) /
-      filteredSessions.length
+          filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -728,7 +728,10 @@ export function Analytics() {
               <XAxis dataKey="date" stroke="var(--color-text-muted)" />
               <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                }}
                 labelStyle={{ color: '#F3F4F6' }}
                 formatter={(value: number) => value.toFixed(2)}
               />
@@ -814,7 +817,10 @@ export function Analytics() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
                   formatter={(value: number) => `${value.toFixed(2)} PED`}
                 />
               </PieChart>
@@ -830,10 +836,19 @@ export function Analytics() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={weaponData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="weapon" stroke="var(--color-text-muted)" angle={-45} textAnchor="end" height={100} />
+              <XAxis
+                dataKey="weapon"
+                stroke="var(--color-text-muted)"
+                angle={-45}
+                textAnchor="end"
+                height={100}
+              />
               <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                }}
                 labelStyle={{ color: '#F3F4F6' }}
               />
               <Legend />
@@ -915,9 +930,7 @@ export function Analytics() {
                 <div className="truncate text-muted" title={global.location || 'Unknown'}>
                   {global.location || 'Unknown'}
                 </div>
-                <div className="text-right text-muted">
-                  {format(global.timestamp, 'MM/dd/yy')}
-                </div>
+                <div className="text-right text-muted">{format(global.timestamp, 'MM/dd/yy')}</div>
               </div>
             ))}
           </div>
@@ -935,7 +948,10 @@ export function Analytics() {
             <div className="text-right">Avg/Drop</div>
           </div>
           {topLootItems.map((item) => (
-            <div key={item.name} className="grid grid-cols-5 gap-2 text-sm py-1 hover:bg-surface-hover">
+            <div
+              key={item.name}
+              className="grid grid-cols-5 gap-2 text-sm py-1 hover:bg-surface-hover"
+            >
               <div className="col-span-2 truncate" title={item.name}>
                 {item.name}
               </div>
@@ -959,7 +975,10 @@ export function Analytics() {
               <XAxis type="number" stroke="var(--color-text-muted)" />
               <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" width={150} />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                }}
                 labelStyle={{ color: '#F3F4F6' }}
                 formatter={(value: number) => value.toFixed(2)}
               />
@@ -1283,10 +1302,7 @@ export function Analytics() {
             </div>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {skillsByWeapon.slice(0, 10).map((item) => (
-                <div
-                  key={item.weapon}
-                  className="flex justify-between p-2 border-b border-border"
-                >
+                <div key={item.weapon} className="flex justify-between p-2 border-b border-border">
                   <span className="text-gray-300 truncate">{item.weapon}</span>
                   <span className="font-semibold text-purple-400">
                     {item.skillGains.toFixed(2)}

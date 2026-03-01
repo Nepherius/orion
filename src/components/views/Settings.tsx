@@ -99,7 +99,11 @@ export function Settings() {
           <label className="label">Color Scheme</label>
           <select
             value={settings.theme}
-            onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'high-contrast' | 'calypso' | 'arkadia' })}
+            onChange={(e) =>
+              updateSettings({
+                theme: e.target.value as 'dark' | 'light' | 'high-contrast' | 'calypso' | 'arkadia',
+              })
+            }
             className="input w-full"
           >
             <option value="dark">Dark</option>

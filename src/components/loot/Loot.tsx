@@ -312,10 +312,7 @@ export function Loot() {
             {topItems.map((item, idx) => {
               const share = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
               return (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2 bg-surface rounded"
-                >
+                <div key={idx} className="flex items-center justify-between p-2 bg-surface rounded">
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 flex items-center justify-center bg-gray-600 rounded font-bold text-sm">
                       #{idx + 1}

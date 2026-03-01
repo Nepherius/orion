@@ -10,8 +10,8 @@ pub struct DbState {
 
 // ========== SESSIONS ==========
 
-#[tauri::command]
-pub fn db_create_session(
+#[derive(serde::Deserialize)]
+pub struct CreateSessionParams {
     uuid: String,
     name: String,
     weapon: String,
@@ -26,13 +26,18 @@ pub fn db_create_session(
     armor_decay: f64,
     healing_cost: f64,
     other_costs: f64,
+}
+
+#[tauri::command]
+pub fn db_create_session(
+    params: CreateSessionParams,
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     let _result = conn.execute(
         "INSERT INTO sessions (uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs) 
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
-        params![uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, repair_cost, armor_decay, healing_cost, other_costs],
+        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.repair_cost, params.armor_decay, params.healing_cost, params.other_costs],
     )
     .map_err(|e| {
         let err_msg = format!("Failed to insert session: {}", e);
@@ -42,8 +47,8 @@ pub fn db_create_session(
     Ok(())
 }
 
-#[tauri::command]
-pub fn db_update_session(
+#[derive(serde::Deserialize)]
+pub struct UpdateSessionParams {
     uuid: String,
     name: Option<String>,
     weapon: Option<String>,
@@ -60,6 +65,11 @@ pub fn db_update_session(
     armor_decay: Option<f64>,
     healing_cost: Option<f64>,
     other_costs: Option<f64>,
+}
+
+#[tauri::command]
+pub fn db_update_session(
+    params: UpdateSessionParams,
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
@@ -68,63 +78,63 @@ pub fn db_update_session(
     let mut updates = Vec::new();
     let mut values: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
-    if let Some(v) = name {
+    if let Some(v) = params.name {
         updates.push("name = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = weapon {
+    if let Some(v) = params.weapon {
         updates.push("weapon = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = armor {
+    if let Some(v) = params.armor {
         updates.push("armor = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = location {
+    if let Some(v) = params.location {
         updates.push("location = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = end_time {
+    if let Some(v) = params.end_time {
         updates.push("end_time = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = status {
+    if let Some(v) = params.status {
         updates.push("status = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = paused_at {
+    if let Some(v) = params.paused_at {
         updates.push("paused_at = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = total_paused_ms {
+    if let Some(v) = params.total_paused_ms {
         updates.push("total_paused_ms = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = loadout_id {
+    if let Some(v) = params.loadout_id {
         updates.push("loadout_id = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = notes {
+    if let Some(v) = params.notes {
         updates.push("notes = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = ammo_cost {
+    if let Some(v) = params.ammo_cost {
         updates.push("ammo_cost = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = repair_cost {
+    if let Some(v) = params.repair_cost {
         updates.push("repair_cost = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = armor_decay {
+    if let Some(v) = params.armor_decay {
         updates.push("armor_decay = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = healing_cost {
+    if let Some(v) = params.healing_cost {
         updates.push("healing_cost = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = other_costs {
+    if let Some(v) = params.other_costs {
         updates.push("other_costs = ?");
         values.push(Box::new(v));
     }
@@ -133,7 +143,7 @@ pub fn db_update_session(
         return Ok(());
     }
 
-    values.push(Box::new(uuid.clone()));
+    values.push(Box::new(params.uuid.clone()));
     let query = format!("UPDATE sessions SET {} WHERE uuid = ?", updates.join(", "));
 
     conn.execute(
@@ -193,8 +203,8 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
 
 // ========== LOOT ITEMS ==========
 
-#[tauri::command]
-pub fn db_add_loot(
+#[derive(serde::Deserialize)]
+pub struct AddLootParams {
     uuid: String,
     session_uuid: String,
     name: String,
@@ -203,12 +213,17 @@ pub fn db_add_loot(
     markup: f64,
     total_value: f64,
     timestamp: i64,
+}
+
+#[tauri::command]
+pub fn db_add_loot(
+    params: AddLootParams,
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     conn.execute(
         "INSERT INTO loot_items (uuid, session_uuid, name, quantity, value, markup, total_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![uuid, session_uuid, name, quantity, value, markup, total_value, timestamp],
+        params![params.uuid, params.session_uuid, params.name, params.quantity, params.value, params.markup, params.total_value, params.timestamp],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -345,24 +360,36 @@ pub fn db_get_session_stats(
 ) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
 
-    // Get basic session info for cost calculations
-    let (ammo_cost, repair_cost, armor_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time): (f64, f64, f64, f64, f64, String, Option<i64>, Option<i64>, i64, Option<i64>) = conn
+    struct SessionStatsRow {
+        ammo_cost: f64,
+        repair_cost: f64,
+        armor_decay: f64,
+        healing_cost: f64,
+        other_costs: f64,
+        status: String,
+        paused_at: Option<i64>,
+        total_paused_ms: Option<i64>,
+        start_time: i64,
+        end_time: Option<i64>,
+    }
+
+    let session_info: SessionStatsRow = conn
         .query_row(
             "SELECT ammo_cost, repair_cost, armor_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time FROM sessions WHERE uuid = ?1",
             [&session_uuid],
             |row| {
-                Ok((
-                    row.get(0)?,
-                    row.get(1)?,
-                    row.get(2)?,
-                    row.get(3)?,
-                    row.get(4)?,
-                    row.get(5)?,
-                    row.get(6)?,
-                    row.get(7)?,
-                    row.get(8)?,
-                    row.get(9)?,
-                ))
+                Ok(SessionStatsRow {
+                    ammo_cost: row.get(0)?,
+                    repair_cost: row.get(1)?,
+                    armor_decay: row.get(2)?,
+                    healing_cost: row.get(3)?,
+                    other_costs: row.get(4)?,
+                    status: row.get(5)?,
+                    paused_at: row.get(6)?,
+                    total_paused_ms: row.get(7)?,
+                    start_time: row.get(8)?,
+                    end_time: row.get(9)?,
+                })
             },
         )
         .map_err(|e| e.to_string())?;
@@ -409,9 +436,23 @@ pub fn db_get_session_stats(
     let mut stmt = conn
         .prepare("SELECT COALESCE(SUM(CASE WHEN type = 'player_miss' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'player_dodge' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'player_evade' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'enemy_miss' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'enemy_evade' THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN type = 'enemy_dodge' THEN 1 ELSE 0 END), 0) FROM combat_events WHERE session_uuid = ?1")
         .map_err(|e| e.to_string())?;
-    let (misses, dodges, evades, enemy_misses, enemy_evades, enemy_dodges): (i64, i64, i64, i64, i64, i64) = stmt
+    let (misses, dodges, evades, enemy_misses, enemy_evades, enemy_dodges): (
+        i64,
+        i64,
+        i64,
+        i64,
+        i64,
+        i64,
+    ) = stmt
         .query_row([&session_uuid], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+                row.get(5)?,
+            ))
         })
         .unwrap_or((0, 0, 0, 0, 0, 0));
 
@@ -444,21 +485,27 @@ pub fn db_get_session_stats(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_millis() as i64;
-    let base_paused_ms = total_paused_ms.unwrap_or(0);
-    let active_pause_ms = if status == "paused" && paused_at.is_some() {
-        now - paused_at.unwrap()
+    let base_paused_ms = session_info.total_paused_ms.unwrap_or(0);
+    
+    let active_pause_ms = if session_info.status == "paused" {
+        if let Some(p_time) = session_info.paused_at {
+            now - p_time
+        } else {
+            0
+        }
     } else {
         0
     };
+    
     let total_paused = base_paused_ms + active_pause_ms;
-    let raw_duration = if let Some(end) = end_time {
-        end - start_time
+    let raw_duration = if let Some(end) = session_info.end_time {
+        end - session_info.start_time
     } else {
-        now - start_time
+        now - session_info.start_time
     };
     let duration_seconds = std::cmp::max(0, raw_duration - total_paused) / 1000;
 
-    let total_cost = ammo_cost + repair_cost + armor_decay + healing_cost + other_costs;
+    let total_cost = session_info.ammo_cost + session_info.repair_cost + session_info.armor_decay + session_info.healing_cost + session_info.other_costs;
     let returns = if total_cost > 0.0 {
         (total_loot / total_cost) * 100.0
     } else {

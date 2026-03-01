@@ -119,7 +119,10 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
                 <XAxis dataKey="index" stroke="var(--color-text-muted)" />
                 <YAxis stroke="var(--color-text-muted)" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
                   formatter={(value: number) => `${value.toFixed(2)} PED`}
                 />
                 <Legend />
@@ -146,9 +149,17 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
               <BarChart data={topLootItems} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis type="number" stroke="var(--color-text-muted)" />
-                <YAxis dataKey="name" type="category" width={120} stroke="var(--color-text-muted)" />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={120}
+                  stroke="var(--color-text-muted)"
+                />
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
                   formatter={(value: number) => [`${value.toFixed(2)} PED`, 'Value']}
                 />
                 <Bar dataKey="value" fill="#22C55E" />
@@ -173,7 +184,10 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
                 <XAxis dataKey="name" stroke="var(--color-text-muted)" />
                 <YAxis stroke="var(--color-text-muted)" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
                   formatter={(value: number) => [`${value.toFixed(2)} PED`, 'Cost']}
                 />
                 <Bar dataKey="value" fill="#EF4444" />

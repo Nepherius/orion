@@ -153,7 +153,10 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               <XAxis dataKey="name" stroke="var(--color-text-muted)" />
               <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid #374151' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid #374151',
+                }}
                 formatter={(value: number) => [`${formatSmallValue(value)} PED`, '']}
               />
               <Bar dataKey="value">
@@ -174,7 +177,10 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               <XAxis dataKey="name" stroke="var(--color-text-muted)" />
               <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid #374151' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid #374151',
+                }}
                 formatter={(value: number) => formatSmallValue(value)}
               />
               <Bar dataKey="value" fill="#3B82F6" />

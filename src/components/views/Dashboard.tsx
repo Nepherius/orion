@@ -217,7 +217,10 @@ export function Dashboard() {
                     stroke="#9CA3AF"
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid #374151' }}
+                    contentStyle={{
+                      backgroundColor: 'var(--color-surface)',
+                      border: '1px solid #374151',
+                    }}
                     formatter={(value: number) => [`${value}%`, 'Return Rate']}
                     labelFormatter={(label) => `Event #${label}`}
                   />

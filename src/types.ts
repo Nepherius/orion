@@ -44,14 +44,14 @@ export interface DamageEvent {
 export interface CombatEvent {
   id: string;
   type:
-  | 'hit'
-  | 'crit'
-  | 'player_miss'
-  | 'player_dodge'
-  | 'player_evade'
-  | 'enemy_miss'
-  | 'enemy_evade'
-  | 'enemy_dodge';
+    | 'hit'
+    | 'crit'
+    | 'player_miss'
+    | 'player_dodge'
+    | 'player_evade'
+    | 'enemy_miss'
+    | 'enemy_evade'
+    | 'enemy_dodge';
   timestamp: number;
 }
 

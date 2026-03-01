@@ -205,43 +205,47 @@ const loadJsonSetting = async <T>(key: string): Promise<T | null> => {
 
 const persistSessionToDb = async (session: HuntSession) => {
   await safeInvoke('db_create_session', {
-    uuid: session.id,
-    name: session.name,
-    weapon: session.weapon,
-    armor: session.armor ?? null,
-    location: session.location ?? null,
-    creature: session.creature ?? 'Unknown',
-    startTime: session.startTime,
-    status: session.status,
-    loadoutId: session.loadoutId ?? null,
-    notes: session.notes,
-    ammoCost: session.ammoCost,
-    repairCost: session.repairCost,
-    armorDecay: session.armorDecay,
-    healingCost: session.healingCost,
-    otherCosts: session.otherCosts,
+    params: {
+      uuid: session.id,
+      name: session.name,
+      weapon: session.weapon,
+      armor: session.armor ?? null,
+      location: session.location ?? null,
+      creature: session.creature ?? 'Unknown',
+      start_time: session.startTime,
+      status: session.status,
+      loadout_id: session.loadoutId ?? null,
+      notes: session.notes,
+      ammo_cost: session.ammoCost,
+      repair_cost: session.repairCost,
+      armor_decay: session.armorDecay,
+      healing_cost: session.healingCost,
+      other_costs: session.otherCosts,
+    }
   });
 };
 
 const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
   await safeInvoke('db_update_session', {
-    uuid: id,
-    name: updates.name,
-    weapon: updates.weapon,
-    armor: updates.armor,
-    location: updates.location,
-    creature: updates.creature,
-    endTime: updates.endTime,
-    status: updates.status,
-    pausedAt: updates.pausedAt,
-    totalPausedMs: updates.totalPausedMs,
-    loadoutId: updates.loadoutId,
-    notes: updates.notes,
-    ammoCost: updates.ammoCost,
-    repairCost: updates.repairCost,
-    armorDecay: updates.armorDecay,
-    healingCost: updates.healingCost,
-    otherCosts: updates.otherCosts,
+    params: {
+      uuid: id,
+      name: updates.name,
+      weapon: updates.weapon,
+      armor: updates.armor,
+      location: updates.location,
+      creature: updates.creature,
+      end_time: updates.endTime,
+      status: updates.status,
+      paused_at: updates.pausedAt,
+      total_paused_ms: updates.totalPausedMs,
+      loadout_id: updates.loadoutId,
+      notes: updates.notes,
+      ammo_cost: updates.ammoCost,
+      repair_cost: updates.repairCost,
+      armor_decay: updates.armorDecay,
+      healing_cost: updates.healingCost,
+      other_costs: updates.otherCosts,
+    }
   });
 };
 
@@ -387,12 +391,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'active' as const,
-                startTime: now,
-                pausedAt: undefined,
-                totalPausedMs: 0,
-              }
+              ...s,
+              status: 'active' as const,
+              startTime: now,
+              pausedAt: undefined,
+              totalPausedMs: 0,
+            }
             : s
         ),
         activeSessionId: id,
@@ -428,11 +432,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'active' as const,
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
+              ...s,
+              status: 'active' as const,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            }
             : s
         ),
         activeSessionId: id,
@@ -456,12 +460,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: state.sessions.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: 'completed' as const,
-                endTime: now,
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
+              ...s,
+              status: 'completed' as const,
+              endTime: now,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            }
             : s
         ),
         activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
@@ -501,14 +505,16 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     }));
 
     void safeInvoke('db_add_loot', {
-      uuid: newLoot.id,
-      sessionUuid: sessionId,
-      name: newLoot.name,
-      quantity: newLoot.quantity,
-      value: newLoot.value,
-      markup: newLoot.markup,
-      totalValue: newLoot.totalValue,
-      timestamp: newLoot.timestamp,
+      params: {
+        uuid: newLoot.id,
+        session_uuid: sessionId,
+        name: newLoot.name,
+        quantity: newLoot.quantity,
+        value: newLoot.value,
+        markup: newLoot.markup,
+        total_value: newLoot.totalValue,
+        timestamp: newLoot.timestamp,
+      }
     });
   },
 

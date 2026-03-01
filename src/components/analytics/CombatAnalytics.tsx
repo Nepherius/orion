@@ -129,9 +129,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Hit Distribution</h3>
           {hitDistribution.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-muted">
-              No combat data
-            </div>
+            <div className="h-64 flex items-center justify-center text-muted">No combat data</div>
           ) : (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -150,7 +148,10 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -161,9 +162,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Evasion Distribution</h3>
           {evasionDistribution.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-muted">
-              No evasion data
-            </div>
+            <div className="h-64 flex items-center justify-center text-muted">No evasion data</div>
           ) : (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -182,7 +181,10 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -198,7 +200,10 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
               <XAxis dataKey="name" stroke="var(--color-text-muted)" />
               <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                }}
                 formatter={(value: number) => value.toFixed(0)}
               />
               <Bar dataKey="value" fill="#3B82F6">
@@ -223,7 +228,10 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
               <XAxis dataKey="index" stroke="var(--color-text-muted)" />
               <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                }}
                 formatter={(value: number) => [value.toFixed(0), 'Damage']}
                 labelFormatter={(label) => `Hit #${label}`}
               />

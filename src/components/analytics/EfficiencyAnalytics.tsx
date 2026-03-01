@@ -126,7 +126,10 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
                 fillOpacity={0.6}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                }}
                 formatter={(value: number) => value.toFixed(1)}
               />
             </RadarChart>
@@ -142,7 +145,10 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
               <XAxis dataKey="name" stroke="var(--color-text-muted)" />
               <YAxis stroke="var(--color-text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                }}
                 formatter={(value: number) => value.toFixed(2)}
               />
               <Bar dataKey="value" fill="#3B82F6" />
