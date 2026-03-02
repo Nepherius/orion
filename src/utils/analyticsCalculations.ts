@@ -118,24 +118,27 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
  * Calculate ammo efficiency (cost per kill)
  */
 export function calculateAmmoCostPerKill(session: HuntSession): number {
-  if (session.stats.kills === 0) return 0;
-  return session.ammoCost / session.stats.kills;
+  if (!session?.stats?.kills) return 0;
+  const ammo = Number(session.ammoCost) || 0;
+  return ammo / session.stats.kills;
 }
 
 /**
  * Calculate weapon decay cost per kill
  */
 export function calculateWeaponDecayCostPerKill(session: HuntSession): number {
-  if (session.stats.kills === 0) return 0;
-  return session.weaponDecay / session.stats.kills;
+  if (!session?.stats?.kills) return 0;
+  const decay = Number(session.weaponDecay) || 0;
+  return decay / session.stats.kills;
 }
 
 /**
  * Calculate armor decay cost per kill
  */
 export function calculateArmorDecayCostPerKill(session: HuntSession): number {
-  if (session.stats.kills === 0) return 0;
-  return session.armorDecay / session.stats.kills;
+  if (!session?.stats?.kills) return 0;
+  const armor = Number(session.armorDecay) || 0;
+  return armor / session.stats.kills;
 }
 
 /**

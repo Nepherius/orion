@@ -76,6 +76,7 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             weapon TEXT,
             armor TEXT,
             location TEXT,
+            creature TEXT,
             notes TEXT,
             start_time INTEGER NOT NULL,
             end_time INTEGER,
@@ -215,7 +216,13 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
         CREATE INDEX IF NOT EXISTS idx_healing_session ON healing_events(session_uuid);
         CREATE INDEX IF NOT EXISTS idx_damage_taken_session ON damage_taken_events(session_uuid);
         COMMIT;",
-    )
+    )?;
+
+    // Handle migrations for existing databases that were created before certain columns were added
+    // Ignore errors for these as they will fail if the column already exists
+    let _ = conn.execute("ALTER TABLE sessions ADD COLUMN creature TEXT", []);
+
+    Ok(())
 }
 
 // Tauri commands

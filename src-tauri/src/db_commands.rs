@@ -17,6 +17,7 @@ pub struct CreateSessionParams {
     weapon: String,
     armor: Option<String>,
     location: Option<String>,
+    creature: String,
     start_time: i64,
     status: String,
     loadout_id: Option<String>,
@@ -35,9 +36,9 @@ pub fn db_create_session(
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     let _result = conn.execute(
-        "INSERT INTO sessions (uuid, name, weapon, armor, location, start_time, status, loadout_id, notes, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs) 
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
-        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.weapon_decay, params.armor_decay, params.healing_cost, params.other_costs],
+        "INSERT INTO sessions (uuid, name, weapon, armor, location, creature, start_time, status, loadout_id, notes, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.creature, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.weapon_decay, params.armor_decay, params.healing_cost, params.other_costs],
     )
     .map_err(|e| {
         let err_msg = format!("Failed to insert session: {}", e);
@@ -54,6 +55,7 @@ pub struct UpdateSessionParams {
     weapon: Option<String>,
     armor: Option<String>,
     location: Option<String>,
+    creature: Option<String>,
     end_time: Option<i64>,
     status: Option<String>,
     paused_at: Option<i64>,
@@ -92,6 +94,10 @@ pub fn db_update_session(
     }
     if let Some(v) = params.location {
         updates.push("location = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = params.creature {
+        updates.push("creature = ?");
         values.push(Box::new(v));
     }
     if let Some(v) = params.end_time {
@@ -167,7 +173,7 @@ pub fn db_delete_session(uuid: String, state: State<'_, DbState>) -> Result<(), 
 pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs FROM sessions ORDER BY start_time DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs, creature FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -190,6 +196,7 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
                 "armorDecay": row.get::<_, f64>(14)?,
                 "healingCost": row.get::<_, f64>(15)?,
                 "otherCosts": row.get::<_, f64>(16)?,
+                "creature": row.get::<_, Option<String>>(17)?,
             }))
         })
         .map_err(|e| e.to_string())?;
@@ -542,7 +549,7 @@ pub fn db_get_session_stats(
 pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs, notes, loadout_id FROM sessions ORDER BY start_time DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs, notes, loadout_id, creature FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -565,6 +572,7 @@ pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValu
                 "otherCosts": row.get::<_, f64>(14)?,
                 "notes": row.get::<_, String>(15)?,
                 "loadoutId": row.get::<_, Option<String>>(16)?,
+                "creature": row.get::<_, Option<String>>(17)?,
             }))
         })
         .map_err(|e| e.to_string())?;

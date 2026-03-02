@@ -123,7 +123,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
           <div>
             <h2 className="text-2xl font-bold mb-2">{session.name}</h2>
             <div className="flex items-center gap-4 text-sm text-muted">
-              <span>Weapon: {session.weapon}</span>
+              <span>Loadout: {session.weapon}</span>
               {session.armor && (
                 <>
                   <span>•</span>
@@ -134,6 +134,12 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
                 <>
                   <span>•</span>
                   <span>Location: {session.location}</span>
+                </>
+              )}
+              {session.creature && (
+                <>
+                  <span>•</span>
+                  <span>Creature: {session.creature}</span>
                 </>
               )}
             </div>
@@ -224,9 +230,8 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
           <div className="bg-surface rounded-lg p-4">
             <div className="text-sm text-muted mb-1">Returns</div>
             <div
-              className={`text-2xl font-bold flex items-center gap-2 ${
-                session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-              }`}
+              className={`text-2xl font-bold flex items-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+                }`}
             >
               {session.stats.returns >= 100 ? (
                 <TrendingUp className="w-5 h-5" />
@@ -398,11 +403,10 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
             {session.globals.map((global) => (
               <div
                 key={global.id}
-                className={`p-3 rounded-lg flex items-center justify-between ${
-                  global.isHoF
-                    ? 'bg-purple-900 border border-purple-600'
-                    : 'bg-yellow-900 border border-yellow-600'
-                }`}
+                className={`p-3 rounded-lg flex items-center justify-between ${global.isHoF
+                  ? 'bg-purple-900 border border-purple-600'
+                  : 'bg-yellow-900 border border-yellow-600'
+                  }`}
               >
                 <div>
                   <span className="font-medium">{global.creature}</span>

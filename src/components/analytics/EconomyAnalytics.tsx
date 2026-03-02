@@ -206,10 +206,6 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
               <span className="text-gray-300">Total Spend</span>
               <span className="font-bold text-red-400">{totalSpend.toFixed(2)} PED</span>
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400">Weapon Decay/Kill</span>
-              <span className="font-bold text-body">{weaponDecayCostPerKill.toFixed(2)}</span>
-            </div>
             <div className="flex justify-between p-3 bg-surface rounded">
               <span className="text-gray-300">Cost/Kill</span>
               <span className="font-bold text-body">{costPerKill.toFixed(2)} PED</span>
@@ -227,8 +223,8 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
             </div>
             <div className="flex justify-between p-3 bg-surface rounded">
               <div className="flex items-center gap-2 text-gray-300">
-                Repair Cost/Kill
-                <InfoTooltip tooltip="Weapon repair cost per kill" />
+                Weapon Decay/Kill
+                <InfoTooltip tooltip="Weapon decay cost per kill" />
               </div>
               <span className="font-bold text-body">{weaponDecayCostPerKill.toFixed(2)}</span>
             </div>

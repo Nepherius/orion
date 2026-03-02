@@ -1032,6 +1032,7 @@ export async function initializeStoreFromDb() {
         weapon: row.weapon ?? '',
         armor: row.armor,
         location: row.location,
+        creature: row.creature || row.name || 'Unknown',
         loot: [],
         skills: [],
         globals: [],

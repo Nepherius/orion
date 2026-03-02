@@ -40,17 +40,6 @@ export function ActiveSessionSidebar() {
           </div>
         </div>
 
-        {/* Loadout */}
-        {activeSession.location && (
-          <div>
-            <div className="text-xs text-muted uppercase mb-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-muted"></span>
-              Loadout
-            </div>
-            <div className="text-body">{activeSession.location}</div>
-          </div>
-        )}
-
         {/* My Globals */}
         <div className="flex-1">
           <div className="text-xs text-muted uppercase mb-3">My Globals</div>

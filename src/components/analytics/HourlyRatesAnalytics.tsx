@@ -157,6 +157,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                   backgroundColor: 'var(--color-surface)',
                   border: '1px solid #374151',
                 }}
+                itemStyle={{ color: 'var(--color-text)' }}
                 formatter={(value: number) => [`${formatSmallValue(value)} PED`, '']}
               />
               <Bar dataKey="value">
@@ -181,6 +182,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
                   backgroundColor: 'var(--color-surface)',
                   border: '1px solid #374151',
                 }}
+                itemStyle={{ color: 'var(--color-text)' }}
                 formatter={(value: number) => formatSmallValue(value)}
               />
               <Bar dataKey="value" fill="#3B82F6" />

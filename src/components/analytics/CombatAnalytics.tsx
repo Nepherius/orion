@@ -152,6 +152,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                     backgroundColor: 'var(--color-surface)',
                     border: '1px solid var(--color-border)',
                   }}
+                  itemStyle={{ color: 'var(--color-text)' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -185,6 +186,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                     backgroundColor: 'var(--color-surface)',
                     border: '1px solid var(--color-border)',
                   }}
+                  itemStyle={{ color: 'var(--color-text)' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -204,6 +206,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                   backgroundColor: 'var(--color-surface)',
                   border: '1px solid var(--color-border)',
                 }}
+                itemStyle={{ color: 'var(--color-text)' }}
                 formatter={(value: number) => value.toFixed(0)}
               />
               <Bar dataKey="value" fill="#3B82F6">
@@ -232,6 +235,7 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                   backgroundColor: 'var(--color-surface)',
                   border: '1px solid var(--color-border)',
                 }}
+                itemStyle={{ color: 'var(--color-text)' }}
                 formatter={(value: number) => [value.toFixed(0), 'Damage']}
                 labelFormatter={(label) => `Hit #${label}`}
               />

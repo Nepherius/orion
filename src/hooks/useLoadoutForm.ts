@@ -51,8 +51,8 @@ export function useLoadoutForm(editLoadout?: Loadout) {
     const loadoutData = {
       name: name || 'Unnamed Loadout',
       hotkey,
-      isPrimary: false,
-      favorite: false,
+      isPrimary: editLoadout ? editLoadout.isPrimary : false,
+      favorite: editLoadout ? editLoadout.favorite : false,
       weapon,
       amplifier,
       scope,

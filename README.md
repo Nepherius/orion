@@ -1,21 +1,18 @@
-# Orion Loot Tracker 🎯
+# Orion - Entropia Universe Loot Tracker 
 
 A modern **desktop application** for tracking Entropia Universe hunting sessions. Built with **Tauri** (Rust + React), Orion automatically monitors your chat log to detect globals, HoFs, and loot in real-time.
 
 **Key Features:**
 
-- 🔥 **Automatic loot detection** from chat log
-- 📊 **Real-time monitoring** with file watching
-- 💎 **Tiny file size** (~10-20 MB)
-- ⚡ **Fast & efficient** - Native performance with Rust backend
-- 💾 **Local-first** - All data stays on your machine
+- **Automatic loot detection** from chat log
+- **Real-time monitoring** with file watching
+- **Tiny file size** (~10-20 MB)
+- **Local-first** - All data stays on your machine
 
-Inspired by **Entropia Tally**, **Artemis**
-
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## ✨ Features
+## Features
 
 ### 🎯 Automatic Chat Log Parsing
 
@@ -74,7 +71,7 @@ Inspired by **Entropia Tally**, **Artemis**
 - Player name configuration
 - **Rust** 1.77.2+ ([install from rustup.rs](https://rustup.rs/))
 - **Node.js** 18+ and npm/yarn
-- **Linux/Windows/macOS** supported
+- **Linux/Windows** supported
 
 ### Installation
 
@@ -115,7 +112,7 @@ The built executable will be in `src-tauri/target/release/`
 4. **Create a hunting session** - Click "New Session" and select your new loadout.
 5. **Hunt!** - Globals, HoFs, and loot will be automatically detected from your chat log.
 
-## 📖 Usage
+## Usage
 
 ### Creating a Hunt Session
 
@@ -151,7 +148,7 @@ The built executable will be in `src-tauri/target/release/`
 3. Create templates for frequently looted items with default values
 4. Use these templates for quick loot entry
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Tauri 2** - Rust-powered desktop framework
 - **Rust** - Backend for file operations and parsing
@@ -162,16 +159,6 @@ The built executable will be in `src-tauri/target/release/`
 - **Zustand** - State management with local persistence
 - **Notify** - File system watching
 - **Regex** - Chat log parsing
-
-## 🚀 Future Enhancements
-
-- [x] Automatic chat log parsing
-- [x] Real-time file watching
-- [x] Global and HoF detection
-- [x] Analytics dashboard with charts
-- [x] Skills & attributes parsing from chat
-- [x] Overlay mode for in-game use
-- [ ] Team/shared loot detection
 
 ## 🤝 Contributing
 
@@ -202,4 +189,4 @@ For issues, questions, or suggestions, please use the GitLab issue tracker.
 
 ---
 
-_Orion Loot Tracker v0.1.0_
+_Orion Loot Tracker v1.1.0_
