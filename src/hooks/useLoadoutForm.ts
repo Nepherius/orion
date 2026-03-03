@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useHuntStore } from '../store';
-import { EquipmentItem, Loadout, LoadoutEnhancers } from '../types';
+import { EquipmentItem, Loadout } from '../types';
 import { calculateLoadoutStats } from '../utils/loadoutCalculations';
+import { calculateHealingCostPerUse } from '../utils/healingCost';
+
+interface MedicalToolEntry {
+  name: string;
+  type: string | null;
+  tt: number | null;
+  markup: number | null;
+  decay: number | null;
+  me: number | null;
+  mecost?: number | null;
+}
 
 export function useLoadoutForm(editLoadout?: Loadout) {
   const { createLoadout, updateLoadout } = useHuntStore();
@@ -14,16 +25,20 @@ export function useLoadoutForm(editLoadout?: Loadout) {
   const [sight, setSight] = useState<EquipmentItem | undefined>(editLoadout?.sight);
   const [sight2, setSight2] = useState<EquipmentItem | undefined>(editLoadout?.sight2);
   const [absorber, setAbsorber] = useState<EquipmentItem | undefined>(editLoadout?.absorber);
-  const [enhancers, setEnhancers] = useState<LoadoutEnhancers>(
-    editLoadout?.enhancers || { dmg: 0, acc: 0, rng: 0, eco: 0 }
-  );
-  const [hitProfession, setHitProfession] = useState(editLoadout?.hitProfession || 100);
-  const [dmgProfession, setDmgProfession] = useState(editLoadout?.dmgProfession || 100);
+  const [armor, setArmor] = useState(editLoadout?.armor || '');
+  const [medicalTool, setMedicalTool] = useState(editLoadout?.medicalTool || '');
+  const [medicalTT, setMedicalTT] = useState(editLoadout?.medicalTT || 0);
+  const [medicalMarkup, setMedicalMarkup] = useState(editLoadout?.medicalMarkup || 100);
+  const [medicalDecay, setMedicalDecay] = useState(editLoadout?.medicalDecay || 0);
+  const [medicalME, setMedicalME] = useState(editLoadout?.medicalME || 0);
+  const [medicalMEMarkup, setMedicalMEMarkup] = useState(editLoadout?.medicalMEMarkup || 120);
 
   const [weapons, setWeapons] = useState<EquipmentItem[]>([]);
   const [amps, setAmps] = useState<EquipmentItem[]>([]);
   const [scopes, setScopes] = useState<EquipmentItem[]>([]);
   const [sights, setSights] = useState<EquipmentItem[]>([]);
+  const [armorItems, setArmorItems] = useState<string[]>([]);
+  const [medicalTools, setMedicalTools] = useState<MedicalToolEntry[]>([]);
   const [absorbers, setAbsorbers] = useState<EquipmentItem[]>([]);
 
   useEffect(() => {
@@ -33,21 +48,54 @@ export function useLoadoutForm(editLoadout?: Loadout) {
       fetch('/assets/items/scopes.json').then((r) => r.json()),
       fetch('/assets/items/sights.json').then((r) => r.json()),
       fetch('/assets/items/absorbers.json').then((r) => r.json()),
-    ]).then(([weaponsData, ampsData, scopesData, sightsData, absorbersData]) => {
-      setWeapons(weaponsData);
-      setAmps(ampsData);
-      setScopes(scopesData);
-      setSights(sightsData);
-      setAbsorbers(absorbersData);
-    });
+      fetch('/assets/armor/armor.json').then((r) => r.json()),
+      fetch('/assets/medical/medicaltool.json').then((r) => r.json()),
+    ]).then(
+      ([weaponsData, ampsData, scopesData, sightsData, absorbersData, armorData, medicalData]) => {
+        setWeapons(weaponsData);
+        setAmps(ampsData);
+        setScopes(scopesData);
+        setSights(sightsData);
+        setAbsorbers(absorbersData);
+        setArmorItems(armorData?.armor || []);
+        setMedicalTools(medicalData?.medicalTools || []);
+      }
+    );
   }, []);
 
+  useEffect(() => {
+    if (!medicalTool) {
+      setMedicalTT(0);
+      setMedicalMarkup(100);
+      setMedicalDecay(0);
+      setMedicalME(0);
+      return;
+    }
+
+    const selectedTool = medicalTools.find((tool) => tool.name === medicalTool);
+    setMedicalTT(selectedTool?.tt ?? 0);
+    setMedicalMarkup(selectedTool?.markup ?? 100);
+    setMedicalDecay(selectedTool?.decay ?? 0);
+    setMedicalME(selectedTool?.me ?? 0);
+  }, [medicalTool, medicalTools]);
+
   const stats = useMemo(
-    () => calculateLoadoutStats(weapon, amplifier, scope, enhancers),
-    [weapon, amplifier, scope, enhancers]
+    () => calculateLoadoutStats(weapon, amplifier, scope, sight, sight2, absorber),
+    [weapon, amplifier, scope, sight, sight2, absorber]
   );
 
   const handleSave = () => {
+    const selectedMedicalTool = medicalTools.find((tool) => tool.name === medicalTool);
+    const isFapType = selectedMedicalTool?.type === 'fap';
+
+    const calculatedMECost = calculateHealingCostPerUse({
+      medicalDecay,
+      medicalMarkup,
+      medicalME,
+      medicalMEMarkup,
+      isFapType,
+    });
+
     const loadoutData = {
       name: name || 'Unnamed Loadout',
       hotkey,
@@ -59,9 +107,14 @@ export function useLoadoutForm(editLoadout?: Loadout) {
       sight,
       sight2,
       absorber,
-      enhancers,
-      hitProfession,
-      dmgProfession,
+      armor,
+      medicalTool,
+      medicalTT,
+      medicalMarkup,
+      medicalDecay,
+      medicalME,
+      medicalMEMarkup,
+      medicalMECost: calculatedMECost,
       ...stats,
     };
 
@@ -89,17 +142,27 @@ export function useLoadoutForm(editLoadout?: Loadout) {
     setSight2,
     absorber,
     setAbsorber,
-    enhancers,
-    setEnhancers,
-    hitProfession,
-    setHitProfession,
-    dmgProfession,
-    setDmgProfession,
+    armor,
+    setArmor,
+    medicalTool,
+    setMedicalTool,
+    medicalTT,
+    setMedicalTT,
+    medicalMarkup,
+    setMedicalMarkup,
+    medicalDecay,
+    setMedicalDecay,
+    medicalME,
+    setMedicalME,
+    medicalMEMarkup,
+    setMedicalMEMarkup,
     weapons,
     amps,
     scopes,
     sights,
     absorbers,
+    armorItems,
+    medicalTools,
     stats,
     handleSave,
   };

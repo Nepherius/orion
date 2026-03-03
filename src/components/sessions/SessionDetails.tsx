@@ -37,6 +37,9 @@ interface GroupedLootItem {
 
 export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsProps) {
   const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
+  const loadoutName = useHuntStore((state) =>
+    session?.loadoutId ? state.loadouts.find((l) => l.id === session.loadoutId)?.name : undefined
+  );
   const removeLoot = useHuntStore((state) => state.removeLoot);
   const deleteSession = useHuntStore((state) => state.deleteSession);
   const resumeSession = useHuntStore((state) => state.resumeSession);
@@ -122,26 +125,16 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold mb-2">{session.name}</h2>
-            <div className="flex items-center gap-4 text-sm text-muted">
-              <span>Loadout: {session.weapon}</span>
-              {session.armor && (
-                <>
-                  <span>•</span>
-                  <span>Armor: {session.armor}</span>
-                </>
-              )}
-              {session.location && (
-                <>
-                  <span>•</span>
-                  <span>Location: {session.location}</span>
-                </>
-              )}
-              {session.creature && (
-                <>
-                  <span>•</span>
-                  <span>Creature: {session.creature}</span>
-                </>
-              )}
+            <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-sm">
+              <div className="text-muted">Loadout</div>
+              <div className="text-muted">Weapon</div>
+              <div className="text-muted">Location</div>
+              <div className="text-muted">Creature</div>
+
+              <div className="font-medium text-gray-300">{loadoutName || '-'}</div>
+              <div className="font-medium text-gray-300">{session.weapon || '-'}</div>
+              <div className="font-medium text-gray-300">{session.location || '-'}</div>
+              <div className="font-medium text-gray-300">{session.creature || '-'}</div>
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -230,8 +223,9 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
           <div className="bg-surface rounded-lg p-4">
             <div className="text-sm text-muted mb-1">Returns</div>
             <div
-              className={`text-2xl font-bold flex items-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-                }`}
+              className={`text-2xl font-bold flex items-center gap-2 ${
+                session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+              }`}
             >
               {session.stats.returns >= 100 ? (
                 <TrendingUp className="w-5 h-5" />
@@ -403,10 +397,11 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
             {session.globals.map((global) => (
               <div
                 key={global.id}
-                className={`p-3 rounded-lg flex items-center justify-between ${global.isHoF
-                  ? 'bg-purple-900 border border-purple-600'
-                  : 'bg-yellow-900 border border-yellow-600'
-                  }`}
+                className={`p-3 rounded-lg flex items-center justify-between ${
+                  global.isHoF
+                    ? 'bg-purple-900 border border-purple-600'
+                    : 'bg-yellow-900 border border-yellow-600'
+                }`}
               >
                 <div>
                   <span className="font-medium">{global.creature}</span>

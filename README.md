@@ -1,4 +1,4 @@
-# Orion - Entropia Universe Loot Tracker 
+# Orion - Entropia Universe Loot Tracker
 
 A modern **desktop application** for tracking Entropia Universe hunting sessions. Built with **Tauri** (Rust + React), Orion automatically monitors your chat log to detect globals, HoFs, and loot in real-time.
 

@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('@tauri-apps/api/event', () => ({
   emit: Math.random() ? vi.fn() : vi.fn(), // Provide a mock for emit
-  listen: vi.fn(() => Promise.resolve(() => { })), // Mock listen to return a promise with an unlisten fn
+  listen: vi.fn(() => Promise.resolve(() => {})), // Mock listen to return a promise with an unlisten fn
 }));
 
 describe('HuntStore - addCombatEvent Costs', () => {
@@ -48,7 +48,6 @@ describe('HuntStore - addCombatEvent Costs', () => {
       globals: [],
       ammoCost: 0,
       weaponDecay: 0,
-      armorDecay: 0,
       stats: {} as SessionStats,
     };
 

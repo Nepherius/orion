@@ -64,7 +64,6 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
   const costBreakdown = [
     { name: 'Ammo', value: session.ammoCost },
     { name: 'Weapon Decay', value: session.weaponDecay },
-    { name: 'Armor', value: session.armorDecay },
     { name: 'Healing', value: session.healingCost },
     { name: 'Other', value: session.otherCosts },
   ].filter((item) => item.value > 0);
@@ -91,7 +90,9 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
 
         <div className="card p-6">
           <div className="text-sm text-muted mb-2">NET P/L</div>
-          <div className={`text - 3xl font - bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'} `}>
+          <div
+            className={`text - 3xl font - bold ${netPL >= 0 ? 'text-green-400' : 'text-red-400'} `}
+          >
             {netPL >= 0 ? <TrendingUp className="w-5 h-5 inline mr-2" /> : null}
             {netPL >= 0 ? '+' : ''}
             {netPL.toFixed(2)} PED

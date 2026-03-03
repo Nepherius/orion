@@ -28,7 +28,7 @@ export function Dashboard() {
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
   const isPageVisible = usePageVisibility();
-  
+
   type AnalyticsView =
     | 'performance'
     | 'economy'

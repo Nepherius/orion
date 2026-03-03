@@ -218,7 +218,6 @@ const persistSessionToDb = async (session: HuntSession) => {
       notes: session.notes,
       ammo_cost: session.ammoCost,
       weapon_decay: session.weaponDecay,
-      armor_decay: session.armorDecay,
       healing_cost: session.healingCost,
       other_costs: session.otherCosts,
     },
@@ -242,7 +241,6 @@ const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
       notes: updates.notes,
       ammo_cost: updates.ammoCost,
       weapon_decay: updates.weaponDecay,
-      armor_decay: updates.armorDecay,
       healing_cost: updates.healingCost,
       other_costs: updates.otherCosts,
     },
@@ -391,12 +389,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'active' as const,
-              startTime: now,
-              pausedAt: undefined,
-              totalPausedMs: 0,
-            }
+                ...s,
+                status: 'active' as const,
+                startTime: now,
+                pausedAt: undefined,
+                totalPausedMs: 0,
+              }
             : s
         ),
         activeSessionId: id,
@@ -424,7 +422,6 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         pausedAt: now,
         ammoCost: session.ammoCost,
         weaponDecay: session.weaponDecay,
-        armorDecay: session.armorDecay,
         healingCost: session.healingCost,
         otherCosts: session.otherCosts,
       });
@@ -444,11 +441,11 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'active' as const,
-              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-              pausedAt: undefined,
-            }
+                ...s,
+                status: 'active' as const,
+                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                pausedAt: undefined,
+              }
             : s
         ),
         activeSessionId: id,
@@ -462,7 +459,6 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         totalPausedMs: resumed.totalPausedMs,
         ammoCost: resumed.ammoCost,
         weaponDecay: resumed.weaponDecay,
-        armorDecay: resumed.armorDecay,
         healingCost: resumed.healingCost,
         otherCosts: resumed.otherCosts,
       });
@@ -477,12 +473,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         sessions: state.sessions.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: 'completed' as const,
-              endTime: now,
-              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-              pausedAt: undefined,
-            }
+                ...s,
+                status: 'completed' as const,
+                endTime: now,
+                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                pausedAt: undefined,
+              }
             : s
         ),
         activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
@@ -498,7 +494,6 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         // Flush running totals back to DB on end
         ammoCost: ended.ammoCost,
         weaponDecay: ended.weaponDecay,
-        armorDecay: ended.armorDecay,
         healingCost: ended.healingCost,
         otherCosts: ended.otherCosts,
       });
@@ -711,7 +706,9 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       // Find loadout by matching loadoutId or weapon name
       const loadout = session.loadoutId
         ? state.loadouts.find((l) => l.id === session.loadoutId)
-        : state.loadouts.find((l) => l.name === session.weapon);
+        : state.loadouts.find(
+            (l) => l.weapon?.Name === session.weapon || l.name === session.weapon
+          );
 
       // Apply shot costs only for player shots (hit/crit/player_miss/enemy_dodge/enemy_evade)
       const isPlayerAttack = ['hit', 'crit', 'player_miss', 'enemy_dodge', 'enemy_evade'].includes(
@@ -761,19 +758,34 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       timestamp: timestamp || Date.now(),
     };
 
-    set((state) => ({
-      sessions: state.sessions.map((s) => {
-        if (s.id === sessionId) {
-          const updated = {
-            ...s,
-            healingEvents: [...(s.healingEvents || []), newHealingEvent],
-          };
-          updated.stats = calculateStats(updated);
-          return updated;
-        }
-        return s;
-      }),
-    }));
+    set((state) => {
+      const session = state.sessions.find((s) => s.id === sessionId);
+      if (!session) {
+        return state;
+      }
+
+      const loadout = session.loadoutId
+        ? state.loadouts.find((l) => l.id === session.loadoutId)
+        : state.loadouts.find(
+            (l) => l.weapon?.Name === session.weapon || l.name === session.weapon
+          );
+      const healCostPerUse = loadout?.medicalMECost || 0;
+
+      return {
+        sessions: state.sessions.map((s) => {
+          if (s.id === sessionId) {
+            const updated = {
+              ...s,
+              healingEvents: [...(s.healingEvents || []), newHealingEvent],
+              healingCost: s.healingCost + healCostPerUse,
+            };
+            updated.stats = calculateStats(updated);
+            return updated;
+          }
+          return s;
+        }),
+      };
+    });
 
     void safeInvoke('db_add_healing_event', {
       uuid: newHealingEvent.id,
@@ -781,6 +793,13 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       amount: newHealingEvent.amount,
       timestamp: newHealingEvent.timestamp,
     });
+
+    const updatedSession = get().sessions.find((s) => s.id === sessionId);
+    if (updatedSession) {
+      void updateSessionInDb(sessionId, {
+        healingCost: updatedSession.healingCost,
+      });
+    }
   },
 
   addDamageTakenEvent: (sessionId, damage, isCritical = false, timestamp?: number) => {
@@ -1044,7 +1063,6 @@ export async function initializeStoreFromDb() {
         loadoutId: row.loadoutId,
         ammoCost: Number(row.ammoCost ?? 0),
         weaponDecay: Number(row.weaponDecay ?? 0),
-        armorDecay: Number(row.armorDecay ?? 0),
         healingCost: Number(row.healingCost ?? 0),
         otherCosts: Number(row.otherCosts ?? 0),
         stats: {
@@ -1056,12 +1074,14 @@ export async function initializeStoreFromDb() {
   );
 
   const hydratedLoadouts = (storedLoadouts ?? []).map((loadout) => {
-    const stats = calculateLoadoutStats(loadout.weapon, loadout.amplifier, loadout.scope, {
-      dmg: loadout.enhancers?.dmg || 0,
-      acc: loadout.enhancers?.acc || 0,
-      rng: loadout.enhancers?.rng || 0,
-      eco: loadout.enhancers?.eco || 0,
-    });
+    const stats = calculateLoadoutStats(
+      loadout.weapon,
+      loadout.amplifier,
+      loadout.scope,
+      loadout.sight,
+      loadout.sight2,
+      loadout.absorber
+    );
     return {
       ...loadout,
       costPerShot: stats.costPerShot,
@@ -1168,7 +1188,7 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
     isApplyingRemoteSync = false;
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)
-    return () => { };
+    return () => {};
   });
 
   // Listen for state request events (when a new window opens and needs current state)
@@ -1199,7 +1219,7 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
     });
   }).catch(() => {
     // Silently fail if listen is not available (dev environment)
-    return () => { };
+    return () => {};
   });
 
   // Listen for overlay session commands (overlay is read-only except pause/resume controls)
@@ -1250,7 +1270,7 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
     }
   ).catch(() => {
     // Silently fail if listen is not available (dev environment)
-    return () => { };
+    return () => {};
   });
 
   // If this window is loading with a delay (overlay), request current state from other windows

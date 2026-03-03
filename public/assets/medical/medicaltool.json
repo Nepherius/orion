@@ -1,0 +1,2705 @@
+{
+  "medicalTools": [
+    {
+      "name": "A.R.C. Improved First Aid Pack (L)",
+      "type": "fap",
+      "tt": 10,
+      "markup": 100,
+      "decay": 1,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "California FAP mk I  (L)",
+      "type": "fap",
+      "tt": 63,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "California FAP mk II (L)",
+      "type": "fap",
+      "tt": 77,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "California FAP mk III (C,L)",
+      "type": "fap",
+      "tt": 88,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "California FAP mk IV Elite (C)",
+      "type": "fap",
+      "tt": 96,
+      "markup": 100,
+      "decay": 6.61,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Cheap A$$ FAP-1(L)",
+      "type": "fap",
+      "tt": 4,
+      "markup": 100,
+      "decay": 1,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Chikara Ashvin HR1 (L)",
+      "type": "fap",
+      "tt": 4,
+      "markup": 100,
+      "decay": 0.63,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Chikara Ashvin HR2 (L)",
+      "type": "fap",
+      "tt": 11,
+      "markup": 100,
+      "decay": 1.15,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Coover's Personal Nurse",
+      "type": "fap",
+      "tt": 5000,
+      "markup": 100,
+      "decay": 2.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Default Initiate's Healing Kit (L)",
+      "type": null,
+      "tt": 9,
+      "markup": 100,
+      "decay": 0.01,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Divine Intervention Chip 1",
+      "type": "mindforce",
+      "tt": 150,
+      "markup": 100,
+      "decay": 1.5,
+      "me": 300,
+      "mecost": 0.015
+    },
+    {
+      "name": "E-Laj V1 (L)",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": 0.903,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Eir Mk 1",
+      "type": "fap",
+      "tt": 320,
+      "markup": 100,
+      "decay": 2.6,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Eir Mk 1 (L)",
+      "type": "fap",
+      "tt": 80,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Eir Mk 2",
+      "type": "fap",
+      "tt": 560,
+      "markup": 100,
+      "decay": 4.8,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Eir Mk 3",
+      "type": "fap",
+      "tt": 762,
+      "markup": 100,
+      "decay": 6.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Eir Mk 3 (L)",
+      "type": "fap",
+      "tt": 190,
+      "markup": 100,
+      "decay": 6.2,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-1000",
+      "type": "fap",
+      "tt": 20,
+      "markup": 100,
+      "decay": 2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2000",
+      "type": "fap",
+      "tt": 40,
+      "markup": 100,
+      "decay": 6,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2300",
+      "type": "fap",
+      "tt": 44,
+      "markup": 100,
+      "decay": 6,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2350",
+      "type": "fap",
+      "tt": 49,
+      "markup": 100,
+      "decay": 6,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2350, Adjusted",
+      "type": "fap",
+      "tt": 98,
+      "markup": 100,
+      "decay": 2.4,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2350, Improved",
+      "type": "fap",
+      "tt": 147,
+      "markup": 100,
+      "decay": 2.4,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2350, Modified",
+      "type": "fap",
+      "tt": 196,
+      "markup": 100,
+      "decay": 2.4,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2500",
+      "type": "fap",
+      "tt": 60,
+      "markup": 100,
+      "decay": 7,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2500 Deluxe",
+      "type": "fap",
+      "tt": 135,
+      "markup": 100,
+      "decay": 180,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2550",
+      "type": "fap",
+      "tt": 62,
+      "markup": 100,
+      "decay": 9,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2580",
+      "type": "fap",
+      "tt": 72,
+      "markup": 100,
+      "decay": 5.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2600",
+      "type": "fap",
+      "tt": 120,
+      "markup": 100,
+      "decay": 9,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2600, Adjusted",
+      "type": "fap",
+      "tt": 240,
+      "markup": 100,
+      "decay": 4.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2600, Improved",
+      "type": "fap",
+      "tt": 360,
+      "markup": 100,
+      "decay": 4.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2600, Modified",
+      "type": "fap",
+      "tt": 480,
+      "markup": 100,
+      "decay": 4.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2700",
+      "type": "fap",
+      "tt": 144,
+      "markup": 100,
+      "decay": 8.6,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "EMT Kit Ek-2900",
+      "type": "fap",
+      "tt": 140,
+      "markup": 100,
+      "decay": 15,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Fanoos Medical V1 (L)",
+      "type": "fap",
+      "tt": 0.05,
+      "markup": 100,
+      "decay": 0.05,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Fanoos Medical V2 (L)",
+      "type": "fap",
+      "tt": 17,
+      "markup": 100,
+      "decay": 1.393,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Fanoos Medical V3 (L)",
+      "type": "fap",
+      "tt": 24,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Fast Aid Pack, Adjusted, FEN Edition",
+      "type": "fap",
+      "tt": 230,
+      "markup": 100,
+      "decay": 1.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Fast Aid Pack, Adjusted, FEN Edition (L)",
+      "type": "fap",
+      "tt": 115,
+      "markup": 100,
+      "decay": 1.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Fast Aid Pack, Improved, FEN Edition",
+      "type": "fap",
+      "tt": 280,
+      "markup": 100,
+      "decay": 2.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Fast Aid Pack, Improved, TWEN Edition",
+      "type": "fap",
+      "tt": 280,
+      "markup": 100,
+      "decay": 2,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Fast Aid Pack, Modified, FEN Edition",
+      "type": "fap",
+      "tt": 330,
+      "markup": 100,
+      "decay": 1.7,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Fast Aid Pack, Modified, FEN Edition (L)",
+      "type": "fap",
+      "tt": 150,
+      "markup": 100,
+      "decay": 1.7,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Fast Aid Pack, Modified, TWEN Edition",
+      "type": "fap",
+      "tt": 330,
+      "markup": 100,
+      "decay": 1,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "First Gen Resurrect Chip 8",
+      "type": "mindforce",
+      "tt": 389.4,
+      "markup": 100,
+      "decay": 23.52,
+      "me": 1200,
+      "mecost": 0.0296
+    },
+    {
+      "name": "Frontier First Aid Pack, Adjusted",
+      "type": "fap",
+      "tt": 10,
+      "markup": 100,
+      "decay": 2,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-10 (L)",
+      "type": "fap",
+      "tt": 31,
+      "markup": 100,
+      "decay": 2.002,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-14 (L)",
+      "type": "fap",
+      "tt": 44,
+      "markup": 100,
+      "decay": 2.879,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-18 (L)",
+      "type": "fap",
+      "tt": 57,
+      "markup": 100,
+      "decay": 3.382,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-2 (L)",
+      "type": "fap",
+      "tt": 5,
+      "markup": 100,
+      "decay": 0.75,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-22 (L)",
+      "type": "fap",
+      "tt": 70,
+      "markup": 100,
+      "decay": 3.885,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-22 Smuggler",
+      "type": "fap",
+      "tt": 210,
+      "markup": 100,
+      "decay": 4.01,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-26 (L)",
+      "type": "fap",
+      "tt": 83,
+      "markup": 100,
+      "decay": 4.389,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-30 (L)",
+      "type": "fap",
+      "tt": 96,
+      "markup": 100,
+      "decay": 5.019,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-35 (L)",
+      "type": "fap",
+      "tt": 109,
+      "markup": 100,
+      "decay": 5.524,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-40 (L)",
+      "type": "fap",
+      "tt": 122,
+      "markup": 100,
+      "decay": 6.029,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-40 Smuggler",
+      "type": "fap",
+      "tt": 330,
+      "markup": 100,
+      "decay": 0.591,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-45 (L)",
+      "type": "fap",
+      "tt": 135,
+      "markup": 100,
+      "decay": 6.41,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-55 (L)",
+      "type": "fap",
+      "tt": 161,
+      "markup": 100,
+      "decay": 7.17,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-6 (L)",
+      "type": "fap",
+      "tt": 18,
+      "markup": 100,
+      "decay": 1.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-60 (L)",
+      "type": "fap",
+      "tt": 174,
+      "markup": 100,
+      "decay": 7.55,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-60 Smuggler",
+      "type": "fap",
+      "tt": 440,
+      "markup": 100,
+      "decay": 7.298,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO Combat FAP-65 (L)",
+      "type": "fap",
+      "tt": 187,
+      "markup": 100,
+      "decay": 7.929,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP Improved",
+      "type": "fap",
+      "tt": 215,
+      "markup": 100,
+      "decay": 2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP Trainer (L)",
+      "type": "fap",
+      "tt": 1,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-10 (L)",
+      "type": "fap",
+      "tt": 35,
+      "markup": 100,
+      "decay": 2.625,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-14 (L)",
+      "type": "fap",
+      "tt": 50,
+      "markup": 100,
+      "decay": 3.678,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-14 Smuggler",
+      "type": "fap",
+      "tt": 240,
+      "markup": 100,
+      "decay": 3.941,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-18 (L)",
+      "type": "fap",
+      "tt": 65,
+      "markup": 100,
+      "decay": 4.381,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-2 (L)",
+      "type": "fap",
+      "tt": 5,
+      "markup": 100,
+      "decay": 0.875,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-2 Smuggler",
+      "type": "fap",
+      "tt": 100,
+      "markup": 100,
+      "decay": 1.75,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-22 (L)",
+      "type": "fap",
+      "tt": 80,
+      "markup": 100,
+      "decay": 5.084,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-26 (L)",
+      "type": "fap",
+      "tt": 95,
+      "markup": 100,
+      "decay": 5.786,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-30 (L)",
+      "type": "fap",
+      "tt": 110,
+      "markup": 100,
+      "decay": 6.488,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-30 Smuggler",
+      "type": "fap",
+      "tt": 400,
+      "markup": 100,
+      "decay": 6.313,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-35 (L)",
+      "type": "fap",
+      "tt": 125,
+      "markup": 100,
+      "decay": 7.191,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-40 (L)",
+      "type": "fap",
+      "tt": 140,
+      "markup": 100,
+      "decay": 7.807,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-45 (L)",
+      "type": "fap",
+      "tt": 155,
+      "markup": 100,
+      "decay": 8.422,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-50 (L)",
+      "type": "fap",
+      "tt": 170,
+      "markup": 100,
+      "decay": 8.954,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-50 Smuggler",
+      "type": "fap",
+      "tt": 560,
+      "markup": 100,
+      "decay": 8.339,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-55 (L)",
+      "type": "fap",
+      "tt": 185,
+      "markup": 100,
+      "decay": 9.485,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-6 (L)",
+      "type": "fap",
+      "tt": 20,
+      "markup": 100,
+      "decay": 1.923,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-60 (L)",
+      "type": "fap",
+      "tt": 200,
+      "markup": 100,
+      "decay": 10.014,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-65 (L)",
+      "type": "fap",
+      "tt": 215,
+      "markup": 100,
+      "decay": 10.544,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "GYRO FAP-TT (L)",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": 0.903,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "H.E.A.R.T. M1 (L)",
+      "type": "fap",
+      "tt": 35,
+      "markup": 100,
+      "decay": 2.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "H.E.A.R.T. M7 (L)",
+      "type": "fap",
+      "tt": 50,
+      "markup": 100,
+      "decay": 3.75,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Adventurer",
+      "type": "fap",
+      "tt": 19992.2,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Adventurer (L)",
+      "type": "fap",
+      "tt": 248.5,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Adventurer, Adjusted (L)",
+      "type": "fap",
+      "tt": 372.75,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc M-450",
+      "type": "fap",
+      "tt": 12223.2,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc M-450 (L)",
+      "type": "fap",
+      "tt": 148.1,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc M-450, Adjusted",
+      "type": "fap",
+      "tt": 18779,
+      "markup": 100,
+      "decay": 9.212,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc M-450, Adjusted (L)",
+      "type": "fap",
+      "tt": 222.15,
+      "markup": 100,
+      "decay": 9.21,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc M-600",
+      "type": "fap",
+      "tt": 18500,
+      "markup": 100,
+      "decay": 13.421,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc M-600 (L)",
+      "type": "fap",
+      "tt": 208.2,
+      "markup": 100,
+      "decay": 13.421,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc M-600, Adjusted",
+      "type": "fap",
+      "tt": 19606.8,
+      "markup": 100,
+      "decay": 11.743,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc M-600, Adjusted (L)",
+      "type": "fap",
+      "tt": 312.3,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Mayhem",
+      "type": "fap",
+      "tt": 40,
+      "markup": 100,
+      "decay": 5.35,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Mayhem, Adjusted",
+      "type": "fap",
+      "tt": 50,
+      "markup": 100,
+      "decay": 5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Mayhem, Augmented",
+      "type": "fap",
+      "tt": 80,
+      "markup": 100,
+      "decay": 9,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Mayhem, Improved",
+      "type": "fap",
+      "tt": 60,
+      "markup": 100,
+      "decay": 8,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Mayhem, Modified",
+      "type": "fap",
+      "tt": 70,
+      "markup": 100,
+      "decay": 8,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc Mayhem, Perfected",
+      "type": "fap",
+      "tt": 90,
+      "markup": 100,
+      "decay": 10,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-120 (L)",
+      "type": "fap",
+      "tt": 117.5,
+      "markup": 100,
+      "decay": 9.023,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-20",
+      "type": "fap",
+      "tt": 750.25,
+      "markup": 100,
+      "decay": 3.159,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-20 (L)",
+      "type": "fap",
+      "tt": 34.8,
+      "markup": 100,
+      "decay": 3.159,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-20, Adjusted",
+      "type": "fap",
+      "tt": 1280.1,
+      "markup": 100,
+      "decay": 2.764,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-20, Adjusted (L)",
+      "type": "fap",
+      "tt": 52.2,
+      "markup": 100,
+      "decay": 2.764,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-20, Adjusted, SGA Edition",
+      "type": "fap",
+      "tt": 128,
+      "markup": 100,
+      "decay": 3.3,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-50",
+      "type": "fap",
+      "tt": 4056.44,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-50 (L)",
+      "type": "fap",
+      "tt": 75,
+      "markup": 100,
+      "decay": 6.355,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-50, Adjusted",
+      "type": "fap",
+      "tt": 6787.59,
+      "markup": 100,
+      "decay": 5.56,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-50, Adjusted (L)",
+      "type": "fap",
+      "tt": 112.5,
+      "markup": 100,
+      "decay": 5.56,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-50, Adjusted, SGA Edition",
+      "type": "fap",
+      "tt": 232,
+      "markup": 100,
+      "decay": 5.561,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-80",
+      "type": "fap",
+      "tt": 7555.81,
+      "markup": 100,
+      "decay": 8.421,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-80 (L)",
+      "type": "fap",
+      "tt": 107.5,
+      "markup": 100,
+      "decay": 8.422,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-80, Adjusted",
+      "type": "fap",
+      "tt": 12600.4,
+      "markup": 100,
+      "decay": 7.368,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Hedoc SK-80, Adjusted (L)",
+      "type": "fap",
+      "tt": 161.25,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Herb Box",
+      "type": "fap",
+      "tt": 5,
+      "markup": 100,
+      "decay": 1.305,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "I0-Pulse Unit",
+      "type": "fap",
+      "tt": 4,
+      "markup": 100,
+      "decay": 1.487,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Imperium Fast Fap v1 (L)",
+      "type": "fap",
+      "tt": 36,
+      "markup": 100,
+      "decay": 2.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Imperium Fast Fap v2 (L)",
+      "type": "fap",
+      "tt": 72,
+      "markup": 100,
+      "decay": 4.4,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Imperium Fast Fap v3 (L)",
+      "type": "fap",
+      "tt": 108,
+      "markup": 100,
+      "decay": 7,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Imperium Reliable Fap v1 (L)",
+      "type": "fap",
+      "tt": 25,
+      "markup": 100,
+      "decay": 1.4,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Imperium Reliable Fap v2 (L)",
+      "type": "fap",
+      "tt": 50,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Imperium Reliable Fap v3 (L)",
+      "type": "fap",
+      "tt": 75,
+      "markup": 100,
+      "decay": 4.2,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Imperium Trainee F.A.P. (L)",
+      "type": "fap",
+      "tt": 1,
+      "markup": 100,
+      "decay": 2.1,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Improved GYRO, Gold Rush Edition",
+      "type": "fap",
+      "tt": 215,
+      "markup": 100,
+      "decay": 2,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Mayhem Restoration Chip, Modified",
+      "type": "mindforce",
+      "tt": 90,
+      "markup": 100,
+      "decay": 2.94,
+      "me": 260,
+      "mecost": 0.021308
+    },
+    {
+      "name": "Medkit (L)",
+      "type": "fap",
+      "tt": 0.5,
+      "markup": 100,
+      "decay": 0.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Mulmun Vigg's FAP (L)",
+      "type": "fap",
+      "tt": 123,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Neff's Stim Pack",
+      "type": "fap",
+      "tt": 401,
+      "markup": 100,
+      "decay": 9.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE FA Series 001 (L)",
+      "type": "fap",
+      "tt": 110,
+      "markup": 100,
+      "decay": 9.307,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE FA Series 002 (L)",
+      "type": "fap",
+      "tt": 123,
+      "markup": 100,
+      "decay": 10.331,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE FA Series 003 (L)",
+      "type": "fap",
+      "tt": 132,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE FA Series 004 (L)",
+      "type": "fap",
+      "tt": 145,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE FA Series 007 (L)",
+      "type": "fap",
+      "tt": 185,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 001 (L)",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": 0.857,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 002 (L)",
+      "type": "fap",
+      "tt": 12.5,
+      "markup": 100,
+      "decay": 1.237,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 003 (L)",
+      "type": "fap",
+      "tt": 16,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 004 (L)",
+      "type": "fap",
+      "tt": 19.5,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 005 (L)",
+      "type": "fap",
+      "tt": 21.5,
+      "markup": 100,
+      "decay": 2.187,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 006 (L)",
+      "type": "fap",
+      "tt": 26,
+      "markup": 100,
+      "decay": 2.569,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 007 (L)",
+      "type": "fap",
+      "tt": 30,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 008 (L)",
+      "type": "fap",
+      "tt": 41,
+      "markup": 100,
+      "decay": 3.81,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 009 (L)",
+      "type": "fap",
+      "tt": 51.5,
+      "markup": 100,
+      "decay": 4.53,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE HK Series 010 (L)",
+      "type": "fap",
+      "tt": 57,
+      "markup": 100,
+      "decay": 5.303,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE LS Series 001 (L)",
+      "type": "fap",
+      "tt": 25,
+      "markup": 100,
+      "decay": 90,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE LS Series 002 (L)",
+      "type": "fap",
+      "tt": 27,
+      "markup": 100,
+      "decay": 100,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE LS Series 003 (L)",
+      "type": "fap",
+      "tt": 29,
+      "markup": 100,
+      "decay": 110,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE LS Series 004 (L)",
+      "type": "fap",
+      "tt": 31,
+      "markup": 100,
+      "decay": 120,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE LS Series 005 (L)",
+      "type": "fap",
+      "tt": 33,
+      "markup": 100,
+      "decay": 130,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE LS Series 008 (L)",
+      "type": "fap",
+      "tt": 39,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE LS Series 009 (L)",
+      "type": "fap",
+      "tt": 41,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE LS Series 010 (L)",
+      "type": "fap",
+      "tt": 43,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NEVERDIE XMAS F.A.P",
+      "type": "fap",
+      "tt": 2,
+      "markup": 100,
+      "decay": 12,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "NI Basic Healing Kit (L)",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "NI Herbbox New Settler Issue (L)",
+      "type": "fap",
+      "tt": 0.05,
+      "markup": 100,
+      "decay": 0.05,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "O.S. F.A.P. M1 (L)",
+      "type": "fap",
+      "tt": 140,
+      "markup": 100,
+      "decay": 10,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "O.S. F.A.P. M7 (L)",
+      "type": "fap",
+      "tt": 200,
+      "markup": 100,
+      "decay": 14.943,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Official Medical Kit",
+      "type": "fap",
+      "tt": 100,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Official Regeneration Chip",
+      "type": "mindforce",
+      "tt": 27,
+      "markup": 100,
+      "decay": null,
+      "me": 100,
+      "mecost": 0
+    },
+    {
+      "name": "Official Regeneration Field Chip",
+      "type": "mindforce",
+      "tt": 34,
+      "markup": 100,
+      "decay": null,
+      "me": 100,
+      "mecost": 0
+    },
+    {
+      "name": "Official Resurrection Chip",
+      "type": "mindforce",
+      "tt": 38.9,
+      "markup": 100,
+      "decay": null,
+      "me": 100,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-10",
+      "type": "fap",
+      "tt": 30,
+      "markup": 100,
+      "decay": 3,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-110",
+      "type": "fap",
+      "tt": 126,
+      "markup": 100,
+      "decay": 8,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-15",
+      "type": "fap",
+      "tt": 33,
+      "markup": 100,
+      "decay": 3.3,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-18",
+      "type": "fap",
+      "tt": 35,
+      "markup": 100,
+      "decay": 4.8,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-18, SGA Edition",
+      "type": "fap",
+      "tt": 35,
+      "markup": 100,
+      "decay": 5.169,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-28",
+      "type": "fap",
+      "tt": 40,
+      "markup": 100,
+      "decay": 3.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-35",
+      "type": "fap",
+      "tt": 41,
+      "markup": 100,
+      "decay": 3.8,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-5",
+      "type": "fap",
+      "tt": 15,
+      "markup": 100,
+      "decay": 1,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-50",
+      "type": "fap",
+      "tt": 50,
+      "markup": 100,
+      "decay": 4,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-50, SGA Edition",
+      "type": "fap",
+      "tt": 50,
+      "markup": 100,
+      "decay": 4,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-69",
+      "type": "fap",
+      "tt": 69,
+      "markup": 100,
+      "decay": 5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-69, SGA Edition",
+      "type": "fap",
+      "tt": 69,
+      "markup": 100,
+      "decay": 4.8,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-80",
+      "type": "fap",
+      "tt": 92,
+      "markup": 100,
+      "decay": 6,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-83",
+      "type": "fap",
+      "tt": 101,
+      "markup": 100,
+      "decay": 8.8,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid FAP-90",
+      "type": "fap",
+      "tt": 120,
+      "markup": 100,
+      "decay": 7,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid Pack, Adjusted",
+      "type": "fap",
+      "tt": 230,
+      "markup": 100,
+      "decay": 2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid Pack, Improved",
+      "type": "fap",
+      "tt": 280,
+      "markup": 100,
+      "decay": 2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid Pack, Improved, SGA Edition",
+      "type": "fap",
+      "tt": 280,
+      "markup": 100,
+      "decay": 2.083,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid Pack, Modified",
+      "type": "fap",
+      "tt": 330,
+      "markup": 100,
+      "decay": 1,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Omegaton Fast Aid Pack, Modified, SGA Edition",
+      "type": "fap",
+      "tt": 330,
+      "markup": 100,
+      "decay": 1,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Ozpyn Factorial F.A.P CE (L)",
+      "type": "fap",
+      "tt": 120,
+      "markup": 100,
+      "decay": 6.625,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Ozpyn Factorial F.A.P DE (L)",
+      "type": "fap",
+      "tt": 100,
+      "markup": 100,
+      "decay": 7.1,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Ozpyn Regenerative F.A.P. CE (L)",
+      "type": "fap",
+      "tt": 130,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Ozpyn Regenerative F.A.P. DE (L)",
+      "type": "fap",
+      "tt": 120,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Ozpyn S.E. F.A.P. (L)",
+      "type": "fap",
+      "tt": 175,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Punk Trauma Pack (L)",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": 0.903,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Rakzum's Pouch (L)",
+      "type": "mindforce",
+      "tt": 1.8,
+      "markup": 100,
+      "decay": 10,
+      "me": 2400,
+      "mecost": 0.014167
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank I",
+      "type": "fap",
+      "tt": 14,
+      "markup": 100,
+      "decay": 2.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank II",
+      "type": "fap",
+      "tt": 14,
+      "markup": 100,
+      "decay": 2.35,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank III",
+      "type": "fap",
+      "tt": 14,
+      "markup": 100,
+      "decay": 2.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank IV",
+      "type": "fap",
+      "tt": 14,
+      "markup": 100,
+      "decay": 2.05,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank IX",
+      "type": "fap",
+      "tt": 80,
+      "markup": 100,
+      "decay": 3.16,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank V",
+      "type": "fap",
+      "tt": 14,
+      "markup": 100,
+      "decay": 1.9,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank VI",
+      "type": "fap",
+      "tt": 14,
+      "markup": 100,
+      "decay": 1.75,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank VII",
+      "type": "fap",
+      "tt": 60,
+      "markup": 100,
+      "decay": 2.15,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Refurbished H.E.A.R.T. Rank VIII",
+      "type": "fap",
+      "tt": 70,
+      "markup": 100,
+      "decay": 2.7,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Regeneration Chip 1",
+      "type": "mindforce",
+      "tt": 15,
+      "markup": 100,
+      "decay": 0.712,
+      "me": 107,
+      "mecost": 0.016654
+    },
+    {
+      "name": "Regeneration Chip 1 (L)",
+      "type": "mindforce",
+      "tt": 7,
+      "markup": 100,
+      "decay": 0.676,
+      "me": 102,
+      "mecost": 0.016627
+    },
+    {
+      "name": "Regeneration Chip 10",
+      "type": "mindforce",
+      "tt": 240,
+      "markup": 100,
+      "decay": 3.468,
+      "me": 520,
+      "mecost": 0.016669
+    },
+    {
+      "name": "Regeneration Chip 10 (L)",
+      "type": "mindforce",
+      "tt": 35,
+      "markup": 100,
+      "decay": 3.294,
+      "me": 494,
+      "mecost": 0.016668
+    },
+    {
+      "name": "Regeneration Chip 11",
+      "type": "mindforce",
+      "tt": 272,
+      "markup": 100,
+      "decay": 3.744,
+      "me": 573,
+      "mecost": 0.016534
+    },
+    {
+      "name": "Regeneration Chip 11 (L)",
+      "type": "mindforce",
+      "tt": 41,
+      "markup": 100,
+      "decay": null,
+      "me": 544,
+      "mecost": 0
+    },
+    {
+      "name": "Regeneration Chip 2",
+      "type": "mindforce",
+      "tt": 30,
+      "markup": 100,
+      "decay": 1.068,
+      "me": 160,
+      "mecost": 0.016675
+    },
+    {
+      "name": "Regeneration Chip 2 (L)",
+      "type": "mindforce",
+      "tt": 11,
+      "markup": 100,
+      "decay": 1.015,
+      "me": 152,
+      "mecost": 0.016678
+    },
+    {
+      "name": "Regeneration Chip 3",
+      "type": "mindforce",
+      "tt": 35,
+      "markup": 100,
+      "decay": 1.42,
+      "me": 213,
+      "mecost": 0.016667
+    },
+    {
+      "name": "Regeneration Chip 3 (L)",
+      "type": "mindforce",
+      "tt": 14.5,
+      "markup": 100,
+      "decay": 1.349,
+      "me": 202,
+      "mecost": 0.016678
+    },
+    {
+      "name": "Regeneration Chip 4",
+      "type": "mindforce",
+      "tt": 37,
+      "markup": 100,
+      "decay": 1.69,
+      "me": 254,
+      "mecost": 0.016654
+    },
+    {
+      "name": "Regeneration Chip 4 (L)",
+      "type": "mindforce",
+      "tt": 18.5,
+      "markup": 100,
+      "decay": 1.605,
+      "me": 241,
+      "mecost": 0.01666
+    },
+    {
+      "name": "Regeneration Chip 5",
+      "type": "mindforce",
+      "tt": 49,
+      "markup": 100,
+      "decay": 1.956,
+      "me": 293,
+      "mecost": 0.016676
+    },
+    {
+      "name": "Regeneration Chip 5 (L)",
+      "type": "mindforce",
+      "tt": 20.5,
+      "markup": 100,
+      "decay": 1.857,
+      "me": 278,
+      "mecost": 0.01668
+    },
+    {
+      "name": "Regeneration Chip 6",
+      "type": "mindforce",
+      "tt": 58,
+      "markup": 100,
+      "decay": 2.22,
+      "me": 333,
+      "mecost": 0.016667
+    },
+    {
+      "name": "Regeneration Chip 6 (L)",
+      "type": "mindforce",
+      "tt": 22.5,
+      "markup": 100,
+      "decay": 2.108,
+      "me": 316,
+      "mecost": 0.016671
+    },
+    {
+      "name": "Regeneration Chip 7",
+      "type": "mindforce",
+      "tt": 154,
+      "markup": 100,
+      "decay": 2.479,
+      "me": 372,
+      "mecost": 0.016664
+    },
+    {
+      "name": "Regeneration Chip 7 (L)",
+      "type": "mindforce",
+      "tt": 25,
+      "markup": 100,
+      "decay": 2.32,
+      "me": 353,
+      "mecost": 0.016572
+    },
+    {
+      "name": "Regeneration Chip 8",
+      "type": "mindforce",
+      "tt": 179,
+      "markup": 100,
+      "decay": 2.8,
+      "me": 420,
+      "mecost": 0.016667
+    },
+    {
+      "name": "Regeneration Chip 9 (L)",
+      "type": "mindforce",
+      "tt": null,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Regeneration Field Chip 1 (L)",
+      "type": "mindforce",
+      "tt": 8,
+      "markup": 100,
+      "decay": 3.301,
+      "me": 1334,
+      "mecost": 0.012475
+    },
+    {
+      "name": "Regeneration Field Chip 2 (L)",
+      "type": "mindforce",
+      "tt": 11.7,
+      "markup": 100,
+      "decay": null,
+      "me": 1608,
+      "mecost": 0
+    },
+    {
+      "name": "Regeneration Field Chip 3 (L)",
+      "type": "mindforce",
+      "tt": 15.5,
+      "markup": 100,
+      "decay": null,
+      "me": 1719,
+      "mecost": 0
+    },
+    {
+      "name": "Regeneration Field Chip 8",
+      "type": "mindforce",
+      "tt": 51,
+      "markup": 100,
+      "decay": null,
+      "me": 2640,
+      "mecost": 0
+    },
+    {
+      "name": "Restoration Chip 1 (L)",
+      "type": "mindforce",
+      "tt": 4.5,
+      "markup": 100,
+      "decay": 0.49,
+      "me": 45,
+      "mecost": 0.020889
+    },
+    {
+      "name": "Restoration Chip 10 (L)",
+      "type": "mindforce",
+      "tt": 12,
+      "markup": 100,
+      "decay": 1.2,
+      "me": 120,
+      "mecost": 0.02
+    },
+    {
+      "name": "Restoration Chip 11 (L)",
+      "type": "mindforce",
+      "tt": 12.9,
+      "markup": 100,
+      "decay": 1.29,
+      "me": 129,
+      "mecost": 0.02
+    },
+    {
+      "name": "Restoration Chip 12 (L)",
+      "type": "mindforce",
+      "tt": 13.7,
+      "markup": 100,
+      "decay": 1.37,
+      "me": 137,
+      "mecost": 0.02
+    },
+    {
+      "name": "Restoration Chip 13 (L)",
+      "type": "mindforce",
+      "tt": 14.6,
+      "markup": 100,
+      "decay": 1.46,
+      "me": 146,
+      "mecost": 0.02
+    },
+    {
+      "name": "Restoration Chip 14 (L)",
+      "type": "mindforce",
+      "tt": 15.4,
+      "markup": 100,
+      "decay": 1.542,
+      "me": 154,
+      "mecost": 0.020013
+    },
+    {
+      "name": "Restoration Chip 15 (L)",
+      "type": "mindforce",
+      "tt": 16.39,
+      "markup": 100,
+      "decay": 1.637,
+      "me": 164,
+      "mecost": 0.019982
+    },
+    {
+      "name": "Restoration Chip 17 (L)",
+      "type": "mindforce",
+      "tt": 18.2,
+      "markup": 100,
+      "decay": 1.817,
+      "me": 182,
+      "mecost": 0.019984
+    },
+    {
+      "name": "Restoration Chip 18 (L)",
+      "type": "mindforce",
+      "tt": 19,
+      "markup": 100,
+      "decay": 1.903,
+      "me": 190,
+      "mecost": 0.020016
+    },
+    {
+      "name": "Restoration Chip 19 (L)",
+      "type": "mindforce",
+      "tt": 20,
+      "markup": 100,
+      "decay": null,
+      "me": 200,
+      "mecost": 0
+    },
+    {
+      "name": "Restoration Chip 2 (L)",
+      "type": "mindforce",
+      "tt": 5.3,
+      "markup": 100,
+      "decay": 0.523,
+      "me": 53,
+      "mecost": 0.019868
+    },
+    {
+      "name": "Restoration Chip 20 (L)",
+      "type": "mindforce",
+      "tt": 20.89,
+      "markup": 100,
+      "decay": null,
+      "me": 209,
+      "mecost": 0
+    },
+    {
+      "name": "Restoration Chip 3 (L)",
+      "type": "mindforce",
+      "tt": 6.4,
+      "markup": 100,
+      "decay": 0.99,
+      "me": 64,
+      "mecost": 0.025469
+    },
+    {
+      "name": "Restoration Chip 4 (L)",
+      "type": "mindforce",
+      "tt": 7.3,
+      "markup": 100,
+      "decay": 0.72,
+      "me": 73,
+      "mecost": 0.019863
+    },
+    {
+      "name": "Restoration Chip 5 (L)",
+      "type": "mindforce",
+      "tt": 8,
+      "markup": 100,
+      "decay": null,
+      "me": 80,
+      "mecost": 0
+    },
+    {
+      "name": "Restoration Chip 6 (L)",
+      "type": "mindforce",
+      "tt": 8.9,
+      "markup": 100,
+      "decay": null,
+      "me": 89,
+      "mecost": 0
+    },
+    {
+      "name": "Restoration Chip 7 (L)",
+      "type": "mindforce",
+      "tt": 9.69,
+      "markup": 100,
+      "decay": null,
+      "me": 97,
+      "mecost": 0
+    },
+    {
+      "name": "Restoration Chip 8 (L)",
+      "type": "mindforce",
+      "tt": 10.4,
+      "markup": 100,
+      "decay": 1.04,
+      "me": 104,
+      "mecost": 0.02
+    },
+    {
+      "name": "Restoration Chip, Adjusted",
+      "type": "mindforce",
+      "tt": 48,
+      "markup": 100,
+      "decay": 0.829,
+      "me": 38,
+      "mecost": 0.031816
+    },
+    {
+      "name": "Restoration Chip, Improved",
+      "type": "mindforce",
+      "tt": 60,
+      "markup": 100,
+      "decay": 1.019,
+      "me": 60,
+      "mecost": 0.026983
+    },
+    {
+      "name": "Restoration Chip, Modified",
+      "type": "mindforce",
+      "tt": 60,
+      "markup": 100,
+      "decay": 1.58,
+      "me": 110,
+      "mecost": 0.024364
+    },
+    {
+      "name": "S.I. First Aid Pack",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": 5.999,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "S.I. H.E.A.R.T.",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": 0.9,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Shifa V1",
+      "type": "fap",
+      "tt": 100,
+      "markup": 100,
+      "decay": 1.52,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Special Issue Medkit (L)",
+      "type": "fap",
+      "tt": 1,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Speedy Refurbished H.E.A.R.T. Rank VI",
+      "type": "fap",
+      "tt": null,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Tibbi Medical V6 (L)",
+      "type": "fap",
+      "tt": 72,
+      "markup": 100,
+      "decay": 5.015,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vigorous Refurbished H.E.A.R.T. Rank VI",
+      "type": "fap",
+      "tt": null,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Explorer (L)",
+      "type": "fap",
+      "tt": 0.05,
+      "markup": 100,
+      "decay": 0.05,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Neo (L)",
+      "type": "fap",
+      "tt": 224,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Neo (L) Adapted",
+      "type": "fap",
+      "tt": 336,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Oxy1500 (L)",
+      "type": "fap",
+      "tt": 162.5,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Oxy1500 (L) Adapted",
+      "type": "fap",
+      "tt": 243.75,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Oxy2000 (L)",
+      "type": "fap",
+      "tt": 178.4,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Oxy2000 (L) Adapted",
+      "type": "fap",
+      "tt": 276.6,
+      "markup": 100,
+      "decay": 10.336,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Oxy2500 (L)",
+      "type": "fap",
+      "tt": 211.5,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Oxy2500 (L) Adapted",
+      "type": "fap",
+      "tt": 317.25,
+      "markup": 100,
+      "decay": 11.713,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Oxy2500, Adapted",
+      "type": "fap",
+      "tt": null,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Oxy2500, SGA Edition (L)",
+      "type": "fap",
+      "tt": 211.5,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo S10",
+      "type": "fap",
+      "tt": 22,
+      "markup": 100,
+      "decay": 1.35,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Survivor (L)",
+      "type": "fap",
+      "tt": 254.5,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Survivor (L) Adapted",
+      "type": "fap",
+      "tt": null,
+      "markup": 100,
+      "decay": null,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T1",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": 0.903,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T10",
+      "type": "fap",
+      "tt": 300.02,
+      "markup": 100,
+      "decay": 2.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T10 (L)",
+      "type": "fap",
+      "tt": 23.5,
+      "markup": 100,
+      "decay": 2.187,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T10 (L) Adapted",
+      "type": "fap",
+      "tt": 35.25,
+      "markup": 100,
+      "decay": 1.914,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T10 Adapted",
+      "type": "fap",
+      "tt": 524.87,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T10, Improved",
+      "type": "fap",
+      "tt": 300,
+      "markup": 100,
+      "decay": 1.2,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T15",
+      "type": "fap",
+      "tt": 1838.56,
+      "markup": 100,
+      "decay": 4.287,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T15 (L)",
+      "type": "fap",
+      "tt": 48.45,
+      "markup": 100,
+      "decay": 4.287,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T15 (L) Adapted",
+      "type": "fap",
+      "tt": 72.67,
+      "markup": 100,
+      "decay": 3.751,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T15 Adapted",
+      "type": "fap",
+      "tt": 3096.79,
+      "markup": 100,
+      "decay": 3.751,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T15 Adapted, SGA Edition (L)",
+      "type": "fap",
+      "tt": 72.67,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T1A (L)",
+      "type": "fap",
+      "tt": 9,
+      "markup": 100,
+      "decay": 0.903,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T20",
+      "type": "fap",
+      "tt": 2638.58,
+      "markup": 100,
+      "decay": 5.001,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T20 (L)",
+      "type": "fap",
+      "tt": 57.9,
+      "markup": 100,
+      "decay": 5.001,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T20 (L) Adapted",
+      "type": "fap",
+      "tt": 86.85,
+      "markup": 100,
+      "decay": 4.375,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T20 Adapted",
+      "type": "fap",
+      "tt": 4429.18,
+      "markup": 100,
+      "decay": 4.375,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T5",
+      "type": "fap",
+      "tt": 88.99,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T5 (L)",
+      "type": "fap",
+      "tt": 16.8,
+      "markup": 100,
+      "decay": 1.607,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T5 (L) Adapted",
+      "type": "fap",
+      "tt": 25.2,
+      "markup": 100,
+      "decay": 1.406,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo T5 Adapted",
+      "type": "fap",
+      "tt": 168.17,
+      "markup": 100,
+      "decay": 1.406,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR125",
+      "type": "fap",
+      "tt": 5638.89,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR125 (L)",
+      "type": "fap",
+      "tt": 85.1,
+      "markup": 100,
+      "decay": 7.001,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR125 (L) Adapted",
+      "type": "fap",
+      "tt": 127.65,
+      "markup": 100,
+      "decay": 6.125,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR125, Adapted",
+      "type": "fap",
+      "tt": null,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR150 (L)",
+      "type": "fap",
+      "tt": 93,
+      "markup": 100,
+      "decay": 7.429,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR175",
+      "type": "fap",
+      "tt": 9750.58,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR175 (L)",
+      "type": "fap",
+      "tt": 120.65,
+      "markup": 100,
+      "decay": 9.001,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR175 (L) Adapted",
+      "type": "fap",
+      "tt": 180.975,
+      "markup": 100,
+      "decay": 7.875,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR200 (L)",
+      "type": "fap",
+      "tt": 128.75,
+      "markup": 100,
+      "decay": 9.537,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR200 (L) Adapted",
+      "type": "fap",
+      "tt": 193.12,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo UR225 (L)",
+      "type": "fap",
+      "tt": 128.75,
+      "markup": 100,
+      "decay": 9.5,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Zychion Pro (L)",
+      "type": "fap",
+      "tt": 271.5,
+      "markup": 100,
+      "decay": 15.875,
+      "me": 0,
+      "mecost": 0
+    },
+    {
+      "name": "Vivo Zychion Pro (L) Adapted",
+      "type": "fap",
+      "tt": null,
+      "markup": 100,
+      "decay": null,
+      "me": null,
+      "mecost": 0
+    }
+  ],
+  "lastUpdated": "2026-03-03T01:22:52.676Z"
+}

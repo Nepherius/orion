@@ -86,7 +86,6 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             loadout_id TEXT,
             ammo_cost REAL DEFAULT 0,
             weapon_decay REAL DEFAULT 0,
-            armor_decay REAL DEFAULT 0,
             healing_cost REAL DEFAULT 0,
             other_costs REAL DEFAULT 0
         );
@@ -175,19 +174,7 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             sight_tt REAL DEFAULT 0,
             scope TEXT,
             scope_tt REAL DEFAULT 0,
-            armor_head TEXT,
-            armor_head_tt REAL DEFAULT 0,
-            armor_upper TEXT,
-            armor_upper_tt REAL DEFAULT 0,
-            armor_lower TEXT,
-            armor_lower_tt REAL DEFAULT 0,
-            armor_arms TEXT,
-            armor_arms_tt REAL DEFAULT 0,
-            armor_hands TEXT,
-            armor_hands_tt REAL DEFAULT 0,
-            armor_feet TEXT,
-            armor_feet_tt REAL DEFAULT 0,
-            enhancers TEXT,
+            armor TEXT,
             notes TEXT,
             is_favorite INTEGER NOT NULL DEFAULT 0,
             is_active INTEGER NOT NULL DEFAULT 0
@@ -221,6 +208,7 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     // Handle migrations for existing databases that were created before certain columns were added
     // Ignore errors for these as they will fail if the column already exists
     let _ = conn.execute("ALTER TABLE sessions ADD COLUMN creature TEXT", []);
+    let _ = conn.execute("ALTER TABLE loadouts ADD COLUMN armor TEXT", []);
 
     Ok(())
 }

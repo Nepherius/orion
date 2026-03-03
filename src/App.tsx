@@ -9,12 +9,22 @@ import { ChatLogMonitorPanel } from './components/views/ChatLogMonitorPanel';
 import { WelcomeModal } from './components/views/WelcomeModal';
 
 // Dynamically imported views to minimize RAM footprint of unfocused tabs
-const Dashboard = lazy(() => import('./components/views/Dashboard').then(m => ({ default: m.Dashboard })));
-const Loot = lazy(() => import('./components/loot/Loot').then(m => ({ default: m.Loot })));
-const Loadouts = lazy(() => import('./components/views/Loadouts').then(m => ({ default: m.Loadouts })));
-const ItemDatabase = lazy(() => import('./components/views/ItemDatabase').then(m => ({ default: m.ItemDatabase })));
-const Analytics = lazy(() => import('./components/views/Analytics').then(m => ({ default: m.Analytics })));
-const Settings = lazy(() => import('./components/views/Settings').then(m => ({ default: m.Settings })));
+const Dashboard = lazy(() =>
+  import('./components/views/Dashboard').then((m) => ({ default: m.Dashboard }))
+);
+const Loot = lazy(() => import('./components/loot/Loot').then((m) => ({ default: m.Loot })));
+const Loadouts = lazy(() =>
+  import('./components/views/Loadouts').then((m) => ({ default: m.Loadouts }))
+);
+const ItemDatabase = lazy(() =>
+  import('./components/views/ItemDatabase').then((m) => ({ default: m.ItemDatabase }))
+);
+const Analytics = lazy(() =>
+  import('./components/views/Analytics').then((m) => ({ default: m.Analytics }))
+);
+const Settings = lazy(() =>
+  import('./components/views/Settings').then((m) => ({ default: m.Settings }))
+);
 
 import {
   Database,
@@ -208,7 +218,13 @@ function App() {
 
           {/* Main Content */}
           <main className="max-w-7xl mx-auto px-6 py-6">
-            <Suspense fallback={<div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div></div>}>
+            <Suspense
+              fallback={
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                </div>
+              }
+            >
               {currentView === 'dashboard' && <Dashboard />}
 
               {currentView === 'loot' && <Loot />}

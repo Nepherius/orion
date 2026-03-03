@@ -16,7 +16,7 @@ interface StoreSyncPayload {
 }
 
 export function OverlayWindow() {
-    const isVisible = usePageVisibility();
+  const isVisible = usePageVisibility();
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );

@@ -13,14 +13,15 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
   const updateSession = useHuntStore((state) => state.updateSession);
   const loadouts = useHuntStore((state) => state.loadouts);
 
-  // Find loadout by weapon name (if it matches a loadout name)
-  const sessionLoadout = loadouts.find((l) => l.name === session?.weapon);
+  // Prefer explicit loadoutId, fallback to matching by weapon item name
+  const sessionLoadout =
+    loadouts.find((l) => l.id === session?.loadoutId) ||
+    loadouts.find((l) => l.weapon?.Name === session?.weapon);
 
   const [formData, setFormData] = useState({
     name: session?.name || '',
     loadoutId: sessionLoadout?.id || '',
     weapon: session?.weapon || '',
-    armor: session?.armor || '',
     creature: session?.creature || '',
     location: session?.location || '',
     notes: session?.notes || '',
@@ -50,7 +51,8 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
     const selectedLoadout = loadouts.find((l) => l.id === formData.loadoutId);
     updateSession(sessionId, {
       ...formData,
-      weapon: selectedLoadout?.name || formData.weapon || 'No Loadout',
+      weapon: selectedLoadout?.weapon?.Name || formData.weapon || 'No Loadout',
+      armor: selectedLoadout?.armor ?? session.armor,
     });
     onClose();
   };
@@ -92,17 +94,6 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label className="label">Armor</label>
-            <input
-              type="text"
-              value={formData.armor}
-              onChange={(e) => setFormData({ ...formData, armor: e.target.value })}
-              placeholder="e.g., Pixie Armor"
-              className="input w-full"
-            />
           </div>
 
           <AutocompleteInput

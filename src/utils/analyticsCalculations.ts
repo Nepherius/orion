@@ -70,7 +70,6 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
     totalCost: number;
     ammoCost: number;
     weaponDecay: number;
-    armorCost: number;
     healingCost: number;
     otherCost: number;
     sessions: number;
@@ -84,7 +83,6 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
           totalCost: 0,
           ammoCost: 0,
           weaponDecay: 0,
-          armorCost: 0,
           healingCost: 0,
           otherCost: 0,
           sessions: 0,
@@ -93,7 +91,6 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
       acc[location].totalCost += session.stats.totalCost;
       acc[location].ammoCost += session.ammoCost;
       acc[location].weaponDecay += session.weaponDecay;
-      acc[location].armorCost += session.armorDecay;
       acc[location].healingCost += session.healingCost;
       acc[location].otherCost += session.otherCosts;
       acc[location].sessions += 1;
@@ -105,7 +102,6 @@ export function calculateCostByLocation(sessions: HuntSession[]): Record<
         totalCost: number;
         ammoCost: number;
         weaponDecay: number;
-        armorCost: number;
         healingCost: number;
         otherCost: number;
         sessions: number;
@@ -130,15 +126,6 @@ export function calculateWeaponDecayCostPerKill(session: HuntSession): number {
   if (!session?.stats?.kills) return 0;
   const decay = Number(session.weaponDecay) || 0;
   return decay / session.stats.kills;
-}
-
-/**
- * Calculate armor decay cost per kill
- */
-export function calculateArmorDecayCostPerKill(session: HuntSession): number {
-  if (!session?.stats?.kills) return 0;
-  const armor = Number(session.armorDecay) || 0;
-  return armor / session.stats.kills;
 }
 
 /**

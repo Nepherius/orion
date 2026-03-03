@@ -13,7 +13,6 @@ export function CostsPanel({ session }: CostsPanelProps) {
   const [costs, setCosts] = useState({
     ammoCost: session.ammoCost,
     weaponDecay: session.weaponDecay,
-    armorDecay: session.armorDecay,
     healingCost: session.healingCost,
     otherCosts: session.otherCosts,
   });
@@ -48,7 +47,7 @@ export function CostsPanel({ session }: CostsPanelProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
         <div>
           <label className="label text-xs">Ammo Cost</label>
           {isEditing ? (
@@ -78,22 +77,6 @@ export function CostsPanel({ session }: CostsPanelProps) {
             />
           ) : (
             <div className="text-lg font-semibold">{costs.weaponDecay.toFixed(2)} PED</div>
-          )}
-        </div>
-
-        <div>
-          <label className="label text-xs">Armor Decay</label>
-          {isEditing ? (
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={costs.armorDecay}
-              onChange={(e) => setCosts({ ...costs, armorDecay: Number(e.target.value) })}
-              className="input w-full"
-            />
-          ) : (
-            <div className="text-lg font-semibold">{costs.armorDecay.toFixed(2)} PED</div>
           )}
         </div>
 

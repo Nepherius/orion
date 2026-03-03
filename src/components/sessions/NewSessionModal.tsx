@@ -18,7 +18,6 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
   const [formData, setFormData] = useState({
     name: '',
     loadoutId: primaryLoadout?.id || '',
-    armor: '',
     location: '',
     creature: '',
     notes: '',
@@ -42,22 +41,36 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const selectedLoadout = loadouts.find((l) => l.id === formData.loadoutId);
+    const selectedWeaponName =
+      selectedLoadout?.weapon?.Name || selectedLoadout?.name || 'No Loadout';
+    const selectedArmorName = selectedLoadout?.armor || undefined;
+    const baseHealingCost = selectedLoadout?.medicalMECost || 0;
 
     // Define the initial session object for database insertion (without stats, id, etc.)
-    const newSessionInit: Omit<HuntSession, 'id' | 'stats' | 'loot' | 'skills' | 'globals' | 'damageEvents' | 'combatEvents' | 'healingEvents' | 'damageTakenEvents'> = {
+    const newSessionInit: Omit<
+      HuntSession,
+      | 'id'
+      | 'stats'
+      | 'loot'
+      | 'skills'
+      | 'globals'
+      | 'damageEvents'
+      | 'combatEvents'
+      | 'healingEvents'
+      | 'damageTakenEvents'
+    > = {
       name: formData.name,
       location: formData.location || 'Unknown',
       loadoutId: formData.loadoutId || undefined,
-      weapon: selectedLoadout?.name || 'No Loadout',
-      armor: formData.armor || '',
+      weapon: selectedWeaponName,
+      armor: selectedArmorName,
       creature: formData.creature || '',
       notes: formData.notes,
       startTime: Date.now(),
       status: 'active',
       ammoCost: 0,
       weaponDecay: 0,
-      armorDecay: 0,
-      healingCost: 0,
+      healingCost: baseHealingCost,
       otherCosts: 0,
     };
 
@@ -106,17 +119,6 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label className="label">Armor</label>
-            <input
-              type="text"
-              value={formData.armor}
-              onChange={(e) => setFormData({ ...formData, armor: e.target.value })}
-              placeholder="e.g., Pixie Armor"
-              className="input w-full"
-            />
           </div>
 
           <AutocompleteInput

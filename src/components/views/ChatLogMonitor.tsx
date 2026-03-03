@@ -20,13 +20,13 @@ interface DamageEvent {
 interface CombatEvent {
   timestamp: string;
   event_type:
-  | 'hit'
-  | 'crit'
-  | 'player_miss'
-  | 'player_dodge'
-  | 'player_evade'
-  | 'enemy_miss'
-  | 'enemy_evade';
+    | 'hit'
+    | 'crit'
+    | 'player_miss'
+    | 'player_dodge'
+    | 'player_evade'
+    | 'enemy_miss'
+    | 'enemy_evade';
 }
 
 interface HealingEvent {
@@ -309,7 +309,10 @@ export function ChatLogMonitor() {
           parseInProgressRef.current = true;
 
           try {
-            debugDetail('[ChatLogMonitor] Parsing coalesced content. Lines:', recentLines.split('\n').length);
+            debugDetail(
+              '[ChatLogMonitor] Parsing coalesced content. Lines:',
+              recentLines.split('\n').length
+            );
             const result: ParseResult = await invoke('parse_chat_log', { content: recentLines });
             const events = result.loot_events;
             const damageEvents = result.damage_events;
@@ -356,12 +359,12 @@ export function ChatLogMonitor() {
                   weapon: primaryLoadout.name || 'No Loadout',
                   loadoutId: primaryLoadout.id,
                   armor: '',
+                  creature: 'Unknown',
                   location: 'Auto',
                   startTime: Date.now(),
                   status: 'active',
                   ammoCost: 0,
                   weaponDecay: 0,
-                  armorDecay: 0,
                   healingCost: 0,
                   otherCosts: 0,
                   notes: 'Automatically created to capture events from chat.log',

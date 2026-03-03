@@ -7,17 +7,13 @@ interface LoadoutStatsPanelProps {
 export function LoadoutStatsPanel({ loadout }: LoadoutStatsPanelProps) {
   return (
     <div className="space-y-4">
-      {/* Cost and DPP */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Cost per Shot */}
+      <div className="grid grid-cols-1 gap-2">
         <div className="bg-surface rounded p-3 text-center">
           <div className="text-xs text-muted uppercase mb-1">Cost/Shot</div>
           <div className="text-xl font-bold text-blue-400">
             {loadout.costPerShot.toFixed(4)} <span className="text-xs">PED</span>
           </div>
-        </div>
-        <div className="bg-surface rounded p-3 text-center">
-          <div className="text-xs text-muted uppercase mb-1">DPP</div>
-          <div className="text-xl font-bold text-green-400">{loadout.dpp.toFixed(4)}</div>
         </div>
       </div>
 
@@ -97,11 +93,7 @@ export function LoadoutStatsPanel({ loadout }: LoadoutStatsPanelProps) {
           </div>
           <div className="flex justify-between">
             <span className="text-muted">Absorber</span>
-            <span>0.0000 PEC</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">Enhancers</span>
-            <span>0.0000 PEC</span>
+            <span>{(loadout.absorber?.Properties?.Economy?.Decay || 0).toFixed(4)} PEC</span>
           </div>
           <div className="flex justify-between border-t border-border pt-1 mt-1 font-bold">
             <span>Total/Shot</span>

@@ -33,7 +33,6 @@ export function LoadoutTable({
               <tr className="text-left text-xs text-muted uppercase">
                 <th className="p-4">Name / Weapon</th>
                 <th className="p-4 text-right">Cost</th>
-                <th className="p-4 text-right">DPP</th>
               </tr>
             </thead>
             <tbody>
@@ -86,10 +85,6 @@ export function LoadoutTable({
                         {loadout.costPerShot.toFixed(4)}
                       </div>
                       <div className="text-xs text-gray-500">PED</div>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="text-green-400 font-mono">{loadout.dpp.toFixed(4)}</div>
-                      <div className="text-xs text-gray-500">DPP</div>
                     </td>
                   </tr>
                 ))

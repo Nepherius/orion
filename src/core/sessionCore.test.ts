@@ -12,9 +12,6 @@ function makeLoadout(overrides: Partial<Loadout> = {}): Loadout {
     name: 'Frontier',
     isPrimary: false,
     favorite: false,
-    enhancers: { dmg: 0, acc: 0, rng: 0, eco: 0 },
-    hitProfession: 0,
-    dmgProfession: 0,
     costPerShot: 0,
     dpp: 0,
     totalDamage: 0,
@@ -49,7 +46,6 @@ function makeSession(overrides: Partial<HuntSession> = {}): HuntSession {
     notes: '',
     ammoCost: 0,
     weaponDecay: 0,
-    armorDecay: 0,
     healingCost: 0,
     otherCosts: 0,
     stats: emptySessionStats(),
@@ -98,15 +94,14 @@ describe('calculateSessionStats', () => {
       ],
       ammoCost: 2,
       weaponDecay: 1,
-      armorDecay: 0.5,
       healingCost: 0.5,
       otherCosts: 1,
     });
 
     const stats = calculateSessionStats(session, 5_000);
     expect(stats.totalLoot).toBe(12);
-    expect(stats.totalCost).toBe(5);
-    expect(stats.returns).toBeCloseTo(240, 5);
+    expect(stats.totalCost).toBe(4.5);
+    expect(stats.returns).toBeCloseTo(266.6667, 4);
   });
 
   it('subtracts paused time from duration', () => {

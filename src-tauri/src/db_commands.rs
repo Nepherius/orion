@@ -24,7 +24,6 @@ pub struct CreateSessionParams {
     notes: String,
     ammo_cost: f64,
     weapon_decay: f64,
-    armor_decay: f64,
     healing_cost: f64,
     other_costs: f64,
 }
@@ -36,9 +35,9 @@ pub fn db_create_session(
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     let _result = conn.execute(
-        "INSERT INTO sessions (uuid, name, weapon, armor, location, creature, start_time, status, loadout_id, notes, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs) 
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
-        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.creature, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.weapon_decay, params.armor_decay, params.healing_cost, params.other_costs],
+        "INSERT INTO sessions (uuid, name, weapon, armor, location, creature, start_time, status, loadout_id, notes, ammo_cost, weapon_decay, healing_cost, other_costs) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.creature, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.weapon_decay, params.healing_cost, params.other_costs],
     )
     .map_err(|e| {
         let err_msg = format!("Failed to insert session: {}", e);
@@ -64,7 +63,6 @@ pub struct UpdateSessionParams {
     notes: Option<String>,
     ammo_cost: Option<f64>,
     weapon_decay: Option<f64>,
-    armor_decay: Option<f64>,
     healing_cost: Option<f64>,
     other_costs: Option<f64>,
 }
@@ -132,10 +130,6 @@ pub fn db_update_session(
         updates.push("weapon_decay = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = params.armor_decay {
-        updates.push("armor_decay = ?");
-        values.push(Box::new(v));
-    }
     if let Some(v) = params.healing_cost {
         updates.push("healing_cost = ?");
         values.push(Box::new(v));
@@ -173,7 +167,7 @@ pub fn db_delete_session(uuid: String, state: State<'_, DbState>) -> Result<(), 
 pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs, creature FROM sessions ORDER BY start_time DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, weapon_decay, healing_cost, other_costs, creature FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -193,10 +187,9 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
                 "notes": row.get::<_, String>(11)?,
                 "ammoCost": row.get::<_, f64>(12)?,
                 "weaponDecay": row.get::<_, f64>(13)?,
-                "armorDecay": row.get::<_, f64>(14)?,
-                "healingCost": row.get::<_, f64>(15)?,
-                "otherCosts": row.get::<_, f64>(16)?,
-                "creature": row.get::<_, Option<String>>(17)?,
+                "healingCost": row.get::<_, f64>(14)?,
+                "otherCosts": row.get::<_, f64>(15)?,
+                "creature": row.get::<_, Option<String>>(16)?,
             }))
         })
         .map_err(|e| e.to_string())?;
@@ -367,7 +360,6 @@ pub fn db_get_session_stats(
     struct SessionStatsRow {
         ammo_cost: f64,
         weapon_decay: f64,
-        armor_decay: f64,
         healing_cost: f64,
         other_costs: f64,
         status: String,
@@ -379,20 +371,19 @@ pub fn db_get_session_stats(
 
     let session_info: SessionStatsRow = conn
         .query_row(
-            "SELECT ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time FROM sessions WHERE uuid = ?1",
+            "SELECT ammo_cost, weapon_decay, healing_cost, other_costs, status, paused_at, total_paused_ms, start_time, end_time FROM sessions WHERE uuid = ?1",
             [&session_uuid],
             |row| {
                 Ok(SessionStatsRow {
                     ammo_cost: row.get(0)?,
                     weapon_decay: row.get(1)?,
-                    armor_decay: row.get(2)?,
-                    healing_cost: row.get(3)?,
-                    other_costs: row.get(4)?,
-                    status: row.get(5)?,
-                    paused_at: row.get(6)?,
-                    total_paused_ms: row.get(7)?,
-                    start_time: row.get(8)?,
-                    end_time: row.get(9)?,
+                    healing_cost: row.get(2)?,
+                    other_costs: row.get(3)?,
+                    status: row.get(4)?,
+                    paused_at: row.get(5)?,
+                    total_paused_ms: row.get(6)?,
+                    start_time: row.get(7)?,
+                    end_time: row.get(8)?,
                 })
             },
         )
@@ -511,7 +502,6 @@ pub fn db_get_session_stats(
 
     let total_cost = session_info.ammo_cost
         + session_info.weapon_decay
-        + session_info.armor_decay
         + session_info.healing_cost
         + session_info.other_costs;
     let returns = if total_cost > 0.0 {
@@ -549,7 +539,7 @@ pub fn db_get_session_stats(
 pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, weapon_decay, armor_decay, healing_cost, other_costs, notes, loadout_id, creature FROM sessions ORDER BY start_time DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, weapon_decay, healing_cost, other_costs, notes, loadout_id, creature FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -567,12 +557,11 @@ pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValu
                 "pausedAt": row.get::<_, Option<i64>>(9)?,
                 "ammoCost": row.get::<_, f64>(10)?,
                 "weaponDecay": row.get::<_, f64>(11)?,
-                "armorDecay": row.get::<_, f64>(12)?,
-                "healingCost": row.get::<_, f64>(13)?,
-                "otherCosts": row.get::<_, f64>(14)?,
-                "notes": row.get::<_, String>(15)?,
-                "loadoutId": row.get::<_, Option<String>>(16)?,
-                "creature": row.get::<_, Option<String>>(17)?,
+                "healingCost": row.get::<_, f64>(12)?,
+                "otherCosts": row.get::<_, f64>(13)?,
+                "notes": row.get::<_, String>(14)?,
+                "loadoutId": row.get::<_, Option<String>>(15)?,
+                "creature": row.get::<_, Option<String>>(16)?,
             }))
         })
         .map_err(|e| e.to_string())?;
@@ -885,19 +874,7 @@ pub fn db_create_loadout(
     sight_tt: f64,
     scope: Option<String>,
     scope_tt: f64,
-    armor_head: Option<String>,
-    armor_head_tt: f64,
-    armor_upper: Option<String>,
-    armor_upper_tt: f64,
-    armor_lower: Option<String>,
-    armor_lower_tt: f64,
-    armor_arms: Option<String>,
-    armor_arms_tt: f64,
-    armor_hands: Option<String>,
-    armor_hands_tt: f64,
-    armor_feet: Option<String>,
-    armor_feet_tt: f64,
-    enhancers: Option<String>,
+    armor: Option<String>,
     notes: Option<String>,
     is_favorite: bool,
     is_active: bool,
@@ -905,9 +882,9 @@ pub fn db_create_loadout(
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     conn.execute(
-        "INSERT INTO loadouts (uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor_head, armor_head_tt, armor_upper, armor_upper_tt, armor_lower, armor_lower_tt, armor_arms, armor_arms_tt, armor_hands, armor_hands_tt, armor_feet, armor_feet_tt, enhancers, notes, is_favorite, is_active) 
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)",
-        params![uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor_head, armor_head_tt, armor_upper, armor_upper_tt, armor_lower, armor_lower_tt, armor_arms, armor_arms_tt, armor_hands, armor_hands_tt, armor_feet, armor_feet_tt, enhancers, notes, if is_favorite { 1 } else { 0 }, if is_active { 1 } else { 0 }],
+        "INSERT INTO loadouts (uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor, notes, is_favorite, is_active) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+        params![uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor, notes, if is_favorite { 1 } else { 0 }, if is_active { 1 } else { 0 }],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -925,7 +902,7 @@ pub fn db_delete_loadout(uuid: String, state: State<'_, DbState>) -> Result<(), 
 pub fn db_get_all_loadouts(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor_head, armor_head_tt, armor_upper, armor_upper_tt, armor_lower, armor_lower_tt, armor_arms, armor_arms_tt, armor_hands, armor_hands_tt, armor_feet, armor_feet_tt, enhancers, notes, is_favorite, is_active FROM loadouts")
+        .prepare("SELECT uuid, name, weapon, weapon_tt, amp, amp_tt, sight, sight_tt, scope, scope_tt, armor, notes, is_favorite, is_active FROM loadouts")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -941,22 +918,10 @@ pub fn db_get_all_loadouts(state: State<'_, DbState>) -> Result<JsonValue, Strin
                 "sightTT": row.get::<_, f64>(7)?,
                 "scope": row.get::<_, Option<String>>(8)?,
                 "scopeTT": row.get::<_, f64>(9)?,
-                "armorHead": row.get::<_, Option<String>>(10)?,
-                "armorHeadTT": row.get::<_, f64>(11)?,
-                "armorUpper": row.get::<_, Option<String>>(12)?,
-                "armorUpperTT": row.get::<_, f64>(13)?,
-                "armorLower": row.get::<_, Option<String>>(14)?,
-                "armorLowerTT": row.get::<_, f64>(15)?,
-                "armorArms": row.get::<_, Option<String>>(16)?,
-                "armorArmsTT": row.get::<_, f64>(17)?,
-                "armorHands": row.get::<_, Option<String>>(18)?,
-                "armorHandsTT": row.get::<_, f64>(19)?,
-                "armorFeet": row.get::<_, Option<String>>(20)?,
-                "armorFeetTT": row.get::<_, f64>(21)?,
-                "enhancers": row.get::<_, Option<String>>(22)?,
-                "notes": row.get::<_, Option<String>>(23)?,
-                "isFavorite": row.get::<_, i64>(24)? != 0,
-                "isActive": row.get::<_, i64>(25)? != 0,
+                "armor": row.get::<_, Option<String>>(10)?,
+                "notes": row.get::<_, Option<String>>(11)?,
+                "isFavorite": row.get::<_, i64>(12)? != 0,
+                "isActive": row.get::<_, i64>(13)? != 0,
             }))
         })
         .map_err(|e| e.to_string())?;

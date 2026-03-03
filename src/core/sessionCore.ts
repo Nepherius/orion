@@ -45,11 +45,7 @@ export function calculateSessionStats(
 ): SessionStats {
   const totalLoot = session.loot.reduce((sum, item) => sum + item.totalValue, 0);
   const totalCost =
-    session.ammoCost +
-    session.weaponDecay +
-    session.armorDecay +
-    session.healingCost +
-    session.otherCosts;
+    session.ammoCost + session.weaponDecay + session.healingCost + session.otherCosts;
   const returns = totalCost > 0 ? (totalLoot / totalCost) * 100 : 0;
 
   const basePausedMs = session.totalPausedMs || 0;

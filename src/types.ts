@@ -44,14 +44,14 @@ export interface DamageEvent {
 export interface CombatEvent {
   id: string;
   type:
-  | 'hit'
-  | 'crit'
-  | 'player_miss'
-  | 'player_dodge'
-  | 'player_evade'
-  | 'enemy_miss'
-  | 'enemy_evade'
-  | 'enemy_dodge';
+    | 'hit'
+    | 'crit'
+    | 'player_miss'
+    | 'player_dodge'
+    | 'player_evade'
+    | 'enemy_miss'
+    | 'enemy_evade'
+    | 'enemy_dodge';
   timestamp: number;
 }
 
@@ -121,7 +121,6 @@ export interface HuntSession {
   // Costs
   ammoCost: number;
   weaponDecay: number;
-  armorDecay: number;
   healingCost: number;
   otherCosts: number;
 
@@ -181,28 +180,26 @@ export interface EquipmentItem {
   Properties: EquipmentProperties;
 }
 
-export interface LoadoutEnhancers {
-  dmg: number;
-  acc: number;
-  rng: number;
-  eco: number;
-}
-
 export interface Loadout {
   id: string;
   name: string;
   hotkey?: number;
   isPrimary: boolean;
   favorite: boolean;
+  armor?: string;
+  medicalTool?: string;
+  medicalTT?: number;
+  medicalMarkup?: number;
+  medicalDecay?: number;
+  medicalME?: number;
+  medicalMEMarkup?: number;
+  medicalMECost?: number;
   weapon?: EquipmentItem;
   amplifier?: EquipmentItem;
   scope?: EquipmentItem;
   sight?: EquipmentItem;
   sight2?: EquipmentItem;
   absorber?: EquipmentItem;
-  enhancers: LoadoutEnhancers;
-  hitProfession: number;
-  dmgProfession: number;
   // Calculated stats
   costPerShot: number;
   dpp: number;
