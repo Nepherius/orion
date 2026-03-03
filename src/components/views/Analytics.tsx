@@ -768,6 +768,44 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
       )}
+      {/* Loadout Performance */}
+      {loadoutData.length > 0 && (
+        <div className="card p-6">
+          <h3 className="text-lg font-bold mb-4">Loadout Performance</h3>
+          <div className="space-y-2">
+            <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted pb-2 border-b border-border">
+              <div>Loadout</div>
+              <div className="text-right">Sessions</div>
+              <div className="text-right">Return %</div>
+              <div className="text-right">Profit</div>
+              <div className="text-right">Avg Kills</div>
+            </div>
+            {loadoutData.map((loadout) => (
+              <div
+                key={loadout.name}
+                className="grid grid-cols-5 gap-2 text-sm py-2 hover:bg-surface-hover"
+              >
+                <div className="font-semibold truncate" title={loadout.name}>
+                  {loadout.name}
+                </div>
+                <div className="text-right text-muted">{loadout.sessions}</div>
+                <div
+                  className={`text-right font-bold ${loadout.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
+                >
+                  {loadout.returnRate.toFixed(2)}%
+                </div>
+                <div
+                  className={`text-right ${loadout.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                >
+                  {loadout.profit >= 0 ? '+' : ''}
+                  {loadout.profit.toFixed(2)}
+                </div>
+                <div className="text-right">{loadout.avgKills.toFixed(2)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Two column layout */}
       <div className="grid grid-cols-2 gap-6">
@@ -871,45 +909,6 @@ export function Analytics() {
               <Bar dataKey="sessions" fill="#3B82F6" name="Sessions" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* Loadout Performance */}
-      {loadoutData.length > 0 && (
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Loadout Performance</h3>
-          <div className="space-y-2">
-            <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted pb-2 border-b border-border">
-              <div>Loadout</div>
-              <div className="text-right">Sessions</div>
-              <div className="text-right">Return %</div>
-              <div className="text-right">Profit</div>
-              <div className="text-right">Avg Kills</div>
-            </div>
-            {loadoutData.map((loadout) => (
-              <div
-                key={loadout.name}
-                className="grid grid-cols-5 gap-2 text-sm py-2 hover:bg-surface-hover"
-              >
-                <div className="font-semibold truncate" title={loadout.name}>
-                  {loadout.name}
-                </div>
-                <div className="text-right text-muted">{loadout.sessions}</div>
-                <div
-                  className={`text-right font-bold ${loadout.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-                >
-                  {loadout.returnRate.toFixed(2)}%
-                </div>
-                <div
-                  className={`text-right ${loadout.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-                >
-                  {loadout.profit >= 0 ? '+' : ''}
-                  {loadout.profit.toFixed(2)}
-                </div>
-                <div className="text-right">{loadout.avgKills.toFixed(2)}</div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

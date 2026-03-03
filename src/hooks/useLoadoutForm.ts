@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { readTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { useHuntStore } from '../store';
 import { EquipmentItem, Loadout } from '../types';
 import { calculateLoadoutStats } from '../utils/loadoutCalculations';
@@ -12,6 +13,24 @@ interface MedicalToolEntry {
   decay: number | null;
   me: number | null;
   mecost?: number | null;
+}
+
+/**
+ * Load equipment data from AppData first (fresh install downloads),
+ * fall back to bundled public assets
+ */
+async function loadEquipmentData(relativePath: string): Promise<unknown> {
+  try {
+    // Try loading from AppData first (fresh install downloaded data)
+    const appDataContent = await readTextFile(relativePath, { baseDir: BaseDirectory.AppData });
+    const parsed = JSON.parse(appDataContent);
+    // New format: { data: [...], lastUpdateAt: timestamp }
+    return parsed.data || parsed;
+  } catch {
+    // Fall back to bundled public assets (old format: direct array)
+    const response = await fetch(`/assets/${relativePath}`);
+    return response.json();
+  }
 }
 
 export function useLoadoutForm(editLoadout?: Loadout) {
@@ -43,22 +62,22 @@ export function useLoadoutForm(editLoadout?: Loadout) {
 
   useEffect(() => {
     Promise.all([
-      fetch('/assets/items/weapons.json').then((r) => r.json()),
-      fetch('/assets/items/amps.json').then((r) => r.json()),
-      fetch('/assets/items/scopes.json').then((r) => r.json()),
-      fetch('/assets/items/sights.json').then((r) => r.json()),
-      fetch('/assets/items/absorbers.json').then((r) => r.json()),
-      fetch('/assets/armor/armor.json').then((r) => r.json()),
-      fetch('/assets/medical/medicaltool.json').then((r) => r.json()),
+      loadEquipmentData('items/weapons.json'),
+      loadEquipmentData('items/amps.json'),
+      loadEquipmentData('items/scopes.json'),
+      loadEquipmentData('items/sights.json'),
+      loadEquipmentData('items/absorbers.json'),
+      loadEquipmentData('armor/armor.json'),
+      loadEquipmentData('medical/medicaltool.json'),
     ]).then(
       ([weaponsData, ampsData, scopesData, sightsData, absorbersData, armorData, medicalData]) => {
-        setWeapons(weaponsData);
-        setAmps(ampsData);
-        setScopes(scopesData);
-        setSights(sightsData);
-        setAbsorbers(absorbersData);
-        setArmorItems(armorData?.armor || []);
-        setMedicalTools(medicalData?.medicalTools || []);
+        setWeapons(weaponsData as EquipmentItem[]);
+        setAmps(ampsData as EquipmentItem[]);
+        setScopes(scopesData as EquipmentItem[]);
+        setSights(sightsData as EquipmentItem[]);
+        setAbsorbers(absorbersData as EquipmentItem[]);
+        setArmorItems((armorData as { armor?: string[] })?.armor || []);
+        setMedicalTools((medicalData as { medicalTools?: MedicalToolEntry[] })?.medicalTools || []);
       }
     );
   }, []);

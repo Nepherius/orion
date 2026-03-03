@@ -99,7 +99,12 @@ interface HuntStore {
       | 'enemy_dodge',
     timestamp?: number
   ) => void;
-  addHealingEvent: (sessionId: string, amount: number, timestamp?: number) => void;
+  addHealingEvent: (
+    sessionId: string,
+    amount: number,
+    timestamp?: number,
+    options?: { applyCost?: boolean; isDirectUse?: boolean }
+  ) => void;
   addDamageTakenEvent: (
     sessionId: string,
     damage: number,
@@ -504,6 +509,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   },
 
   addLoot: (sessionId, lootData) => {
+    // Check if item is in ignore list
+    const ignoreList = get().settings.ignoreListItems || [];
+    if (ignoreList.includes(lootData.name)) {
+      return; // Don't add ignored items
+    }
+
     const newLoot: LootItem = {
       ...lootData,
       id: generateId(),
@@ -751,11 +762,15 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     }
   },
 
-  addHealingEvent: (sessionId, amount, timestamp?: number) => {
+  addHealingEvent: (sessionId, amount, timestamp?: number, options?) => {
+    const applyCost = options?.applyCost ?? true;
+    const isDirectUse = options?.isDirectUse ?? applyCost;
+
     const newHealingEvent: HealingEvent = {
       id: generateId(),
       amount,
       timestamp: timestamp || Date.now(),
+      isDirectUse,
     };
 
     set((state) => {
@@ -770,6 +785,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
             (l) => l.weapon?.Name === session.weapon || l.name === session.weapon
           );
       const healCostPerUse = loadout?.medicalMECost || 0;
+      const healingCostDelta = applyCost ? healCostPerUse : 0;
 
       return {
         sessions: state.sessions.map((s) => {
@@ -777,7 +793,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
             const updated = {
               ...s,
               healingEvents: [...(s.healingEvents || []), newHealingEvent],
-              healingCost: s.healingCost + healCostPerUse,
+              healingCost: s.healingCost + healingCostDelta,
             };
             updated.stats = calculateStats(updated);
             return updated;

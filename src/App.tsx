@@ -7,6 +7,7 @@ import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
 import { ChatLogMonitor } from './components/views/ChatLogMonitor';
 import { ChatLogMonitorPanel } from './components/views/ChatLogMonitorPanel';
 import { WelcomeModal } from './components/views/WelcomeModal';
+import { useInitialDataLoader } from './hooks/useInitialDataLoader';
 
 // Dynamically imported views to minimize RAM footprint of unfocused tabs
 const Dashboard = lazy(() =>
@@ -48,6 +49,14 @@ function App() {
   const theme = useHuntStore((state) => state.settings.theme);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+  // Load initial equipment data from API on fresh install
+  const {
+    isLoading: isLoadingInitialData,
+    progress: initialDataProgress,
+    error: initialDataError,
+  } = useInitialDataLoader();
+  const [showInitialDataError, setShowInitialDataError] = useState(false);
+
   // Show welcome modal only after data is loaded and avatar name is still empty
   const showWelcome = dataLoaded && !avatarName;
 
@@ -62,6 +71,15 @@ function App() {
       showWelcome
     );
   }, [avatarName, dataLoaded, showWelcome]);
+
+  // Show error notification if initial data load fails
+  useEffect(() => {
+    if (initialDataError) {
+      setShowInitialDataError(true);
+
+      console.error('[App] Initial data load error:', initialDataError);
+    }
+  }, [initialDataError]);
 
   // Setup cross-window sync on mount
   // CRITICAL: Must await DB initialization before setting up sync
@@ -119,6 +137,58 @@ function App() {
             />
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4"></div>
             <p className="text-muted">Loading...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Initial data loading overlay - shown after DB loads on first run */}
+      {dataLoaded && isLoadingInitialData && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-surface border border-border rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center flex flex-col items-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4"></div>
+              <h3 className="text-lg font-bold mb-2">First Run Setup</h3>
+              <p className="text-muted mb-4">Downloading equipment data from Entropia Nexus...</p>
+              {initialDataProgress && (
+                <div className="w-full">
+                  <p className="text-sm text-primary-400 mb-2">{initialDataProgress.fileName}</p>
+                  <div className="w-full bg-surface-dark rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-primary-500 h-full rounded-full transition-all duration-300 ease-out"
+                      style={{
+                        width: `${(initialDataProgress.current / initialDataProgress.total) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-muted mt-2">
+                    {initialDataProgress.current} of {initialDataProgress.total} files
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Initial data error notification */}
+      {showInitialDataError && (
+        <div className="fixed bottom-6 right-6 bg-red-900/20 border border-red-500/50 rounded-lg p-4 max-w-sm z-50">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500/30 flex items-center justify-center mt-0.5">
+              <div className="w-2 h-2 rounded-full bg-red-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-200">Equipment data download failed</p>
+              <p className="text-xs text-red-300/70 mt-1">
+                The app will continue to work normally. The system will retry on next restart.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowInitialDataError(false)}
+              className="flex-shrink-0 text-red-300/50 hover:text-red-300 transition-colors"
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}

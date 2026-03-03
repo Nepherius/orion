@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useHuntStore } from '../../store';
+import {
+  classifyFapHealingFromLogLines,
+  type FapHotClassifierState,
+} from '../../utils/fapHotClassifier';
 
 interface LootEvent {
   timestamp: string;
@@ -73,6 +77,12 @@ export function ChatLogMonitor() {
   const coalesceTimerRef = useRef<number | null>(null);
   const parseInProgressRef = useRef(false);
   const reparseQueuedRef = useRef(false);
+  const fapHotStateRef = useRef<FapHotClassifierState>({
+    hotWindowEndMs: null,
+    lastHealTimestampMs: null,
+    lastHealAmount: null,
+    pendingDirectHealTimestampMs: null,
+  });
 
   const parseTimestamp = (ts: string): number => {
     // Manually extract components to avoid Date(string) parsing inconsistencies
@@ -321,6 +331,12 @@ export function ChatLogMonitor() {
             const damageTakenEvents = result.damage_taken_events;
             const skillGains = result.skill_gains;
 
+            const fapClassifiedHealing = classifyFapHealingFromLogLines(
+              recentLines,
+              fapHotStateRef.current
+            );
+            fapHotStateRef.current = fapClassifiedHealing.nextState;
+
             debugDetail(
               `[ChatLogMonitor] Parsed: ${events.length} loot, ${damageEvents.length} damage, ${combatEvents.length} combat, ${healingEvents.length} healing, ${damageTakenEvents.length} damage taken, ${skillGains.length} skills`
             );
@@ -525,17 +541,46 @@ export function ChatLogMonitor() {
 
             // Process healing events
             if (activeSession && healingEvents.length > 0) {
-              debugDetail('[ChatLogMonitor] Processing healing events:', healingEvents.length);
               const storeActions = useHuntStore.getState();
+              const loadout = activeSession.loadoutId
+                ? storeActions.loadouts.find((l) => l.id === activeSession?.loadoutId)
+                : storeActions.loadouts.find(
+                    (l) =>
+                      l.weapon?.Name === activeSession?.weapon || l.name === activeSession?.weapon
+                  );
+              const isLikelyFapLoadout = (loadout?.medicalME || 0) <= 0;
+
+              const classifiedHealingEvents = isLikelyFapLoadout
+                ? fapClassifiedHealing.healingEvents
+                : healingEvents.map((heal) => ({
+                    timestamp: heal.timestamp,
+                    amount: heal.amount,
+                    isDirectUse: true,
+                  }));
+
+              debugDetail(
+                '[ChatLogMonitor] Processing healing events:',
+                classifiedHealingEvents.length
+              );
+
               let addedCount = 0;
-              healingEvents.forEach((heal) => {
+              classifiedHealingEvents.forEach((heal) => {
                 const eventKey = `heal:${heal.timestamp}:${heal.amount}`;
                 if (!processedEventsRef.current.has(eventKey)) {
-                  debugDetail('[ChatLogMonitor] Adding healing event:', heal.amount);
+                  debugDetail(
+                    '[ChatLogMonitor] Adding healing event:',
+                    heal.amount,
+                    'directUse:',
+                    heal.isDirectUse
+                  );
                   storeActions.addHealingEvent(
                     activeSession.id,
                     heal.amount,
-                    parseTimestamp(heal.timestamp)
+                    parseTimestamp(heal.timestamp),
+                    {
+                      applyCost: heal.isDirectUse,
+                      isDirectUse: heal.isDirectUse,
+                    }
                   );
                   processedEventsRef.current.add(eventKey);
                   addedCount++;

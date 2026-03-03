@@ -59,6 +59,7 @@ export interface HealingEvent {
   id: string;
   amount: number;
   timestamp: number;
+  isDirectUse?: boolean;
 }
 
 export interface DamageTakenEvent {

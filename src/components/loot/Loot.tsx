@@ -1,15 +1,103 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useHuntStore } from '../../store';
-import { Info, Search, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Info, Search, ArrowUpDown, Trash2, X } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 
+interface ItemData {
+  Id: number;
+  Name: string;
+  Properties: {
+    Type: string;
+  };
+}
+
 export function Loot() {
+  const [itemTypeCache, setItemTypeCache] = useState<Map<string, string>>(new Map());
+  const [loadedItems, setLoadedItems] = useState<ItemData[] | null>(null);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [itemMarkup, setItemMarkup] = useState<number>(100);
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
   const removeLootByName = useHuntStore((state) => state.removeLootByName);
+  const ignoreList = useHuntStore((state) => state.settings.ignoreListItems || []);
+  const addToIgnoreList = useHuntStore((state) => state.addToIgnoreList);
+  const removeFromIgnoreList = useHuntStore((state) => state.removeFromIgnoreList);
+  const addItemTemplate = useHuntStore((state) => state.addItemTemplate);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'value' | 'qty' | 'name'>('value');
+
+  // Lazy-load item data and cache lookups
+  const getItemType = useMemo(() => {
+    return async (itemName: string): Promise<string | undefined> => {
+      // Return from cache if already looked up
+      if (itemTypeCache.has(itemName)) {
+        return itemTypeCache.get(itemName);
+      }
+
+      try {
+        // Load items.json only once
+        if (!loadedItems) {
+          const response = await fetch('/assets/items/entropia-items.json');
+          if (!response.ok) return undefined;
+          const items: ItemData[] = await response.json();
+          setLoadedItems(items);
+
+          // Find and cache this item
+          const found = items.find((item) => item.Name === itemName);
+          if (found) {
+            const type = found.Properties?.Type;
+            setItemTypeCache((prev) => new Map(prev).set(itemName, type));
+            return type;
+          }
+        } else {
+          // Items already loaded, search in loaded data
+          const found = loadedItems.find((item) => item.Name === itemName);
+          if (found) {
+            const type = found.Properties?.Type;
+            setItemTypeCache((prev) => new Map(prev).set(itemName, type));
+            return type;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to lookup item type:', err);
+      }
+      return undefined;
+    };
+  }, [itemTypeCache, loadedItems]);
+
+  // Helper to map Entropia Type to ItemTemplate category
+  const mapTypeToCategory = (
+    entropyType: string | undefined
+  ): 'loot' | 'weapon' | 'armor' | 'tool' | 'other' => {
+    if (!entropyType) return 'loot';
+    const type = entropyType.toLowerCase();
+    if (type.includes('weapon')) return 'weapon';
+    if (type.includes('armor') || type.includes('clothing')) return 'armor';
+    if (type.includes('tool')) return 'tool';
+    return 'loot';
+  };
+
+  // Preload item types for only the items in this session (lazy, memory efficient)
+  // This runs before the early return, so it works for all cases
+  useEffect(() => {
+    if (!activeSession || activeSession.loot.length === 0) {
+      return;
+    }
+
+    const preloadItemTypes = async () => {
+      const uniqueItemNames = new Set(activeSession.loot.map((item) => item.name));
+      for (const itemName of uniqueItemNames) {
+        if (!itemTypeCache.has(itemName)) {
+          await getItemType(itemName);
+        }
+      }
+    };
+
+    if (loadedItems === null) {
+      preloadItemTypes();
+    }
+  }, [activeSession, itemTypeCache, loadedItems, getItemType]);
 
   if (!activeSession) {
     return (
@@ -58,8 +146,9 @@ export function Loot() {
   const groupedLoot = Array.from(lootMap.values());
 
   // Filter and sort
-  const filteredLoot = groupedLoot.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredLoot = groupedLoot.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) && !ignoreList.includes(item.name)
   );
 
   filteredLoot.sort((a, b) => {
@@ -246,7 +335,7 @@ export function Loot() {
                       Name
                     </button>
                   </th>
-                  <th className="text-right py-2 px-3">Materials</th>
+                  <th className="text-right py-2 px-3">Type</th>
                   <th className="text-right py-2 px-3">TT</th>
                   <th className="text-right py-2 px-3">Share</th>
                   <th className="text-right py-2 px-3"></th>
@@ -255,9 +344,16 @@ export function Loot() {
               <tbody>
                 {filteredLoot.map((item, idx) => {
                   const share = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
-                  const isMaterial = item.name.includes('Oil') || item.name.includes('Shrapnel');
+                  const itemType = itemTypeCache.get(item.name);
                   return (
-                    <tr key={idx} className="border-b border-gray-800 hover:bg-surface">
+                    <tr
+                      key={idx}
+                      className="border-b border-gray-800 hover:bg-surface cursor-pointer"
+                      onClick={() => {
+                        setSelectedItem(item.name);
+                        setItemMarkup(100);
+                      }}
+                    >
                       <td className="py-2 px-3">
                         <div className="font-medium">{item.value.toFixed(2)}</div>
                         <div className="text-xs text-muted">{item.totalValue.toFixed(2)}</div>
@@ -265,13 +361,18 @@ export function Loot() {
                       <td className="py-2 px-3">{item.quantity}</td>
                       <td className="py-2 px-3 font-medium">{item.name}</td>
                       <td className="py-2 px-3 text-right">
-                        {isMaterial && <span className="text-blue-400">Materials</span>}
+                        {itemType && <span className="text-blue-400">{itemType}</span>}
                       </td>
                       <td className="py-2 px-3 text-right">
                         {(item.value / item.quantity).toFixed(4)} PED
                       </td>
                       <td className="py-2 px-3 text-right">{share.toFixed(1)}%</td>
-                      <td className="py-2 px-3 text-right">
+                      <td
+                        className="py-2 px-3 text-right"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
                         <button
                           onClick={() =>
                             activeSession && removeLootByName(activeSession.id, item.name)
@@ -339,6 +440,82 @@ export function Loot() {
       <div className="col-span-3">
         <ActiveSessionSidebar />
       </div>
+
+      {/* Item Options Modal */}
+      {selectedItem && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-surface border border-border rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">{selectedItem}</h3>
+              <button onClick={() => setSelectedItem(null)} className="text-muted hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Markup Setting */}
+              <div>
+                <label className="block text-sm text-muted mb-2">Set Markup %</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="100"
+                    step="1"
+                    value={itemMarkup}
+                    onChange={(e) => setItemMarkup(Number(e.target.value))}
+                    className="input flex-1"
+                  />
+                  <button
+                    onClick={() => {
+                      addItemTemplate({
+                        name: selectedItem,
+                        category: mapTypeToCategory(itemTypeCache.get(selectedItem)),
+                        defaultTTValue: 0,
+                        defaultMarkup: itemMarkup,
+                        description: `Set from loot page - Type: ${itemTypeCache.get(selectedItem) || 'Unknown'}`,
+                      });
+                      setSelectedItem(null);
+                    }}
+                    className="btn-primary"
+                  >
+                    Save MU
+                  </button>
+                </div>
+              </div>
+
+              {/* Ignore List */}
+              <div className="border-t border-border pt-4">
+                {ignoreList.includes(selectedItem) ? (
+                  <button
+                    onClick={() => {
+                      removeFromIgnoreList(selectedItem);
+                      setSelectedItem(null);
+                    }}
+                    className="btn-secondary w-full"
+                  >
+                    Remove from Ignore List
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      addToIgnoreList(selectedItem);
+                      setSelectedItem(null);
+                    }}
+                    className="btn-secondary w-full"
+                  >
+                    Add to Ignore List
+                  </button>
+                )}
+              </div>
+
+              {/* Close Button */}
+              <button onClick={() => setSelectedItem(null)} className="btn-secondary w-full">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

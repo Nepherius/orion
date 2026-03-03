@@ -99,7 +99,7 @@ export function calculateSessionStats(
     shotsFired: shotsFiredCount,
     damageDealt: session.damageEvents?.reduce((sum, evt) => sum + evt.damage, 0) || 0,
     damageTaken: session.damageTakenEvents?.reduce((sum, evt) => sum + evt.damage, 0) || 0,
-    healsUsed: session.healingEvents?.length || 0,
+    healsUsed: session.healingEvents?.filter((evt) => evt.isDirectUse !== false).length || 0,
     totalHealing: session.healingEvents?.reduce((sum, evt) => sum + evt.amount, 0) || 0,
     misses,
     dodges,
