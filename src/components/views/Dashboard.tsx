@@ -21,6 +21,7 @@ import { EfficiencyAnalytics } from '../analytics/EfficiencyAnalytics';
 import { SkillsAnalytics } from '../analytics/SkillsAnalytics';
 import { CombatAnalytics } from '../analytics/CombatAnalytics';
 import { HourlyRatesAnalytics } from '../analytics/HourlyRatesAnalytics';
+import { HealingAnalytics } from '../analytics/HealingAnalytics';
 import { GrindGoals } from '../analytics/GrindGoals';
 
 export function Dashboard() {
@@ -36,6 +37,7 @@ export function Dashboard() {
     | 'skills'
     | 'combat'
     | 'hourly'
+    | 'healing'
     | null;
   const [analyticsView, setAnalyticsView] = useState<AnalyticsView>(null);
 
@@ -145,6 +147,14 @@ export function Dashboard() {
   const skillsPerKill =
     activeSession.stats.kills > 0 ? totalSkillGains / activeSession.stats.kills : 0;
   const avgSkillValue = totalSkillEvents > 0 ? totalSkillGains / totalSkillEvents : 0;
+
+  // Healing metrics
+  const totalHealing = activeSession.stats.totalHealing || 0;
+  const healsUsed = activeSession.stats.healsUsed || 0;
+  const healingCost = activeSession.healingCost || 0;
+  const avgHealAmount = healsUsed > 0 ? totalHealing / healsUsed : 0;
+  const costPerHeal = healsUsed > 0 ? healingCost / healsUsed : 0;
+  const healingEfficiency = healingCost > 0 ? totalHealing / healingCost : 0;
 
   const formatSmallValue = (value: number, decimals: number = 2) => {
     const absolute = Math.abs(value);
@@ -330,7 +340,7 @@ export function Dashboard() {
           </div>
 
           {/* Bottom Stats Grid */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             {/* Skills */}
             <div
               className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
@@ -347,6 +357,37 @@ export function Dashboard() {
                 <StatCard label="Skills/Hour" value={skillsPerHour.toFixed(4)} />
                 <StatCard label="Skills/Kill" value={skillsPerKill.toFixed(4)} />
                 <StatCard label="Avg Skill Value" value={avgSkillValue.toFixed(4)} />
+              </div>
+            </div>
+
+            {/* Healing */}
+            <div
+              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
+              onClick={() => setAnalyticsView('healing')}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-blue-400 uppercase">Healing</h3>
+                <span className="text-blue-400 text-xl">›</span>
+              </div>
+              <div className="space-y-3">
+                <StatCard
+                  label="Total Healing"
+                  value={totalHealing.toFixed(0)}
+                  color="text-green-400"
+                />
+                <StatCard label="Heals Used" value={healsUsed} />
+                <StatCard label="Avg Heal Amount" value={avgHealAmount.toFixed(1)} />
+                <StatCard label="Cost per Heal" value={costPerHeal.toFixed(2)} />
+                <StatCard
+                  label="Healing Efficiency"
+                  value={healingEfficiency.toFixed(2)}
+                  color={healingEfficiency > 1 ? 'text-green-400' : 'text-red-400'}
+                />
+                <StatCard
+                  label="Healing Cost"
+                  value={`${healingCost.toFixed(2)} PED`}
+                  color="text-red-400"
+                />
               </div>
             </div>
 
@@ -458,9 +499,11 @@ export function Dashboard() {
                   ? 'Skills Analytics'
                   : analyticsView === 'combat'
                     ? 'Combat Analytics'
-                    : analyticsView === 'hourly'
-                      ? 'Hourly Rates Analytics'
-                      : 'Analytics'
+                    : analyticsView === 'healing'
+                      ? 'Healing Analytics'
+                      : analyticsView === 'hourly'
+                        ? 'Hourly Rates Analytics'
+                        : 'Analytics'
         }
       >
         {analyticsView === 'performance' && <PerformanceAnalytics session={activeSession} />}
@@ -468,6 +511,7 @@ export function Dashboard() {
         {analyticsView === 'efficiency' && <EfficiencyAnalytics session={activeSession} />}
         {analyticsView === 'skills' && <SkillsAnalytics session={activeSession} />}
         {analyticsView === 'combat' && <CombatAnalytics session={activeSession} />}
+        {analyticsView === 'healing' && <HealingAnalytics session={activeSession} />}
         {analyticsView === 'hourly' && <HourlyRatesAnalytics session={activeSession} />}
       </AnalyticsModal>
     </>

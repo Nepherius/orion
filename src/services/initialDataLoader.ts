@@ -23,28 +23,90 @@ export interface ProgressUpdate {
   message: string;
 }
 
+function hasValidDataPayload(parsed: unknown): boolean {
+  if (!parsed || typeof parsed !== 'object') {
+    return false;
+  }
+
+  const wrapped = parsed as { data?: unknown; lastUpdateAt?: unknown };
+  if (wrapped.data !== undefined) {
+    if (Array.isArray(wrapped.data)) {
+      return wrapped.data.length > 0;
+    }
+    if (typeof wrapped.data === 'object' && wrapped.data !== null) {
+      return Object.keys(wrapped.data).length > 0;
+    }
+    return Boolean(wrapped.data);
+  }
+
+  if (Array.isArray(parsed)) {
+    return parsed.length > 0;
+  }
+
+  return Object.keys(parsed).length > 0;
+}
+
 /**
  * Check if equipment data has already been downloaded
  */
 export async function hasEquipmentData(): Promise<boolean> {
-  try {
-    // Check if weapons file exists and has timestamp
-    const content = await readTextFile(EQUIPMENT_PATHS.weapons, { baseDir: BaseDirectory.AppData });
-    const parsed = JSON.parse(content);
+  const requiredFiles = [
+    EQUIPMENT_PATHS.weapons,
+    EQUIPMENT_PATHS.amplifiers,
+    EQUIPMENT_PATHS.scopes,
+    EQUIPMENT_PATHS.sights,
+    EQUIPMENT_PATHS.absorbers,
+    EQUIPMENT_PATHS.armor,
+    EQUIPMENT_PATHS.items,
+  ];
 
-    if (parsed.lastUpdateAt && parsed.data) {
+  let validFileCount = 0;
+  let timestampedFileCount = 0;
+
+  for (const path of requiredFiles) {
+    try {
+      const content = await readTextFile(path, { baseDir: BaseDirectory.AppData });
+      const parsed = JSON.parse(content) as { lastUpdateAt?: number } | unknown;
+
+      if (!hasValidDataPayload(parsed)) {
+        // eslint-disable-next-line no-console
+        console.warn('[InitialDataLoader] Invalid/empty equipment payload:', path);
+        continue;
+      }
+
+      validFileCount += 1;
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        'lastUpdateAt' in parsed &&
+        typeof parsed.lastUpdateAt === 'number'
+      ) {
+        timestampedFileCount += 1;
+      }
+    } catch (error) {
       // eslint-disable-next-line no-console
-      console.log(
-        '[InitialDataLoader] Equipment data exists, last updated:',
-        new Date(parsed.lastUpdateAt)
-      );
-      return true;
+      console.warn('[InitialDataLoader] Equipment file check failed:', path, error);
     }
-    return false;
-  } catch {
-    // File doesn't exist or is invalid
-    return false;
   }
+
+  // If any file has a valid timestamped payload, treat data as initialized.
+  // This avoids unnecessary refetches when one optional file is missing/corrupt.
+  if (timestampedFileCount > 0) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[InitialDataLoader] Equipment data detected via timestamped files: ${timestampedFileCount}/${requiredFiles.length}`
+    );
+    return true;
+  }
+
+  // Legacy format support (valid payloads without wrapper timestamps)
+  if (validFileCount === requiredFiles.length) {
+    // eslint-disable-next-line no-console
+    console.log('[InitialDataLoader] Equipment data detected via legacy payload format');
+    return true;
+  }
+
+  return false;
 }
 
 export async function loadInitialEquipmentData(

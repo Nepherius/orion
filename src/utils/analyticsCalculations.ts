@@ -537,6 +537,102 @@ export function calculateSessionAttributeGains(
 }
 
 /**
+ * Calculate creature stats by location
+ * Returns data organized by location, showing most killed and most profitable creatures
+ */
+export function calculateCreatureStatsByLocation(sessions: HuntSession[]): Record<
+  string,
+  {
+    mostKilled: { creature: string; kills: number } | null;
+    mostProfitable: { creature: string; profit: number } | null;
+    totalKills: number;
+    creatures: Record<
+      string,
+      {
+        kills: number;
+        sessions: number;
+        totalLoot: number;
+        totalCost: number;
+        profit: number;
+        returnRate: number;
+      }
+    >;
+  }
+> {
+  return sessions.reduce(
+    (acc, session) => {
+      const location = session.location || 'Unknown';
+      const creature = session.creature || 'Unknown';
+
+      if (!acc[location]) {
+        acc[location] = {
+          mostKilled: null,
+          mostProfitable: null,
+          totalKills: 0,
+          creatures: {},
+        };
+      }
+
+      if (!acc[location].creatures[creature]) {
+        acc[location].creatures[creature] = {
+          kills: 0,
+          sessions: 0,
+          totalLoot: 0,
+          totalCost: 0,
+          profit: 0,
+          returnRate: 0,
+        };
+      }
+
+      const creatureStats = acc[location].creatures[creature];
+      creatureStats.kills += session.stats.kills;
+      creatureStats.sessions += 1;
+      creatureStats.totalLoot += session.stats.totalLoot;
+      creatureStats.totalCost += session.stats.totalCost;
+      creatureStats.profit = creatureStats.totalLoot - creatureStats.totalCost;
+      creatureStats.returnRate =
+        creatureStats.totalCost > 0 ? (creatureStats.totalLoot / creatureStats.totalCost) * 100 : 0;
+
+      acc[location].totalKills += session.stats.kills;
+
+      // Update mostKilled
+      if (!acc[location].mostKilled || creatureStats.kills > acc[location].mostKilled.kills) {
+        acc[location].mostKilled = { creature, kills: creatureStats.kills };
+      }
+
+      // Update mostProfitable
+      if (
+        !acc[location].mostProfitable ||
+        creatureStats.profit > acc[location].mostProfitable.profit
+      ) {
+        acc[location].mostProfitable = { creature, profit: creatureStats.profit };
+      }
+
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        mostKilled: { creature: string; kills: number } | null;
+        mostProfitable: { creature: string; profit: number } | null;
+        totalKills: number;
+        creatures: Record<
+          string,
+          {
+            kills: number;
+            sessions: number;
+            totalLoot: number;
+            totalCost: number;
+            profit: number;
+            returnRate: number;
+          }
+        >;
+      }
+    >
+  );
+}
+
+/**
  * Calculate lifetime attribute gains across multiple sessions
  */
 export function calculateLifetimeAttributeGains(

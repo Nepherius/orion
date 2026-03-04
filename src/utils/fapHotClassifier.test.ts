@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { classifyFapHealingFromLogLines } from './fapHotClassifier';
+import { classifyFapHealingFromLogLines, getHealToolProfile } from './fapHotClassifier';
 
 describe('classifyFapHealingFromLogLines', () => {
-  it('binds EoT only when it appears after direct heal and marks close follow-up as HoT tick', () => {
+  it('marks first heal after EoT as direct, then later heals can be HoT ticks', () => {
     const content = [
       '2026-03-03 10:00:00 [System] [] You healed yourself 30.0 points',
       '2026-03-03 10:00:01 [System] [] Received Effect Over Time: Heal',
       '2026-03-03 10:00:02 [System] [] You healed yourself 5.0 points',
+      '2026-03-03 10:00:03 [System] [] You healed yourself 2.0 points',
     ].join('\n');
 
     const result = classifyFapHealingFromLogLines(content);
 
-    expect(result.healingEvents).toHaveLength(2);
+    expect(result.healingEvents).toHaveLength(3);
     expect(result.healingEvents[0]).toMatchObject({ amount: 30, isDirectUse: true });
-    expect(result.healingEvents[1]).toMatchObject({ amount: 5, isDirectUse: false });
+    expect(result.healingEvents[1]).toMatchObject({ amount: 5, isDirectUse: true });
+    expect(result.healingEvents[2]).toMatchObject({ amount: 2, isDirectUse: false });
   });
 
   it('refreshes active FAP HoT to now+10s (not cumulative) on direct use without new EoT', () => {
@@ -81,5 +83,44 @@ describe('classifyFapHealingFromLogLines', () => {
     for (let i = 9; i < 13; i++) {
       expect(result.healingEvents[i]).toMatchObject({ amount: 1.5, isDirectUse: false });
     }
+  });
+
+  it('uses 30s HoT window for restoration chip', () => {
+    const restorationProfile = getHealToolProfile('Restoration Chip IV');
+
+    const result = classifyFapHealingFromLogLines(
+      [
+        '2026-03-03 10:00:00 [System] [] You healed yourself 20.0 points',
+        '2026-03-03 10:00:20 [System] [] You healed yourself 2.0 points',
+        '2026-03-03 10:00:31 [System] [] You healed yourself 2.0 points',
+      ].join('\n'),
+      undefined,
+      restorationProfile.windowDurationMs,
+      restorationProfile.hotMode
+    );
+
+    expect(result.healingEvents).toHaveLength(3);
+    expect(result.healingEvents[0]).toMatchObject({ amount: 20, isDirectUse: true });
+    expect(result.healingEvents[1]).toMatchObject({ amount: 2, isDirectUse: false });
+    expect(result.healingEvents[2]).toMatchObject({ amount: 2, isDirectUse: true });
+  });
+
+  it('treats regeneration chip heals as direct uses (no HoT ticks)', () => {
+    const regenerationProfile = getHealToolProfile('Regeneration Chip I');
+
+    const result = classifyFapHealingFromLogLines(
+      [
+        '2026-03-03 10:00:00 [System] [] You healed yourself 10.0 points',
+        '2026-03-03 10:00:01 [System] [] Received Effect Over Time: Heal',
+        '2026-03-03 10:00:02 [System] [] You healed yourself 2.0 points',
+      ].join('\n'),
+      undefined,
+      regenerationProfile.windowDurationMs,
+      regenerationProfile.hotMode
+    );
+
+    expect(result.healingEvents).toHaveLength(2);
+    expect(result.healingEvents[0]).toMatchObject({ amount: 10, isDirectUse: true });
+    expect(result.healingEvents[1]).toMatchObject({ amount: 2, isDirectUse: true });
   });
 });

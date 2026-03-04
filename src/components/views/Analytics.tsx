@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import { InfoTooltip } from '../common/InfoTooltip';
+import { CreatureAnalytics } from '../analytics/CreatureAnalytics';
 import {
   calculateAverageDropValue,
   getLargestDrop,
@@ -1285,6 +1286,9 @@ export function Analytics() {
           </div>
         </div>
       )}
+
+      {/* Category 7b: Detailed Creature Analytics */}
+      {filteredSessions.length > 0 && <CreatureAnalytics sessions={filteredSessions} />}
 
       {/* Category 10: Skill Efficiency */}
       <div className="grid grid-cols-2 gap-6">

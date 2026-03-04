@@ -81,12 +81,13 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
     { label: 'Hit Rate', value: `${hitRate.toFixed(1)}%`, good: hitRate >= 80 },
     { label: 'Crit Rate', value: `${critRate.toFixed(1)}%`, good: critRate >= 5 },
     { label: 'Total Events', value: session.stats.lootEvents, good: true },
+    { label: 'Total Kills', value: `${session.stats.kills}?`, good: true },
   ];
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <div className="card p-6">
           <div className="text-sm text-muted mb-2">RETURN RATE</div>
           <div
@@ -127,6 +128,15 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
             <Award className="w-5 h-5 inline mr-2" />
             {critRate.toFixed(1)}%
           </div>
+        </div>
+
+        <div className="card p-6">
+          <div className="text-sm text-muted mb-2">KILLS?</div>
+          <div className="text-3xl font-bold text-orange-400">
+            <Target className="w-5 h-5 inline mr-2" />
+            {session.stats.kills}
+          </div>
+          <div className="text-xs text-muted mt-1">Estimated from damage events</div>
         </div>
       </div>
 

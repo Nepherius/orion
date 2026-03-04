@@ -23,6 +23,8 @@ export function useInitialDataLoader() {
         return;
       }
 
+      setHasAttempted(true);
+
       // Check if equipment data already exists
       const dataExists = await hasEquipmentData();
       if (dataExists) {
@@ -31,7 +33,6 @@ export function useInitialDataLoader() {
         return;
       }
 
-      setHasAttempted(true);
       // eslint-disable-next-line no-console
       console.log('[InitialDataLoader] First run detected, loading equipment data...');
       setIsLoading(true);

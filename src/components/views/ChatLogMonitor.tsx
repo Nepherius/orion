@@ -4,6 +4,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useHuntStore } from '../../store';
 import {
   classifyFapHealingFromLogLines,
+  getHealToolProfile,
   type FapHotClassifierState,
 } from '../../utils/fapHotClassifier';
 
@@ -82,6 +83,7 @@ export function ChatLogMonitor() {
     lastHealTimestampMs: null,
     lastHealAmount: null,
     pendingDirectHealTimestampMs: null,
+    expectingDirectUseHeal: false,
   });
 
   const parseTimestamp = (ts: string): number => {
@@ -331,19 +333,39 @@ export function ChatLogMonitor() {
             const damageTakenEvents = result.damage_taken_events;
             const skillGains = result.skill_gains;
 
+            // Get fresh state and active session for loadout lookup
+            const currentState = useHuntStore.getState();
+            let activeSession = currentState.getActiveSession();
+            
+            // Determine heal window duration based on active session's loadout heal tool
+            let healWindowDurationMs: number | undefined;
+            let healHotMode: 'always' | 'conditional' | 'none' | undefined;
+            if (activeSession?.loadoutId) {
+              const sessionLoadout = currentState.loadouts.find(
+                (l) => l.id === activeSession?.loadoutId
+              );
+              if (sessionLoadout?.medicalTool) {
+                const healToolProfile = getHealToolProfile(sessionLoadout.medicalTool);
+                healWindowDurationMs = healToolProfile.windowDurationMs;
+                healHotMode = healToolProfile.hotMode;
+                debugDetail(
+                  `[ChatLogMonitor] Heal tool: ${sessionLoadout.medicalTool}, window: ${healWindowDurationMs}ms, mode: ${healHotMode}`
+                );
+              }
+            }
+
             const fapClassifiedHealing = classifyFapHealingFromLogLines(
               recentLines,
-              fapHotStateRef.current
+              fapHotStateRef.current,
+              healWindowDurationMs,
+              healHotMode
             );
             fapHotStateRef.current = fapClassifiedHealing.nextState;
 
             debugDetail(
               `[ChatLogMonitor] Parsed: ${events.length} loot, ${damageEvents.length} damage, ${combatEvents.length} combat, ${healingEvents.length} healing, ${damageTakenEvents.length} damage taken, ${skillGains.length} skills`
             );
-
-            // Process new events - get fresh state each time
-            let activeSession = useHuntStore.getState().getActiveSession();
-            const storeSettings = useHuntStore.getState().settings;
+            const storeSettings = currentState.settings;
             debugDetail('[ChatLogMonitor] Current active session:', activeSession?.id);
 
             // If there's no active session but we have events (loot, damage, combat, healing, damage taken) and auto-start is enabled, auto-create one

@@ -112,7 +112,7 @@ export function ActiveSessionPanel({
           className="btn-danger flex flex-1 items-center justify-center gap-2 px-8 py-1 text-sm"
         >
           <StopCircle className="w-4 h-4" />
-          Stop
+          Complete
         </button>
         <button
           onClick={handleShowOverlay}

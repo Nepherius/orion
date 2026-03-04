@@ -9,7 +9,7 @@ A modern **desktop application** for tracking Entropia Universe hunting sessions
 - **Tiny file size** (~10-20 MB)
 - **Local-first** - All data stays on your machine
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Features
@@ -189,4 +189,4 @@ For issues, questions, or suggestions, please use the GitLab issue tracker.
 
 ---
 
-_Orion Loot Tracker v1.1.0_
+_Orion Loot Tracker v1.2.0_
