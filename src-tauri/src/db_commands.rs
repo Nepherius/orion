@@ -214,14 +214,15 @@ pub struct AddLootParams {
     fixed_value: Option<f64>,
     total_value: f64,
     timestamp: i64,
+    kill_uuid: Option<String>,
 }
 
 #[tauri::command]
 pub fn db_add_loot(params: AddLootParams, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     conn.execute(
-        "INSERT INTO loot_items (uuid, session_uuid, name, quantity, value, markup, fixed_value, total_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-        params![params.uuid, params.session_uuid, params.name, params.quantity, params.value, params.markup, params.fixed_value, params.total_value, params.timestamp],
+        "INSERT INTO loot_items (uuid, session_uuid, name, quantity, value, markup, fixed_value, total_value, timestamp, kill_uuid) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+        params![params.uuid, params.session_uuid, params.name, params.quantity, params.value, params.markup, params.fixed_value, params.total_value, params.timestamp, params.kill_uuid],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -236,6 +237,7 @@ pub fn db_update_loot(
     markup: Option<f64>,
     fixed_value: Option<f64>,
     total_value: Option<f64>,
+    kill_uuid: Option<String>,
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
@@ -265,6 +267,10 @@ pub fn db_update_loot(
     }
     if let Some(v) = total_value {
         updates.push("total_value = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = kill_uuid {
+        updates.push("kill_uuid = ?");
         values.push(Box::new(v));
     }
 
@@ -676,6 +682,68 @@ pub fn db_get_session_globals(
         globals.push(row.map_err(|e| e.to_string())?);
     }
     Ok(json!(globals))
+}
+
+// ========== KILLS ==========
+
+#[tauri::command]
+pub fn db_add_kill(
+    uuid: String,
+    session_uuid: String,
+    creature_name: String,
+    maturity: Option<String>,
+    hp_dealt: f64,
+    cost: f64,
+    loot_value: f64,
+    timestamp: i64,
+    state: State<'_, DbState>,
+) -> Result<(), String> {
+    println!(
+        "[Kill Tracking] Persisting kill: creature='{}', maturity='{}', hp_dealt={:.2}, loot_value={:.2}",
+        creature_name,
+        maturity.clone().unwrap_or_else(|| "Unknown".to_string()),
+        hp_dealt,
+        loot_value
+    );
+
+    let conn = state.db.lock().unwrap();
+    conn.execute(
+        "INSERT INTO kills (uuid, session_uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![uuid, session_uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_get_session_kills(
+    session_uuid: String,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp FROM kills WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt
+        .query_map([session_uuid], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "creatureName": row.get::<_, String>(1)?,
+                "maturity": row.get::<_, Option<String>>(2)?,
+                "hpDealt": row.get::<_, f64>(3)?,
+                "cost": row.get::<_, f64>(4)?,
+                "lootValue": row.get::<_, f64>(5)?,
+                "timestamp": row.get::<_, i64>(6)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut kills = Vec::new();
+    for row in rows {
+        kills.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(json!(kills))
 }
 
 // ========== DAMAGE EVENTS ==========

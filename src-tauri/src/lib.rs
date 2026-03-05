@@ -125,6 +125,19 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS kills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            creature_name TEXT NOT NULL,
+            maturity TEXT,
+            hp_dealt REAL NOT NULL,
+            cost REAL NOT NULL,
+            loot_value REAL NOT NULL,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
+        );
+
         CREATE TABLE IF NOT EXISTS damage_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             uuid TEXT NOT NULL UNIQUE,
@@ -200,6 +213,9 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
         CREATE INDEX IF NOT EXISTS idx_loot_session ON loot_items(session_uuid);
         CREATE INDEX IF NOT EXISTS idx_skills_session ON skill_gains(session_uuid);
         CREATE INDEX IF NOT EXISTS idx_globals_session ON globals(session_uuid);
+        CREATE INDEX IF NOT EXISTS idx_kills_session ON kills(session_uuid);
+        CREATE INDEX IF NOT EXISTS idx_kills_creature ON kills(creature_name);
+        CREATE INDEX IF NOT EXISTS idx_kills_timestamp ON kills(timestamp);
         CREATE INDEX IF NOT EXISTS idx_damage_session ON damage_events(session_uuid);
         CREATE INDEX IF NOT EXISTS idx_combat_session ON combat_events(session_uuid);
         CREATE INDEX IF NOT EXISTS idx_healing_session ON healing_events(session_uuid);
@@ -212,7 +228,29 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     let _ = conn.execute("ALTER TABLE sessions ADD COLUMN creature TEXT", []);
     let _ = conn.execute("ALTER TABLE loadouts ADD COLUMN armor TEXT", []);
     let _ = conn.execute("ALTER TABLE loot_items ADD COLUMN fixed_value REAL", []);
+    let _ = conn.execute("ALTER TABLE loot_items ADD COLUMN kill_uuid TEXT", []);
     let _ = conn.execute("ALTER TABLE item_templates ADD COLUMN default_fixed_value REAL", []);
+    
+    // Create kills table if it doesn't exist (migration for existing databases)
+    let _ = conn.execute(
+        "CREATE TABLE IF NOT EXISTS kills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            session_uuid TEXT NOT NULL,
+            creature_name TEXT NOT NULL,
+            maturity TEXT,
+            hp_dealt REAL NOT NULL,
+            cost REAL NOT NULL,
+            loot_value REAL NOT NULL,
+            timestamp INTEGER NOT NULL,
+            FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
+        )",
+        [],
+    );
+    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_kills_session ON kills(session_uuid)", []);
+    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_kills_creature ON kills(creature_name)", []);
+    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_kills_timestamp ON kills(timestamp)", []);
+    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_loot_kill ON loot_items(kill_uuid)", []);
 
     Ok(())
 }
@@ -529,6 +567,8 @@ pub fn run() {
             db_commands::db_get_session_skills,
             db_commands::db_add_global,
             db_commands::db_get_session_globals,
+            db_commands::db_add_kill,
+            db_commands::db_get_session_kills,
             db_commands::db_add_damage_event,
             db_commands::db_get_session_damage_events,
             db_commands::db_add_combat_event,

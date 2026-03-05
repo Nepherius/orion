@@ -1,6 +1,7 @@
 import { FolderOpen, User, FileText, Palette, Sliders } from 'lucide-react';
 import { useSettingsModel } from '../../hooks/useSettingsModel';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { InfoTooltip } from '../common/InfoTooltip';
 import { open } from '@tauri-apps/plugin-shell';
 
 interface SettingSectionProps {
@@ -144,6 +145,22 @@ export function Settings() {
             <label htmlFor="autoSave" className="text-sm text-gray-300">
               Auto-save data automatically
             </label>
+          </div>
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="enableKillTrackingMaturity"
+              checked={settings.enableKillTrackingMaturity ?? true}
+              onChange={(e) => updateSettings({ enableKillTrackingMaturity: e.target.checked })}
+              className="w-4 h-4"
+            />
+            <label htmlFor="enableKillTrackingMaturity" className="text-sm text-gray-300">
+              HP-based maturity inference (experimental)
+            </label>
+            <InfoTooltip tooltip="Automatically infer creature maturity by matching HP dealt to known creature stats. If disabled, all kills will show Unknown maturity for analytical purposes." />
           </div>
         </div>
       </SettingSection>

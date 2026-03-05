@@ -42,7 +42,7 @@ export function AddLootModal({ sessionId, onClose }: AddLootModalProps) {
       formData.fixedValue > 0
         ? (formData.value + formData.fixedValue) * formData.quantity
         : formData.value * (formData.markup / 100) * formData.quantity;
-    addLoot(sessionId, { ...formData, totalValue });
+    void addLoot(sessionId, { ...formData, totalValue });
     onClose();
   };
 
@@ -114,7 +114,8 @@ export function AddLootModal({ sessionId, onClose }: AddLootModalProps) {
               className="input w-full"
             />
             <p className="text-xs text-muted mt-1">
-              100% = TT value, 150% = TT + 50%{formData.fixedValue > 0 ? ' (ignored when fixed value is set)' : ''}
+              100% = TT value, 150% = TT + 50%
+              {formData.fixedValue > 0 ? ' (ignored when fixed value is set)' : ''}
             </p>
           </div>
 
@@ -129,7 +130,9 @@ export function AddLootModal({ sessionId, onClose }: AddLootModalProps) {
               placeholder="0.00"
               className="input w-full"
             />
-            <p className="text-xs text-muted mt-1">If set above 0, total uses TT + fixed value and ignores MU.</p>
+            <p className="text-xs text-muted mt-1">
+              If set above 0, total uses TT + fixed value and ignores MU.
+            </p>
           </div>
 
           <div className="bg-surface rounded-lg p-4">

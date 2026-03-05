@@ -20,6 +20,7 @@ import {
 import { format } from 'date-fns';
 import { InfoTooltip } from '../common/InfoTooltip';
 import { CreatureAnalytics } from '../analytics/CreatureAnalytics';
+import { KillTrackingAnalytics } from '../analytics/KillTrackingAnalytics';
 import {
   calculateAverageDropValue,
   getLargestDrop,
@@ -1271,13 +1272,13 @@ export function Analytics() {
                 <div
                   className={`text-right ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                 >
-                  {creature.returnRate.toFixed(1)}%
+                  {creature.returnRate.toFixed(2)}%
                 </div>
                 <div
                   className={`text-right ${creature.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
                 >
                   {creature.profit >= 0 ? '+' : ''}
-                  {creature.profit.toFixed(0)}
+                  {creature.profit.toFixed(2)}
                 </div>
                 <div className="text-right">{creature.totalKills}</div>
                 <div className="text-right text-yellow-400">{creature.totalGlobals}</div>
@@ -1287,7 +1288,10 @@ export function Analytics() {
         </div>
       )}
 
-      {/* Category 7b: Detailed Creature Analytics */}
+      {/* Category 7b: Kill Tracking Analytics */}
+      {filteredSessions.length > 0 && <KillTrackingAnalytics sessions={filteredSessions} />}
+
+      {/* Category 7c: Detailed Creature Analytics */}
       {filteredSessions.length > 0 && <CreatureAnalytics sessions={filteredSessions} />}
 
       {/* Category 10: Skill Efficiency */}

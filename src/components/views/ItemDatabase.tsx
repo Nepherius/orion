@@ -368,7 +368,9 @@ function ItemModal({ item, onClose, onSave }: ItemModalProps) {
               placeholder="0.00"
               className="input w-full"
             />
-            <p className="text-xs text-muted mt-1">When set above 0, MU is ignored for this item template.</p>
+            <p className="text-xs text-muted mt-1">
+              When set above 0, MU is ignored for this item template.
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">

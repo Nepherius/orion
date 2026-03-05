@@ -9,6 +9,7 @@ export interface LootItem {
   fixedValue?: number; // Fixed PED value per item (overrides markup when set)
   totalValue: number; // value * (markup / 100) * quantity
   timestamp: number;
+  killUuid?: string; // Associated kill UUID
 }
 
 export interface Goal {
@@ -33,6 +34,16 @@ export interface Global {
   value: number;
   timestamp: number;
   isHoF: boolean; // Hall of Fame (larger globals)
+}
+
+export interface Kill {
+  id: string;
+  creatureName: string;
+  maturity?: string;
+  hpDealt: number;
+  cost: number;
+  lootValue: number;
+  timestamp: number;
 }
 
 export interface DamageEvent {
@@ -113,6 +124,7 @@ export interface HuntSession {
   loot: LootItem[];
   skills: SkillGain[];
   globals: Global[];
+  kills: Kill[];
   damageEvents: DamageEvent[];
   combatEvents: CombatEvent[];
   healingEvents: HealingEvent[];
@@ -152,6 +164,7 @@ export interface AppSettings {
   overlayWidth?: number;
   overlayHeight?: number;
   ignoreListItems?: string[]; // Items to ignore in ChatLogMonitor
+  enableKillTrackingMaturity?: boolean; // Enable HP-based maturity inference for kills (experimental)
 }
 
 // Equipment and Loadout types

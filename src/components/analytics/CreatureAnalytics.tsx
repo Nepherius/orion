@@ -142,7 +142,7 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
                   creatureStats
                     .filter((c) => c.profit > 0)
                     .sort((a, b) => b.profit - a.profit)[0]
-                    ?.profit.toFixed(0) || 0
+                    ?.profit.toFixed(2) || 0
                 } PED`
               : '0 PED'}
           </div>
@@ -204,7 +204,7 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
                     className={`text-right font-bold ${item.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
                   >
                     {item.profit >= 0 ? '+' : ''}
-                    {item.profit.toFixed(0)} PED
+                    {item.profit.toFixed(2)} PED
                   </div>
                 </div>
               ))}
@@ -316,10 +316,10 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
                 <div
                   className={`text-right font-bold ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                 >
-                  {creature.returnRate.toFixed(1)}%
+                  {creature.returnRate.toFixed(2)}%
                 </div>
                 <div className="text-right text-muted">
-                  {creature.avgKillsPerSession.toFixed(1)}
+                  {creature.avgKillsPerSession.toFixed(2)}
                 </div>
                 <div className="text-right text-muted">{creature.costPerKill.toFixed(2)}</div>
                 <div className="text-right text-green-400">
@@ -361,13 +361,13 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
                 <div
                   className={`text-right font-bold ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
                 >
-                  {creature.returnRate.toFixed(1)}%
+                  {creature.returnRate.toFixed(2)}%
                 </div>
                 <div
                   className={`text-right font-bold ${creature.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
                 >
                   {creature.profit >= 0 ? '+' : ''}
-                  {creature.profit.toFixed(0)}
+                  {creature.profit.toFixed(2)}
                 </div>
                 <div className="text-right text-muted">{creature.costPerKill.toFixed(2)}</div>
                 <div className="text-right text-green-400">{creature.lootPerKill.toFixed(2)}</div>

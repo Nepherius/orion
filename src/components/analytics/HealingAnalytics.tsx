@@ -142,7 +142,9 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Healing Over Time</h3>
           {healingChart.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-muted">No healing events yet</div>
+            <div className="h-64 flex items-center justify-center text-muted">
+              No healing events yet
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={healingChart}>
@@ -173,7 +175,9 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Healing vs Damage Taken</h3>
           {comparisonChart.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-muted">No combat data yet</div>
+            <div className="h-64 flex items-center justify-center text-muted">
+              No combat data yet
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={comparisonChart}>
@@ -216,10 +220,7 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
           <div className="grid grid-cols-2 gap-8">
             {healingTypeData.map((item) => (
               <div key={item.name} className="flex items-center gap-4">
-                <div
-                  className="w-12 h-12 rounded"
-                  style={{ backgroundColor: item.color }}
-                />
+                <div className="w-12 h-12 rounded" style={{ backgroundColor: item.color }} />
                 <div>
                   <div className="text-sm text-muted">{item.name}</div>
                   <div className="text-2xl font-bold text-body">{item.value}</div>

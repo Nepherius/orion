@@ -343,7 +343,7 @@ export function ChatLogMonitor() {
             // Get fresh state and active session for loadout lookup
             const currentState = useHuntStore.getState();
             let activeSession = currentState.getActiveSession();
-            
+
             // Determine heal window duration based on active session's loadout heal tool
             let healWindowDurationMs: number | undefined;
             let healHotMode: 'always' | 'conditional' | 'none' | undefined;
@@ -467,14 +467,15 @@ export function ChatLogMonitor() {
 
                     // Check if item exists in database and use its markup
                     const customItem = storeState.itemDatabase.find(
-                      (item) => normalizeLootItemName(item.name) === normalizeLootItemName(evt.creature)
+                      (item) =>
+                        normalizeLootItemName(item.name) === normalizeLootItemName(evt.creature)
                     );
                     const markup = customItem?.defaultMarkup || storeSettings.defaultMarkup || 100;
                     const fixedValue = customItem?.defaultFixedValue || 0;
                     const totalValue =
                       fixedValue > 0 ? evt.value + fixedValue : evt.value * (markup / 100);
 
-                    storeActions.addLoot(activeSession.id, {
+                    void storeActions.addLoot(activeSession.id, {
                       name: evt.creature,
                       quantity: 1,
                       value: evt.value,

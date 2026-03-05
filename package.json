@@ -1,6 +1,6 @@
 {
   "name": "orion-loot-tracker",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Entropia Universe Loot Tracker - Track your hunting sessions, loot, and returns",
   "type": "module",
   "scripts": {

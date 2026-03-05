@@ -80,9 +80,6 @@ function extractCreaturesFromMobs(mobs: NexusMob[]): CreatureSummary[] {
   return creatures;
 }
 
-async function loadBundledAsset<T>(relativePath: string): Promise<T> {
-}
-
 /**
  * Check if equipment data has already been downloaded
  */
@@ -209,7 +206,10 @@ export async function loadInitialEquipmentData(
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
 
-    console.warn('[InitialDataLoader] API unavailable, using bundled assets. Will retry next restart:', errorMsg);
+    console.warn(
+      '[InitialDataLoader] API unavailable, using bundled assets. Will retry next restart:',
+      errorMsg
+    );
     onProgress?.({
       fileName: 'Bundled Data',
       current: 0,

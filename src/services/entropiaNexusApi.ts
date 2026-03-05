@@ -43,40 +43,40 @@ export interface NexusItem {
   Links?: unknown;
 }
 
-  export interface NexusMob {
+export interface NexusMob {
+  Id: number;
+  ClassId?: number | null;
+  Name: string;
+  Type: string;
+  Properties: {
+    Description?: string | null;
+    AttackRange?: number | null;
+    AggressionRange?: number | null;
+    AggressionTimer?: number | null;
+    AttacksPerMinute?: number | null;
+    IsSweatable?: boolean;
+  };
+  Maturities: Array<{
     Id: number;
-    ClassId?: number | null;
     Name: string;
-    Type: string;
     Properties: {
-      Description?: string | null;
-      AttackRange?: number | null;
-      AggressionRange?: number | null;
-      AggressionTimer?: number | null;
+      Health: number;
+      Level?: number;
       AttacksPerMinute?: number | null;
-      IsSweatable?: boolean;
-    };
-    Maturities: Array<{
-      Id: number;
-      Name: string;
-      Properties: {
-        Health: number;
-        Level?: number;
-        AttacksPerMinute?: number | null;
-        [key: string]: unknown;
-      };
-      [key: string]: unknown;
-    }>;
-    Planet?: {
-      Name: string;
-      [key: string]: unknown;
-    };
-    Species?: {
-      Name: string;
       [key: string]: unknown;
     };
     [key: string]: unknown;
-  }
+  }>;
+  Planet?: {
+    Name: string;
+    [key: string]: unknown;
+  };
+  Species?: {
+    Name: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
 
 async function fetchWithHeaders<T>(endpoint: string): Promise<T> {
   try {
@@ -150,11 +150,11 @@ export async function fetchAllItems(): Promise<NexusItem[]> {
   return fetchWithHeaders<NexusItem[]>('/items');
 }
 
-  export async function fetchMobs(): Promise<NexusMob[]> {
-    // eslint-disable-next-line no-console
-    console.log('[EntropiaNexus] Fetching mobs...');
-    return fetchWithHeaders<NexusMob[]>('/mobs');
-  }
+export async function fetchMobs(): Promise<NexusMob[]> {
+  // eslint-disable-next-line no-console
+  console.log('[EntropiaNexus] Fetching mobs...');
+  return fetchWithHeaders<NexusMob[]>('/mobs');
+}
 
 /**
  * Fetches all equipment data from Entropia Nexus API

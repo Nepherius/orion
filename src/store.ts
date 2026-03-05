@@ -6,6 +6,7 @@ import {
   LootItem,
   SkillGain,
   Global,
+  Kill,
   DamageEvent,
   CombatEvent,
   HealingEvent,
@@ -31,6 +32,14 @@ interface HuntStore {
   settings: AppSettings;
   goals: Goal[];
 
+  // Kill tracking state (maps sessionId to pending kill info)
+  pendingKills: Map<string, PendingKill>;
+  creatureData: Array<{ name: string; maturity: string; hp: number }> | null;
+
+  // Internal helper for kill tracking
+  _loadCreatureData: () => Promise<void>;
+  _finalizePendingKill: (sessionId: string) => Promise<void>;
+
   // Goal actions
   addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;
   updateGoal: (id: string, updates: Partial<Goal>) => void;
@@ -45,6 +54,7 @@ interface HuntStore {
       | 'loot'
       | 'skills'
       | 'globals'
+      | 'kills'
       | 'damageEvents'
       | 'combatEvents'
       | 'healingEvents'
@@ -56,13 +66,13 @@ interface HuntStore {
   startSession: (id: string) => void;
   pauseSession: (id: string) => void;
   resumeSession: (id: string) => void;
-  endSession: (id: string) => void;
+  endSession: (id: string) => Promise<void>;
 
   // Loot actions
   addLoot: (
     sessionId: string,
     loot: Omit<LootItem, 'id' | 'timestamp'> & { timestamp?: number }
-  ) => void;
+  ) => Promise<void>;
   updateLoot: (sessionId: string, lootId: string, updates: Partial<LootItem>) => void;
   updateLootByName: (
     sessionId: string,
@@ -175,6 +185,9 @@ let isApplyingRemoteSync = false;
 let allowBroadcasting = true; // Start true by default
 const storeSyncSourceId = `store-${Math.random().toString(36).slice(2)}`;
 
+// Guard to prevent concurrent kill finalization (race condition when multiple loot items arrive rapidly)
+const finalizationInProgress = new Set<string>();
+
 type StoreSyncPayload = {
   sourceId: string;
   sessions: HuntSession[];
@@ -201,6 +214,7 @@ const defaultSettings: AppSettings = {
   overlayWidth: 750,
   overlayHeight: 56,
   ignoreListItems: [],
+  enableKillTrackingMaturity: true,
 };
 
 const safeInvoke = async <T = unknown>(command: string, args?: Record<string, unknown>) => {
@@ -238,6 +252,96 @@ const loadJsonSetting = async <T>(key: string): Promise<T | null> => {
     console.warn(`[Settings] loadJsonSetting: Failed to parse value for key '${key}'`);
     return null;
   }
+};
+
+// Kill Tracking Helpers
+interface PendingKill {
+  startTimestamp: number;
+  endTimestamp: number;
+  lootItemIds: string[];
+}
+
+// Simple pending kill tracking: flag + damage start timestamp
+const pendingKillFlag = new Map<string, boolean>();
+const pendingKillStartTime = new Map<string, number>();
+
+const finalizePendingKill = async (
+  session: HuntSession,
+  pendingKill: PendingKill,
+  creatures: Array<{ name: string; maturity: string; hp: number }>,
+  settings: AppSettings
+) => {
+  if (!session.creature) {
+    console.warn('[Kill Tracking] Cannot finalize kill without creature selection');
+    return null;
+  }
+
+  // Use the pending kill's captured start/end timestamps.
+  const damageStartTime = pendingKill.startTimestamp;
+
+  // Get all damage between start of this kill and the loot
+  const damageInWindow = session.damageEvents.filter(
+    (evt) => evt.timestamp >= damageStartTime && evt.timestamp <= pendingKill.endTimestamp
+  );
+
+  const hpDealt = damageInWindow.reduce((sum, evt) => sum + evt.damage, 0);
+
+  if (hpDealt === 0) {
+    console.warn('[Kill Tracking] No damage events found for pending kill');
+    return null;
+  }
+
+  // Infer maturity from HP dealt or default to Unknown when disabled
+  let maturity = 'Unknown';
+  if (settings.enableKillTrackingMaturity ?? true) {
+    const { inferMaturity } = await import('./services/creatureDataLoader');
+    maturity = inferMaturity(session.creature, hpDealt, creatures) ?? 'Unknown';
+  }
+
+  // Calculate loot value from pending loot items
+  const lootValue = session.loot
+    .filter((item) => pendingKill.lootItemIds.includes(item.id))
+    .reduce((sum, item) => sum + item.totalValue, 0);
+
+  // Calculate proportional cost for this kill based on HP dealt
+  const totalSessionDamage = session.damageEvents.reduce((sum, evt) => sum + evt.damage, 0);
+  const totalSessionCost =
+    session.ammoCost + session.weaponDecay + session.healingCost + session.otherCosts;
+  const killCost = totalSessionDamage > 0 ? (hpDealt / totalSessionDamage) * totalSessionCost : 0;
+
+  // Create kill record
+  const killId = generateId();
+  const kill = {
+    id: killId,
+    creatureName: session.creature,
+    maturity,
+    hpDealt,
+    cost: killCost,
+    lootValue,
+    timestamp: pendingKill.endTimestamp,
+  };
+
+  // Persist kill to database
+  await safeInvoke('db_add_kill', {
+    uuid: kill.id,
+    sessionUuid: session.id,
+    creatureName: kill.creatureName,
+    maturity: kill.maturity,
+    hpDealt: kill.hpDealt,
+    cost: kill.cost,
+    lootValue: kill.lootValue,
+    timestamp: kill.timestamp,
+  });
+
+  // Update loot items with kill_uuid
+  for (const lootId of pendingKill.lootItemIds) {
+    await safeInvoke('db_update_loot', {
+      uuid: lootId,
+      kill_uuid: killId,
+    });
+  }
+
+  return kill;
 };
 
 const persistSessionToDb = async (session: HuntSession) => {
@@ -285,31 +389,41 @@ const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
 };
 
 const hydrateSessionEvents = async (session: HuntSession): Promise<HuntSession> => {
-  const [loot, skills, globals, damageEvents, combatEvents, healingEvents, damageTakenEvents] =
-    await Promise.all([
-      safeInvoke<LootItem[]>('db_get_session_loot', { sessionUuid: session.id }),
-      safeInvoke<SkillGain[]>('db_get_session_skills', { sessionUuid: session.id }),
-      safeInvoke<Global[]>('db_get_session_globals', { sessionUuid: session.id }),
-      safeInvoke<DamageEvent[]>('db_get_session_damage_events', { sessionUuid: session.id }),
-      safeInvoke<CombatEvent[]>('db_get_session_combat_events', { sessionUuid: session.id }),
-      safeInvoke<HealingEvent[]>('db_get_session_healing_events', { sessionUuid: session.id }),
-      safeInvoke<DamageTakenEvent[]>('db_get_session_damage_taken_events', {
-        sessionUuid: session.id,
-      }),
-    ]);
+  const [
+    loot,
+    skills,
+    globals,
+    kills,
+    damageEvents,
+    combatEvents,
+    healingEvents,
+    damageTakenEvents,
+  ] = await Promise.all([
+    safeInvoke<LootItem[]>('db_get_session_loot', { sessionUuid: session.id }),
+    safeInvoke<SkillGain[]>('db_get_session_skills', { sessionUuid: session.id }),
+    safeInvoke<Global[]>('db_get_session_globals', { sessionUuid: session.id }),
+    safeInvoke<Kill[]>('db_get_session_kills', { sessionUuid: session.id }),
+    safeInvoke<DamageEvent[]>('db_get_session_damage_events', { sessionUuid: session.id }),
+    safeInvoke<CombatEvent[]>('db_get_session_combat_events', { sessionUuid: session.id }),
+    safeInvoke<HealingEvent[]>('db_get_session_healing_events', { sessionUuid: session.id }),
+    safeInvoke<DamageTakenEvent[]>('db_get_session_damage_taken_events', {
+      sessionUuid: session.id,
+    }),
+  ]);
 
   const hydrated: HuntSession = {
     ...session,
     loot: loot ?? [],
     skills: skills ?? [],
     globals: globals ?? [],
+    kills: kills ?? [],
     damageEvents: damageEvents ?? [],
     combatEvents: combatEvents ?? [],
     healingEvents: healingEvents ?? [],
     damageTakenEvents: damageTakenEvents ?? [],
     stats: emptySessionStats(),
   };
-  // Recalculate stats from loaded data so kills (and everything else) are accurate
+  // Recalculate stats from loaded session data
   hydrated.stats = calculateSessionStatsCore(hydrated);
   return hydrated;
 };
@@ -321,6 +435,75 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   loadouts: [],
   settings: defaultSettings,
   goals: [],
+  pendingKills: new Map(),
+  creatureData: null,
+
+  _loadCreatureData: async () => {
+    const state = get();
+    if (state.creatureData) {
+      return; // Already loaded
+    }
+
+    try {
+      const { loadCreatureEntries } = await import('./services/creatureDataLoader');
+      const creatures = await loadCreatureEntries();
+      set({ creatureData: creatures });
+    } catch (error) {
+      console.error('[Kill Tracking] Failed to load creature data:', error);
+    }
+  },
+
+  _finalizePendingKill: async (sessionId: string) => {
+    // Guard against concurrent finalization (race when multiple loot items arrive in burst)
+    if (finalizationInProgress.has(sessionId)) {
+      return;
+    }
+    finalizationInProgress.add(sessionId);
+
+    try {
+      const state = get();
+      const pendingKill = state.pendingKills.get(sessionId);
+      if (!pendingKill || !state.creatureData) {
+        return;
+      }
+
+      const session = state.sessions.find((s) => s.id === sessionId);
+      if (!session) {
+        return;
+      }
+
+      const kill = await finalizePendingKill(
+        session,
+        pendingKill,
+        state.creatureData,
+        state.settings
+      );
+      if (kill) {
+        // Add kill to session
+        set((state) => ({
+          sessions: state.sessions.map((s) => {
+            if (s.id === sessionId) {
+              return {
+                ...s,
+                kills: [...s.kills, kill],
+                loot: s.loot.map((item) =>
+                  pendingKill.lootItemIds.includes(item.id) ? { ...item, killUuid: kill.id } : item
+                ),
+              };
+            }
+            return s;
+          }),
+        }));
+
+        // Clear pending kill
+        const newPendingKills = new Map(state.pendingKills);
+        newPendingKills.delete(sessionId);
+        set({ pendingKills: newPendingKills });
+      }
+    } finally {
+      finalizationInProgress.delete(sessionId);
+    }
+  },
 
   addGoal: (goalData) => {
     set((state) => {
@@ -359,6 +542,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       loot: [],
       skills: [],
       globals: [],
+      kills: [],
       damageEvents: [],
       combatEvents: [],
       healingEvents: [],
@@ -503,7 +687,10 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     void saveJsonSetting('activeSessionId', id);
   },
 
-  endSession: (id) => {
+  endSession: async (id) => {
+    // Finalize any pending kills before ending the session
+    await get()._finalizePendingKill(id);
+
     const now = Date.now();
     set((state) => {
       return {
@@ -540,12 +727,15 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     }
   },
 
-  addLoot: (sessionId, lootData) => {
+  addLoot: async (sessionId, lootData) => {
     // Check if item is in ignore list
     const ignoreList = get().settings.ignoreListItems || [];
     if (ignoreList.includes(lootData.name)) {
       return; // Don't add ignored items
     }
+
+    // Ensure creature data is loaded for kill tracking
+    await get()._loadCreatureData();
 
     const newLoot: LootItem = {
       ...lootData,
@@ -553,6 +743,30 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       timestamp: lootData.timestamp || Date.now(),
       totalValue: calculateLootTotalValue(lootData),
     };
+
+    // Pending kill state machine: damage sets flag ON, loot finalizes and sets flag OFF
+    const state = get();
+    const hasPendingFlag = pendingKillFlag.get(sessionId) === true;
+    const existingPendingKill = state.pendingKills.get(sessionId);
+
+    if (hasPendingFlag) {
+      const startTimestamp = pendingKillStartTime.get(sessionId) ?? newLoot.timestamp;
+      const updatedPendingKill: PendingKill = existingPendingKill
+        ? {
+            ...existingPendingKill,
+            endTimestamp: newLoot.timestamp,
+            lootItemIds: [...existingPendingKill.lootItemIds, newLoot.id],
+          }
+        : {
+            startTimestamp,
+            endTimestamp: newLoot.timestamp,
+            lootItemIds: [newLoot.id],
+          };
+
+      const newPendingKills = new Map(state.pendingKills);
+      newPendingKills.set(sessionId, updatedPendingKill);
+      set({ pendingKills: newPendingKills });
+    }
 
     set((state) => ({
       sessions: state.sessions.map((session) => {
@@ -576,8 +790,16 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         fixed_value: newLoot.fixedValue,
         total_value: newLoot.totalValue,
         timestamp: newLoot.timestamp,
+        kill_uuid: newLoot.killUuid,
       },
     });
+
+    // Finalize kill on loot if pending flag is ON
+    if (hasPendingFlag) {
+      await get()._finalizePendingKill(sessionId);
+      pendingKillFlag.set(sessionId, false);
+      pendingKillStartTime.delete(sessionId);
+    }
   },
 
   updateLoot: (sessionId, lootId, updates) => {
@@ -757,6 +979,12 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       timestamp: timestamp || Date.now(),
       isCritical,
     };
+
+    // Set pending flag ON and record start time on first damage
+    if (!pendingKillFlag.get(sessionId)) {
+      pendingKillFlag.set(sessionId, true);
+      pendingKillStartTime.set(sessionId, newDamageEvent.timestamp);
+    }
 
     set((state) => ({
       sessions: state.sessions.map((s) => {
@@ -1158,6 +1386,7 @@ export async function initializeStoreFromDb() {
         loot: [],
         skills: [],
         globals: [],
+        kills: [],
         damageEvents: [],
         combatEvents: [],
         healingEvents: [],
@@ -1223,7 +1452,7 @@ export async function initializeStoreFromDb() {
 // Setup event listeners for cross-window synchronization
 export async function setupStoreSync(delayBroadcastMs = 0) {
   if (syncInitialized) {
-    return;
+    return () => {};
   }
   syncInitialized = true;
 
@@ -1248,6 +1477,7 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
       loot: [],
       skills: [],
       globals: [],
+      kills: [],
       damageEvents: [],
       combatEvents: [],
       healingEvents: [],
@@ -1309,6 +1539,7 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
       loot: [],
       skills: [],
       globals: [],
+      kills: [],
       damageEvents: [],
       combatEvents: [],
       healingEvents: [],
@@ -1413,5 +1644,9 @@ export async function setupStoreSync(delayBroadcastMs = 0) {
     if (requestInterval !== undefined) {
       window.clearInterval(requestInterval);
     }
+    // Allow re-initialization after React StrictMode remount/HMR.
+    syncInitialized = false;
+    allowBroadcasting = true;
+    isApplyingRemoteSync = false;
   };
 }

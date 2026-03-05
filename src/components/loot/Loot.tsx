@@ -65,9 +65,7 @@ export function Loot() {
           }
         } else {
           // Items already loaded, search in loaded data
-          const found = loadedItems.find(
-            (item) => normalizeItemName(item.Name) === normalizedName
-          );
+          const found = loadedItems.find((item) => normalizeItemName(item.Name) === normalizedName);
           if (found) {
             const type = found.Properties?.Type;
             setItemTypeCache((prev) => new Map(prev).set(itemName, type));
@@ -230,10 +228,8 @@ export function Loot() {
         {/* Value Composition */}
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-2">
-            <div className="text-2xl font-bold">Loot Value Distribution
-            </div>
+            <div className="text-2xl font-bold">Loot Value Distribution</div>
             <InfoTooltip tooltip="TT = Trade Terminal Value, MU = Markup, MV = Market Value" />
-
           </div>
           <div className="relative h-2 bg-surface rounded-full overflow-hidden">
             <div
@@ -252,10 +248,11 @@ export function Loot() {
             <div
               className="absolute top-0 h-full bg-violet-500"
               style={{
-                left: `${totalAdjustedValue > 0
+                left: `${
+                  totalAdjustedValue > 0
                     ? ((totalTTValue + totalMarkup) / totalAdjustedValue) * 100
                     : 0
-                  }%`,
+                }%`,
                 width: `${totalAdjustedValue > 0 ? (totalFixedValue / totalAdjustedValue) * 100 : 0}%`,
               }}
             />
@@ -263,17 +260,23 @@ export function Loot() {
           <div className="flex items-center justify-between mt-2 text-xs">
             <span className="text-blue-400">
               TT Value (
-              {totalAdjustedValue > 0 ? ((totalTTValue / totalAdjustedValue) * 100).toFixed(1) : '0.0'}
+              {totalAdjustedValue > 0
+                ? ((totalTTValue / totalAdjustedValue) * 100).toFixed(1)
+                : '0.0'}
               %)
             </span>
             <span className="text-green-400">
               MU (
-              {totalAdjustedValue > 0 ? ((totalMarkup / totalAdjustedValue) * 100).toFixed(1) : '0.0'}
+              {totalAdjustedValue > 0
+                ? ((totalMarkup / totalAdjustedValue) * 100).toFixed(1)
+                : '0.0'}
               %)
             </span>
             <span className="text-violet-400">
               MV (
-              {totalAdjustedValue > 0 ? ((totalFixedValue / totalAdjustedValue) * 100).toFixed(1) : '0.0'}
+              {totalAdjustedValue > 0
+                ? ((totalFixedValue / totalAdjustedValue) * 100).toFixed(1)
+                : '0.0'}
               %)
             </span>
           </div>
@@ -284,7 +287,8 @@ export function Loot() {
           <div className="text-xs text-muted uppercase mb-4">COMPOSITION</div>
           <div className="space-y-2">
             {topItems.slice(0, 5).map((item, idx) => {
-              const percent = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
+              const percent =
+                totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
               return (
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
@@ -391,7 +395,8 @@ export function Loot() {
               </thead>
               <tbody>
                 {filteredLoot.map((item, idx) => {
-                  const share = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
+                  const share =
+                    totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
                   const itemType = itemTypeCache.get(item.name);
                   return (
                     <tr
@@ -403,7 +408,9 @@ export function Loot() {
                             normalizeItemName(template.name) === normalizeItemName(item.name)
                         );
                         const sessionFixedValuePerItem =
-                          item.fixedGain > 0 && item.quantity > 0 ? item.fixedGain / item.quantity : 0;
+                          item.fixedGain > 0 && item.quantity > 0
+                            ? item.fixedGain / item.quantity
+                            : 0;
 
                         setSelectedItem(item.name);
                         setItemMarkup(existingTemplate?.defaultMarkup ?? item.markup ?? 100);
@@ -473,7 +480,8 @@ export function Loot() {
           <div className="text-xs text-muted uppercase mb-4">TOP ITEMS</div>
           <div className="space-y-2">
             {topItems.map((item, idx) => {
-              const share = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
+              const share =
+                totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
               return (
                 <div key={idx} className="flex items-center justify-between p-2 bg-surface rounded">
                   <div className="flex items-center gap-3">
@@ -563,7 +571,9 @@ export function Loot() {
                   onChange={(e) => setItemFixedValue(Number(e.target.value))}
                   className="input w-full"
                 />
-                <p className="text-xs text-muted mt-1">Additional value on top of TT. When set above 0, MU is ignored.</p>
+                <p className="text-xs text-muted mt-1">
+                  Additional value on top of TT. When set above 0, MU is ignored.
+                </p>
               </div>
 
               {/* Ignore List */}
