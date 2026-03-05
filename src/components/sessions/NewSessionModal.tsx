@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useHuntStore } from '../../store';
-import { emptySessionStats } from '../../core/sessionCore';
 import { AutocompleteInput } from '../common/AutocompleteInput';
 import { X } from 'lucide-react';
 import { HuntSession } from '../../types';
@@ -53,6 +52,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
       | 'loot'
       | 'skills'
       | 'globals'
+      | 'kills'
       | 'damageEvents'
       | 'combatEvents'
       | 'healingEvents'
@@ -73,8 +73,8 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
       otherCosts: 0,
     };
 
-    // Tauri db insertion function creates the uuid, UI store assigns the full populated stat wrapper locally
-    createSession({ ...newSessionInit, stats: emptySessionStats() } as HuntSession);
+    // Tauri db insertion creates the UUID and the store initializes omitted collections/stats.
+    createSession(newSessionInit);
 
     onClose();
     onSessionCreated?.();

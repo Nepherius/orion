@@ -1,0 +1,185 @@
+import { invoke } from '@tauri-apps/api/core';
+import type {
+  AppSettings,
+  CombatEvent,
+  DamageEvent,
+  DamageTakenEvent,
+  Global,
+  HealingEvent,
+  HuntSession,
+  ItemTemplate,
+  Kill,
+  LootItem,
+  SessionStats,
+  SkillGain,
+} from '../types';
+import {
+  calculateSessionStats as calculateSessionStatsCore,
+  emptySessionStats,
+} from '../core/sessionCore';
+
+export const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+export const normalizeTemplateItemName = (name: string): string =>
+  name
+    .replace(/\s*\((m|f)\)$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+export const dedupeItemTemplates = (items: ItemTemplate[]): ItemTemplate[] => {
+  const deduped = new Map<string, ItemTemplate>();
+  for (const item of items) {
+    deduped.set(normalizeTemplateItemName(item.name), item);
+  }
+  return Array.from(deduped.values());
+};
+
+export const calculateLootTotalValue = (loot: {
+  value: number;
+  markup: number;
+  quantity: number;
+  fixedValue?: number;
+}): number => {
+  if (loot.fixedValue !== undefined && loot.fixedValue !== null && loot.fixedValue > 0) {
+    return (loot.value + loot.fixedValue) * loot.quantity;
+  }
+  return loot.value * (loot.markup / 100) * loot.quantity;
+};
+
+export const calculateStats = (session: HuntSession): SessionStats =>
+  calculateSessionStatsCore(session);
+
+export const defaultSettings: AppSettings = {
+  avatarName: '',
+  defaultMarkup: 100,
+  autoSave: true,
+  theme: 'dark',
+  chatLogPath: '',
+  autoStartSession: true,
+  overlayX: 20,
+  overlayY: 20,
+  overlayWidth: 750,
+  overlayHeight: 56,
+  ignoreListItems: [],
+  enableKillTrackingMaturity: true,
+};
+
+export const safeInvoke = async <T = unknown>(command: string, args?: Record<string, unknown>) => {
+  try {
+    return (await invoke(command, args)) as T;
+  } catch (error) {
+    console.error(`[DB Error] Command '${command}' failed:`, error);
+    return null;
+  }
+};
+
+export const saveJsonSetting = async (key: string, value: unknown) => {
+  // eslint-disable-next-line no-console
+  console.debug(`[Settings] Saving key '${key}' with value:`, value);
+  await safeInvoke('db_set_setting', {
+    key,
+    value: JSON.stringify(value),
+  });
+};
+
+export const loadJsonSetting = async <T>(key: string): Promise<T | null> => {
+  const raw = await safeInvoke<string | null>('db_get_setting', { key });
+  if (!raw) {
+    // eslint-disable-next-line no-console
+    console.debug(`[Settings] loadJsonSetting: No value for key '${key}'`);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw) as T;
+    // eslint-disable-next-line no-console
+    console.debug(`[Settings] loadJsonSetting: Loaded key '${key}' value:`, parsed);
+    return parsed;
+  } catch {
+    console.warn(`[Settings] loadJsonSetting: Failed to parse value for key '${key}'`);
+    return null;
+  }
+};
+
+export const persistSessionToDb = async (session: HuntSession) => {
+  await safeInvoke('db_create_session', {
+    params: {
+      uuid: session.id,
+      name: session.name,
+      weapon: session.weapon,
+      armor: session.armor ?? null,
+      location: session.location ?? null,
+      creature: session.creature ?? 'Unknown',
+      start_time: session.startTime,
+      status: session.status,
+      loadout_id: session.loadoutId ?? null,
+      notes: session.notes,
+      ammo_cost: session.ammoCost,
+      weapon_decay: session.weaponDecay,
+      healing_cost: session.healingCost,
+      other_costs: session.otherCosts,
+    },
+  });
+};
+
+export const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
+  await safeInvoke('db_update_session', {
+    params: {
+      uuid: id,
+      name: updates.name,
+      weapon: updates.weapon,
+      armor: updates.armor,
+      location: updates.location,
+      creature: updates.creature,
+      end_time: updates.endTime,
+      status: updates.status,
+      paused_at: updates.pausedAt,
+      total_paused_ms: updates.totalPausedMs,
+      loadout_id: updates.loadoutId,
+      notes: updates.notes,
+      ammo_cost: updates.ammoCost,
+      weapon_decay: updates.weaponDecay,
+      healing_cost: updates.healingCost,
+      other_costs: updates.otherCosts,
+    },
+  });
+};
+
+export const hydrateSessionEvents = async (session: HuntSession): Promise<HuntSession> => {
+  const [
+    loot,
+    skills,
+    globals,
+    kills,
+    damageEvents,
+    combatEvents,
+    healingEvents,
+    damageTakenEvents,
+  ] = await Promise.all([
+    safeInvoke<LootItem[]>('db_get_session_loot', { sessionUuid: session.id }),
+    safeInvoke<SkillGain[]>('db_get_session_skills', { sessionUuid: session.id }),
+    safeInvoke<Global[]>('db_get_session_globals', { sessionUuid: session.id }),
+    safeInvoke<Kill[]>('db_get_session_kills', { sessionUuid: session.id }),
+    safeInvoke<DamageEvent[]>('db_get_session_damage_events', { sessionUuid: session.id }),
+    safeInvoke<CombatEvent[]>('db_get_session_combat_events', { sessionUuid: session.id }),
+    safeInvoke<HealingEvent[]>('db_get_session_healing_events', { sessionUuid: session.id }),
+    safeInvoke<DamageTakenEvent[]>('db_get_session_damage_taken_events', {
+      sessionUuid: session.id,
+    }),
+  ]);
+
+  const hydrated: HuntSession = {
+    ...session,
+    loot: loot ?? [],
+    skills: skills ?? [],
+    globals: globals ?? [],
+    kills: kills ?? [],
+    damageEvents: damageEvents ?? [],
+    combatEvents: combatEvents ?? [],
+    healingEvents: healingEvents ?? [],
+    damageTakenEvents: damageTakenEvents ?? [],
+    stats: emptySessionStats(),
+  };
+  hydrated.stats = calculateSessionStatsCore(hydrated);
+  return hydrated;
+};

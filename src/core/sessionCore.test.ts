@@ -28,7 +28,7 @@ function makeLoadout(overrides: Partial<Loadout> = {}): Loadout {
 }
 
 function makeSession(overrides: Partial<HuntSession> = {}): HuntSession {
-  return {
+  const base: HuntSession = {
     id: 's1',
     name: 'Session',
     startTime: 1_000,
@@ -39,6 +39,7 @@ function makeSession(overrides: Partial<HuntSession> = {}): HuntSession {
     loot: [],
     skills: [],
     globals: [],
+    kills: [],
     damageEvents: [],
     combatEvents: [],
     healingEvents: [],
@@ -49,7 +50,21 @@ function makeSession(overrides: Partial<HuntSession> = {}): HuntSession {
     healingCost: 0,
     otherCosts: 0,
     stats: emptySessionStats(),
+  };
+
+  return {
+    ...base,
     ...overrides,
+    loot: overrides.loot ?? base.loot,
+    skills: overrides.skills ?? base.skills,
+    globals: overrides.globals ?? base.globals,
+    kills: overrides.kills ?? base.kills,
+    damageEvents: overrides.damageEvents ?? base.damageEvents,
+    combatEvents: overrides.combatEvents ?? base.combatEvents,
+    healingEvents: overrides.healingEvents ?? base.healingEvents,
+    damageTakenEvents: overrides.damageTakenEvents ?? base.damageTakenEvents,
+    notes: overrides.notes ?? base.notes,
+    stats: overrides.stats ?? base.stats,
   };
 }
 
