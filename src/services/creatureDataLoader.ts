@@ -30,16 +30,16 @@ function toCreatureNames(parsed: unknown): string[] {
 
     if (typeof payload[0] === 'object' && payload[0] !== null) {
       const entries = payload as CreatureEntry[];
-      return entries
-        .map((entry) => {
-          const baseName = normalizeCreatureName(entry.name || '');
-          const maturity = normalizeCreatureName(entry.maturity || '');
-          if (!baseName) {
-            return '';
-          }
-          return maturity ? `${baseName} ${maturity}` : baseName;
-        })
-        .filter(Boolean);
+      const uniqueNames = new Set<string>();
+      
+      entries.forEach((entry) => {
+        const baseName = normalizeCreatureName(entry.name || '');
+        if (baseName) {
+          uniqueNames.add(baseName);
+        }
+      });
+      
+      return Array.from(uniqueNames);
     }
 
     return [];
