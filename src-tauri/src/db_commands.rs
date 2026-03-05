@@ -211,6 +211,7 @@ pub struct AddLootParams {
     quantity: i64,
     value: f64,
     markup: f64,
+    fixed_value: Option<f64>,
     total_value: f64,
     timestamp: i64,
 }
@@ -219,8 +220,8 @@ pub struct AddLootParams {
 pub fn db_add_loot(params: AddLootParams, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     conn.execute(
-        "INSERT INTO loot_items (uuid, session_uuid, name, quantity, value, markup, total_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![params.uuid, params.session_uuid, params.name, params.quantity, params.value, params.markup, params.total_value, params.timestamp],
+        "INSERT INTO loot_items (uuid, session_uuid, name, quantity, value, markup, fixed_value, total_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![params.uuid, params.session_uuid, params.name, params.quantity, params.value, params.markup, params.fixed_value, params.total_value, params.timestamp],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -233,6 +234,7 @@ pub fn db_update_loot(
     quantity: Option<i64>,
     value: Option<f64>,
     markup: Option<f64>,
+    fixed_value: Option<f64>,
     total_value: Option<f64>,
     state: State<'_, DbState>,
 ) -> Result<(), String> {
@@ -255,6 +257,10 @@ pub fn db_update_loot(
     }
     if let Some(v) = markup {
         updates.push("markup = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(v) = fixed_value {
+        updates.push("fixed_value = ?");
         values.push(Box::new(v));
     }
     if let Some(v) = total_value {
@@ -296,7 +302,7 @@ pub fn db_get_session_loot(
 ) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, quantity, value, markup, total_value, timestamp FROM loot_items WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .prepare("SELECT uuid, name, quantity, value, markup, fixed_value, total_value, timestamp FROM loot_items WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -307,8 +313,9 @@ pub fn db_get_session_loot(
                 "quantity": row.get::<_, i64>(2)?,
                 "value": row.get::<_, f64>(3)?,
                 "markup": row.get::<_, f64>(4)?,
-                "totalValue": row.get::<_, f64>(5)?,
-                "timestamp": row.get::<_, i64>(6)?,
+                "fixedValue": row.get::<_, Option<f64>>(5)?,
+                "totalValue": row.get::<_, f64>(6)?,
+                "timestamp": row.get::<_, i64>(7)?,
             }))
         })
         .map_err(|e| e.to_string())?;
@@ -942,13 +949,14 @@ pub fn db_add_item_template(
     category: String,
     default_tt_value: f64,
     default_markup: f64,
+    default_fixed_value: Option<f64>,
     description: Option<String>,
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     conn.execute(
-        "INSERT INTO item_templates (uuid, name, category, default_tt_value, default_markup, description) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![uuid, name, category, default_tt_value, default_markup, description],
+        "INSERT INTO item_templates (uuid, name, category, default_tt_value, default_markup, default_fixed_value, description) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![uuid, name, category, default_tt_value, default_markup, default_fixed_value, description],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -966,7 +974,7 @@ pub fn db_delete_item_template(uuid: String, state: State<'_, DbState>) -> Resul
 pub fn db_get_all_item_templates(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, category, default_tt_value, default_markup, description FROM item_templates")
+        .prepare("SELECT uuid, name, category, default_tt_value, default_markup, default_fixed_value, description FROM item_templates")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -977,7 +985,8 @@ pub fn db_get_all_item_templates(state: State<'_, DbState>) -> Result<JsonValue,
                 "category": row.get::<_, String>(2)?,
                 "defaultTTValue": row.get::<_, f64>(3)?,
                 "defaultMarkup": row.get::<_, f64>(4)?,
-                "description": row.get::<_, Option<String>>(5)?,
+                "defaultFixedValue": row.get::<_, Option<f64>>(5)?,
+                "description": row.get::<_, Option<String>>(6)?,
             }))
         })
         .map_err(|e| e.to_string())?;

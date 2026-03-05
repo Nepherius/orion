@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useHuntStore } from '../../store';
 import { AutocompleteInput } from '../common/AutocompleteInput';
 import { X } from 'lucide-react';
+import { loadCreatureNames } from '../../services/creatureDataLoader';
 
 interface EditSessionModalProps {
   sessionId: string;
@@ -33,9 +34,7 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
   useEffect(() => {
     // Load creatures and planets data
     Promise.all([
-      fetch('/assets/creatures/creatures.json')
-        .then((res) => res.json())
-        .then((data) => setCreatures(data.creatures || [])),
+      loadCreatureNames().then((data) => setCreatures(data)),
       fetch('/assets/creatures/planets.json')
         .then((res) => res.json())
         .then((data) => setPlanets(data.planets || [])),

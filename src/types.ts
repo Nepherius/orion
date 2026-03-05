@@ -6,6 +6,7 @@ export interface LootItem {
   quantity: number;
   value: number; // TT value (Trade Terminal)
   markup: number; // Markup percentage (100 = no markup, 150 = 50% markup)
+  fixedValue?: number; // Fixed PED value per item (overrides markup when set)
   totalValue: number; // value * (markup / 100) * quantity
   timestamp: number;
 }
@@ -135,6 +136,7 @@ export interface ItemTemplate {
   category: 'loot' | 'weapon' | 'armor' | 'tool' | 'other';
   defaultTTValue: number;
   defaultMarkup: number;
+  defaultFixedValue?: number; // Fixed PED value per item (overrides markup when set)
   description?: string;
 }
 

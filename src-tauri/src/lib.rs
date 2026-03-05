@@ -98,6 +98,7 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             quantity INTEGER NOT NULL,
             value REAL NOT NULL,
             markup REAL NOT NULL,
+            fixed_value REAL,
             total_value REAL NOT NULL,
             timestamp INTEGER NOT NULL,
             FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
@@ -187,6 +188,7 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             category TEXT NOT NULL,
             default_tt_value REAL NOT NULL,
             default_markup REAL NOT NULL,
+            default_fixed_value REAL,
             description TEXT
         );
 
@@ -209,6 +211,8 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     // Ignore errors for these as they will fail if the column already exists
     let _ = conn.execute("ALTER TABLE sessions ADD COLUMN creature TEXT", []);
     let _ = conn.execute("ALTER TABLE loadouts ADD COLUMN armor TEXT", []);
+    let _ = conn.execute("ALTER TABLE loot_items ADD COLUMN fixed_value REAL", []);
+    let _ = conn.execute("ALTER TABLE item_templates ADD COLUMN default_fixed_value REAL", []);
 
     Ok(())
 }

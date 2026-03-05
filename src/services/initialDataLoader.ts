@@ -4,7 +4,7 @@
  */
 
 import { writeTextFile, readTextFile, BaseDirectory, mkdir } from '@tauri-apps/plugin-fs';
-import { fetchAllEquipmentData } from './entropiaNexusApi';
+import { fetchAllEquipmentData, NexusMob } from './entropiaNexusApi';
 
 const EQUIPMENT_PATHS = {
   weapons: 'assets/items/weapons.json',
@@ -14,7 +14,14 @@ const EQUIPMENT_PATHS = {
   absorbers: 'assets/items/absorbers.json',
   armor: 'assets/armor/armor.json',
   items: 'assets/items/entropia-items.json',
+  creatures: 'assets/creatures/creatures.json',
 };
+
+interface CreatureSummary {
+  name: string;
+  maturity: string;
+  hp: number;
+}
 
 export interface ProgressUpdate {
   fileName: string;
@@ -46,6 +53,36 @@ function hasValidDataPayload(parsed: unknown): boolean {
   return Object.keys(parsed).length > 0;
 }
 
+function extractCreaturesFromMobs(mobs: NexusMob[]): CreatureSummary[] {
+  const creatures: CreatureSummary[] = [];
+
+  for (const mob of mobs) {
+    if (!Array.isArray(mob.Maturities) || mob.Maturities.length === 0) {
+      continue;
+    }
+
+    for (const maturity of mob.Maturities) {
+      creatures.push({
+        name: mob.Name,
+        maturity: maturity.Name,
+        hp: Number(maturity.Properties?.Health ?? 0),
+      });
+    }
+  }
+
+  creatures.sort((a, b) => {
+    if (a.name !== b.name) {
+      return a.name.localeCompare(b.name);
+    }
+    return a.maturity.localeCompare(b.maturity);
+  });
+
+  return creatures;
+}
+
+async function loadBundledAsset<T>(relativePath: string): Promise<T> {
+}
+
 /**
  * Check if equipment data has already been downloaded
  */
@@ -58,9 +95,9 @@ export async function hasEquipmentData(): Promise<boolean> {
     EQUIPMENT_PATHS.absorbers,
     EQUIPMENT_PATHS.armor,
     EQUIPMENT_PATHS.items,
+    EQUIPMENT_PATHS.creatures,
   ];
 
-  let validFileCount = 0;
   let timestampedFileCount = 0;
 
   for (const path of requiredFiles) {
@@ -74,7 +111,6 @@ export async function hasEquipmentData(): Promise<boolean> {
         continue;
       }
 
-      validFileCount += 1;
       if (
         parsed &&
         typeof parsed === 'object' &&
@@ -89,20 +125,12 @@ export async function hasEquipmentData(): Promise<boolean> {
     }
   }
 
-  // If any file has a valid timestamped payload, treat data as initialized.
-  // This avoids unnecessary refetches when one optional file is missing/corrupt.
-  if (timestampedFileCount > 0) {
+  // Required files must exist and be timestamped.
+  if (timestampedFileCount === requiredFiles.length) {
     // eslint-disable-next-line no-console
     console.log(
       `[InitialDataLoader] Equipment data detected via timestamped files: ${timestampedFileCount}/${requiredFiles.length}`
     );
-    return true;
-  }
-
-  // Legacy format support (valid payloads without wrapper timestamps)
-  if (validFileCount === requiredFiles.length) {
-    // eslint-disable-next-line no-console
-    console.log('[InitialDataLoader] Equipment data detected via legacy payload format');
     return true;
   }
 
@@ -116,7 +144,7 @@ export async function loadInitialEquipmentData(
     onProgress?.({
       fileName: 'Entropia Nexus',
       current: 0,
-      total: 8,
+      total: 9,
       message: 'Fetching equipment data...',
     });
     const data = await fetchAllEquipmentData();
@@ -126,6 +154,9 @@ export async function loadInitialEquipmentData(
       () => {}
     );
     await mkdir('assets/armor', { baseDir: BaseDirectory.AppData, recursive: true }).catch(
+      () => {}
+    );
+    await mkdir('assets/creatures', { baseDir: BaseDirectory.AppData, recursive: true }).catch(
       () => {}
     );
 
@@ -138,6 +169,7 @@ export async function loadInitialEquipmentData(
       { name: 'absorbers', data: data.absorbers, label: 'Absorbers' },
       { name: 'armor', data: { armor: data.armor }, label: 'Armor' },
       { name: 'items', data: data.items, label: 'Items Database' },
+      { name: 'creatures', data: extractCreaturesFromMobs(data.mobs), label: 'Creatures' },
     ];
 
     for (let i = 0; i < files.length; i++) {
@@ -155,7 +187,7 @@ export async function loadInitialEquipmentData(
           ? EQUIPMENT_PATHS.armor
           : EQUIPMENT_PATHS[file.name as keyof typeof EQUIPMENT_PATHS];
 
-      // Wrap data with timestamp
+      // Wrap API data with timestamp
       const wrappedData = {
         data: file.data,
         lastUpdateAt: now,
@@ -177,7 +209,12 @@ export async function loadInitialEquipmentData(
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
 
-    console.error('[InitialDataLoader] Failed to load equipment data:', errorMsg);
-    throw new Error(`Equipment data loader failed: ${errorMsg}. Will retry on next restart.`);
+    console.warn('[InitialDataLoader] API unavailable, using bundled assets. Will retry next restart:', errorMsg);
+    onProgress?.({
+      fileName: 'Bundled Data',
+      current: 0,
+      total: 0,
+      message: 'Using bundled data (API unavailable). Will retry on next launch.',
+    });
   }
 }

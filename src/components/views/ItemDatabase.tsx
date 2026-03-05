@@ -58,7 +58,6 @@ export function ItemDatabase() {
       category: getCategory(item),
       defaultTTValue: getTTValue(item),
       defaultMarkup: markupValue,
-      description: `Item ID: ${item.Id}, Type: ${item.Properties?.Type || 'Unknown'}`,
     });
     // Clear the markup after saving
     setEntropyMarkups((prev) => {
@@ -114,7 +113,7 @@ export function ItemDatabase() {
                   <th className="text-left py-2 px-3">Category</th>
                   <th className="text-right py-2 px-3">Default TT Value</th>
                   <th className="text-right py-2 px-3">Default Markup</th>
-                  <th className="text-left py-2 px-3">Description</th>
+                  <th className="text-right py-2 px-3">Fixed Value</th>
                   <th className="text-right py-2 px-3">Actions</th>
                 </tr>
               </thead>
@@ -127,7 +126,11 @@ export function ItemDatabase() {
                     </td>
                     <td className="py-2 px-3 text-right">{item.defaultTTValue.toFixed(2)} PED</td>
                     <td className="py-2 px-3 text-right">{item.defaultMarkup}%</td>
-                    <td className="py-2 px-3 text-sm text-muted">{item.description || '-'}</td>
+                    <td className="py-2 px-3 text-right">
+                      {item.defaultFixedValue && item.defaultFixedValue > 0
+                        ? `${item.defaultFixedValue.toFixed(2)} PED`
+                        : '-'}
+                    </td>
                     <td className="py-2 px-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
@@ -273,7 +276,7 @@ function ItemModal({ item, onClose, onSave }: ItemModalProps) {
     category: item?.category || ('loot' as const),
     defaultTTValue: item?.defaultTTValue || 0,
     defaultMarkup: item?.defaultMarkup || 100,
-    description: item?.description || '',
+    defaultFixedValue: item?.defaultFixedValue || 0,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -347,18 +350,25 @@ function ItemModal({ item, onClose, onSave }: ItemModalProps) {
               step="1"
               value={formData.defaultMarkup}
               onChange={(e) => setFormData({ ...formData, defaultMarkup: Number(e.target.value) })}
+              disabled={formData.defaultFixedValue > 0}
               className="input w-full"
             />
           </div>
 
           <div>
-            <label className="label">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Optional description..."
-              className="input w-full h-20 resize-none"
+            <label className="label">Default Fixed Value (PED)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.defaultFixedValue}
+              onChange={(e) =>
+                setFormData({ ...formData, defaultFixedValue: Number(e.target.value) })
+              }
+              placeholder="0.00"
+              className="input w-full"
             />
+            <p className="text-xs text-muted mt-1">When set above 0, MU is ignored for this item template.</p>
           </div>
 
           <div className="flex gap-3 pt-4">

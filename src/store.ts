@@ -64,6 +64,11 @@ interface HuntStore {
     loot: Omit<LootItem, 'id' | 'timestamp'> & { timestamp?: number }
   ) => void;
   updateLoot: (sessionId: string, lootId: string, updates: Partial<LootItem>) => void;
+  updateLootByName: (
+    sessionId: string,
+    itemName: string,
+    updates: Pick<Partial<LootItem>, 'markup' | 'fixedValue'>
+  ) => void;
   removeLoot: (sessionId: string, lootId: string) => void;
   removeLootByName: (sessionId: string, itemName: string) => void;
 
@@ -137,6 +142,33 @@ interface HuntStore {
 }
 
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+const normalizeTemplateItemName = (name: string): string =>
+  name
+    .replace(/\s*\((m|f)\)$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+const dedupeItemTemplates = (items: ItemTemplate[]): ItemTemplate[] => {
+  const deduped = new Map<string, ItemTemplate>();
+  for (const item of items) {
+    deduped.set(normalizeTemplateItemName(item.name), item);
+  }
+  return Array.from(deduped.values());
+};
+
+const calculateLootTotalValue = (loot: {
+  value: number;
+  markup: number;
+  quantity: number;
+  fixedValue?: number;
+}): number => {
+  if (loot.fixedValue !== undefined && loot.fixedValue !== null && loot.fixedValue > 0) {
+    return (loot.value + loot.fixedValue) * loot.quantity;
+  }
+  return loot.value * (loot.markup / 100) * loot.quantity;
+};
 
 let syncInitialized = false;
 let isApplyingRemoteSync = false;
@@ -519,7 +551,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       ...lootData,
       id: generateId(),
       timestamp: lootData.timestamp || Date.now(),
-      totalValue: lootData.value * (lootData.markup / 100) * lootData.quantity,
+      totalValue: calculateLootTotalValue(lootData),
     };
 
     set((state) => ({
@@ -541,6 +573,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
         quantity: newLoot.quantity,
         value: newLoot.value,
         markup: newLoot.markup,
+        fixed_value: newLoot.fixedValue,
         total_value: newLoot.totalValue,
         timestamp: newLoot.timestamp,
       },
@@ -556,8 +589,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
             loot: session.loot.map((item) => {
               if (item.id === lootId) {
                 const updatedItem = { ...item, ...updates };
-                updatedItem.totalValue =
-                  updatedItem.value * (updatedItem.markup / 100) * updatedItem.quantity;
+                updatedItem.totalValue = calculateLootTotalValue(updatedItem);
                 return updatedItem;
               }
               return item;
@@ -576,7 +608,56 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
       quantity: updates.quantity,
       value: updates.value,
       markup: updates.markup,
-      totalValue: updates.totalValue,
+      fixed_value: updates.fixedValue,
+      total_value: updates.totalValue,
+    });
+  },
+
+  updateLootByName: (sessionId, itemName, updates) => {
+    const matchingLoot =
+      get()
+        .sessions.find((s) => s.id === sessionId)
+        ?.loot.filter((item) => item.name === itemName) || [];
+
+    set((state) => ({
+      sessions: state.sessions.map((session) => {
+        if (session.id !== sessionId) {
+          return session;
+        }
+
+        const updatedSession = {
+          ...session,
+          loot: session.loot.map((item) => {
+            if (item.name !== itemName) {
+              return item;
+            }
+
+            const updatedItem = {
+              ...item,
+              ...updates,
+            };
+            updatedItem.totalValue = calculateLootTotalValue(updatedItem);
+            return updatedItem;
+          }),
+        };
+        updatedSession.stats = calculateStats(updatedSession);
+        return updatedSession;
+      }),
+    }));
+
+    matchingLoot.forEach((item) => {
+      const nextItem = {
+        ...item,
+        ...updates,
+      };
+      const nextTotal = calculateLootTotalValue(nextItem);
+
+      void safeInvoke('db_update_loot', {
+        uuid: item.id,
+        markup: updates.markup,
+        fixed_value: updates.fixedValue,
+        total_value: nextTotal,
+      });
     });
   },
 
@@ -850,12 +931,18 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   },
 
   addItemTemplate: (itemData) => {
-    const newItem: ItemTemplate = {
-      ...itemData,
-      id: generateId(),
-    };
     set((state) => {
-      const itemDatabase = [...state.itemDatabase, newItem];
+      const normalizedIncomingName = normalizeTemplateItemName(itemData.name);
+      const existing = state.itemDatabase.find(
+        (item) => normalizeTemplateItemName(item.name) === normalizedIncomingName
+      );
+
+      const itemDatabase = existing
+        ? state.itemDatabase.map((item) =>
+            item.id === existing.id ? { ...item, ...itemData, id: item.id } : item
+          )
+        : [...state.itemDatabase, { ...itemData, id: generateId() }];
+
       void saveJsonSetting('itemDatabase', itemDatabase);
       return { itemDatabase };
     });
@@ -1115,6 +1202,11 @@ export async function initializeStoreFromDb() {
   });
 
   const normalizedHydratedLoadouts = ensureSingleLoadoutPrimary(hydratedLoadouts);
+  const normalizedItemDatabase = dedupeItemTemplates(storedItemDatabase ?? []);
+
+  if ((storedItemDatabase ?? []).length !== normalizedItemDatabase.length) {
+    void saveJsonSetting('itemDatabase', normalizedItemDatabase);
+  }
 
   useHuntStore.setState((prev) => ({
     ...prev,
@@ -1123,7 +1215,7 @@ export async function initializeStoreFromDb() {
       storedActiveSessionId ?? sessions.find((s) => s.status === 'active')?.id ?? null,
     settings: storedSettings ?? defaultSettings,
     loadouts: normalizedHydratedLoadouts,
-    itemDatabase: storedItemDatabase ?? [],
+    itemDatabase: normalizedItemDatabase,
     goals: storedGoals ?? [],
   }));
 }

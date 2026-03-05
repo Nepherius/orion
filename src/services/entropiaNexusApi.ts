@@ -43,6 +43,41 @@ export interface NexusItem {
   Links?: unknown;
 }
 
+  export interface NexusMob {
+    Id: number;
+    ClassId?: number | null;
+    Name: string;
+    Type: string;
+    Properties: {
+      Description?: string | null;
+      AttackRange?: number | null;
+      AggressionRange?: number | null;
+      AggressionTimer?: number | null;
+      AttacksPerMinute?: number | null;
+      IsSweatable?: boolean;
+    };
+    Maturities: Array<{
+      Id: number;
+      Name: string;
+      Properties: {
+        Health: number;
+        Level?: number;
+        AttacksPerMinute?: number | null;
+        [key: string]: unknown;
+      };
+      [key: string]: unknown;
+    }>;
+    Planet?: {
+      Name: string;
+      [key: string]: unknown;
+    };
+    Species?: {
+      Name: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }
+
 async function fetchWithHeaders<T>(endpoint: string): Promise<T> {
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, {
@@ -115,6 +150,12 @@ export async function fetchAllItems(): Promise<NexusItem[]> {
   return fetchWithHeaders<NexusItem[]>('/items');
 }
 
+  export async function fetchMobs(): Promise<NexusMob[]> {
+    // eslint-disable-next-line no-console
+    console.log('[EntropiaNexus] Fetching mobs...');
+    return fetchWithHeaders<NexusMob[]>('/mobs');
+  }
+
 /**
  * Fetches all equipment data from Entropia Nexus API
  * Returns a map of categories to their data
@@ -127,6 +168,7 @@ export async function fetchAllEquipmentData(): Promise<{
   absorbers: NexusItem[];
   armor: string[];
   items: NexusItem[];
+  mobs: NexusMob[];
 }> {
   // eslint-disable-next-line no-console
   console.log('[EntropiaNexus] Starting batch fetch of all equipment data...');
@@ -137,14 +179,15 @@ export async function fetchAllEquipmentData(): Promise<{
     console.log('[EntropiaNexus] Testing API connectivity with weapons endpoint...');
     const weapons = await fetchWeapons();
 
-    // API connectivity confirmed, fetch remaining data in parallel
+    // API connectivity confirmed, fetch remaining equipment data in parallel
     // Note: scopes and sights come from same endpoint (weaponvisionattachments)
-    const [amplifiers, scopesAndSights, absorbers, armor, items] = await Promise.all([
+    const [amplifiers, scopesAndSights, absorbers, armor, items, mobs] = await Promise.all([
       fetchAmplifiers(),
       fetchScopes(),
       fetchAbsorbers(),
       fetchArmor(),
       fetchAllItems(),
+      fetchMobs(),
     ]);
 
     // eslint-disable-next-line no-console
@@ -156,6 +199,7 @@ export async function fetchAllEquipmentData(): Promise<{
       absorbers: absorbers.length,
       armor: armor.length,
       items: items.length,
+      mobs: mobs.length,
     });
 
     return {
@@ -166,6 +210,7 @@ export async function fetchAllEquipmentData(): Promise<{
       absorbers,
       armor,
       items,
+      mobs,
     };
   } catch (error) {
     console.error('[EntropiaNexus] Batch fetch failed:', error);

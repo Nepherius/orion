@@ -69,6 +69,13 @@ interface ParseResult {
 // Limit buffer size to prevent memory explosion (10MB max)
 const MAX_PENDING_BUFFER = 10 * 1024 * 1024;
 
+const normalizeLootItemName = (name: string): string =>
+  name
+    .replace(/\s*\((m|f)\)$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
 export function ChatLogMonitor() {
   const [listenerReady, setListenerReady] = useState(false);
   // Track processed event timestamps to avoid duplicates - use ref since we don't need re-renders
@@ -460,16 +467,20 @@ export function ChatLogMonitor() {
 
                     // Check if item exists in database and use its markup
                     const customItem = storeState.itemDatabase.find(
-                      (item) => item.name.toLowerCase() === evt.creature.toLowerCase()
+                      (item) => normalizeLootItemName(item.name) === normalizeLootItemName(evt.creature)
                     );
                     const markup = customItem?.defaultMarkup || storeSettings.defaultMarkup || 100;
+                    const fixedValue = customItem?.defaultFixedValue || 0;
+                    const totalValue =
+                      fixedValue > 0 ? evt.value + fixedValue : evt.value * (markup / 100);
 
                     storeActions.addLoot(activeSession.id, {
                       name: evt.creature,
                       quantity: 1,
                       value: evt.value,
                       markup: markup,
-                      totalValue: evt.value * (markup / 100),
+                      fixedValue,
+                      totalValue,
                       timestamp: parseTimestamp(evt.timestamp),
                     });
 

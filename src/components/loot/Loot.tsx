@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useHuntStore } from '../../store';
 import { Info, Search, ArrowUpDown, Trash2, X } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
+import { InfoTooltip } from '../common/InfoTooltip';
 
 interface ItemData {
   Id: number;
@@ -11,25 +12,37 @@ interface ItemData {
   };
 }
 
+const normalizeItemName = (name: string): string =>
+  name
+    .replace(/\s*\((m|f)\)$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
 export function Loot() {
   const [itemTypeCache, setItemTypeCache] = useState<Map<string, string>>(new Map());
   const [loadedItems, setLoadedItems] = useState<ItemData[] | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [itemMarkup, setItemMarkup] = useState<number>(100);
+  const [itemFixedValue, setItemFixedValue] = useState<number>(0);
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
   const removeLootByName = useHuntStore((state) => state.removeLootByName);
+  const updateLootByName = useHuntStore((state) => state.updateLootByName);
   const ignoreList = useHuntStore((state) => state.settings.ignoreListItems || []);
   const addToIgnoreList = useHuntStore((state) => state.addToIgnoreList);
   const removeFromIgnoreList = useHuntStore((state) => state.removeFromIgnoreList);
   const addItemTemplate = useHuntStore((state) => state.addItemTemplate);
+  const itemDatabase = useHuntStore((state) => state.itemDatabase);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'value' | 'qty' | 'name'>('value');
 
   // Lazy-load item data and cache lookups
   const getItemType = useMemo(() => {
     return async (itemName: string): Promise<string | undefined> => {
+      const normalizedName = normalizeItemName(itemName);
+
       // Return from cache if already looked up
       if (itemTypeCache.has(itemName)) {
         return itemTypeCache.get(itemName);
@@ -44,7 +57,7 @@ export function Loot() {
           setLoadedItems(items);
 
           // Find and cache this item
-          const found = items.find((item) => item.Name === itemName);
+          const found = items.find((item) => normalizeItemName(item.Name) === normalizedName);
           if (found) {
             const type = found.Properties?.Type;
             setItemTypeCache((prev) => new Map(prev).set(itemName, type));
@@ -52,7 +65,9 @@ export function Loot() {
           }
         } else {
           // Items already loaded, search in loaded data
-          const found = loadedItems.find((item) => item.Name === itemName);
+          const found = loadedItems.find(
+            (item) => normalizeItemName(item.Name) === normalizedName
+          );
           if (found) {
             const type = found.Properties?.Type;
             setItemTypeCache((prev) => new Map(prev).set(itemName, type));
@@ -124,21 +139,37 @@ export function Loot() {
   // Group loot items by name and sum quantities
   const lootMap = new Map<
     string,
-    { name: string; quantity: number; value: number; markup: number; totalValue: number }
+    {
+      name: string;
+      quantity: number;
+      value: number;
+      markup: number;
+      totalValue: number;
+      markupGain: number;
+      fixedGain: number;
+    }
   >();
   activeSession.loot.forEach((item) => {
+    const baseValue = item.value * item.quantity;
+    const fixedGain = item.fixedValue && item.fixedValue > 0 ? item.fixedValue * item.quantity : 0;
+    const markupGain = fixedGain > 0 ? 0 : item.totalValue - baseValue;
+
     const existing = lootMap.get(item.name);
     if (existing) {
       existing.quantity += item.quantity;
-      existing.value += item.value * item.quantity;
+      existing.value += baseValue;
       existing.totalValue += item.totalValue;
+      existing.markupGain += markupGain;
+      existing.fixedGain += fixedGain;
     } else {
       lootMap.set(item.name, {
         name: item.name,
         quantity: item.quantity,
-        value: item.value * item.quantity,
+        value: baseValue,
         markup: item.markup,
         totalValue: item.totalValue,
+        markupGain,
+        fixedGain,
       });
     }
   });
@@ -154,7 +185,7 @@ export function Loot() {
   filteredLoot.sort((a, b) => {
     switch (sortBy) {
       case 'value':
-        return b.value - a.value;
+        return b.totalValue - a.totalValue;
       case 'qty':
         return b.quantity - a.quantity;
       case 'name':
@@ -165,17 +196,19 @@ export function Loot() {
   });
 
   // Calculate stats
-  const totalTTValue = activeSession.stats.totalLoot;
-  const totalMarkup = filteredLoot.reduce((sum, item) => sum + (item.totalValue - item.value), 0);
+  const totalAdjustedValue = filteredLoot.reduce((sum, item) => sum + item.totalValue, 0);
+  const totalTTValue = filteredLoot.reduce((sum, item) => sum + item.value, 0);
+  const totalMarkup = filteredLoot.reduce((sum, item) => sum + item.markupGain, 0);
+  const totalFixedValue = filteredLoot.reduce((sum, item) => sum + item.fixedGain, 0);
   const avgMarkup =
     filteredLoot.length > 0
       ? filteredLoot.reduce((sum, item) => sum + item.markup, 0) / filteredLoot.length
       : 100;
   const uniqueItems = filteredLoot.length;
-  const pedPerItem = uniqueItems > 0 ? totalTTValue / uniqueItems : 0;
+  const pedPerItem = uniqueItems > 0 ? totalAdjustedValue / uniqueItems : 0;
 
   // Top items
-  const topItems = [...filteredLoot].sort((a, b) => b.value - a.value).slice(0, 5);
+  const topItems = [...filteredLoot].sort((a, b) => b.totalValue - a.totalValue).slice(0, 5);
   const topValueItem = topItems[0];
 
   return (
@@ -196,40 +229,51 @@ export function Loot() {
 
         {/* Value Composition */}
         <div className="card p-6">
-          <div className="text-xs text-muted uppercase mb-4">VALUE</div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="text-2xl font-bold">
-              TT {totalTTValue.toFixed(2)} •{' '}
-              <span className="text-green-400">{totalMarkup.toFixed(2)}</span>
+            <div className="text-2xl font-bold">Loot Value Distribution
             </div>
+            <InfoTooltip tooltip="TT = Trade Terminal Value, MU = Markup, MV = Market Value" />
+
           </div>
           <div className="relative h-2 bg-surface rounded-full overflow-hidden">
             <div
               className="absolute top-0 left-0 h-full bg-blue-500"
               style={{
-                width: `${totalTTValue > 0 ? (totalTTValue / (totalTTValue + totalMarkup)) * 100 : 50}%`,
+                width: `${totalAdjustedValue > 0 ? (totalTTValue / totalAdjustedValue) * 100 : 0}%`,
               }}
             />
             <div
-              className="absolute top-0 right-0 h-full bg-green-500"
+              className="absolute top-0 h-full bg-green-500"
               style={{
-                width: `${totalTTValue > 0 ? (totalMarkup / (totalTTValue + totalMarkup)) * 100 : 50}%`,
+                left: `${totalAdjustedValue > 0 ? (totalTTValue / totalAdjustedValue) * 100 : 0}%`,
+                width: `${totalAdjustedValue > 0 ? (totalMarkup / totalAdjustedValue) * 100 : 0}%`,
+              }}
+            />
+            <div
+              className="absolute top-0 h-full bg-violet-500"
+              style={{
+                left: `${totalAdjustedValue > 0
+                    ? ((totalTTValue + totalMarkup) / totalAdjustedValue) * 100
+                    : 0
+                  }%`,
+                width: `${totalAdjustedValue > 0 ? (totalFixedValue / totalAdjustedValue) * 100 : 0}%`,
               }}
             />
           </div>
           <div className="flex items-center justify-between mt-2 text-xs">
             <span className="text-blue-400">
-              ● TT Value (
-              {totalTTValue > 0
-                ? ((totalTTValue / (totalTTValue + totalMarkup)) * 100).toFixed(1)
-                : '50.0'}
+              TT Value (
+              {totalAdjustedValue > 0 ? ((totalTTValue / totalAdjustedValue) * 100).toFixed(1) : '0.0'}
               %)
             </span>
             <span className="text-green-400">
-              ● Markup (
-              {totalTTValue > 0
-                ? ((totalMarkup / (totalTTValue + totalMarkup)) * 100).toFixed(1)
-                : '50.0'}
+              MU (
+              {totalAdjustedValue > 0 ? ((totalMarkup / totalAdjustedValue) * 100).toFixed(1) : '0.0'}
+              %)
+            </span>
+            <span className="text-violet-400">
+              MV (
+              {totalAdjustedValue > 0 ? ((totalFixedValue / totalAdjustedValue) * 100).toFixed(1) : '0.0'}
               %)
             </span>
           </div>
@@ -240,7 +284,7 @@ export function Loot() {
           <div className="text-xs text-muted uppercase mb-4">COMPOSITION</div>
           <div className="space-y-2">
             {topItems.slice(0, 5).map((item, idx) => {
-              const percent = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
+              const percent = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
               return (
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
@@ -251,7 +295,7 @@ export function Loot() {
                     <div className="flex items-center gap-4">
                       <span className="text-muted">{item.quantity}</span>
                       <span className="text-muted">{item.markup}%</span>
-                      <span className="font-medium">{item.value.toFixed(2)}</span>
+                      <span className="font-medium">{item.totalValue.toFixed(2)}</span>
                       <span className="text-muted">{percent.toFixed(1)}%</span>
                     </div>
                   </div>
@@ -268,7 +312,7 @@ export function Loot() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
           <div className="card p-4 text-center">
             <div className="text-2xl font-bold">{uniqueItems}</div>
             <div className="text-xs text-muted">Unlocks</div>
@@ -280,6 +324,10 @@ export function Loot() {
           <div className="card p-4 text-center">
             <div className="text-2xl font-bold text-green-400">+{totalMarkup.toFixed(2)}</div>
             <div className="text-xs text-muted">MU Gain</div>
+          </div>
+          <div className="card p-4 text-center">
+            <div className="text-2xl font-bold text-violet-400">+{totalFixedValue.toFixed(2)}</div>
+            <div className="text-xs text-muted">MV Gain</div>
           </div>
           <div className="card p-4 text-center">
             <div className="text-2xl font-bold">{pedPerItem.toFixed(3)}</div>
@@ -343,20 +391,34 @@ export function Loot() {
               </thead>
               <tbody>
                 {filteredLoot.map((item, idx) => {
-                  const share = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
+                  const share = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
                   const itemType = itemTypeCache.get(item.name);
                   return (
                     <tr
                       key={idx}
                       className="border-b border-gray-800 hover:bg-surface cursor-pointer"
                       onClick={() => {
+                        const existingTemplate = itemDatabase.find(
+                          (template) =>
+                            normalizeItemName(template.name) === normalizeItemName(item.name)
+                        );
+                        const sessionFixedValuePerItem =
+                          item.fixedGain > 0 && item.quantity > 0 ? item.fixedGain / item.quantity : 0;
+
                         setSelectedItem(item.name);
-                        setItemMarkup(100);
+                        setItemMarkup(existingTemplate?.defaultMarkup ?? item.markup ?? 100);
+                        setItemFixedValue(
+                          existingTemplate?.defaultFixedValue ?? sessionFixedValuePerItem
+                        );
                       }}
                     >
                       <td className="py-2 px-3">
-                        <div className="font-medium">{item.value.toFixed(2)}</div>
-                        <div className="text-xs text-muted">{item.totalValue.toFixed(2)}</div>
+                        <div className="font-medium">{item.totalValue.toFixed(2)}</div>
+                        <div className="text-xs text-muted">
+                          TT {item.value.toFixed(2)}
+                          {item.markupGain > 0 ? ` + ${item.markupGain.toFixed(2)}` : ''}
+                          {item.fixedGain > 0 ? ` + ${item.fixedGain.toFixed(2)}` : ''}
+                        </div>
                       </td>
                       <td className="py-2 px-3">{item.quantity}</td>
                       <td className="py-2 px-3 font-medium">{item.name}</td>
@@ -400,7 +462,7 @@ export function Loot() {
               <div>
                 <div className="text-sm text-muted">Top Value</div>
                 <div className="font-bold">{topValueItem.name}</div>
-                <div className="text-green-400">{topValueItem.value.toFixed(2)} PED</div>
+                <div className="text-green-400">{topValueItem.totalValue.toFixed(2)} PED</div>
               </div>
             </div>
           </div>
@@ -411,7 +473,7 @@ export function Loot() {
           <div className="text-xs text-muted uppercase mb-4">TOP ITEMS</div>
           <div className="space-y-2">
             {topItems.map((item, idx) => {
-              const share = totalTTValue > 0 ? (item.value / totalTTValue) * 100 : 0;
+              const share = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
               return (
                 <div key={idx} className="flex items-center justify-between p-2 bg-surface rounded">
                   <div className="flex items-center gap-3">
@@ -421,7 +483,7 @@ export function Loot() {
                     <div>
                       <div className="font-medium">{item.name}</div>
                       <div className="text-xs text-muted">
-                        {item.value.toFixed(2)} PED • {share.toFixed(1)}%
+                        {item.totalValue.toFixed(2)} PED • {share.toFixed(1)}%
                       </div>
                     </div>
                   </div>
@@ -455,7 +517,7 @@ export function Loot() {
             <div className="space-y-4">
               {/* Markup Setting */}
               <div>
-                <label className="block text-sm text-muted mb-2">Set Markup %</label>
+                <label className="block text-sm text-muted mb-2">Set Mark Up - MU (%)</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -467,20 +529,41 @@ export function Loot() {
                   />
                   <button
                     onClick={() => {
+                      if (activeSession) {
+                        updateLootByName(activeSession.id, selectedItem, {
+                          markup: itemMarkup,
+                          fixedValue: itemFixedValue > 0 ? itemFixedValue : 0,
+                        });
+                      }
+
                       addItemTemplate({
                         name: selectedItem,
                         category: mapTypeToCategory(itemTypeCache.get(selectedItem)),
                         defaultTTValue: 0,
                         defaultMarkup: itemMarkup,
+                        defaultFixedValue: itemFixedValue > 0 ? itemFixedValue : undefined,
                         description: `Set from loot page - Type: ${itemTypeCache.get(selectedItem) || 'Unknown'}`,
                       });
                       setSelectedItem(null);
                     }}
                     className="btn-primary"
                   >
-                    Save MU
+                    Save Custom Rules
                   </button>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-muted mb-2">Set Market Value - MV (PED)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={itemFixedValue}
+                  onChange={(e) => setItemFixedValue(Number(e.target.value))}
+                  className="input w-full"
+                />
+                <p className="text-xs text-muted mt-1">Additional value on top of TT. When set above 0, MU is ignored.</p>
               </div>
 
               {/* Ignore List */}

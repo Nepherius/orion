@@ -4,6 +4,7 @@ import { emptySessionStats } from '../../core/sessionCore';
 import { AutocompleteInput } from '../common/AutocompleteInput';
 import { X } from 'lucide-react';
 import { HuntSession } from '../../types';
+import { loadCreatureNames } from '../../services/creatureDataLoader';
 
 interface NewSessionModalProps {
   onClose: () => void;
@@ -29,9 +30,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
   useEffect(() => {
     // Load creatures and planets data
     Promise.all([
-      fetch('/assets/creatures/creatures.json')
-        .then((res) => res.json())
-        .then((data) => setCreatures(data.creatures || [])),
+      loadCreatureNames().then((data) => setCreatures(data)),
       fetch('/assets/creatures/planets.json')
         .then((res) => res.json())
         .then((data) => setPlanets(data.planets || [])),
