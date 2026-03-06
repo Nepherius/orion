@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useHuntStore } from '../../store';
-import { Info, Search, ArrowUpDown, Trash2, X } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
-import { InfoTooltip } from '../common/InfoTooltip';
+import { LootBreakdownPanels } from './LootBreakdownPanels';
+import { LootItemTable } from './LootItemTable';
+import { LootItemOptionsModal } from './LootItemOptionsModal';
+import type { GroupedLootItem, LootSortBy } from './lootTypes';
 
 interface ItemData {
   Id: number;
@@ -36,7 +39,7 @@ export function Loot() {
   const addItemTemplate = useHuntStore((state) => state.addItemTemplate);
   const itemDatabase = useHuntStore((state) => state.itemDatabase);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'value' | 'qty' | 'name'>('value');
+  const [sortBy, setSortBy] = useState<LootSortBy>('value');
 
   // Lazy-load item data and cache lookups
   const getItemType = useMemo(() => {
@@ -135,18 +138,7 @@ export function Loot() {
           : 'text-red-400';
 
   // Group loot items by name and sum quantities
-  const lootMap = new Map<
-    string,
-    {
-      name: string;
-      quantity: number;
-      value: number;
-      markup: number;
-      totalValue: number;
-      markupGain: number;
-      fixedGain: number;
-    }
-  >();
+  const lootMap = new Map<string, GroupedLootItem>();
   activeSession.loot.forEach((item) => {
     const baseValue = item.value * item.quantity;
     const fixedGain = item.fixedValue && item.fixedValue > 0 ? item.fixedValue * item.quantity : 0;
@@ -207,7 +199,54 @@ export function Loot() {
 
   // Top items
   const topItems = [...filteredLoot].sort((a, b) => b.totalValue - a.totalValue).slice(0, 5);
-  const topValueItem = topItems[0];
+
+  const handleSelectItem = (item: GroupedLootItem) => {
+    const existingTemplate = itemDatabase.find(
+      (template) => normalizeItemName(template.name) === normalizeItemName(item.name)
+    );
+    const sessionFixedValuePerItem =
+      item.fixedGain > 0 && item.quantity > 0 ? item.fixedGain / item.quantity : 0;
+
+    setSelectedItem(item.name);
+    setItemMarkup(existingTemplate?.defaultMarkup ?? item.markup ?? 100);
+    setItemFixedValue(existingTemplate?.defaultFixedValue ?? sessionFixedValuePerItem);
+  };
+
+  const handleSaveCustomRules = () => {
+    if (!selectedItem) {
+      return;
+    }
+
+    if (activeSession) {
+      updateLootByName(activeSession.id, selectedItem, {
+        markup: itemMarkup,
+        fixedValue: itemFixedValue > 0 ? itemFixedValue : 0,
+      });
+    }
+
+    addItemTemplate({
+      name: selectedItem,
+      category: mapTypeToCategory(itemTypeCache.get(selectedItem)),
+      defaultTTValue: 0,
+      defaultMarkup: itemMarkup,
+      defaultFixedValue: itemFixedValue > 0 ? itemFixedValue : undefined,
+      description: `Set from loot page - Type: ${itemTypeCache.get(selectedItem) || 'Unknown'}`,
+    });
+    setSelectedItem(null);
+  };
+
+  const handleToggleIgnore = () => {
+    if (!selectedItem) {
+      return;
+    }
+
+    if (ignoreList.includes(selectedItem)) {
+      removeFromIgnoreList(selectedItem);
+    } else {
+      addToIgnoreList(selectedItem);
+    }
+    setSelectedItem(null);
+  };
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -225,285 +264,32 @@ export function Loot() {
           </div>
         </div>
 
-        {/* Value Composition */}
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="text-2xl font-bold">Loot Value Distribution</div>
-            <InfoTooltip tooltip="TT = Trade Terminal Value, MU = Markup, MV = Market Value" />
-          </div>
-          <div className="relative h-2 bg-surface rounded-full overflow-hidden">
-            <div
-              className="absolute top-0 left-0 h-full bg-blue-500"
-              style={{
-                width: `${totalAdjustedValue > 0 ? (totalTTValue / totalAdjustedValue) * 100 : 0}%`,
-              }}
-            />
-            <div
-              className="absolute top-0 h-full bg-green-500"
-              style={{
-                left: `${totalAdjustedValue > 0 ? (totalTTValue / totalAdjustedValue) * 100 : 0}%`,
-                width: `${totalAdjustedValue > 0 ? (totalMarkup / totalAdjustedValue) * 100 : 0}%`,
-              }}
-            />
-            <div
-              className="absolute top-0 h-full bg-violet-500"
-              style={{
-                left: `${
-                  totalAdjustedValue > 0
-                    ? ((totalTTValue + totalMarkup) / totalAdjustedValue) * 100
-                    : 0
-                }%`,
-                width: `${totalAdjustedValue > 0 ? (totalFixedValue / totalAdjustedValue) * 100 : 0}%`,
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between mt-2 text-xs">
-            <span className="text-blue-400">
-              TT Value (
-              {totalAdjustedValue > 0
-                ? ((totalTTValue / totalAdjustedValue) * 100).toFixed(1)
-                : '0.0'}
-              %)
-            </span>
-            <span className="text-green-400">
-              MU (
-              {totalAdjustedValue > 0
-                ? ((totalMarkup / totalAdjustedValue) * 100).toFixed(1)
-                : '0.0'}
-              %)
-            </span>
-            <span className="text-violet-400">
-              MV (
-              {totalAdjustedValue > 0
-                ? ((totalFixedValue / totalAdjustedValue) * 100).toFixed(1)
-                : '0.0'}
-              %)
-            </span>
-          </div>
-        </div>
+        <LootBreakdownPanels
+          totalAdjustedValue={totalAdjustedValue}
+          totalTTValue={totalTTValue}
+          totalMarkup={totalMarkup}
+          totalFixedValue={totalFixedValue}
+          topItems={topItems}
+          uniqueItems={uniqueItems}
+          avgMarkup={avgMarkup}
+          pedPerItem={pedPerItem}
+        />
 
-        {/* Composition */}
-        <div className="card p-6">
-          <div className="text-xs text-muted uppercase mb-4">COMPOSITION</div>
-          <div className="space-y-2">
-            {topItems.slice(0, 5).map((item, idx) => {
-              const percent =
-                totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
-              return (
-                <div key={idx} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-yellow-500" />
-                      <span>{item.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-muted">{item.quantity}</span>
-                      <span className="text-muted">{item.markup}%</span>
-                      <span className="font-medium">{item.totalValue.toFixed(2)}</span>
-                      <span className="text-muted">{percent.toFixed(1)}%</span>
-                    </div>
-                  </div>
-                  <div className="relative h-1 bg-surface rounded-full overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 h-full bg-yellow-500"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-5 gap-4">
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold">{uniqueItems}</div>
-            <div className="text-xs text-muted">Unlocks</div>
-          </div>
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold">{avgMarkup.toFixed(1)}%</div>
-            <div className="text-xs text-muted">Avg MU</div>
-          </div>
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold text-green-400">+{totalMarkup.toFixed(2)}</div>
-            <div className="text-xs text-muted">MU Gain</div>
-          </div>
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold text-violet-400">+{totalFixedValue.toFixed(2)}</div>
-            <div className="text-xs text-muted">MV Gain</div>
-          </div>
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold">{pedPerItem.toFixed(3)}</div>
-            <div className="text-xs text-muted">PED/Item</div>
-          </div>
-        </div>
-
-        {/* Item List */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="relative flex-1 mr-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
-              <input
-                type="text"
-                placeholder="Search items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input w-full pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'value' | 'qty' | 'name')}
-                className="input"
-              >
-                <option value="value">⬇ Value</option>
-                <option value="qty">⬇ Qty</option>
-                <option value="name">⬇ Name</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-xs text-muted">
-                  <th className="text-left py-2 px-3">
-                    <button className="flex items-center gap-1 hover:text-white">
-                      <ArrowUpDown className="w-3 h-3" />
-                      Value
-                    </button>
-                  </th>
-                  <th className="text-left py-2 px-3">
-                    <button className="flex items-center gap-1 hover:text-white">
-                      <ArrowUpDown className="w-3 h-3" />
-                      Qty
-                    </button>
-                  </th>
-                  <th className="text-left py-2 px-3">
-                    <button className="flex items-center gap-1 hover:text-white">
-                      <ArrowUpDown className="w-3 h-3" />
-                      Name
-                    </button>
-                  </th>
-                  <th className="text-right py-2 px-3">Type</th>
-                  <th className="text-right py-2 px-3">TT</th>
-                  <th className="text-right py-2 px-3">Share</th>
-                  <th className="text-right py-2 px-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLoot.map((item, idx) => {
-                  const share =
-                    totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
-                  const itemType = itemTypeCache.get(item.name);
-                  return (
-                    <tr
-                      key={idx}
-                      className="border-b border-gray-800 hover:bg-surface cursor-pointer"
-                      onClick={() => {
-                        const existingTemplate = itemDatabase.find(
-                          (template) =>
-                            normalizeItemName(template.name) === normalizeItemName(item.name)
-                        );
-                        const sessionFixedValuePerItem =
-                          item.fixedGain > 0 && item.quantity > 0
-                            ? item.fixedGain / item.quantity
-                            : 0;
-
-                        setSelectedItem(item.name);
-                        setItemMarkup(existingTemplate?.defaultMarkup ?? item.markup ?? 100);
-                        setItemFixedValue(
-                          existingTemplate?.defaultFixedValue ?? sessionFixedValuePerItem
-                        );
-                      }}
-                    >
-                      <td className="py-2 px-3">
-                        <div className="font-medium">{item.totalValue.toFixed(2)}</div>
-                        <div className="text-xs text-muted">
-                          TT {item.value.toFixed(2)}
-                          {item.markupGain > 0 ? ` + ${item.markupGain.toFixed(2)}` : ''}
-                          {item.fixedGain > 0 ? ` + ${item.fixedGain.toFixed(2)}` : ''}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">{item.quantity}</td>
-                      <td className="py-2 px-3 font-medium">{item.name}</td>
-                      <td className="py-2 px-3 text-right">
-                        {itemType && <span className="text-blue-400">{itemType}</span>}
-                      </td>
-                      <td className="py-2 px-3 text-right">
-                        {(item.value / item.quantity).toFixed(4)} PED
-                      </td>
-                      <td className="py-2 px-3 text-right">{share.toFixed(1)}%</td>
-                      <td
-                        className="py-2 px-3 text-right"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                      >
-                        <button
-                          onClick={() =>
-                            activeSession && removeLootByName(activeSession.id, item.name)
-                          }
-                          className="text-red-400 hover:text-red-300"
-                          title="Delete all entries for this item"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Highlights */}
-        {topValueItem && (
-          <div className="card p-6">
-            <div className="text-xs text-muted uppercase mb-4">HIGHLIGHTS</div>
-            <div className="flex items-center gap-4">
-              <div className="text-lg">🏆</div>
-              <div>
-                <div className="text-sm text-muted">Top Value</div>
-                <div className="font-bold">{topValueItem.name}</div>
-                <div className="text-green-400">{topValueItem.totalValue.toFixed(2)} PED</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Top Items */}
-        <div className="card p-6">
-          <div className="text-xs text-muted uppercase mb-4">TOP ITEMS</div>
-          <div className="space-y-2">
-            {topItems.map((item, idx) => {
-              const share =
-                totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
-              return (
-                <div key={idx} className="flex items-center justify-between p-2 bg-surface rounded">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 flex items-center justify-center bg-gray-600 rounded font-bold text-sm">
-                      #{idx + 1}
-                    </div>
-                    <div>
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-xs text-muted">
-                        {item.totalValue.toFixed(2)} PED • {share.toFixed(1)}%
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold">{item.value.toFixed(2)} PED</div>
-                    <div className="text-xs text-muted">{share.toFixed(1)}%</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <LootItemTable
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortByChange={setSortBy}
+          filteredLoot={filteredLoot}
+          totalAdjustedValue={totalAdjustedValue}
+          itemTypeCache={itemTypeCache}
+          onSelectItem={handleSelectItem}
+          onDeleteItem={(itemName) => {
+            if (activeSession) {
+              removeLootByName(activeSession.id, itemName);
+            }
+          }}
+        />
       </div>
 
       {/* Active Session Sidebar */}
@@ -511,104 +297,17 @@ export function Loot() {
         <ActiveSessionSidebar />
       </div>
 
-      {/* Item Options Modal */}
-      {selectedItem && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-surface border border-border rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">{selectedItem}</h3>
-              <button onClick={() => setSelectedItem(null)} className="text-muted hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {/* Markup Setting */}
-              <div>
-                <label className="block text-sm text-muted mb-2">Set Mark Up - MU (%)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="100"
-                    step="1"
-                    value={itemMarkup}
-                    onChange={(e) => setItemMarkup(Number(e.target.value))}
-                    className="input flex-1"
-                  />
-                  <button
-                    onClick={() => {
-                      if (activeSession) {
-                        updateLootByName(activeSession.id, selectedItem, {
-                          markup: itemMarkup,
-                          fixedValue: itemFixedValue > 0 ? itemFixedValue : 0,
-                        });
-                      }
-
-                      addItemTemplate({
-                        name: selectedItem,
-                        category: mapTypeToCategory(itemTypeCache.get(selectedItem)),
-                        defaultTTValue: 0,
-                        defaultMarkup: itemMarkup,
-                        defaultFixedValue: itemFixedValue > 0 ? itemFixedValue : undefined,
-                        description: `Set from loot page - Type: ${itemTypeCache.get(selectedItem) || 'Unknown'}`,
-                      });
-                      setSelectedItem(null);
-                    }}
-                    className="btn-primary"
-                  >
-                    Save Custom Rules
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-muted mb-2">Set Market Value - MV (PED)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={itemFixedValue}
-                  onChange={(e) => setItemFixedValue(Number(e.target.value))}
-                  className="input w-full"
-                />
-                <p className="text-xs text-muted mt-1">
-                  Additional value on top of TT. When set above 0, MU is ignored.
-                </p>
-              </div>
-
-              {/* Ignore List */}
-              <div className="border-t border-border pt-4">
-                {ignoreList.includes(selectedItem) ? (
-                  <button
-                    onClick={() => {
-                      removeFromIgnoreList(selectedItem);
-                      setSelectedItem(null);
-                    }}
-                    className="btn-secondary w-full"
-                  >
-                    Remove from Ignore List
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      addToIgnoreList(selectedItem);
-                      setSelectedItem(null);
-                    }}
-                    className="btn-secondary w-full"
-                  >
-                    Add to Ignore List
-                  </button>
-                )}
-              </div>
-
-              {/* Close Button */}
-              <button onClick={() => setSelectedItem(null)} className="btn-secondary w-full">
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <LootItemOptionsModal
+        selectedItem={selectedItem}
+        itemMarkup={itemMarkup}
+        itemFixedValue={itemFixedValue}
+        isIgnored={selectedItem ? ignoreList.includes(selectedItem) : false}
+        onMarkupChange={setItemMarkup}
+        onFixedValueChange={setItemFixedValue}
+        onSaveCustomRules={handleSaveCustomRules}
+        onToggleIgnore={handleToggleIgnore}
+        onClose={() => setSelectedItem(null)}
+      />
     </div>
   );
 }
