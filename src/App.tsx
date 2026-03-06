@@ -3,6 +3,7 @@ import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import packageJson from '../package.json';
 import { SessionList } from './components/sessions/SessionList';
 import { SessionDetails } from './components/sessions/SessionDetails';
+import { ViewStats } from './components/views/ViewStats';
 import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
 import { ChatLogMonitor } from './components/views/ChatLogMonitor';
 import { ChatLogMonitorPanel } from './components/views/ChatLogMonitorPanel';
@@ -10,9 +11,6 @@ import { WelcomeModal } from './components/views/WelcomeModal';
 import { useInitialDataLoader } from './hooks/useInitialDataLoader';
 
 // Dynamically imported views to minimize RAM footprint of unfocused tabs
-const Dashboard = lazy(() =>
-  import('./components/views/Dashboard').then((m) => ({ default: m.Dashboard }))
-);
 const Loot = lazy(() => import('./components/loot/Loot').then((m) => ({ default: m.Loot })));
 const Loadouts = lazy(() =>
   import('./components/views/Loadouts').then((m) => ({ default: m.Loadouts }))
@@ -27,23 +25,26 @@ const Settings = lazy(() =>
   import('./components/views/Settings').then((m) => ({ default: m.Settings }))
 );
 
-import {
-  Database,
-  Settings as SettingsIcon,
-  BarChart3,
-  Activity,
-  Package,
-  Sword,
-} from 'lucide-react';
+import { Database, Settings as SettingsIcon, BarChart3, Sword, X } from 'lucide-react';
 
 type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analytics' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('sessions');
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [viewStatsOverlaySessionId, setViewStatsOverlaySessionId] = useState<string | null>(null);
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
+  const selectedSession = useHuntStore((state) =>
+    selectedSessionId ? state.sessions.find((s) => s.id === selectedSessionId) || null : null
+  );
+
+  const openSelectedSessionViewStatsOverlay = () => {
+    if (selectedSession?.status === 'completed') {
+      setViewStatsOverlaySessionId(selectedSession.id);
+    }
+  };
 
   const avatarName = useHuntStore((state) => state.settings.avatarName);
   const theme = useHuntStore((state) => state.settings.theme);
@@ -206,24 +207,6 @@ function App() {
 
               {/* Navigation */}
               <nav className="flex gap-2">
-                {activeSession && (
-                  <>
-                    <button
-                      onClick={() => setCurrentView('dashboard')}
-                      className={`btn ${currentView === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
-                    >
-                      <Activity className="w-4 h-4 inline mr-2" />
-                      Dashboard
-                    </button>
-                    <button
-                      onClick={() => setCurrentView('loot')}
-                      className={`btn ${currentView === 'loot' ? 'btn-primary' : 'btn-secondary'}`}
-                    >
-                      <Package className="w-4 h-4 inline mr-2" />
-                      Loot
-                    </button>
-                  </>
-                )}
                 <button
                   onClick={() => setCurrentView('sessions')}
                   className={`btn ${currentView === 'sessions' ? 'btn-primary' : 'btn-secondary'}`}
@@ -295,7 +278,12 @@ function App() {
                 </div>
               }
             >
-              {currentView === 'dashboard' && <Dashboard />}
+              {currentView === 'dashboard' && (
+                <ViewStats
+                  sessionId={selectedSessionId ?? activeSession?.id ?? null}
+                  onSessionResumed={() => setCurrentView('dashboard')}
+                />
+              )}
 
               {currentView === 'loot' && <Loot />}
 
@@ -314,6 +302,7 @@ function App() {
                       <SessionDetails
                         sessionId={selectedSessionId}
                         onSessionResumed={() => setCurrentView('dashboard')}
+                        onOpenInDashboard={openSelectedSessionViewStatsOverlay}
                       />
                     ) : (
                       <div className="card p-8 text-center text-muted">
@@ -333,6 +322,41 @@ function App() {
               {currentView === 'settings' && <Settings />}
             </Suspense>
           </main>
+
+          {viewStatsOverlaySessionId && (
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              onClick={() => setViewStatsOverlaySessionId(null)}
+            >
+              <div className="h-full w-full p-6">
+                <div
+                  className="card h-full max-w-7xl mx-auto flex flex-col overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <h2 className="text-lg font-semibold">Overview</h2>
+                    <button
+                      onClick={() => setViewStatsOverlaySessionId(null)}
+                      className="btn-secondary h-8 w-8 p-0 flex items-center justify-center"
+                      title="Close Overview"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-auto p-4">
+                    <ViewStats
+                      sessionId={viewStatsOverlaySessionId}
+                      showHeader={false}
+                      onSessionResumed={() => {
+                        setViewStatsOverlaySessionId(null);
+                        setCurrentView('dashboard');
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <footer className="border-t border-border px-6 py-4 mt-12 bg-surface">

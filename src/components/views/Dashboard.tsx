@@ -24,10 +24,18 @@ import { HourlyRatesAnalytics } from '../analytics/HourlyRatesAnalytics';
 import { HealingAnalytics } from '../analytics/HealingAnalytics';
 import { GrindGoals } from '../analytics/GrindGoals';
 
-export function Dashboard() {
+interface DashboardProps {
+  sessionId?: string;
+}
+
+export function Dashboard({ sessionId }: DashboardProps = {}) {
+  const sessionFromSelection = useHuntStore((state) =>
+    sessionId ? state.sessions.find((s) => s.id === sessionId) || null : null
+  );
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
+  const session = sessionFromSelection || activeSession;
   const isPageVisible = usePageVisibility();
 
   type AnalyticsView =
@@ -45,16 +53,16 @@ export function Dashboard() {
   // Only update when the page is visible to avoid unnecessary re-renders
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (activeSession?.status !== 'active' || !isPageVisible) return;
+    if (session?.status !== 'active' || !isPageVisible) return;
     const interval = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(interval);
-  }, [activeSession?.status, isPageVisible]);
+  }, [session?.status, isPageVisible]);
 
-  if (!activeSession) {
+  if (!session) {
     return (
       <div className="card p-8 text-center text-muted">
         <Info className="w-16 h-16 mx-auto mb-4 opacity-50" />
-        <p>No active session. Start or resume a session to view the dashboard.</p>
+        <p>No session selected. Pick a session from Sessions or start one to view Hunt View.</p>
       </div>
     );
   }
@@ -64,31 +72,30 @@ export function Dashboard() {
     return timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp;
   };
 
-  const profit = activeSession.stats.totalLoot - activeSession.stats.totalCost;
+  const profit = session.stats.totalLoot - session.stats.totalCost;
   const now = Date.now();
-  const startTimeMs = normalizeTimestampMs(activeSession.startTime) ?? now;
-  const pausedAtMs = normalizeTimestampMs(activeSession.pausedAt);
-  const endTimeMs = normalizeTimestampMs(activeSession.endTime);
-  const elapsedReference = activeSession.status === 'completed' && endTimeMs ? endTimeMs : now;
+  const startTimeMs = normalizeTimestampMs(session.startTime) ?? now;
+  const pausedAtMs = normalizeTimestampMs(session.pausedAt);
+  const endTimeMs = normalizeTimestampMs(session.endTime);
+  const elapsedReference = session.status === 'completed' && endTimeMs ? endTimeMs : now;
   const pausedMs =
-    (activeSession.totalPausedMs || 0) +
-    (activeSession.status === 'paused' && pausedAtMs ? now - pausedAtMs : 0);
+    (session.totalPausedMs || 0) + (session.status === 'paused' && pausedAtMs ? now - pausedAtMs : 0);
   const durationFromTimestamps = Math.max(0, elapsedReference - startTimeMs - pausedMs);
   const duration =
-    activeSession.status === 'completed' && activeSession.stats.duration > 0
-      ? activeSession.stats.duration * 1000
+    session.status === 'completed' && session.stats.duration > 0
+      ? session.stats.duration * 1000
       : durationFromTimestamps;
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 
   // Calculate return rate over time
-  const chartData = activeSession.loot.map((item, index) => {
-    const cumulativeLoot = activeSession.loot
+  const chartData = session.loot.map((item, index) => {
+    const cumulativeLoot = session.loot
       .slice(0, index + 1)
       .reduce((sum, l) => sum + l.totalValue, 0);
     const returnRate =
-      activeSession.stats.totalCost > 0
-        ? (cumulativeLoot / activeSession.stats.totalCost) * 100
+      session.stats.totalCost > 0
+        ? (cumulativeLoot / session.stats.totalCost) * 100
         : 0;
     return {
       name: `${index + 1}`,
@@ -98,12 +105,12 @@ export function Dashboard() {
   });
 
   // Combat calculations
-  const totalHits = activeSession.stats.hits || 0;
-  const totalCritHits = activeSession.stats.criticalHits || 0;
-  const totalMisses = activeSession.stats.misses || 0;
-  const totalDodges = activeSession.stats.dodges || 0;
-  const totalEvades = activeSession.stats.evades || 0;
-  const shotsFired = activeSession.stats.shotsFired || 0;
+  const totalHits = session.stats.hits || 0;
+  const totalCritHits = session.stats.criticalHits || 0;
+  const totalMisses = session.stats.misses || 0;
+  const totalDodges = session.stats.dodges || 0;
+  const totalEvades = session.stats.evades || 0;
+  const shotsFired = session.stats.shotsFired || 0;
   const hitRate = shotsFired > 0 ? ((totalHits + totalCritHits) / shotsFired) * 100 : 0;
   const critRate = shotsFired > 0 ? (totalCritHits / shotsFired) * 100 : 0;
   const evasionRate =
@@ -112,46 +119,46 @@ export function Dashboard() {
       : 0;
 
   // Performance metrics
-  const totalEvents = activeSession.stats.lootEvents;
+  const totalEvents = session.stats.lootEvents;
 
   // Economy metrics
-  const totalLoot = activeSession.stats.totalLoot;
-  const totalSpend = activeSession.stats.totalCost;
-  const costPerKill = activeSession.stats.kills > 0 ? totalSpend / activeSession.stats.kills : 0;
-  const lootPerKill = activeSession.stats.kills > 0 ? totalLoot / activeSession.stats.kills : 0;
+  const totalLoot = session.stats.totalLoot;
+  const totalSpend = session.stats.totalCost;
+  const costPerKill = session.stats.kills > 0 ? totalSpend / session.stats.kills : 0;
+  const lootPerKill = session.stats.kills > 0 ? totalLoot / session.stats.kills : 0;
   const netPL = profit;
   const lootPerPED = totalSpend > 0 ? totalLoot / totalSpend : 0;
 
   // Efficiency metrics
-  const dpp = activeSession.stats.kills > 0 ? totalSpend / activeSession.stats.kills : 0;
+  const dpp = session.stats.kills > 0 ? totalSpend / session.stats.kills : 0;
   const dps = durationMinutes > 0 ? totalSpend / durationMinutes : 0;
-  const killsPerPED = totalSpend > 0 ? activeSession.stats.kills / totalSpend : 0;
-  const killsPerHour = durationHours > 0 ? activeSession.stats.kills / durationHours : 0;
+  const killsPerPED = totalSpend > 0 ? session.stats.kills / totalSpend : 0;
+  const killsPerHour = durationHours > 0 ? session.stats.kills / durationHours : 0;
   const avgDmgPerHit =
-    activeSession.stats.shotsFired > 0
-      ? activeSession.stats.damageDealt / activeSession.stats.shotsFired
+    session.stats.shotsFired > 0
+      ? session.stats.damageDealt / session.stats.shotsFired
       : 0;
   const shotsPerKill =
-    activeSession.stats.kills > 0 ? activeSession.stats.shotsFired / activeSession.stats.kills : 0;
+    session.stats.kills > 0 ? session.stats.shotsFired / session.stats.kills : 0;
 
   // Hourly rates
   const lootPerHour = durationHours > 0 ? totalLoot / durationHours : 0;
   const spendPerHour = durationHours > 0 ? totalSpend / durationHours : 0;
-  const dmgPerHour = durationHours > 0 ? activeSession.stats.damageDealt / durationHours : 0;
+  const dmgPerHour = durationHours > 0 ? session.stats.damageDealt / durationHours : 0;
 
   // Skill metrics
-  const totalSkillGains = activeSession.skills.reduce((sum, skill) => sum + skill.gainAmount, 0);
-  const totalSkillEvents = activeSession.skills.length;
+  const totalSkillGains = session.skills.reduce((sum, skill) => sum + skill.gainAmount, 0);
+  const totalSkillEvents = session.skills.length;
   const skillsPerPed = totalSpend > 0 ? totalSkillGains / totalSpend : 0;
   const skillsPerHour = durationHours > 0 ? totalSkillGains / durationHours : 0;
   const skillsPerKill =
-    activeSession.stats.kills > 0 ? totalSkillGains / activeSession.stats.kills : 0;
+    session.stats.kills > 0 ? totalSkillGains / session.stats.kills : 0;
   const avgSkillValue = totalSkillEvents > 0 ? totalSkillGains / totalSkillEvents : 0;
 
   // Healing metrics
-  const totalHealing = activeSession.stats.totalHealing || 0;
-  const healsUsed = activeSession.stats.healsUsed || 0;
-  const healingCost = activeSession.healingCost || 0;
+  const totalHealing = session.stats.totalHealing || 0;
+  const healsUsed = session.stats.healsUsed || 0;
+  const healingCost = session.healingCost || 0;
   const avgHealAmount = healsUsed > 0 ? totalHealing / healsUsed : 0;
   const costPerHeal = healsUsed > 0 ? healingCost / healsUsed : 0;
   const healingEfficiency = healingCost > 0 ? totalHealing / healingCost : 0;
@@ -185,14 +192,14 @@ export function Dashboard() {
             <div className="card p-6">
               <div className="text-sm text-muted mb-2">RETURN RATE</div>
               <div
-                className={`text-4xl font-bold flex items-center gap-2 ${activeSession.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
+                className={`text-4xl font-bold flex items-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
               >
-                {activeSession.stats.returns >= 100 ? (
+                {session.stats.returns >= 100 ? (
                   <TrendingUp className="w-6 h-6" />
                 ) : (
                   <TrendingDown className="w-6 h-6" />
                 )}
-                {activeSession.stats.returns.toFixed(1)}%
+                {session.stats.returns.toFixed(1)}%
               </div>
             </div>
             <div className="card p-6">
@@ -206,7 +213,7 @@ export function Dashboard() {
             </div>
             <div className="card p-6">
               <div className="text-sm text-muted mb-2">TOTAL KILLS</div>
-              <div className="text-4xl font-bold text-body">{activeSession.stats.kills}</div>
+              <div className="text-4xl font-bold text-body">{session.stats.kills}</div>
             </div>
           </div>
 
@@ -241,8 +248,8 @@ export function Dashboard() {
                   <Line
                     type="monotone"
                     dataKey="returnRate"
-                    stroke={activeSession.stats.returns >= 100 ? '#22C55E' : '#EF4444'}
-                    dot={{ fill: activeSession.stats.returns >= 100 ? '#22C55E' : '#EF4444', r: 4 }}
+                    stroke={session.stats.returns >= 100 ? '#22C55E' : '#EF4444'}
+                    dot={{ fill: session.stats.returns >= 100 ? '#22C55E' : '#EF4444', r: 4 }}
                     activeDot={{ r: 6 }}
                     strokeWidth={2}
                   />
@@ -265,8 +272,8 @@ export function Dashboard() {
               <div className="space-y-3">
                 <StatCard
                   label="Return Rate"
-                  value={`${activeSession.stats.returns.toFixed(1)}%`}
-                  color={activeSession.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}
+                  value={`${session.stats.returns.toFixed(1)}%`}
+                  color={session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}
                 />
                 <StatCard
                   label="Profit/Loss"
@@ -401,26 +408,26 @@ export function Dashboard() {
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
-                <StatCard label="Kills" value={activeSession.stats.kills} />
+                <StatCard label="Kills" value={session.stats.kills} />
                 <StatCard
                   label="Total Damage Out"
-                  value={activeSession.stats.damageDealt.toFixed(0)}
+                  value={session.stats.damageDealt.toFixed(0)}
                 />
                 <StatCard
                   label="Total Damage In"
-                  value={(activeSession.stats.damageTaken || 0).toFixed(0)}
+                  value={(session.stats.damageTaken || 0).toFixed(0)}
                   color="text-red-400"
                 />
                 <StatCard
                   label="Total Healing"
-                  value={(activeSession.stats.totalHealing || 0).toFixed(0)}
+                  value={(session.stats.totalHealing || 0).toFixed(0)}
                   color="text-green-400"
                 />
-                <StatCard label="Shots Fired" value={activeSession.stats.shotsFired} />
+                <StatCard label="Shots Fired" value={session.stats.shotsFired} />
                 <StatCard label="Hits" value={totalHits} color="text-green-400" />
                 <StatCard
                   label="Critical Hits"
-                  value={activeSession.stats.criticalHits || 0}
+                  value={session.stats.criticalHits || 0}
                   color="text-yellow-400"
                 />
                 <StatCard label="Misses" value={totalMisses} color="text-muted" />
@@ -463,10 +470,10 @@ export function Dashboard() {
                   <div className="flex items-center gap-2 text-sm text-muted">Combat Time</div>
                   <div className="font-semibold text-body">
                     <LiveTimer
-                      startTime={activeSession.startTime}
-                      isRunning={activeSession.status === 'active'}
-                      pausedAt={activeSession.pausedAt}
-                      pausedDurationMs={activeSession.totalPausedMs || 0}
+                      startTime={session.startTime}
+                      isRunning={session.status === 'active'}
+                      pausedAt={session.pausedAt}
+                      pausedDurationMs={session.totalPausedMs || 0}
                     />
                   </div>
                 </div>
@@ -506,13 +513,13 @@ export function Dashboard() {
                         : 'Analytics'
         }
       >
-        {analyticsView === 'performance' && <PerformanceAnalytics session={activeSession} />}
-        {analyticsView === 'economy' && <EconomyAnalytics session={activeSession} />}
-        {analyticsView === 'efficiency' && <EfficiencyAnalytics session={activeSession} />}
-        {analyticsView === 'skills' && <SkillsAnalytics session={activeSession} />}
-        {analyticsView === 'combat' && <CombatAnalytics session={activeSession} />}
-        {analyticsView === 'healing' && <HealingAnalytics session={activeSession} />}
-        {analyticsView === 'hourly' && <HourlyRatesAnalytics session={activeSession} />}
+        {analyticsView === 'performance' && <PerformanceAnalytics session={session} />}
+        {analyticsView === 'economy' && <EconomyAnalytics session={session} />}
+        {analyticsView === 'efficiency' && <EfficiencyAnalytics session={session} />}
+        {analyticsView === 'skills' && <SkillsAnalytics session={session} />}
+        {analyticsView === 'combat' && <CombatAnalytics session={session} />}
+        {analyticsView === 'healing' && <HealingAnalytics session={session} />}
+        {analyticsView === 'hourly' && <HourlyRatesAnalytics session={session} />}
       </AnalyticsModal>
     </>
   );

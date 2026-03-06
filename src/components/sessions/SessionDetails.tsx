@@ -24,6 +24,7 @@ import { ConfirmModal } from '../common/ConfirmModal';
 interface SessionDetailsProps {
   sessionId: string;
   onSessionResumed?: () => void;
+  onOpenInDashboard?: () => void;
 }
 
 interface GroupedLootItem {
@@ -35,7 +36,11 @@ interface GroupedLootItem {
   count: number;
 }
 
-export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsProps) {
+export function SessionDetails({
+  sessionId,
+  onSessionResumed,
+  onOpenInDashboard,
+}: SessionDetailsProps) {
   const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
   const loadoutName = useHuntStore((state) =>
     session?.loadoutId ? state.loadouts.find((l) => l.id === session.loadoutId)?.name : undefined
@@ -122,96 +127,109 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
     <div className="space-y-6">
       {/* Session Overview Card */}
       <div className="card p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">{session.name}</h2>
-            <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-sm">
-              <div className="text-muted">Loadout</div>
-              <div className="text-muted">Weapon</div>
-              <div className="text-muted">Location</div>
-              <div className="text-muted">Creature</div>
+        {/* Row 1: Title and Buttons */}
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-bold">{session.name}</h2>
+          <div className="flex gap-2">
+            {onOpenInDashboard && session.status === 'completed' && (
+              <button
+                onClick={() => onOpenInDashboard()}
+                className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                title="Open Overview"
+              >
+                <Zap className="w-4 h-4" />
+                Overview
+              </button>
+            )}
+            {session.status === 'completed' ? (
+              <button
+                onClick={handleResume}
+                className="btn-primary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                title="Resume Session"
+              >
+                <Play className="w-4 h-4" />
+                Resume
+              </button>
+            ) : session.status === 'active' ? (
+              <button
+                onClick={handlePause}
+                className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                title="Pause Session"
+              >
+                <Pause className="w-4 h-4" />
+                Pause
+              </button>
+            ) : (
+              <button
+                onClick={handleResume}
+                className="btn-primary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                title="Resume Session"
+              >
+                <Play className="w-4 h-4" />
+                Resume
+              </button>
+            )}
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+              title="Edit Session"
+            >
+              <Edit2 className="w-4 h-4" />
+              Edit
+            </button>
+            <button
+              onClick={handleDeleteRequest}
+              className="bg-red-600 hover:bg-red-700 text-white h-6 w-32 px-3 rounded-lg flex items-center justify-center gap-2 text-sm whitespace-nowrap transition-colors"
+              title="Delete Session"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+          </div>
+        </div>
 
-              <div className="font-medium text-gray-300">{loadoutName || '-'}</div>
-              <div className="font-medium text-gray-300">{session.weapon || '-'}</div>
-              <div className="font-medium text-gray-300">{session.location || '-'}</div>
-              <div className="font-medium text-gray-300">{session.creature || '-'}</div>
-            </div>
+        {/* Row 2: Dates */}
+        <div className="flex gap-6 text-sm mb-4">
+          <div>
+            <span className="text-muted">Started:</span>{' '}
+            <span className="font-medium text-gray-300">{format(session.startTime, 'PPpp')}</span>
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              {session.status === 'completed' ? (
-                <button
-                  onClick={handleResume}
-                  className="btn-primary flex items-center gap-2 text-sm"
-                  title="Resume Session"
-                >
-                  <Play className="w-4 h-4" />
-                  Resume
-                </button>
-              ) : session.status === 'active' ? (
-                <button
-                  onClick={handlePause}
-                  className="btn-secondary flex items-center gap-2 text-sm"
-                  title="Pause Session"
-                >
-                  <Pause className="w-4 h-4" />
-                  Pause
-                </button>
-              ) : (
-                <button
-                  onClick={handleResume}
-                  className="btn-primary flex items-center gap-2 text-sm"
-                  title="Resume Session"
-                >
-                  <Play className="w-4 h-4" />
-                  Resume
-                </button>
-              )}
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="btn-secondary flex items-center gap-2 text-sm"
-                title="Edit Session"
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit
-              </button>
-              <button
-                onClick={handleDeleteRequest}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
-                title="Delete Session"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
+          {session.endTime && (
+            <div>
+              <span className="text-muted">Ended:</span>{' '}
+              <span className="font-medium text-gray-300">{format(session.endTime, 'PPpp')}</span>
             </div>
-            <div className="text-right text-sm">
-              <div className="text-xs text-muted">Started</div>
-              <div className="font-medium text-gray-300">{format(session.startTime, 'PPpp')}</div>
-              {session.endTime && (
-                <>
-                  <div className="text-xs text-muted mt-1">Ended</div>
-                  <div className="font-medium text-gray-300">{format(session.endTime, 'PPpp')}</div>
-                </>
-              )}
-            </div>
-          </div>
+          )}
+        </div>
+
+        {/* Row 3: Details Grid */}
+        <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-sm mb-4">
+          <div className="text-muted">Loadout</div>
+          <div className="text-muted">Weapon</div>
+          <div className="text-muted">Location</div>
+          <div className="text-muted">Creature</div>
+
+          <div className="font-medium text-gray-300">{loadoutName || '-'}</div>
+          <div className="font-medium text-gray-300">{session.weapon || '-'}</div>
+          <div className="font-medium text-gray-300">{session.location || '-'}</div>
+          <div className="font-medium text-gray-300">{session.creature || '-'}</div>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-4 mt-6">
-          <div className="bg-surface rounded-lg p-4">
+          <div className="bg-surface rounded-lg p-3 text-center border border-border">
             <div className="text-sm text-muted mb-1">Total Loot</div>
             <div className="text-2xl font-bold text-green-400">
               {session.stats.totalLoot.toFixed(2)} PED
             </div>
           </div>
-          <div className="bg-surface rounded-lg p-4">
+          <div className="bg-surface rounded-lg p-3 text-center border border-border">
             <div className="text-sm text-muted mb-1">Total Cost</div>
             <div className="text-2xl font-bold text-red-400">
               {session.stats.totalCost.toFixed(2)} PED
             </div>
           </div>
-          <div className="bg-surface rounded-lg p-4">
+          <div className="bg-surface rounded-lg p-3 text-center border border-border">
             <div className="text-sm text-muted mb-1">Profit/Loss</div>
             <div
               className={`text-2xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
@@ -220,10 +238,10 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
               {profit.toFixed(2)} PED
             </div>
           </div>
-          <div className="bg-surface rounded-lg p-4">
+          <div className="bg-surface rounded-lg p-3 text-center border border-border">
             <div className="text-sm text-muted mb-1">Returns</div>
             <div
-              className={`text-2xl font-bold flex items-center gap-2 ${
+              className={`text-2xl font-bold flex items-center justify-center gap-2 ${
                 session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
               }`}
             >
@@ -239,19 +257,19 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
 
         {/* Additional Stats */}
         <div className="grid grid-cols-4 gap-4 mt-4">
-          <div className="bg-surface rounded-lg p-3 text-center">
+          <div className="bg-surface rounded-lg p-3 text-center border border-border">
             <div className="text-xs text-muted">Loot Events</div>
             <div className="text-lg font-semibold">{session.stats.lootEvents}</div>
           </div>
-          <div className="bg-surface rounded-lg p-3 text-center">
+          <div className="bg-surface rounded-lg p-3 text-center border border-border">
             <div className="text-xs text-muted">Globals</div>
             <div className="text-lg font-semibold text-yellow-400">{session.stats.globals}</div>
           </div>
-          <div className="bg-surface rounded-lg p-3 text-center">
+          <div className="bg-surface rounded-lg p-3 text-center border border-border">
             <div className="text-xs text-muted">HoFs</div>
             <div className="text-lg font-semibold text-purple-400">{session.stats.hofs}</div>
           </div>
-          <div className="bg-surface rounded-lg p-3 text-center">
+          <div className="bg-surface rounded-lg p-3 text-center border border-border">
             <div className="text-xs text-muted">Duration</div>
             <div className="text-lg font-semibold">
               {Math.floor(session.stats.duration / 3600)}h{' '}
@@ -316,7 +334,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
               </thead>
               <tbody>
                 {session.loot.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-800 hover:bg-surface">
+                  <tr key={item.id} className="border-b border-border hover:bg-surface">
                     <td className="py-2 px-3 text-sm text-muted">
                       {format(item.timestamp, 'HH:mm:ss')}
                     </td>
@@ -355,7 +373,7 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
               </thead>
               <tbody>
                 {groupedLoot.map((stackedItem) => (
-                  <tr key={stackedItem.name} className="border-b border-gray-800 hover:bg-surface">
+                  <tr key={stackedItem.name} className="border-b border-border hover:bg-surface">
                     <td className="py-2 px-3 font-medium">{stackedItem.name}</td>
                     <td className="py-2 px-3 text-right">{stackedItem.quantity}</td>
                     <td className="py-2 px-3 text-right">{stackedItem.value.toFixed(2)}</td>
@@ -423,19 +441,29 @@ export function SessionDetails({ sessionId, onSessionResumed }: SessionDetailsPr
       {groupedSkills.length > 0 && (
         <div className="card p-6">
           <h3 className="text-xl font-bold mb-4">Skill Gains</h3>
-          <div className="space-y-2">
-            {groupedSkills.map((skill) => (
-              <div
-                key={skill.skillName}
-                className="flex items-center justify-between p-3 bg-surface rounded-lg"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{skill.skillName}</span>
-                  <span className="text-xs text-muted">({skill.count}x)</span>
-                </div>
-                <span className="text-green-400">+{skill.gainAmount.toFixed(4)}</span>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 px-3">Skill</th>
+                  <th className="text-right py-2 px-3">Gain Amount</th>
+                  <th className="text-right py-2 px-3">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedSkills.map((skill) => (
+                  <tr key={skill.skillName} className="border-b border-border hover:bg-surface">
+                    <td className="py-2 px-3 font-medium">{skill.skillName}</td>
+                    <td className="py-2 px-3 text-right font-semibold text-green-400">
+                      +{skill.gainAmount.toFixed(4)}
+                    </td>
+                    <td className="py-2 px-3 text-right text-sm text-muted">
+                      {skill.count}x
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

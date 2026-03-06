@@ -48,7 +48,7 @@ export function CostsPanel({ session }: CostsPanelProps) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-        <div>
+        <div className="bg-surface rounded-lg p-3 border border-border">
           <label className="label text-xs">Ammo Cost</label>
           {isEditing ? (
             <input
@@ -64,7 +64,7 @@ export function CostsPanel({ session }: CostsPanelProps) {
           )}
         </div>
 
-        <div>
+        <div className="bg-surface rounded-lg p-3 border border-border">
           <label className="label text-xs">Weapon decay</label>
           {isEditing ? (
             <input
@@ -80,7 +80,7 @@ export function CostsPanel({ session }: CostsPanelProps) {
           )}
         </div>
 
-        <div>
+        <div className="bg-surface rounded-lg p-3 border border-border">
           <label className="label text-xs">Healing Cost</label>
           {isEditing ? (
             <input
@@ -96,7 +96,7 @@ export function CostsPanel({ session }: CostsPanelProps) {
           )}
         </div>
 
-        <div>
+        <div className="bg-surface rounded-lg p-3 border border-border">
           <label className="label text-xs">Other Costs</label>
           {isEditing ? (
             <input
@@ -112,7 +112,7 @@ export function CostsPanel({ session }: CostsPanelProps) {
           )}
         </div>
 
-        <div className="bg-red-900 bg-opacity-30 rounded-lg p-3">
+        <div className="bg-red-900 bg-opacity-30 rounded-lg p-3 border border-red-500/50">
           <label className="label text-xs">Total Cost</label>
           <div className="text-xl font-bold text-red-400">{totalCost.toFixed(2)} PED</div>
         </div>
