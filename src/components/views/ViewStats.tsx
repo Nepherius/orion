@@ -1,16 +1,22 @@
 import { useState } from 'react';
 import { Dashboard } from './Dashboard';
-import { SessionDetails } from '../sessions/SessionDetails';
+import { Loot } from '../loot/Loot';
 
 interface ViewStatsProps {
   sessionId: string | null;
   onSessionResumed?: () => void;
   showHeader?: boolean;
+  showSidebar?: boolean;
 }
 
 type ViewStatsTab = 'metrics' | 'loot';
 
-export function ViewStats({ sessionId, onSessionResumed, showHeader = true }: ViewStatsProps) {
+export function ViewStats({
+  sessionId,
+  onSessionResumed: _onSessionResumed,
+  showHeader = true,
+  showSidebar = true,
+}: ViewStatsProps) {
   const [activeTab, setActiveTab] = useState<ViewStatsTab>('metrics');
 
   if (!sessionId) {
@@ -46,9 +52,9 @@ export function ViewStats({ sessionId, onSessionResumed, showHeader = true }: Vi
       </div>
 
       {activeTab === 'metrics' ? (
-        <Dashboard sessionId={sessionId} />
+        <Dashboard sessionId={sessionId} showSidebar={showSidebar} />
       ) : (
-        <SessionDetails sessionId={sessionId} onSessionResumed={onSessionResumed} />
+        <Loot sessionId={sessionId} showSidebar={showSidebar} />
       )}
     </div>
   );

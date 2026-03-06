@@ -80,7 +80,8 @@ export function LootItemTable({
           </thead>
           <tbody>
             {filteredLoot.map((item, idx) => {
-              const share = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
+              const share =
+                totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
               const itemType = itemTypeCache.get(item.name);
               return (
                 <tr
@@ -101,7 +102,9 @@ export function LootItemTable({
                   <td className="py-2 px-3 text-right">
                     {itemType && <span className="text-blue-400">{itemType}</span>}
                   </td>
-                  <td className="py-2 px-3 text-right">{(item.value / item.quantity).toFixed(4)} PED</td>
+                  <td className="py-2 px-3 text-right">
+                    {(item.value / item.quantity).toFixed(4)} PED
+                  </td>
                   <td className="py-2 px-3 text-right">{share.toFixed(1)}%</td>
                   <td
                     className="py-2 px-3 text-right"

@@ -1,18 +1,44 @@
 import { Loadout } from '../../types';
+import { calculateHealingCostPerUse } from '../../utils/healingCost';
 
 interface LoadoutStatsPanelProps {
   loadout: Loadout;
 }
 
 export function LoadoutStatsPanel({ loadout }: LoadoutStatsPanelProps) {
+  // Calculate cost per heal if medical tool is configured
+  const hasMedicalTool = !!loadout.medicalTool;
+  const isFapType = loadout.medicalTool?.toLowerCase().includes('fap') || false;
+  const costPerHeal = hasMedicalTool
+    ? calculateHealingCostPerUse({
+        medicalDecay: loadout.medicalDecay || 0,
+        medicalMarkup: loadout.medicalMarkup || 100,
+        medicalME: loadout.medicalME || 0,
+        medicalMEMarkup: loadout.medicalMEMarkup || 100,
+        isFapType,
+      })
+    : 0;
+
   return (
     <div className="space-y-4">
-      {/* Cost per Shot */}
-      <div className="grid grid-cols-1 gap-2">
+      {/* Cost per Shot and Cost per Heal */}
+      <div className="grid grid-cols-2 gap-2">
         <div className="bg-surface rounded p-3 text-center">
           <div className="text-xs text-muted uppercase mb-1">Cost/Shot</div>
           <div className="text-xl font-bold text-blue-400">
             {loadout.costPerShot.toFixed(4)} <span className="text-xs">PED</span>
+          </div>
+        </div>
+        <div className="bg-surface rounded p-3 text-center">
+          <div className="text-xs text-muted uppercase mb-1">Cost/Heal</div>
+          <div className="text-xl font-bold text-green-400">
+            {hasMedicalTool ? (
+              <>
+                {costPerHeal.toFixed(4)} <span className="text-xs">PED</span>
+              </>
+            ) : (
+              <span className="text-muted text-sm">N/A</span>
+            )}
           </div>
         </div>
       </div>

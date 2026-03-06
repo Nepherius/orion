@@ -6,7 +6,6 @@ import { SessionDetails } from './components/sessions/SessionDetails';
 import { ViewStats } from './components/views/ViewStats';
 import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
 import { ChatLogMonitor } from './components/views/ChatLogMonitor';
-import { ChatLogMonitorPanel } from './components/views/ChatLogMonitorPanel';
 import { WelcomeModal } from './components/views/WelcomeModal';
 import { useInitialDataLoader } from './hooks/useInitialDataLoader';
 
@@ -36,6 +35,8 @@ function App() {
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
+  const isLiveSessionAvailable =
+    activeSession?.status === 'active' || activeSession?.status === 'paused';
   const selectedSession = useHuntStore((state) =>
     selectedSessionId ? state.sessions.find((s) => s.id === selectedSessionId) || null : null
   );
@@ -113,6 +114,13 @@ function App() {
       splash.remove();
     }
   }, []);
+
+  // Set initial view to Live if there's an active/paused session
+  useEffect(() => {
+    if (dataLoaded && isLiveSessionAvailable) {
+      setCurrentView('dashboard');
+    }
+  }, [dataLoaded]); // Only run once when data loads
 
   // Sync Tailwind CSS theme classes dynamically
   useEffect(() => {
@@ -208,6 +216,23 @@ function App() {
               {/* Navigation */}
               <nav className="flex gap-2">
                 <button
+                  onClick={() => setCurrentView('dashboard')}
+                  disabled={!isLiveSessionAvailable}
+                  className={`btn w-28 justify-center ${currentView === 'dashboard' ? 'btn-primary' : 'btn-secondary'} ${
+                    !isLiveSessionAvailable ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  title={
+                    isLiveSessionAvailable
+                      ? 'Open live session view'
+                      : 'Live view is only available when a session is active or paused'
+                  }
+                >
+                  <span className="text-primary-400 text-xs font-bold tracking-wide inline mr-2">
+                    ●
+                  </span>
+                  Live
+                </button>
+                <button
                   onClick={() => setCurrentView('sessions')}
                   className={`btn ${currentView === 'sessions' ? 'btn-primary' : 'btn-secondary'}`}
                 >
@@ -282,6 +307,7 @@ function App() {
                 <ViewStats
                   sessionId={selectedSessionId ?? activeSession?.id ?? null}
                   onSessionResumed={() => setCurrentView('dashboard')}
+                  showSidebar={true}
                 />
               )}
 
@@ -295,7 +321,6 @@ function App() {
                       onSelectSession={setSelectedSessionId}
                       onNavigateToDashboard={() => setCurrentView('dashboard')}
                     />
-                    <ChatLogMonitorPanel />
                   </div>
                   <div className="col-span-8">
                     {selectedSessionId ? (
@@ -347,6 +372,7 @@ function App() {
                     <ViewStats
                       sessionId={viewStatsOverlaySessionId}
                       showHeader={false}
+                      showSidebar={false}
                       onSessionResumed={() => {
                         setViewStatsOverlaySessionId(null);
                         setCurrentView('dashboard');

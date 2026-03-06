@@ -729,7 +729,7 @@ export function Analytics() {
         </div>
       </div>
 
-      <div className="card p-6 border border-blue-500/20 bg-blue-500/5">
+      <div className="card p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold">Situation Summary</h3>

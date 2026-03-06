@@ -1,11 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useHuntStore } from '../../store';
-import { Info } from 'lucide-react';
+import { usePageVisibility } from '../../hooks/usePageVisibility';
+import { Info, AlertCircle } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 import { LootBreakdownPanels } from './LootBreakdownPanels';
 import { LootItemTable } from './LootItemTable';
 import { LootItemOptionsModal } from './LootItemOptionsModal';
 import type { GroupedLootItem, LootSortBy } from './lootTypes';
+
+interface LootProps {
+  sessionId?: string | null;
+  showSidebar?: boolean;
+}
 
 interface ItemData {
   Id: number;
@@ -22,7 +28,8 @@ const normalizeItemName = (name: string): string =>
     .trim()
     .toLowerCase();
 
-export function Loot() {
+export function Loot({ sessionId = null, showSidebar = true }: LootProps) {
+  const isPageVisible = usePageVisibility();
   const [itemTypeCache, setItemTypeCache] = useState<Map<string, string>>(new Map());
   const [loadedItems, setLoadedItems] = useState<ItemData[] | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
@@ -30,6 +37,9 @@ export function Loot() {
   const [itemFixedValue, setItemFixedValue] = useState<number>(0);
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
+  );
+  const targetSession = useHuntStore((state) =>
+    sessionId ? state.sessions.find((s) => s.id === sessionId) || null : null
   );
   const removeLootByName = useHuntStore((state) => state.removeLootByName);
   const updateLootByName = useHuntStore((state) => state.updateLootByName);
@@ -94,15 +104,17 @@ export function Loot() {
     return 'loot';
   };
 
+  const session = sessionId ? targetSession : activeSession;
+
   // Preload item types for only the items in this session (lazy, memory efficient)
   // This runs before the early return, so it works for all cases
   useEffect(() => {
-    if (!activeSession || activeSession.loot.length === 0) {
+    if (!session || session.loot.length === 0 || !isPageVisible) {
       return;
     }
 
     const preloadItemTypes = async () => {
-      const uniqueItemNames = new Set(activeSession.loot.map((item) => item.name));
+      const uniqueItemNames = new Set(session.loot.map((item) => item.name));
       for (const itemName of uniqueItemNames) {
         if (!itemTypeCache.has(itemName)) {
           await getItemType(itemName);
@@ -113,33 +125,33 @@ export function Loot() {
     if (loadedItems === null) {
       preloadItemTypes();
     }
-  }, [activeSession, itemTypeCache, loadedItems, getItemType]);
+  }, [session, itemTypeCache, loadedItems, getItemType, isPageVisible]);
 
-  if (!activeSession) {
+  if (!isPageVisible) {
     return (
       <div className="card p-8 text-center text-muted">
-        <Info className="w-16 h-16 mx-auto mb-4 opacity-50" />
-        <p>No active session. Start or resume a session to view loot.</p>
+        <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-60" />
+        <p>Loot is paused while the app is in the background.</p>
       </div>
     );
   }
 
-  // Calculate session grade
-  const returns = activeSession.stats.returns;
-  const grade =
-    returns >= 100 ? 'A' : returns >= 90 ? 'B' : returns >= 80 ? 'C' : returns >= 70 ? 'D' : 'F';
-  const gradeColor =
-    returns >= 100
-      ? 'text-green-400'
-      : returns >= 90
-        ? 'text-blue-400'
-        : returns >= 80
-          ? 'text-yellow-400'
-          : 'text-red-400';
+  if (!session) {
+    return (
+      <div className="card p-8 text-center text-muted">
+        <Info className="w-16 h-16 mx-auto mb-4 opacity-50" />
+        <p>
+          {sessionId
+            ? 'Session not found.'
+            : 'No active session. Start or resume a session to view loot.'}
+        </p>
+      </div>
+    );
+  }
 
   // Group loot items by name and sum quantities
   const lootMap = new Map<string, GroupedLootItem>();
-  activeSession.loot.forEach((item) => {
+  session.loot.forEach((item) => {
     const baseValue = item.value * item.quantity;
     const fixedGain = item.fixedValue && item.fixedValue > 0 ? item.fixedValue * item.quantity : 0;
     const markupGain = fixedGain > 0 ? 0 : item.totalValue - baseValue;
@@ -217,12 +229,10 @@ export function Loot() {
       return;
     }
 
-    if (activeSession) {
-      updateLootByName(activeSession.id, selectedItem, {
-        markup: itemMarkup,
-        fixedValue: itemFixedValue > 0 ? itemFixedValue : 0,
-      });
-    }
+    updateLootByName(session.id, selectedItem, {
+      markup: itemMarkup,
+      fixedValue: itemFixedValue > 0 ? itemFixedValue : 0,
+    });
 
     addItemTemplate({
       name: selectedItem,
@@ -248,22 +258,12 @@ export function Loot() {
     setSelectedItem(null);
   };
 
+  const mainColumnSpanClass = showSidebar ? 'col-span-9' : 'col-span-12';
+
   return (
     <div className="grid grid-cols-12 gap-6">
       {/* Main Content */}
-      <div className="col-span-9 space-y-6">
-        {/* Header with Grade */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-muted uppercase">Session Grade</div>
-            <div className={`text-5xl font-bold ${gradeColor}`}>{grade}</div>
-            <div className="text-sm text-muted">
-              <div>Return {returns.toFixed(1)}%</div>
-              <div>Cost {activeSession.stats.totalCost.toFixed(2)}</div>
-            </div>
-          </div>
-        </div>
-
+      <div className={`${mainColumnSpanClass} space-y-6`}>
         <LootBreakdownPanels
           totalAdjustedValue={totalAdjustedValue}
           totalTTValue={totalTTValue}
@@ -285,17 +285,17 @@ export function Loot() {
           itemTypeCache={itemTypeCache}
           onSelectItem={handleSelectItem}
           onDeleteItem={(itemName) => {
-            if (activeSession) {
-              removeLootByName(activeSession.id, itemName);
-            }
+            removeLootByName(session.id, itemName);
           }}
         />
       </div>
 
       {/* Active Session Sidebar */}
-      <div className="col-span-3">
-        <ActiveSessionSidebar />
-      </div>
+      {showSidebar && (
+        <div className="col-span-3">
+          <ActiveSessionSidebar />
+        </div>
+      )}
 
       <LootItemOptionsModal
         selectedItem={selectedItem}

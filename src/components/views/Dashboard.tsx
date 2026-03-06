@@ -26,16 +26,17 @@ import { GrindGoals } from '../analytics/GrindGoals';
 
 interface DashboardProps {
   sessionId?: string;
+  showSidebar?: boolean;
 }
 
-export function Dashboard({ sessionId }: DashboardProps = {}) {
+export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}) {
   const sessionFromSelection = useHuntStore((state) =>
     sessionId ? state.sessions.find((s) => s.id === sessionId) || null : null
   );
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
-  const session = sessionFromSelection || activeSession;
+  const session = sessionId ? sessionFromSelection : activeSession;
   const isPageVisible = usePageVisibility();
 
   type AnalyticsView =
@@ -79,7 +80,8 @@ export function Dashboard({ sessionId }: DashboardProps = {}) {
   const endTimeMs = normalizeTimestampMs(session.endTime);
   const elapsedReference = session.status === 'completed' && endTimeMs ? endTimeMs : now;
   const pausedMs =
-    (session.totalPausedMs || 0) + (session.status === 'paused' && pausedAtMs ? now - pausedAtMs : 0);
+    (session.totalPausedMs || 0) +
+    (session.status === 'paused' && pausedAtMs ? now - pausedAtMs : 0);
   const durationFromTimestamps = Math.max(0, elapsedReference - startTimeMs - pausedMs);
   const duration =
     session.status === 'completed' && session.stats.duration > 0
@@ -94,9 +96,7 @@ export function Dashboard({ sessionId }: DashboardProps = {}) {
       .slice(0, index + 1)
       .reduce((sum, l) => sum + l.totalValue, 0);
     const returnRate =
-      session.stats.totalCost > 0
-        ? (cumulativeLoot / session.stats.totalCost) * 100
-        : 0;
+      session.stats.totalCost > 0 ? (cumulativeLoot / session.stats.totalCost) * 100 : 0;
     return {
       name: `${index + 1}`,
       returnRate: Math.round(returnRate * 10) / 10, // Round to 1 decimal
@@ -135,11 +135,8 @@ export function Dashboard({ sessionId }: DashboardProps = {}) {
   const killsPerPED = totalSpend > 0 ? session.stats.kills / totalSpend : 0;
   const killsPerHour = durationHours > 0 ? session.stats.kills / durationHours : 0;
   const avgDmgPerHit =
-    session.stats.shotsFired > 0
-      ? session.stats.damageDealt / session.stats.shotsFired
-      : 0;
-  const shotsPerKill =
-    session.stats.kills > 0 ? session.stats.shotsFired / session.stats.kills : 0;
+    session.stats.shotsFired > 0 ? session.stats.damageDealt / session.stats.shotsFired : 0;
+  const shotsPerKill = session.stats.kills > 0 ? session.stats.shotsFired / session.stats.kills : 0;
 
   // Hourly rates
   const lootPerHour = durationHours > 0 ? totalLoot / durationHours : 0;
@@ -151,8 +148,7 @@ export function Dashboard({ sessionId }: DashboardProps = {}) {
   const totalSkillEvents = session.skills.length;
   const skillsPerPed = totalSpend > 0 ? totalSkillGains / totalSpend : 0;
   const skillsPerHour = durationHours > 0 ? totalSkillGains / durationHours : 0;
-  const skillsPerKill =
-    session.stats.kills > 0 ? totalSkillGains / session.stats.kills : 0;
+  const skillsPerKill = session.stats.kills > 0 ? totalSkillGains / session.stats.kills : 0;
   const avgSkillValue = totalSkillEvents > 0 ? totalSkillGains / totalSkillEvents : 0;
 
   // Healing metrics
@@ -178,11 +174,13 @@ export function Dashboard({ sessionId }: DashboardProps = {}) {
     return value.toFixed(decimals);
   };
 
+  const mainColumnSpanClass = showSidebar ? 'col-span-9' : 'col-span-12';
+
   return (
     <>
       <div className="grid grid-cols-12 gap-6">
         {/* Main Content */}
-        <div className="col-span-9 space-y-6">
+        <div className={`${mainColumnSpanClass} space-y-6`}>
           {/* Key Metrics */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold">KEY METRICS</h2>
@@ -409,10 +407,7 @@ export function Dashboard({ sessionId }: DashboardProps = {}) {
               </div>
               <div className="space-y-3">
                 <StatCard label="Kills" value={session.stats.kills} />
-                <StatCard
-                  label="Total Damage Out"
-                  value={session.stats.damageDealt.toFixed(0)}
-                />
+                <StatCard label="Total Damage Out" value={session.stats.damageDealt.toFixed(0)} />
                 <StatCard
                   label="Total Damage In"
                   value={(session.stats.damageTaken || 0).toFixed(0)}
@@ -483,12 +478,14 @@ export function Dashboard({ sessionId }: DashboardProps = {}) {
         </div>
 
         {/* Active Session Sidebar */}
-        <div className="col-span-3 flex flex-col pt-14">
-          <div className="mb-6 flex flex-1 overflow-hidden min-h-[300px]">
-            <GrindGoals />
+        {showSidebar && (
+          <div className="col-span-3 flex flex-col pt-14">
+            <div className="mb-6 flex flex-1 overflow-hidden min-h-[300px]">
+              <GrindGoals />
+            </div>
+            <ActiveSessionSidebar />
           </div>
-          <ActiveSessionSidebar />
-        </div>
+        )}
       </div>
 
       {/* Analytics Modal */}

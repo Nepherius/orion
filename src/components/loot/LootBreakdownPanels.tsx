@@ -60,7 +60,9 @@ export function LootBreakdownPanels({
         <div className="flex items-center justify-between mt-2 text-xs">
           <span className="text-blue-400">
             TT Value (
-            {totalAdjustedValue > 0 ? ((totalTTValue / totalAdjustedValue) * 100).toFixed(1) : '0.0'}
+            {totalAdjustedValue > 0
+              ? ((totalTTValue / totalAdjustedValue) * 100).toFixed(1)
+              : '0.0'}
             %)
           </span>
           <span className="text-green-400">
@@ -70,7 +72,9 @@ export function LootBreakdownPanels({
           </span>
           <span className="text-violet-400">
             MV (
-            {totalAdjustedValue > 0 ? ((totalFixedValue / totalAdjustedValue) * 100).toFixed(1) : '0.0'}
+            {totalAdjustedValue > 0
+              ? ((totalFixedValue / totalAdjustedValue) * 100).toFixed(1)
+              : '0.0'}
             %)
           </span>
         </div>
@@ -80,7 +84,8 @@ export function LootBreakdownPanels({
         <div className="text-xs text-muted uppercase mb-4">COMPOSITION</div>
         <div className="space-y-2">
           {topItems.slice(0, 5).map((item, idx) => {
-            const percent = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
+            const percent =
+              totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
             return (
               <div key={idx} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">

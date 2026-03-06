@@ -56,7 +56,7 @@ export const defaultSettings: AppSettings = {
   autoSave: true,
   theme: 'dark',
   chatLogPath: '',
-  autoStartSession: true,
+  autoStartSession: false,
   overlayX: 20,
   overlayY: 20,
   overlayWidth: 750,

@@ -146,11 +146,24 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                 <div className="text-sm font-bold text-muted uppercase">Equipment</div>
 
                 {/* Stats Display */}
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="bg-surface rounded-lg p-3 text-center">
                     <div className="text-xs text-muted uppercase mb-1">Cost/Shot</div>
                     <div className="text-2xl font-bold text-blue-400">
                       {stats.costPerShot.toFixed(4)} <span className="text-xs">PED</span>
+                    </div>
+                  </div>
+                  <div className="bg-surface rounded-lg p-3 text-center">
+                    <div className="text-xs text-muted uppercase mb-1">Cost/Heal</div>
+                    <div className="text-2xl font-bold text-green-400">
+                      {medicalTool ? (
+                        <>
+                          {adjustedMedicalCostPerHeal.toFixed(4)}{' '}
+                          <span className="text-xs">PED</span>
+                        </>
+                      ) : (
+                        <span className="text-muted text-sm">N/A</span>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -25,6 +25,7 @@ interface SessionDetailsProps {
   sessionId: string;
   onSessionResumed?: () => void;
   onOpenInDashboard?: () => void;
+  displayMode?: 'full' | 'loot-only';
 }
 
 interface GroupedLootItem {
@@ -40,6 +41,7 @@ export function SessionDetails({
   sessionId,
   onSessionResumed,
   onOpenInDashboard,
+  displayMode = 'full',
 }: SessionDetailsProps) {
   const session = useHuntStore((state) => state.sessions.find((s) => s.id === sessionId));
   const loadoutName = useHuntStore((state) =>
@@ -123,164 +125,213 @@ export function SessionDetails({
     pauseSession(sessionId);
   };
 
+  const isLootOnly = displayMode === 'loot-only';
+
   return (
     <div className="space-y-6">
       {/* Session Overview Card */}
-      <div className="card p-6">
-        {/* Row 1: Title and Buttons */}
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-2xl font-bold">{session.name}</h2>
-          <div className="flex gap-2">
-            {onOpenInDashboard && session.status === 'completed' && (
-              <button
-                onClick={() => onOpenInDashboard()}
-                className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
-                title="Open Overview"
-              >
-                <Zap className="w-4 h-4" />
-                Overview
-              </button>
-            )}
-            {session.status === 'completed' ? (
-              <button
-                onClick={handleResume}
-                className="btn-primary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
-                title="Resume Session"
-              >
-                <Play className="w-4 h-4" />
-                Resume
-              </button>
-            ) : session.status === 'active' ? (
-              <button
-                onClick={handlePause}
-                className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
-                title="Pause Session"
-              >
-                <Pause className="w-4 h-4" />
-                Pause
-              </button>
-            ) : (
-              <button
-                onClick={handleResume}
-                className="btn-primary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
-                title="Resume Session"
-              >
-                <Play className="w-4 h-4" />
-                Resume
-              </button>
-            )}
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
-              title="Edit Session"
-            >
-              <Edit2 className="w-4 h-4" />
-              Edit
-            </button>
-            <button
-              onClick={handleDeleteRequest}
-              className="bg-red-600 hover:bg-red-700 text-white h-6 w-32 px-3 rounded-lg flex items-center justify-center gap-2 text-sm whitespace-nowrap transition-colors"
-              title="Delete Session"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </button>
-          </div>
-        </div>
-
-        {/* Row 2: Dates */}
-        <div className="flex gap-6 text-sm mb-4">
-          <div>
-            <span className="text-muted">Started:</span>{' '}
-            <span className="font-medium text-gray-300">{format(session.startTime, 'PPpp')}</span>
-          </div>
-          {session.endTime && (
-            <div>
-              <span className="text-muted">Ended:</span>{' '}
-              <span className="font-medium text-gray-300">{format(session.endTime, 'PPpp')}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Row 3: Details Grid */}
-        <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-sm mb-4">
-          <div className="text-muted">Loadout</div>
-          <div className="text-muted">Weapon</div>
-          <div className="text-muted">Location</div>
-          <div className="text-muted">Creature</div>
-
-          <div className="font-medium text-gray-300">{loadoutName || '-'}</div>
-          <div className="font-medium text-gray-300">{session.weapon || '-'}</div>
-          <div className="font-medium text-gray-300">{session.location || '-'}</div>
-          <div className="font-medium text-gray-300">{session.creature || '-'}</div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-4 mt-6">
-          <div className="bg-surface rounded-lg p-3 text-center border border-border">
-            <div className="text-sm text-muted mb-1">Total Loot</div>
-            <div className="text-2xl font-bold text-green-400">
-              {session.stats.totalLoot.toFixed(2)} PED
-            </div>
-          </div>
-          <div className="bg-surface rounded-lg p-3 text-center border border-border">
-            <div className="text-sm text-muted mb-1">Total Cost</div>
-            <div className="text-2xl font-bold text-red-400">
-              {session.stats.totalCost.toFixed(2)} PED
-            </div>
-          </div>
-          <div className="bg-surface rounded-lg p-3 text-center border border-border">
-            <div className="text-sm text-muted mb-1">Profit/Loss</div>
-            <div
-              className={`text-2xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-            >
-              {profit >= 0 ? '+' : ''}
-              {profit.toFixed(2)} PED
-            </div>
-          </div>
-          <div className="bg-surface rounded-lg p-3 text-center border border-border">
-            <div className="text-sm text-muted mb-1">Returns</div>
-            <div
-              className={`text-2xl font-bold flex items-center justify-center gap-2 ${
-                session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-              }`}
-            >
-              {session.stats.returns >= 100 ? (
-                <TrendingUp className="w-5 h-5" />
-              ) : (
-                <TrendingDown className="w-5 h-5" />
+      {!isLootOnly && (
+        <div className="card p-6">
+          {/* Row 1: Title and Buttons */}
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold">{session.name}</h2>
+            <div className="flex gap-2">
+              {onOpenInDashboard && session.status === 'completed' && (
+                <button
+                  onClick={() => onOpenInDashboard()}
+                  className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                  title="Open Overview"
+                >
+                  <Zap className="w-4 h-4" />
+                  Overview
+                </button>
               )}
-              {session.stats.returns.toFixed(1)}%
+              {session.status === 'completed' ? (
+                <button
+                  onClick={handleResume}
+                  className="btn-primary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                  title="Resume Session"
+                >
+                  <Play className="w-4 h-4" />
+                  Resume
+                </button>
+              ) : session.status === 'active' ? (
+                <button
+                  onClick={handlePause}
+                  className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                  title="Pause Session"
+                >
+                  <Pause className="w-4 h-4" />
+                  Pause
+                </button>
+              ) : (
+                <button
+                  onClick={handleResume}
+                  className="btn-primary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                  title="Resume Session"
+                >
+                  <Play className="w-4 h-4" />
+                  Resume
+                </button>
+              )}
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                title="Edit Session"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit
+              </button>
+              <button
+                onClick={handleDeleteRequest}
+                className="bg-red-600 hover:bg-red-700 text-white h-6 w-32 px-3 rounded-lg flex items-center justify-center gap-2 text-sm whitespace-nowrap transition-colors"
+                title="Delete Session"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Additional Stats */}
-        <div className="grid grid-cols-4 gap-4 mt-4">
-          <div className="bg-surface rounded-lg p-3 text-center border border-border">
-            <div className="text-xs text-muted">Loot Events</div>
-            <div className="text-lg font-semibold">{session.stats.lootEvents}</div>
+          {/* Row 2: Dates */}
+          <div className="flex gap-6 text-sm mb-4">
+            <div>
+              <span className="text-muted">Started:</span>{' '}
+              <span className="font-medium text-gray-300">{format(session.startTime, 'PPpp')}</span>
+            </div>
+            {session.endTime && (
+              <div>
+                <span className="text-muted">Ended:</span>{' '}
+                <span className="font-medium text-gray-300">{format(session.endTime, 'PPpp')}</span>
+              </div>
+            )}
           </div>
-          <div className="bg-surface rounded-lg p-3 text-center border border-border">
-            <div className="text-xs text-muted">Globals</div>
-            <div className="text-lg font-semibold text-yellow-400">{session.stats.globals}</div>
+
+          {/* Row 3: Details Grid */}
+          <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-sm mb-4">
+            <div className="text-muted">Loadout</div>
+            <div className="text-muted">Weapon</div>
+            <div className="text-muted">Location</div>
+            <div className="text-muted">Creature</div>
+
+            <div className="font-medium text-gray-300">{loadoutName || '-'}</div>
+            <div className="font-medium text-gray-300">{session.weapon || '-'}</div>
+            <div className="font-medium text-gray-300">{session.location || '-'}</div>
+            <div className="font-medium text-gray-300">{session.creature || '-'}</div>
           </div>
-          <div className="bg-surface rounded-lg p-3 text-center border border-border">
-            <div className="text-xs text-muted">HoFs</div>
-            <div className="text-lg font-semibold text-purple-400">{session.stats.hofs}</div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-4 gap-4 mt-6">
+            <div className="bg-surface rounded-lg p-3 text-center border border-border">
+              <div className="text-sm text-muted mb-1">Total Loot</div>
+              <div className="text-2xl font-bold text-green-400">
+                {session.stats.totalLoot.toFixed(2)} PED
+              </div>
+            </div>
+            <div className="bg-surface rounded-lg p-3 text-center border border-border">
+              <div className="text-sm text-muted mb-1">Total Cost</div>
+              <div className="text-2xl font-bold text-red-400">
+                {session.stats.totalCost.toFixed(2)} PED
+              </div>
+            </div>
+            <div className="bg-surface rounded-lg p-3 text-center border border-border">
+              <div className="text-sm text-muted mb-1">Profit/Loss</div>
+              <div
+                className={`text-2xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
+              >
+                {profit >= 0 ? '+' : ''}
+                {profit.toFixed(2)} PED
+              </div>
+            </div>
+            <div className="bg-surface rounded-lg p-3 text-center border border-border">
+              <div className="text-sm text-muted mb-1">Returns</div>
+              <div
+                className={`text-2xl font-bold flex items-center justify-center gap-2 ${
+                  session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+                }`}
+              >
+                {session.stats.returns >= 100 ? (
+                  <TrendingUp className="w-5 h-5" />
+                ) : (
+                  <TrendingDown className="w-5 h-5" />
+                )}
+                {session.stats.returns.toFixed(1)}%
+              </div>
+            </div>
           </div>
-          <div className="bg-surface rounded-lg p-3 text-center border border-border">
-            <div className="text-xs text-muted">Duration</div>
-            <div className="text-lg font-semibold">
-              {Math.floor(session.stats.duration / 3600)}h{' '}
-              {Math.floor((session.stats.duration % 3600) / 60)}m
+
+          {/* Additional Stats */}
+          <div className="grid grid-cols-4 gap-4 mt-4">
+            <div className="bg-surface rounded-lg p-3 text-center border border-border">
+              <div className="text-xs text-muted">Loot Events</div>
+              <div className="text-lg font-semibold">{session.stats.lootEvents}</div>
+            </div>
+            <div className="bg-surface rounded-lg p-3 text-center border border-border">
+              <div className="text-xs text-muted">Globals</div>
+              <div className="text-lg font-semibold text-yellow-400">{session.stats.globals}</div>
+            </div>
+            <div className="bg-surface rounded-lg p-3 text-center border border-border">
+              <div className="text-xs text-muted">HoFs</div>
+              <div className="text-lg font-semibold text-purple-400">{session.stats.hofs}</div>
+            </div>
+            <div className="bg-surface rounded-lg p-3 text-center border border-border">
+              <div className="text-xs text-muted">Duration</div>
+              <div className="text-lg font-semibold">
+                {Math.floor(session.stats.duration / 3600)}h{' '}
+                {Math.floor((session.stats.duration % 3600) / 60)}m
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Costs Panel */}
-      <CostsPanel session={session} />
+      {!isLootOnly && <CostsPanel session={session} />}
+
+      {/* Globals & HoFs */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <Award className="w-5 h-5 text-yellow-400" />
+            Globals & HoFs
+          </h3>
+          <button
+            onClick={() => setShowAddGlobal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4" />
+            Add Global
+          </button>
+        </div>
+
+        {session.globals.length === 0 ? (
+          <p className="text-center text-muted py-8">No globals recorded yet</p>
+        ) : (
+          <div className="space-y-2">
+            {session.globals.map((global) => (
+              <div
+                key={global.id}
+                className={`p-3 rounded-lg flex items-center justify-between ${
+                  global.isHoF
+                    ? 'bg-purple-900 border border-purple-600'
+                    : 'bg-yellow-900 border border-yellow-600'
+                }`}
+              >
+                <div>
+                  <span className="font-medium">{global.creature}</span>
+                  <span className="text-sm text-gray-300 ml-2">
+                    {format(global.timestamp, 'MMM dd, HH:mm')}
+                  </span>
+                </div>
+                <div className="font-bold text-lg">
+                  {global.value.toFixed(2)} PED
+                  {global.isHoF && <span className="ml-2 text-sm">🏆 HoF</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Loot Table */}
       <div className="card p-6">
@@ -392,51 +443,6 @@ export function SessionDetails({
         )}
       </div>
 
-      {/* Globals & HoFs */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <Award className="w-5 h-5 text-yellow-400" />
-            Globals & HoFs
-          </h3>
-          <button
-            onClick={() => setShowAddGlobal(true)}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Zap className="w-4 h-4" />
-            Add Global
-          </button>
-        </div>
-
-        {session.globals.length === 0 ? (
-          <p className="text-center text-muted py-8">No globals recorded yet</p>
-        ) : (
-          <div className="space-y-2">
-            {session.globals.map((global) => (
-              <div
-                key={global.id}
-                className={`p-3 rounded-lg flex items-center justify-between ${
-                  global.isHoF
-                    ? 'bg-purple-900 border border-purple-600'
-                    : 'bg-yellow-900 border border-yellow-600'
-                }`}
-              >
-                <div>
-                  <span className="font-medium">{global.creature}</span>
-                  <span className="text-sm text-gray-300 ml-2">
-                    {format(global.timestamp, 'MMM dd, HH:mm')}
-                  </span>
-                </div>
-                <div className="font-bold text-lg">
-                  {global.value.toFixed(2)} PED
-                  {global.isHoF && <span className="ml-2 text-sm">🏆 HoF</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Skills */}
       {groupedSkills.length > 0 && (
         <div className="card p-6">
@@ -457,9 +463,7 @@ export function SessionDetails({
                     <td className="py-2 px-3 text-right font-semibold text-green-400">
                       +{skill.gainAmount.toFixed(4)}
                     </td>
-                    <td className="py-2 px-3 text-right text-sm text-muted">
-                      {skill.count}x
-                    </td>
+                    <td className="py-2 px-3 text-right text-sm text-muted">{skill.count}x</td>
                   </tr>
                 ))}
               </tbody>

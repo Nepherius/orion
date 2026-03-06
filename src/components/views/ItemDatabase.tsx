@@ -1,12 +1,14 @@
-import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { ItemTemplate } from '../../types';
 import { useItemDatabaseModel } from '../../hooks/useItemDatabaseModel';
+import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { useItemBrowser, EntropyItem } from '../../hooks/useItemBrowser';
 import { useHuntStore } from '../../store';
 
 export function ItemDatabase() {
+  const isPageVisible = usePageVisibility();
   const {
     searchQuery,
     setSearchQuery,
@@ -35,6 +37,15 @@ export function ItemDatabase() {
   const ignoreList = useHuntStore((state) => state.settings.ignoreListItems || []);
   const addToIgnoreList = useHuntStore((state) => state.addToIgnoreList);
   const removeFromIgnoreList = useHuntStore((state) => state.removeFromIgnoreList);
+
+  if (!isPageVisible) {
+    return (
+      <div className="card p-8 text-center text-muted">
+        <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-60" />
+        <p>Item Database is paused while the app is in the background.</p>
+      </div>
+    );
+  }
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
