@@ -108,7 +108,7 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
             value={formData.location}
             onChange={(location) => setFormData({ ...formData, location })}
             options={planets}
-            placeholder="e.g., Port Atlantis"
+            placeholder="e.g., Planet Calypso"
           />
 
           <div>
