@@ -73,8 +73,8 @@ pub fn db_get_all_loadouts(state: State<'_, DbState>) -> Result<JsonValue, Strin
 
 // ========== ITEM TEMPLATES ==========
 
-#[tauri::command]
-pub fn db_add_item_template(
+#[derive(serde::Deserialize)]
+pub struct AddItemTemplateParams {
     uuid: String,
     name: String,
     category: String,
@@ -82,12 +82,17 @@ pub fn db_add_item_template(
     default_markup: f64,
     default_fixed_value: Option<f64>,
     description: Option<String>,
+}
+
+#[tauri::command]
+pub fn db_add_item_template(
+    params: AddItemTemplateParams,
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
     conn.execute(
         "INSERT INTO item_templates (uuid, name, category, default_tt_value, default_markup, default_fixed_value, description) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![uuid, name, category, default_tt_value, default_markup, default_fixed_value, description],
+        params![params.uuid, params.name, params.category, params.default_tt_value, params.default_markup, params.default_fixed_value, params.description],
     )
     .map_err(|e| e.to_string())?;
     Ok(())

@@ -55,20 +55,24 @@ export const finalizePendingKillRecord = async (
   };
 
   await safeInvoke('db_add_kill', {
-    uuid: kill.id,
-    sessionUuid: session.id,
-    creatureName: kill.creatureName,
-    maturity: kill.maturity,
-    hpDealt: kill.hpDealt,
-    cost: kill.cost,
-    lootValue: kill.lootValue,
-    timestamp: kill.timestamp,
+    params: {
+      uuid: kill.id,
+      session_uuid: session.id,
+      creature_name: kill.creatureName,
+      maturity: kill.maturity,
+      hp_dealt: kill.hpDealt,
+      cost: kill.cost,
+      loot_value: kill.lootValue,
+      timestamp: kill.timestamp,
+    },
   });
 
   for (const lootId of pendingKill.lootItemIds) {
     await safeInvoke('db_update_loot', {
-      uuid: lootId,
-      kill_uuid: killId,
+      params: {
+        uuid: lootId,
+        kill_uuid: killId,
+      },
     });
   }
 

@@ -103,7 +103,6 @@ export async function hasEquipmentData(): Promise<boolean> {
       const parsed = JSON.parse(content) as { lastUpdateAt?: number } | unknown;
 
       if (!hasValidDataPayload(parsed)) {
-        // eslint-disable-next-line no-console
         console.warn('[InitialDataLoader] Invalid/empty equipment payload:', path);
         continue;
       }
@@ -117,7 +116,6 @@ export async function hasEquipmentData(): Promise<boolean> {
         timestampedFileCount += 1;
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.warn('[InitialDataLoader] Equipment file check failed:', path, error);
     }
   }

@@ -104,13 +104,15 @@ export const createLootActions = (
     }));
 
     void safeInvoke('db_update_loot', {
-      uuid: lootId,
-      name: updates.name,
-      quantity: updates.quantity,
-      value: updates.value,
-      markup: updates.markup,
-      fixed_value: updates.fixedValue,
-      total_value: updates.totalValue,
+      params: {
+        uuid: lootId,
+        name: updates.name,
+        quantity: updates.quantity,
+        value: updates.value,
+        markup: updates.markup,
+        fixed_value: updates.fixedValue,
+        total_value: updates.totalValue,
+      },
     });
   },
 
@@ -154,10 +156,12 @@ export const createLootActions = (
       const nextTotal = calculateLootTotalValue(nextItem);
 
       void safeInvoke('db_update_loot', {
-        uuid: item.id,
-        markup: updates.markup,
-        fixed_value: updates.fixedValue,
-        total_value: nextTotal,
+        params: {
+          uuid: item.id,
+          markup: updates.markup,
+          fixed_value: updates.fixedValue,
+          total_value: nextTotal,
+        },
       });
     });
   },

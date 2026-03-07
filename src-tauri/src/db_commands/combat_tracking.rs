@@ -98,8 +98,8 @@ pub fn db_get_session_globals(
 
 // ========== KILLS ==========
 
-#[tauri::command]
-pub fn db_add_kill(
+#[derive(serde::Deserialize)]
+pub struct AddKillParams {
     uuid: String,
     session_uuid: String,
     creature_name: String,
@@ -108,8 +108,10 @@ pub fn db_add_kill(
     cost: f64,
     loot_value: f64,
     timestamp: i64,
-    state: State<'_, DbState>,
-) -> Result<(), String> {
+}
+
+#[tauri::command]
+pub fn db_add_kill(params: AddKillParams, state: State<'_, DbState>) -> Result<(), String> {
     // println!(
     //     "[Kill Tracking] Persisting kill: creature='{}', maturity='{}', hp_dealt={:.2}, loot_value={:.2}",
     //     creature_name,
@@ -121,7 +123,7 @@ pub fn db_add_kill(
     let conn = state.db.lock().unwrap();
     conn.execute(
         "INSERT INTO kills (uuid, session_uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![uuid, session_uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp],
+        params![params.uuid, params.session_uuid, params.creature_name, params.maturity, params.hp_dealt, params.cost, params.loot_value, params.timestamp],
     )
     .map_err(|e| e.to_string())?;
     Ok(())

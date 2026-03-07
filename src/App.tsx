@@ -134,7 +134,7 @@ function App() {
     if (dataLoaded && isLiveSessionAvailable) {
       setCurrentView('dashboard');
     }
-  }, [dataLoaded]); // Only run once when data loads
+  }, [dataLoaded, isLiveSessionAvailable]); // Only run once when data loads
 
   // Sync Tailwind CSS theme classes dynamically
   useEffect(() => {

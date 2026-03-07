@@ -15,6 +15,18 @@ pub struct AddLootParams {
     kill_uuid: Option<String>,
 }
 
+#[derive(serde::Deserialize)]
+pub struct UpdateLootParams {
+    uuid: String,
+    name: Option<String>,
+    quantity: Option<i64>,
+    value: Option<f64>,
+    markup: Option<f64>,
+    fixed_value: Option<f64>,
+    total_value: Option<f64>,
+    kill_uuid: Option<String>,
+}
+
 #[tauri::command]
 pub fn db_add_loot(params: AddLootParams, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
@@ -27,47 +39,37 @@ pub fn db_add_loot(params: AddLootParams, state: State<'_, DbState>) -> Result<(
 }
 
 #[tauri::command]
-pub fn db_update_loot(
-    uuid: String,
-    name: Option<String>,
-    quantity: Option<i64>,
-    value: Option<f64>,
-    markup: Option<f64>,
-    fixed_value: Option<f64>,
-    total_value: Option<f64>,
-    kill_uuid: Option<String>,
-    state: State<'_, DbState>,
-) -> Result<(), String> {
+pub fn db_update_loot(params: UpdateLootParams, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
 
     let mut updates = Vec::new();
     let mut values: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
-    if let Some(v) = name {
+    if let Some(v) = params.name {
         updates.push("name = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = quantity {
+    if let Some(v) = params.quantity {
         updates.push("quantity = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = value {
+    if let Some(v) = params.value {
         updates.push("value = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = markup {
+    if let Some(v) = params.markup {
         updates.push("markup = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = fixed_value {
+    if let Some(v) = params.fixed_value {
         updates.push("fixed_value = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = total_value {
+    if let Some(v) = params.total_value {
         updates.push("total_value = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = kill_uuid {
+    if let Some(v) = params.kill_uuid {
         updates.push("kill_uuid = ?");
         values.push(Box::new(v));
     }
@@ -76,7 +78,7 @@ pub fn db_update_loot(
         return Ok(());
     }
 
-    values.push(Box::new(uuid.clone()));
+    values.push(Box::new(params.uuid.clone()));
     let query = format!(
         "UPDATE loot_items SET {} WHERE uuid = ?",
         updates.join(", ")
