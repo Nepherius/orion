@@ -142,19 +142,19 @@ export function inferMaturity(
     return undefined;
   }
 
-  // Find closest HP match (within 20% tolerance)
-  let bestMatch: CreatureEntry | undefined;
-  let smallestDiff = Infinity;
+  // A maturity cannot be selected unless its HP is less than or equal to dealt damage.
+  // Allow limited overkill up to +20% of that maturity HP.
+  const candidates = matchingCreatures.filter((creature) => {
+    const lowerBound = creature.hp;
+    const upperBound = creature.hp * 1.2;
+    return hpDealt >= lowerBound && hpDealt <= upperBound;
+  });
 
-  for (const creature of matchingCreatures) {
-    const diff = Math.abs(creature.hp - hpDealt);
-    const tolerance = creature.hp * 0.2; // 20% tolerance
-
-    if (diff < smallestDiff && diff <= tolerance) {
-      smallestDiff = diff;
-      bestMatch = creature;
-    }
+  if (candidates.length === 0) {
+    return undefined;
   }
 
-  return bestMatch?.maturity;
+  // Prefer the highest HP candidate that still fits the dealt damage.
+  candidates.sort((a, b) => b.hp - a.hp);
+  return candidates[0]?.maturity;
 }

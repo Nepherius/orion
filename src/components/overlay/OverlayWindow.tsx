@@ -100,6 +100,43 @@ export function OverlayWindow() {
     };
   }, [isVisible]);
 
+  useEffect(() => {
+    const pinTopmost = async () => {
+      try {
+        const displayServer = await invoke<string | null>('get_linux_display_server');
+        if (!displayServer) {
+          return;
+        }
+
+        await invoke('refresh_overlay_topmost');
+      } catch {
+        // Silently fail - best effort only
+      }
+    };
+
+    const intervalId = window.setInterval(() => {
+      if (!document.hidden) {
+        void pinTopmost();
+      }
+    }, 1500);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        void pinTopmost();
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    void pinTopmost();
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Save overlay geometry when window is moved or resized
   useEffect(() => {
     let saveTimeout: ReturnType<typeof setTimeout> | undefined;

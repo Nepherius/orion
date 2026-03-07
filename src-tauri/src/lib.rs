@@ -402,8 +402,14 @@ async fn show_overlay(
 
     // Check if overlay window already exists
     if let Some(window) = app_handle.get_webview_window("overlay") {
+        if cfg!(target_os = "linux") {
+            let _ = window.set_visible_on_all_workspaces(true);
+            window.set_always_on_top(true).map_err(|e| e.to_string())?;
+        }
         window.show().map_err(|e| e.to_string())?;
-        window.set_focus().map_err(|e| e.to_string())?;
+        if cfg!(target_os = "windows") {
+            window.set_focus().map_err(|e| e.to_string())?;
+        }
         return Ok(());
     }
 
@@ -414,7 +420,7 @@ async fn show_overlay(
     let win_height = height.unwrap_or(40.0);
 
     // Create new overlay window
-    let _overlay_window = tauri::WebviewWindowBuilder::new(
+    let overlay_window = tauri::WebviewWindowBuilder::new(
         &app_handle,
         "overlay",
         tauri::WebviewUrl::App("index.html#/overlay".into()),
@@ -426,8 +432,16 @@ async fn show_overlay(
     .resizable(true)
     .always_on_top(true)
     .transparent(true)
+    .visible_on_all_workspaces(true)
     .build()
     .map_err(|e| e.to_string())?;
+
+    if cfg!(target_os = "linux") {
+        let _ = overlay_window.set_visible_on_all_workspaces(true);
+        overlay_window
+            .set_always_on_top(true)
+            .map_err(|e| e.to_string())?;
+    }
 
     Ok(())
 }
@@ -481,6 +495,49 @@ async fn get_overlay_geometry(
     } else {
         Ok(None)
     }
+}
+
+#[tauri::command]
+async fn refresh_overlay_topmost(app_handle: tauri::AppHandle) -> Result<(), String> {
+    use tauri::Manager;
+
+    if !cfg!(target_os = "linux") {
+        return Ok(());
+    }
+
+    if let Some(window) = app_handle.get_webview_window("overlay") {
+        let _ = window.set_visible_on_all_workspaces(true);
+        let _ = window.show();
+        window.set_always_on_top(true).map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn get_linux_display_server() -> Option<String> {
+    if !cfg!(target_os = "linux") {
+        return None;
+    }
+
+    if std::env::var("WAYLAND_DISPLAY")
+        .map(|value| !value.is_empty())
+        .unwrap_or(false)
+    {
+        return Some("wayland".to_string());
+    }
+
+    if std::env::var("DISPLAY")
+        .map(|value| !value.is_empty())
+        .unwrap_or(false)
+    {
+        return Some("x11".to_string());
+    }
+
+    std::env::var("XDG_SESSION_TYPE")
+        .ok()
+        .map(|value| value.trim().to_lowercase())
+        .filter(|value| !value.is_empty())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -552,6 +609,8 @@ pub fn run() {
             hide_overlay,
             is_overlay_visible,
             get_overlay_geometry,
+            get_linux_display_server,
+            refresh_overlay_topmost,
             db_commands::db_create_session,
             db_commands::db_update_session,
             db_commands::db_delete_session,
