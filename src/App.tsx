@@ -1,15 +1,29 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import packageJson from '../package.json';
-import { SessionList } from './components/sessions/SessionList';
-import { SessionDetails } from './components/sessions/SessionDetails';
-import { ViewStats } from './components/views/ViewStats';
-import { ActiveSessionPanel } from './components/sessions/ActiveSessionPanel';
-import { ChatLogMonitor } from './components/views/ChatLogMonitor';
-import { WelcomeModal } from './components/views/WelcomeModal';
 import { useInitialDataLoader } from './hooks/useInitialDataLoader';
 
-// Dynamically imported views to minimize RAM footprint of unfocused tabs
+// Dynamically imported views and components to minimize bundle size
+const SessionList = lazy(() =>
+  import('./components/sessions/SessionList').then((m) => ({ default: m.SessionList }))
+);
+const SessionDetails = lazy(() =>
+  import('./components/sessions/SessionDetails').then((m) => ({ default: m.SessionDetails }))
+);
+const ViewStats = lazy(() =>
+  import('./components/views/ViewStats').then((m) => ({ default: m.ViewStats }))
+);
+const ActiveSessionPanel = lazy(() =>
+  import('./components/sessions/ActiveSessionPanel').then((m) => ({
+    default: m.ActiveSessionPanel,
+  }))
+);
+const ChatLogMonitor = lazy(() =>
+  import('./components/views/ChatLogMonitor').then((m) => ({ default: m.ChatLogMonitor }))
+);
+const WelcomeModal = lazy(() =>
+  import('./components/views/WelcomeModal').then((m) => ({ default: m.WelcomeModal }))
+);
 const Loot = lazy(() => import('./components/loot/Loot').then((m) => ({ default: m.Loot })));
 const Loadouts = lazy(() =>
   import('./components/views/Loadouts').then((m) => ({ default: m.Loadouts }))

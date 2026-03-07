@@ -347,3 +347,38 @@ fn test_parse_file_with_damage_routes_events_correctly() {
     assert_eq!(skill_gains.len(), 1);
     assert_eq!(skill_gains[0].skill_name, "Bravado");
 }
+
+#[test]
+fn test_parse_file_with_damage_excludes_ground_pickup_pairs() {
+    let parser = ChatLogParser::new();
+    let content = [
+        "2026-03-05 12:17:31 [System] [] You received Kaldon x (41) Value: 0.0004 PED",
+        "2026-03-05 12:17:31 [System] [] Picked up Kaldon (41)",
+        "2026-03-06 00:12:30 [System] [] You received Brukite x (63) Value: 0.0006 PED",
+        "2026-03-06 00:12:30 [System] [] Picked up Brukite (63)",
+        "2026-03-06 22:54:01 [System] [] You received Bombardo x (12) Value: 0.0001 PED",
+        "2026-03-06 22:54:01 [System] [] Picked up Bombardo (12)",
+    ]
+    .join("\n");
+
+    let (loot_events, _, _, _, _, _) = parser.parse_file_with_damage(&content);
+
+    assert_eq!(
+        loot_events.len(),
+        0,
+        "Ground pickup receive/picked-up pairs should not count as loot"
+    );
+}
+
+#[test]
+fn test_parse_file_with_damage_keeps_unpaired_system_receive() {
+    let parser = ChatLogParser::new();
+    let content =
+        "2026-03-06 22:54:01 [System] [] You received Animal Eye Oil x (12) Value: 0.1200 PED";
+
+    let (loot_events, _, _, _, _, _) = parser.parse_file_with_damage(content);
+
+    assert_eq!(loot_events.len(), 1);
+    assert_eq!(loot_events[0].creature, "Animal Eye Oil");
+    assert_eq!(loot_events[0].value, 0.12);
+}

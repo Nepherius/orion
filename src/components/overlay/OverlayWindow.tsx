@@ -102,7 +102,7 @@ export function OverlayWindow() {
 
   // Save overlay geometry when window is moved or resized
   useEffect(() => {
-    let saveTimeout: number;
+    let saveTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const saveGeometry = async () => {
       try {
@@ -126,7 +126,7 @@ export function OverlayWindow() {
     };
 
     const debouncedSave = () => {
-      clearTimeout(saveTimeout);
+      if (saveTimeout) clearTimeout(saveTimeout);
       saveTimeout = setTimeout(saveGeometry, 500); // Debounce save by 500ms
     };
 

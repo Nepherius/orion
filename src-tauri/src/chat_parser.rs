@@ -1,6 +1,7 @@
 use crate::language_patterns::LanguagePatterns;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LootEvent {
@@ -59,6 +60,7 @@ pub struct ChatLogParser {
     mining_regex: Regex,
     rare_item_regex: Regex,
     system_receive_regex: Regex,
+    system_picked_up_regex: Regex,
     damage_regex: Regex,
     healing_regex: Regex,
     damage_taken_regex: Regex,
@@ -90,12 +92,17 @@ impl ChatLogParser {
         let system_receive_regex = Regex::new(
             r"\[System\](?: \[\])? You received (?:\[(?P<item_br>.+?)\]|(?P<item_plain>.+?)) x \([\d,]+\) Value: (?P<value>[\d.]+) PED\s*$"
         ).unwrap();
+        let system_picked_up_regex = Regex::new(
+            r"\[System\](?: \[\])? Picked up (?:\[(?P<item_br>.+?)\]|(?P<item_plain>.+?)) \([\d,]+\)\s*$",
+        )
+        .unwrap();
 
         Self {
             global_regex,
             mining_regex,
             rare_item_regex,
             system_receive_regex,
+            system_picked_up_regex,
             damage_regex,
             healing_regex,
             damage_taken_regex,
@@ -326,10 +333,8 @@ impl ChatLogParser {
 
     #[allow(dead_code)]
     pub fn parse_file(&self, content: &str) -> Vec<LootEvent> {
-        content
-            .lines()
-            .filter_map(|line| self.parse_line(line))
-            .collect()
+        let (loot_events, _, _, _, _, _) = self.parse_file_with_damage(content);
+        loot_events
     }
 
     pub fn parse_file_with_damage(&self, content: &str) -> ParsedEvents {
@@ -340,8 +345,36 @@ impl ChatLogParser {
         let mut damage_taken_events = Vec::new();
         let mut skill_gains = Vec::new();
 
+        // Ground pickups generate paired system lines at the same timestamp:
+        // "You received ..." + "Picked up ...". Exclude those from loot.
+        let mut picked_up_by_timestamp: HashMap<String, HashSet<String>> = HashMap::new();
+        for line in content.lines() {
+            if let Some(caps) = self.system_picked_up_regex.captures(line) {
+                let item = caps
+                    .name("item_br")
+                    .or_else(|| caps.name("item_plain"))
+                    .map(|m| m.as_str().trim().to_string())
+                    .unwrap_or_default();
+                if !item.is_empty() {
+                    let timestamp = Self::extract_timestamp(line);
+                    picked_up_by_timestamp
+                        .entry(timestamp)
+                        .or_default()
+                        .insert(item);
+                }
+            }
+        }
+
         for line in content.lines() {
             if let Some(loot) = self.parse_line(line) {
+                let is_ground_pickup = loot.player.is_empty()
+                    && picked_up_by_timestamp
+                        .get(&loot.timestamp)
+                        .is_some_and(|items| items.contains(&loot.creature));
+
+                if is_ground_pickup {
+                    continue;
+                }
                 loot_events.push(loot);
             } else if let Some(damage) = self.parse_damage_line(line) {
                 damage_events.push(damage);
