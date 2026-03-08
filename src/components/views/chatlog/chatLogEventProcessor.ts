@@ -4,6 +4,7 @@ import {
   classifyFapHealingFromLogLines,
   getHealToolProfile,
   type FapHotClassifierState,
+  type HealHotMode,
 } from '../../../utils/fapHotClassifier';
 import type { ParseResult } from './chatLogTypes';
 
@@ -51,7 +52,7 @@ export async function processRecentChatLines({
 
   // Determine heal window duration based on active session's loadout heal tool
   let healWindowDurationMs: number | undefined;
-  let healHotMode: 'always' | 'conditional' | 'none' | undefined;
+  let healHotMode: HealHotMode | undefined;
   if (activeSession?.loadoutId) {
     const sessionLoadout = currentState.loadouts.find((l) => l.id === activeSession?.loadoutId);
     if (sessionLoadout?.medicalTool) {
@@ -254,20 +255,7 @@ export async function processRecentChatLines({
 
   if (activeSession && healingEvents.length > 0) {
     const storeActions = useHuntStore.getState();
-    const loadout = activeSession.loadoutId
-      ? storeActions.loadouts.find((l) => l.id === activeSession?.loadoutId)
-      : storeActions.loadouts.find(
-          (l) => l.weapon?.Name === activeSession?.weapon || l.name === activeSession?.weapon
-        );
-    const isLikelyFapLoadout = (loadout?.medicalME || 0) <= 0;
-
-    const classifiedHealingEvents = isLikelyFapLoadout
-      ? fapClassifiedHealing.healingEvents
-      : healingEvents.map((heal) => ({
-          timestamp: heal.timestamp,
-          amount: heal.amount,
-          isDirectUse: true,
-        }));
+    const classifiedHealingEvents = fapClassifiedHealing.healingEvents;
 
     debugDetail('[ChatLogMonitor] Processing healing events:', classifiedHealingEvents.length);
 

@@ -256,6 +256,7 @@ export function PerformancePanelsSection({
                   border: '1px solid var(--color-border)',
                 }}
                 labelStyle={{ color: '#F3F4F6' }}
+                formatter={(value: number) => value.toFixed(2)}
               />
               <Legend />
               <Bar dataKey="returnRate" fill="#10B981" name="Return Rate %" />

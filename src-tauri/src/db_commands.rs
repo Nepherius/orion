@@ -1,6 +1,6 @@
+use rusqlite::params;
 use rusqlite::Connection;
 use rusqlite::OptionalExtension;
-use rusqlite::params;
 use serde_json::{json, Value as JsonValue};
 use std::sync::{Arc, Mutex};
 use tauri::State;

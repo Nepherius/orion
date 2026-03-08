@@ -80,41 +80,43 @@ export function ActiveSessionPanel({
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
-        <div>
-          <div className="text-sm text-gray-300">Active Session</div>
-          <div className="font-bold text-lg">{session.name}</div>
-        </div>
+          <div>
+            <div className="text-sm text-gray-300">Active Session</div>
+            <div className="font-bold text-lg">{session.name}</div>
+          </div>
 
-        <div className="h-8 w-px bg-gray-600" />
+          <div className="h-8 w-px bg-gray-600" />
 
-        <div>
-          <div className="text-xs text-muted">Loot Value</div>
-          <div className="font-semibold text-green-400">
-            {session.stats.totalLoot.toFixed(2)} PED
+          <div>
+            <div className="text-xs text-muted">Loot Value</div>
+            <div className="font-semibold text-green-400">
+              {session.stats.totalLoot.toFixed(2)} PED
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs text-muted">Total Cost</div>
+            <div className="font-semibold text-red-400">
+              {session.stats.totalCost.toFixed(2)} PED
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs text-muted">Returns</div>
+            <div
+              className={`font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
+            >
+              {session.stats.returns.toFixed(1)}%
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs text-muted">Duration</div>
+            <div className="font-semibold">
+              {formatDistanceToNow(session.startTime, { addSuffix: false })}
+            </div>
           </div>
         </div>
-
-        <div>
-          <div className="text-xs text-muted">Total Cost</div>
-          <div className="font-semibold text-red-400">{session.stats.totalCost.toFixed(2)} PED</div>
-        </div>
-
-        <div>
-          <div className="text-xs text-muted">Returns</div>
-          <div
-            className={`font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
-          >
-            {session.stats.returns.toFixed(1)}%
-          </div>
-        </div>
-
-        <div>
-          <div className="text-xs text-muted">Duration</div>
-          <div className="font-semibold">
-            {formatDistanceToNow(session.startTime, { addSuffix: false })}
-          </div>
-        </div>
-      </div>
 
         <div className="flex gap-2">
           {session.status === 'active' ? (

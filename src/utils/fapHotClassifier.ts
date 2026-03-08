@@ -17,7 +17,7 @@ export interface FapHotClassificationResult {
   nextState: FapHotClassifierState;
 }
 
-export type HealHotMode = 'always' | 'conditional' | 'none';
+export type HealHotMode = 'always' | 'eotOnly' | 'none';
 
 export interface HealToolProfile {
   windowDurationMs: number;
@@ -26,13 +26,14 @@ export interface HealToolProfile {
 
 const FAP_HOT_WINDOW_MS = 10_000; // 10 seconds for FAP HOT
 const CHIP_WINDOW_MS = 30_000; // 30 seconds for CHIP
+const REFURBISHED_HEART_WINDOW_MS = 5_000; // 5 seconds for Refurbished H.E.A.R.T. VI-VIII
 const FAP_EOT_BIND_WINDOW_MS = 2_000;
 
 export function getHealToolProfile(healToolName?: string): HealToolProfile {
   if (!healToolName) {
     return {
       windowDurationMs: FAP_HOT_WINDOW_MS,
-      hotMode: 'conditional',
+      hotMode: 'none',
     };
   }
 
@@ -59,9 +60,32 @@ export function getHealToolProfile(healToolName?: string): HealToolProfile {
     };
   }
 
+  // Vivo S10 has 10 second heal over time
+  if (name.includes('vivo') && name.includes('s10')) {
+    return {
+      windowDurationMs: FAP_HOT_WINDOW_MS,
+      hotMode: 'eotOnly',
+    };
+  }
+
+  // Refurbished H.E.A.R.T. Rank VI to VIII have 5 second heal over time
+  if (name.includes('refurbished') && name.includes('h.e.a.r.t')) {
+    const hasRankVI = name.includes('vi') && !name.includes('vii') && !name.includes('viii');
+    const hasRankVII = name.includes('vii') && !name.includes('viii');
+    const hasRankVIII = name.includes('viii');
+
+    if (hasRankVI || hasRankVII || hasRankVIII) {
+      return {
+        windowDurationMs: REFURBISHED_HEART_WINDOW_MS,
+        hotMode: 'eotOnly',
+      };
+    }
+  }
+
+  // All other FAPs: single heal, no HoT
   return {
     windowDurationMs: FAP_HOT_WINDOW_MS,
-    hotMode: 'conditional',
+    hotMode: 'none',
   };
 }
 
@@ -104,7 +128,7 @@ export function classifyFapHealingFromLogLines(
   content: string,
   state?: Partial<FapHotClassifierState>,
   windowDurationMs?: number,
-  hotMode: HealHotMode = 'conditional'
+  hotMode: HealHotMode = 'none'
 ): FapHotClassificationResult {
   const workingState = defaultState(state);
   const eotWindowMs = windowDurationMs ?? FAP_HOT_WINDOW_MS;
@@ -160,33 +184,25 @@ export function classifyFapHealingFromLogLines(
       // If not marked by EOT flag, use window-based classification
       if (!isDirectUse) {
         if (hotMode === 'none') {
-          // Regeneration chip: all heals are direct uses
+          // No HoT: all heals are direct uses
           isDirectUse = true;
         } else if (hotMode === 'always') {
-          // Restoration chip: first use is direct, all heals within window are passive ticks
-          // Heal amounts are consistent (no big jumps), so use window timing only
+          // Always HoT (restoration chips): First heal in a window is direct use,
+          // subsequent heals inside that window are passive ticks.
+          // Add 1s grace period to window unless EOT marker is present
+          const gracePeriodMs = wasExpectingDirectUse ? 0 : 1000;
           const withinHotWindow =
-            workingState.hotWindowEndMs !== null && timestampMs <= workingState.hotWindowEndMs;
+            workingState.hotWindowEndMs !== null &&
+            timestampMs <= workingState.hotWindowEndMs + gracePeriodMs;
           isDirectUse = !withinHotWindow;
-        } else {
-          // FAP (conditional): direct heals are MUCH stronger than ticks
-          // Use aggressive 3x threshold to detect new direct uses by heal amount jump
+        } else if (hotMode === 'eotOnly') {
+          // EOT-only HoT (Vivo S10, Refurbished HEART): Only EOT markers create windows
+          // Add 1s grace period to handle timing variations, but not when EOT marker is present
+          const gracePeriodMs = wasExpectingDirectUse ? 0 : 1000;
           const withinHotWindow =
-            workingState.hotWindowEndMs !== null && timestampMs <= workingState.hotWindowEndMs;
-
-          const isSignificantHealJump =
-            workingState.lastHealAmount !== null && amount >= workingState.lastHealAmount * 3.0;
-
-          if (!withinHotWindow) {
-            // Outside any window = direct use
-            isDirectUse = true;
-          } else if (isSignificantHealJump) {
-            // Large heal jump within window = new direct use
-            isDirectUse = true;
-          } else {
-            // Small heal within window = passive tick
-            isDirectUse = false;
-          }
+            workingState.hotWindowEndMs !== null &&
+            timestampMs <= workingState.hotWindowEndMs + gracePeriodMs;
+          isDirectUse = !withinHotWindow;
         }
       }
 
@@ -198,13 +214,12 @@ export function classifyFapHealingFromLogLines(
 
       if (isDirectUse) {
         if (hotMode === 'always') {
+          // Always refresh window for restoration chips
           workingState.hotWindowEndMs = timestampMs + eotWindowMs;
           workingState.pendingDirectHealTimestampMs = timestampMs;
-        } else if (hotMode === 'conditional') {
-          const wasWithinActiveWindow =
-            workingState.hotWindowEndMs !== null && timestampMs <= workingState.hotWindowEndMs;
-
-          if (wasExpectingDirectUse || wasWithinActiveWindow) {
+        } else if (hotMode === 'eotOnly') {
+          // Only refresh window when there's an EOT marker
+          if (wasExpectingDirectUse) {
             workingState.hotWindowEndMs = timestampMs + eotWindowMs;
           }
           workingState.pendingDirectHealTimestampMs = timestampMs;

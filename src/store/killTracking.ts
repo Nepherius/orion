@@ -52,6 +52,7 @@ export const finalizePendingKillRecord = async (
     cost: killCost,
     lootValue,
     timestamp: pendingKill.endTimestamp,
+    loadoutId: session.loadoutId,
   };
 
   await safeInvoke('db_add_kill', {
@@ -64,6 +65,7 @@ export const finalizePendingKillRecord = async (
       cost: kill.cost,
       loot_value: kill.lootValue,
       timestamp: kill.timestamp,
+      loadout_id: kill.loadoutId,
     },
   });
 

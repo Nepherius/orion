@@ -135,6 +135,7 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             cost REAL NOT NULL,
             loot_value REAL NOT NULL,
             timestamp INTEGER NOT NULL,
+            loadout_id TEXT,
             FOREIGN KEY (session_uuid) REFERENCES sessions(uuid) ON DELETE CASCADE
         );
 
@@ -229,8 +230,11 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     let _ = conn.execute("ALTER TABLE loadouts ADD COLUMN armor TEXT", []);
     let _ = conn.execute("ALTER TABLE loot_items ADD COLUMN fixed_value REAL", []);
     let _ = conn.execute("ALTER TABLE loot_items ADD COLUMN kill_uuid TEXT", []);
-    let _ = conn.execute("ALTER TABLE item_templates ADD COLUMN default_fixed_value REAL", []);
-    
+    let _ = conn.execute(
+        "ALTER TABLE item_templates ADD COLUMN default_fixed_value REAL",
+        [],
+    );
+
     // Create kills table if it doesn't exist (migration for existing databases)
     let _ = conn.execute(
         "CREATE TABLE IF NOT EXISTS kills (
@@ -247,10 +251,25 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
         )",
         [],
     );
-    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_kills_session ON kills(session_uuid)", []);
-    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_kills_creature ON kills(creature_name)", []);
-    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_kills_timestamp ON kills(timestamp)", []);
-    let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_loot_kill ON loot_items(kill_uuid)", []);
+    let _ = conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_kills_session ON kills(session_uuid)",
+        [],
+    );
+    let _ = conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_kills_creature ON kills(creature_name)",
+        [],
+    );
+    let _ = conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_kills_timestamp ON kills(timestamp)",
+        [],
+    );
+    let _ = conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_loot_kill ON loot_items(kill_uuid)",
+        [],
+    );
+
+    // Add loadout_id to kills table (migration for existing databases)
+    let _ = conn.execute("ALTER TABLE kills ADD COLUMN loadout_id TEXT", []);
 
     Ok(())
 }

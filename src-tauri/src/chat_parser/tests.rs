@@ -106,10 +106,14 @@ fn test_parse_prowler_global() {
 #[test]
 fn test_parse_system_pickup_no_brackets() {
     let parser = ChatLogParser::new();
-    let line = "26-02-27 01:41:54 [System] [] You received Animal Muscle Oil x (9) Value: 0.2700 PED";
+    let line =
+        "26-02-27 01:41:54 [System] [] You received Animal Muscle Oil x (9) Value: 0.2700 PED";
 
     let result = parser.parse_line(line);
-    assert!(result.is_some(), "Parser failed to match system pickup line");
+    assert!(
+        result.is_some(),
+        "Parser failed to match system pickup line"
+    );
 
     let event = result.unwrap();
     assert_eq!(event.player, ""); // System pickups have no player
@@ -287,7 +291,8 @@ fn test_parse_skill_gain_multi_word() {
 #[test]
 fn test_parse_system_pickup_with_brackets() {
     let parser = ChatLogParser::new();
-    let line = "26-02-27 01:41:54 [System] [] You received [Animal Eye Oil] x (9) Value: 0.2700 PED";
+    let line =
+        "26-02-27 01:41:54 [System] [] You received [Animal Eye Oil] x (9) Value: 0.2700 PED";
 
     let result = parser.parse_line(line);
     assert!(

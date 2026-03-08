@@ -44,6 +44,7 @@ export interface Kill {
   cost: number;
   lootValue: number;
   timestamp: number;
+  loadoutId?: string;
 }
 
 export interface DamageEvent {

@@ -108,6 +108,7 @@ pub struct AddKillParams {
     cost: f64,
     loot_value: f64,
     timestamp: i64,
+    loadout_id: Option<String>,
 }
 
 #[tauri::command]
@@ -122,8 +123,8 @@ pub fn db_add_kill(params: AddKillParams, state: State<'_, DbState>) -> Result<(
 
     let conn = state.db.lock().unwrap();
     conn.execute(
-        "INSERT INTO kills (uuid, session_uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![params.uuid, params.session_uuid, params.creature_name, params.maturity, params.hp_dealt, params.cost, params.loot_value, params.timestamp],
+        "INSERT INTO kills (uuid, session_uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp, loadout_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![params.uuid, params.session_uuid, params.creature_name, params.maturity, params.hp_dealt, params.cost, params.loot_value, params.timestamp, params.loadout_id],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -136,7 +137,7 @@ pub fn db_get_session_kills(
 ) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp FROM kills WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .prepare("SELECT uuid, creature_name, maturity, hp_dealt, cost, loot_value, timestamp, loadout_id FROM kills WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -149,6 +150,7 @@ pub fn db_get_session_kills(
                 "cost": row.get::<_, f64>(4)?,
                 "lootValue": row.get::<_, f64>(5)?,
                 "timestamp": row.get::<_, i64>(6)?,
+                "loadoutId": row.get::<_, Option<String>>(7)?,
             }))
         })
         .map_err(|e| e.to_string())?;

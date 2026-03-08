@@ -172,7 +172,15 @@ export function Analytics() {
   const weaponData = useMemo(() => {
     const weaponPerformance = filteredSessions.reduce(
       (acc, session) => {
-        const weapon = session.weapon || 'Unknown';
+        // Use weapon name from loadout if available, otherwise fall back to session.weapon
+        let weapon = 'Unknown';
+        if (session.loadoutId) {
+          const loadout = loadouts.find((l) => l.id === session.loadoutId);
+          weapon = loadout?.weapon?.Name || session.weapon || 'Unknown';
+        } else {
+          weapon = session.weapon || 'Unknown';
+        }
+
         if (!acc[weapon]) {
           acc[weapon] = {
             sessions: 0,
@@ -212,7 +220,7 @@ export function Analytics() {
       }))
       .sort((a, b) => b.totalCost - a.totalCost)
       .slice(0, 10);
-  }, [filteredSessions]);
+  }, [filteredSessions, loadouts]);
 
   // Armor performance
   const armorData = useMemo(() => {
@@ -252,39 +260,42 @@ export function Analytics() {
 
   // Loadout performance
   const loadoutData = useMemo(() => {
-    const loadoutPerformance = filteredSessions
-      .filter((s) => s.loadoutId)
-      .reduce(
-        (acc, session) => {
-          const loadout = loadouts.find((l) => l.id === session.loadoutId);
-          const loadoutName = loadout?.name || 'Unknown';
-          if (!acc[loadoutName]) {
-            acc[loadoutName] = {
-              sessions: 0,
-              totalLoot: 0,
-              totalCost: 0,
-              totalKills: 0,
-            };
-          }
-          acc[loadoutName].sessions += 1;
-          acc[loadoutName].totalLoot += session.stats.totalLoot;
-          acc[loadoutName].totalCost += session.stats.totalCost;
-          acc[loadoutName].totalKills += session.stats.kills;
-          return acc;
-        },
-        {} as Record<
-          string,
-          { sessions: number; totalLoot: number; totalCost: number; totalKills: number }
-        >
-      );
+    const loadoutPerformance: Record<
+      string,
+      { sessions: Set<string>; totalLoot: number; totalCost: number; totalKills: number }
+    > = {};
+
+    // Aggregate by individual kills with loadoutId
+    filteredSessions.forEach((session) => {
+      session.kills.forEach((kill) => {
+        if (!kill.loadoutId) return;
+
+        const loadout = loadouts.find((l) => l.id === kill.loadoutId);
+        const loadoutName = loadout?.name || 'Unknown';
+
+        if (!loadoutPerformance[loadoutName]) {
+          loadoutPerformance[loadoutName] = {
+            sessions: new Set(),
+            totalLoot: 0,
+            totalCost: 0,
+            totalKills: 0,
+          };
+        }
+
+        loadoutPerformance[loadoutName].sessions.add(session.id);
+        loadoutPerformance[loadoutName].totalLoot += kill.lootValue;
+        loadoutPerformance[loadoutName].totalCost += kill.cost;
+        loadoutPerformance[loadoutName].totalKills += 1;
+      });
+    });
 
     return Object.entries(loadoutPerformance)
       .map(([name, data]) => ({
         name,
-        sessions: data.sessions,
+        sessions: data.sessions.size,
         returnRate: data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0,
         profit: data.totalLoot - data.totalCost,
-        avgKills: data.sessions > 0 ? data.totalKills / data.sessions : 0,
+        avgKills: data.sessions.size > 0 ? data.totalKills / data.sessions.size : 0,
       }))
       .sort((a, b) => b.returnRate - a.returnRate);
   }, [filteredSessions, loadouts]);
