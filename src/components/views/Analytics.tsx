@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import { LootPerformanceSection } from './analytics/LootPerformanceSection';
 import { PerformancePanelsSection } from './analytics/PerformancePanelsSection';
 import { AdvancedAnalyticsSection } from './analytics/AdvancedAnalyticsSection';
+import { CorrelationAnalytics } from '../analytics/CorrelationAnalytics';
+import { StatisticalInsights } from '../analytics/StatisticalInsights';
 import {
   calculateAverageDropValue,
   getLargestDrop,
@@ -105,11 +107,11 @@ export function Analytics() {
   const lifetimeHitRate = useMemo(() => {
     return lifetimeStats.totalShotsFired > 0
       ? (filteredSessions.reduce(
-          (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
-          0
-        ) /
-          lifetimeStats.totalShotsFired) *
-          100
+        (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
+        0
+      ) /
+        lifetimeStats.totalShotsFired) *
+      100
       : 0;
   }, [filteredSessions, lifetimeStats.totalShotsFired]);
 
@@ -391,7 +393,7 @@ export function Analytics() {
   const avgLootValue = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateAverageDropValue(s), 0) /
-          filteredSessions.length
+      filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -404,7 +406,7 @@ export function Analytics() {
   const avgMinutesPerLoot = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateMinutesPerLootEvent(s), 0) /
-          filteredSessions.length
+      filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -749,11 +751,10 @@ export function Analytics() {
             </p>
           </div>
           <div
-            className={`text-sm px-3 py-1 rounded-full border ${
-              lifetimeReturnRate >= 100
-                ? 'text-green-300 border-green-400/30 bg-green-500/10'
-                : 'text-red-300 border-red-400/30 bg-red-500/10'
-            }`}
+            className={`text-sm px-3 py-1 rounded-full border ${lifetimeReturnRate >= 100
+              ? 'text-green-300 border-green-400/30 bg-green-500/10'
+              : 'text-red-300 border-red-400/30 bg-red-500/10'
+              }`}
           >
             {lifetimeReturnRate >= 100 ? 'Profitable' : 'Under 100% Return'}
           </div>
@@ -832,6 +833,10 @@ export function Analytics() {
         projectedLifetimeProfit={projectedLifetimeProfit}
         sessionsToBreakEven={sessionsToBreakEven}
       />
+
+      <CorrelationAnalytics filteredSessions={filteredSessions} />
+
+      <StatisticalInsights filteredSessions={filteredSessions} />
     </div>
   );
 }
