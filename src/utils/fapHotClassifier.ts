@@ -196,7 +196,12 @@ export function classifyFapHealingFromLogLines(
         if (hotMode === 'none') {
           // No HoT: all heals are direct uses
           isDirectUse = true;
-        } else if (hotMode === 'always' || hotMode === 'eotOnly' || hotMode === 'vivoS10' || hotMode === 'refurbishedHeart') {
+        } else if (
+          hotMode === 'always' ||
+          hotMode === 'eotOnly' ||
+          hotMode === 'vivoS10' ||
+          hotMode === 'refurbishedHeart'
+        ) {
           const gracePeriodMs = wasExpectingDirectUse ? 0 : 1000;
           const withinHotWindow =
             workingState.hotWindowEndMs !== null &&
@@ -211,7 +216,10 @@ export function classifyFapHealingFromLogLines(
             if (hotMode === 'vivoS10') {
               // The user specified "ticks are up to 20% of the main heal".
               // If the heal amount is > 25% of the baseline active heal, we confidently classify it as an active use.
-              if (workingState.baseActiveHealAmount !== null && amount > workingState.baseActiveHealAmount * 0.25) {
+              if (
+                workingState.baseActiveHealAmount !== null &&
+                amount > workingState.baseActiveHealAmount * 0.25
+              ) {
                 isDirectUse = true;
               } else {
                 isDirectUse = false;
@@ -233,7 +241,11 @@ export function classifyFapHealingFromLogLines(
       if (isDirectUse) {
         workingState.baseActiveHealAmount = amount; // Lock in the baseline for tick calculation
 
-        if (hotMode === 'always' || ((hotMode === 'eotOnly' || hotMode === 'vivoS10') && (wasExpectingDirectUse || workingState.hotWindowEndMs !== null))) {
+        if (
+          hotMode === 'always' ||
+          ((hotMode === 'eotOnly' || hotMode === 'vivoS10') &&
+            (wasExpectingDirectUse || workingState.hotWindowEndMs !== null))
+        ) {
           // Always refresh window for restoration chips, or when an EOT starts a window for Vivo.
           // ALSO refresh if it was a direct use while an active eot window was already running!
           workingState.hotWindowEndMs = timestampMs + eotWindowMs;

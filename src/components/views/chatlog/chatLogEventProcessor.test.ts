@@ -6,7 +6,8 @@ import type { FapHotClassifierState } from '../../../utils/fapHotClassifier';
 const invokeMock = vi.fn();
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: (...args: unknown[]) => invokeMock(...args),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  invoke: (...args: any[]) => invokeMock(...args),
 }));
 
 const addHealingEventMock = vi.fn();

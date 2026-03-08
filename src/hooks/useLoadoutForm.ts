@@ -15,11 +15,16 @@ interface MedicalToolEntry {
   mecost?: number | null;
 }
 
+type EquipmentDataResponse = EquipmentItem[] | { data: EquipmentItem[]; lastUpdateAt?: number };
+type ArmorDataResponse = { armor?: string[] } | string[];
+type MedicalDataResponse = { medicalTools?: MedicalToolEntry[] } | MedicalToolEntry[];
+type LoadEquipmentData = EquipmentDataResponse | ArmorDataResponse | MedicalDataResponse;
+
 /**
  * Load equipment data from AppData first (fresh install downloads),
  * fall back to bundled public assets
  */
-async function loadEquipmentData(relativePath: string): Promise<unknown> {
+async function loadEquipmentData(relativePath: string): Promise<LoadEquipmentData> {
   try {
     // Try loading from AppData first (fresh install downloaded data)
     const appDataContent = await readTextFile(relativePath, { baseDir: BaseDirectory.AppData });
@@ -71,13 +76,13 @@ export function useLoadoutForm(editLoadout?: Loadout) {
       loadEquipmentData('medical/medicaltool.json'),
     ]).then(
       ([weaponsData, ampsData, scopesData, sightsData, absorbersData, armorData, medicalData]) => {
-        setWeapons(weaponsData as EquipmentItem[]);
-        setAmps(ampsData as EquipmentItem[]);
-        setScopes(scopesData as EquipmentItem[]);
-        setSights(sightsData as EquipmentItem[]);
-        setAbsorbers(absorbersData as EquipmentItem[]);
-        setArmorItems((armorData as { armor?: string[] })?.armor || []);
-        setMedicalTools((medicalData as { medicalTools?: MedicalToolEntry[] })?.medicalTools || []);
+        setWeapons(Array.isArray(weaponsData) ? weaponsData : weaponsData.data);
+        setAmps(Array.isArray(ampsData) ? ampsData : ampsData.data);
+        setScopes(Array.isArray(scopesData) ? scopesData : scopesData.data);
+        setSights(Array.isArray(sightsData) ? sightsData : sightsData.data);
+        setAbsorbers(Array.isArray(absorbersData) ? absorbersData : absorbersData.data);
+        setArmorItems(Array.isArray(armorData) ? armorData : armorData.armor || []);
+        setMedicalTools(Array.isArray(medicalData) ? medicalData : medicalData.medicalTools || []);
       }
     );
   }, []);

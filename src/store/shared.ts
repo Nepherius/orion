@@ -65,7 +65,8 @@ export const defaultSettings: AppSettings = {
   enableKillTrackingMaturity: true,
 };
 
-export const safeInvoke = async <T = unknown>(command: string, args?: Record<string, unknown>) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const safeInvoke = async <T = any>(command: string, args?: Record<string, any>) => {
   try {
     return (await invoke(command, args)) as T;
   } catch (error) {
@@ -74,7 +75,8 @@ export const safeInvoke = async <T = unknown>(command: string, args?: Record<str
   }
 };
 
-export const saveJsonSetting = async (key: string, value: unknown) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const saveJsonSetting = async (key: string, value: any) => {
   // eslint-disable-next-line no-console
   console.debug(`[Settings] Saving key '${key}' with value:`, value);
   await safeInvoke('db_set_setting', {

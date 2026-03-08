@@ -636,6 +636,7 @@ pub fn run() {
             db_commands::db_get_all_sessions,
             db_commands::db_get_all_sessions_summary,
             db_commands::db_get_session_stats,
+            db_commands::db_get_lifetime_stats,
             db_commands::db_add_loot,
             db_commands::db_update_loot,
             db_commands::db_delete_loot,

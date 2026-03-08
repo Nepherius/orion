@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { InfoTooltip } from '../../common/InfoTooltip';
 
-interface TopLootItem {
+export interface TopLootItem {
   name: string;
   totalValue: number;
   quantity: number;
@@ -9,7 +9,7 @@ interface TopLootItem {
   avgValue: number;
 }
 
-interface GlobalEntry {
+export interface GlobalEntry {
   id: string;
   creature: string;
   value: number;

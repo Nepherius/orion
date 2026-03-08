@@ -14,14 +14,14 @@ import {
   Legend,
 } from 'recharts';
 
-interface RecentSession {
+export interface RecentSession {
   date: string;
   returnRate: number;
   profit: number;
   loot: number;
 }
 
-interface LoadoutData {
+export interface LoadoutData {
   name: string;
   sessions: number;
   returnRate: number;
@@ -29,7 +29,7 @@ interface LoadoutData {
   avgKills: number;
 }
 
-interface LocationData {
+export interface LocationData {
   location: string;
   sessions: number;
   returnRate: number;
@@ -37,13 +37,13 @@ interface LocationData {
   globals: number;
 }
 
-interface CostDatum {
+export interface CostDatum {
   name: string;
   value: number;
   color: string;
 }
 
-interface WeaponData {
+export interface WeaponData {
   weapon: string;
   sessions: number;
   returnRate: number;
@@ -52,12 +52,12 @@ interface WeaponData {
   avgDamage: number;
 }
 
-interface TopSkill {
+export interface TopSkill {
   name: string;
   total: number;
 }
 
-interface ArmorData {
+export interface ArmorData {
   armor: string;
   sessions: number;
   returnRate: number;

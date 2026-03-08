@@ -1,6 +1,7 @@
 import { classifyFapHealingFromLogLines, getHealToolProfile } from './src/utils/fapHotClassifier';
 
 const heartProfile = getHealToolProfile('Refurbished H.E.A.R.T. Rank VIII');
+// eslint-disable-next-line no-console
 console.log('Profile:', heartProfile);
 
 const result = classifyFapHealingFromLogLines(
@@ -13,4 +14,5 @@ const result = classifyFapHealingFromLogLines(
   heartProfile.hotMode
 );
 
+// eslint-disable-next-line no-console
 console.log('Result:', JSON.stringify(result.healingEvents, null, 2));

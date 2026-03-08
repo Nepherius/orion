@@ -113,7 +113,17 @@ export function Settings() {
             value={settings.theme}
             onChange={(e) =>
               updateSettings({
-                theme: e.target.value as 'dark' | 'light' | 'high-contrast' | 'calypso' | 'arkadia' | 'rocktropia' | 'cyrene' | 'monria' | 'next-island' | 'toulan',
+                theme: e.target.value as
+                  | 'dark'
+                  | 'light'
+                  | 'high-contrast'
+                  | 'calypso'
+                  | 'arkadia'
+                  | 'rocktropia'
+                  | 'cyrene'
+                  | 'monria'
+                  | 'next-island'
+                  | 'toulan',
               })
             }
             className="input w-full"

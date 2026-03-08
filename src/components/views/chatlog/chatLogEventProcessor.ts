@@ -12,7 +12,7 @@ interface ProcessRecentChatLinesParams {
   recentLines: string;
   processedEvents: Set<string>;
   fapHotState: FapHotClassifierState;
-  debugDetail: (...args: unknown[]) => void;
+  debugDetail: (...args: Parameters<typeof console.log>) => void;
 }
 
 const normalizeLootItemName = (name: string): string =>

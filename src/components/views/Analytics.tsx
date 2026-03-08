@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, lazy, Suspense, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useHuntStore } from '../../store';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { BarChart3, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { LootPerformanceSection } from './analytics/LootPerformanceSection';
-import { PerformancePanelsSection } from './analytics/PerformancePanelsSection';
-import { AdvancedAnalyticsSection } from './analytics/AdvancedAnalyticsSection';
-import { CorrelationAnalytics } from '../analytics/CorrelationAnalytics';
-import { StatisticalInsights } from '../analytics/StatisticalInsights';
+
+const AnalyticsOverviewTab = lazy(() => import('../analytics/AnalyticsOverviewTab'));
+const AnalyticsPerformanceTab = lazy(() => import('../analytics/AnalyticsPerformanceTab'));
+const AnalyticsAdvancedTab = lazy(() => import('../analytics/AnalyticsAdvancedTab'));
 import {
   calculateAverageDropValue,
   getLargestDrop,
@@ -37,6 +37,7 @@ export function Analytics() {
   >('lifetime');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'advanced'>('overview');
 
   const filteredSessions = useMemo(() => {
     if (timeRange === 'lifetime') return sessions;
@@ -70,36 +71,62 @@ export function Analytics() {
     return sessions.filter((s) => s.startTime >= startTime);
   }, [sessions, timeRange, customStartDate, customEndDate]);
 
-  // Calculate lifetime stats
-  const lifetimeStats = useMemo(
-    () =>
-      filteredSessions.reduce(
-        (acc, session) => {
-          acc.totalLoot += session.stats.totalLoot;
-          acc.totalCost += session.stats.totalCost;
-          acc.totalKills += session.stats.kills;
-          acc.totalGlobals += session.stats.globals;
-          acc.totalHofs += session.stats.hofs;
-          acc.totalDamage += session.stats.damageDealt;
-          acc.totalShotsFired += session.stats.shotsFired;
-          acc.totalDuration += session.stats.duration;
-          acc.totalSessions += 1;
-          return acc;
-        },
-        {
-          totalLoot: 0,
-          totalCost: 0,
-          totalKills: 0,
-          totalGlobals: 0,
-          totalHofs: 0,
-          totalDamage: 0,
-          totalShotsFired: 0,
-          totalDuration: 0,
-          totalSessions: 0,
+  // Fetch lifetime stats from Tauri strictly (Bypassing frontend TS array limits)
+  const [lifetimeStats, setLifetimeStats] = useState({
+    totalLoot: 0,
+    totalCost: 0,
+    totalKills: 0,
+    totalGlobals: 0,
+    totalHofs: 0,
+    totalDamage: 0,
+    totalShotsFired: 0,
+    totalDuration: 0,
+    totalSessions: 0,
+  });
+
+  useEffect(() => {
+    const fetchLifetimeStats = async () => {
+      try {
+        if (timeRange === 'lifetime') {
+          // For true lifetime, offload sum exactly to SQLite Rust backend for instant return
+          const stats = await invoke<typeof lifetimeStats>('db_get_lifetime_stats');
+          setLifetimeStats(stats);
+        } else {
+          // For custom narrowed time ranges we fallback to fast JS loop over just the filtered window
+          const fallbackStats = filteredSessions.reduce(
+            (acc, session) => {
+              acc.totalLoot += session.stats.totalLoot;
+              acc.totalCost += session.stats.totalCost;
+              acc.totalKills += session.stats.kills;
+              acc.totalGlobals += session.stats.globals;
+              acc.totalHofs += session.stats.hofs;
+              acc.totalDamage += session.stats.damageDealt;
+              acc.totalShotsFired += session.stats.shotsFired;
+              acc.totalDuration += session.stats.duration;
+              acc.totalSessions += 1;
+              return acc;
+            },
+            {
+              totalLoot: 0,
+              totalCost: 0,
+              totalKills: 0,
+              totalGlobals: 0,
+              totalHofs: 0,
+              totalDamage: 0,
+              totalShotsFired: 0,
+              totalDuration: 0,
+              totalSessions: 0,
+            }
+          );
+          setLifetimeStats(fallbackStats);
         }
-      ),
-    [filteredSessions]
-  );
+      } catch (err) {
+        console.error('Failed to pull DB stats:', err);
+      }
+    };
+
+    fetchLifetimeStats();
+  }, [filteredSessions, timeRange]);
 
   const lifetimeProfit = lifetimeStats.totalLoot - lifetimeStats.totalCost;
   const lifetimeReturnRate =
@@ -107,11 +134,11 @@ export function Analytics() {
   const lifetimeHitRate = useMemo(() => {
     return lifetimeStats.totalShotsFired > 0
       ? (filteredSessions.reduce(
-        (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
-        0
-      ) /
-        lifetimeStats.totalShotsFired) *
-      100
+          (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
+          0
+        ) /
+          lifetimeStats.totalShotsFired) *
+          100
       : 0;
   }, [filteredSessions, lifetimeStats.totalShotsFired]);
 
@@ -393,7 +420,7 @@ export function Analytics() {
   const avgLootValue = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateAverageDropValue(s), 0) /
-      filteredSessions.length
+          filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -406,7 +433,7 @@ export function Analytics() {
   const avgMinutesPerLoot = useMemo(() => {
     return filteredSessions.length > 0
       ? filteredSessions.reduce((sum, s) => sum + calculateMinutesPerLootEvent(s), 0) /
-      filteredSessions.length
+          filteredSessions.length
       : 0;
   }, [filteredSessions]);
 
@@ -673,170 +700,106 @@ export function Analytics() {
         </div>
       </div>
 
-      {/* Lifetime Stats Cards */}
-      <div className="grid grid-cols-6 gap-4">
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Total Loot</div>
-          <div className="text-2xl font-bold text-green-400">
-            {lifetimeStats.totalLoot.toFixed(2)} PED
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Total Cost</div>
-          <div className="text-2xl font-bold text-red-400">
-            {lifetimeStats.totalCost.toFixed(2)} PED
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Net Profit</div>
-          <div
-            className={`text-2xl font-bold ${lifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-          >
-            {lifetimeProfit >= 0 ? '+' : ''}
-            {lifetimeProfit.toFixed(2)} PED
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Return Rate</div>
-          <div
-            className={`text-2xl font-bold ${lifetimeReturnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-          >
-            {lifetimeReturnRate.toFixed(2)}%
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Total Kills</div>
-          <div className="text-2xl font-bold text-body">
-            {lifetimeStats.totalKills.toLocaleString()}
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Total Time</div>
-          <div className="text-2xl font-bold text-body">
-            {formatDuration(lifetimeStats.totalDuration)}
-          </div>
-        </div>
+      {/* Tab Navigation */}
+      <div className="flex border-b border-border">
+        <button
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+            activeTab === 'overview'
+              ? 'border-primary-500 text-primary-400'
+              : 'border-transparent text-muted hover:text-body'
+          }`}
+          onClick={() => setActiveTab('overview')}
+        >
+          Overview
+        </button>
+        <button
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+            activeTab === 'performance'
+              ? 'border-primary-500 text-primary-400'
+              : 'border-transparent text-muted hover:text-body'
+          }`}
+          onClick={() => setActiveTab('performance')}
+        >
+          Performance Deep-Dive
+        </button>
+        <button
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+            activeTab === 'advanced'
+              ? 'border-primary-500 text-primary-400'
+              : 'border-transparent text-muted hover:text-body'
+          }`}
+          onClick={() => setActiveTab('advanced')}
+        >
+          Advanced Analytics
+        </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Globals</div>
-          <div className="text-2xl font-bold text-yellow-400">{lifetimeStats.totalGlobals}</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Hall of Fame</div>
-          <div className="text-2xl font-bold text-purple-400">{lifetimeStats.totalHofs}</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Hit Rate</div>
-          <div className="text-2xl font-bold text-blue-400">{lifetimeHitRate.toFixed(2)}%</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-muted mb-1">Avg Kill Value</div>
-          <div className="text-2xl font-bold text-body">
-            {lifetimeStats.totalKills > 0
-              ? (lifetimeStats.totalLoot / lifetimeStats.totalKills).toFixed(2)
-              : '0.00'}{' '}
-            PED
+      <Suspense
+        fallback={
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
           </div>
-        </div>
-      </div>
+        }
+      >
+        {activeTab === 'overview' && (
+          <AnalyticsOverviewTab
+            lifetimeStats={lifetimeStats}
+            lifetimeProfit={lifetimeProfit}
+            lifetimeReturnRate={lifetimeReturnRate}
+            lifetimeHitRate={lifetimeHitRate}
+            sessionWinRate={sessionWinRate}
+            bestWeapon={bestWeapon}
+            bestLocation={bestLocation}
+            formatDuration={formatDuration}
+          />
+        )}
 
-      <div className="card p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-bold">Situation Summary</h3>
-            <p className="text-sm text-muted mt-1">
-              Quick read of current hunting health before drilling into details.
-            </p>
-          </div>
-          <div
-            className={`text-sm px-3 py-1 rounded-full border ${lifetimeReturnRate >= 100
-              ? 'text-green-300 border-green-400/30 bg-green-500/10'
-              : 'text-red-300 border-red-400/30 bg-red-500/10'
-              }`}
-          >
-            {lifetimeReturnRate >= 100 ? 'Profitable' : 'Under 100% Return'}
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          <div className="border border-border rounded p-4">
-            <div className="text-sm text-muted mb-2">Current Direction</div>
-            <div
-              className={`text-xl font-bold ${lifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-            >
-              {lifetimeProfit >= 0 ? 'Positive' : 'Negative'}
-            </div>
-            <div className="text-xs text-muted mt-1">{lifetimeProfit.toFixed(2)} PED net</div>
-          </div>
-          <div className="border border-border rounded p-4">
-            <div className="text-sm text-muted mb-2">Session Consistency</div>
-            <div className="text-xl font-bold text-blue-400">{sessionWinRate.toFixed(1)}%</div>
-            <div className="text-xs text-muted mt-1">Profitable sessions</div>
-          </div>
-          <div className="border border-border rounded p-4">
-            <div className="text-sm text-muted mb-2">Best Setup Snapshot</div>
-            <div className="text-sm font-semibold truncate" title={bestWeapon?.weapon || 'N/A'}>
-              Weapon: {bestWeapon?.weapon || 'N/A'}
-            </div>
-            <div
-              className="text-sm font-semibold truncate mt-1"
-              title={bestLocation?.location || 'N/A'}
-            >
-              Location: {bestLocation?.location || 'N/A'}
-            </div>
-          </div>
-        </div>
-      </div>
+        {activeTab === 'performance' && (
+          <AnalyticsPerformanceTab
+            avgLootValue={avgLootValue}
+            overallLootStdDev={overallLootStdDev}
+            largestDropValue={largestDropValue}
+            avgMinutesPerLoot={avgMinutesPerLoot}
+            totalLootEvents={totalLootEvents}
+            totalGlobalsCount={totalGlobalsCount}
+            totalHoFsCount={totalHoFsCount}
+            globalDropRatePerKill={globalDropRatePerKill}
+            globalDropRatePerHour={globalDropRatePerHour}
+            avgGlobalValue={avgGlobalValue}
+            bestGlobalValue={bestGlobalValue}
+            topLootItems={topLootItems}
+            allGlobals={allGlobals}
+            recentSessions={recentSessions}
+            loadoutData={loadoutData}
+            locationData={locationData}
+            costData={costData}
+            weaponData={weaponData}
+            topSkills={topSkills}
+            armorData={armorData}
+          />
+        )}
 
-      <LootPerformanceSection
-        avgLootValue={avgLootValue}
-        overallLootStdDev={overallLootStdDev}
-        largestDropValue={largestDropValue}
-        avgMinutesPerLoot={avgMinutesPerLoot}
-        totalLootEvents={totalLootEvents}
-        totalGlobalsCount={totalGlobalsCount}
-        totalHoFsCount={totalHoFsCount}
-        globalDropRatePerKill={globalDropRatePerKill}
-        globalDropRatePerHour={globalDropRatePerHour}
-        avgGlobalValue={avgGlobalValue}
-        bestGlobalValue={bestGlobalValue}
-        topLootItems={topLootItems}
-        allGlobals={allGlobals}
-      />
-
-      <PerformancePanelsSection
-        recentSessions={recentSessions}
-        loadoutData={loadoutData}
-        locationData={locationData}
-        costData={costData}
-        weaponData={weaponData}
-        topSkills={topSkills}
-        armorData={armorData}
-      />
-
-      <AdvancedAnalyticsSection
-        sessionWinRate={sessionWinRate}
-        profitableStreaks={profitableStreaks}
-        bestWeapon={bestWeapon}
-        bestLocation={bestLocation}
-        bestLoadout={bestLoadout}
-        temporalInsights={temporalInsights}
-        creatureAnalysis={creatureAnalysis}
-        filteredSessions={filteredSessions}
-        skillsByLocation={skillsByLocation}
-        skillsByWeapon={skillsByWeapon}
-        lifetimeAttributeGains={lifetimeAttributeGains}
-        allSkillNames={allSkillNames}
-        skillGainVariance={skillGainVariance}
-        skillValuePerCost={skillValuePerCost}
-        projectedLifetimeProfit={projectedLifetimeProfit}
-        sessionsToBreakEven={sessionsToBreakEven}
-      />
-
-      <CorrelationAnalytics filteredSessions={filteredSessions} />
-
-      <StatisticalInsights filteredSessions={filteredSessions} />
+        {activeTab === 'advanced' && (
+          <AnalyticsAdvancedTab
+            sessionWinRate={sessionWinRate}
+            profitableStreaks={profitableStreaks}
+            bestWeapon={bestWeapon}
+            bestLocation={bestLocation}
+            bestLoadout={bestLoadout}
+            temporalInsights={temporalInsights}
+            creatureAnalysis={creatureAnalysis}
+            filteredSessions={filteredSessions}
+            skillsByLocation={skillsByLocation}
+            skillsByWeapon={skillsByWeapon}
+            lifetimeAttributeGains={lifetimeAttributeGains}
+            allSkillNames={allSkillNames}
+            skillGainVariance={skillGainVariance}
+            skillValuePerCost={skillValuePerCost}
+            projectedLifetimeProfit={projectedLifetimeProfit}
+            sessionsToBreakEven={sessionsToBreakEven}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

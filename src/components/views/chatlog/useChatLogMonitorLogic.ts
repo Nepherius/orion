@@ -25,11 +25,13 @@ export function useChatLogMonitorLogic() {
     expectingDirectUseHeal: false,
   });
 
-  const debugLog = (..._args: unknown[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const debugLog = (..._args: any[]) => {
     // Development debug logs removed
   };
 
-  const debugDetail = (..._args: unknown[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const debugDetail = (..._args: any[]) => {
     // Development debug logs removed
   };
 

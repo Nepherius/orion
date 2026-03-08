@@ -27,7 +27,10 @@ export function calculateVariance(values: number[]): number {
  * @param confidenceLevel Typically 0.95 for a 95% confidence interval
  * @returns [lowerBound, upperBound] of the mean
  */
-export function calculateConfidenceInterval(values: number[], confidenceLevel = 0.95): [number, number] {
+export function calculateConfidenceInterval(
+  values: number[],
+  confidenceLevel = 0.95
+): [number, number] {
   if (values.length < 2) return [0, 0];
 
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
