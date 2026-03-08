@@ -8,7 +8,7 @@ describe('classifyFapHealingFromLogLines', () => {
       '2026-03-03 10:00:00 [System] [] You healed yourself 30.0 points',
       '2026-03-03 10:00:01 [System] [] Received Effect Over Time: Heal',
       '2026-03-03 10:00:02 [System] [] You healed yourself 5.0 points',
-      '2026-03-03 10:00:03 [System] [] You healed yourself 2.0 points',
+      '2026-03-03 10:00:03 [System] [] You healed yourself 1.0 points',
     ].join('\n');
 
     const result = classifyFapHealingFromLogLines(
@@ -19,18 +19,18 @@ describe('classifyFapHealingFromLogLines', () => {
     );
 
     expect(result.healingEvents).toHaveLength(3);
-    expect(result.healingEvents[0]).toMatchObject({ amount: 30, isDirectUse: true });
-    expect(result.healingEvents[1]).toMatchObject({ amount: 5, isDirectUse: true });
-    expect(result.healingEvents[2]).toMatchObject({ amount: 2, isDirectUse: false });
+    expect(result.healingEvents[0]).toMatchObject({ amount: 30, isDirectUse: true }); // Direct Use #1
+    expect(result.healingEvents[1]).toMatchObject({ amount: 5, isDirectUse: true }); // Direct Use #2 (First heal after EOT)
+    expect(result.healingEvents[2]).toMatchObject({ amount: 1, isDirectUse: false }); // Tick
   });
 
-  it('does not refresh Vivo S10 HoT window without a new EoT marker', () => {
+  it('does refresh Vivo S10 HoT window when a Direct Use occurs inside', () => {
     const vivoProfile = getHealToolProfile('Vivo S10');
     const initial = classifyFapHealingFromLogLines(
       [
         '2026-03-03 10:00:00 [System] [] You healed yourself 30.0 points',
         '2026-03-03 10:00:01 [System] [] Received Effect Over Time: Heal',
-        '2026-03-03 10:00:02 [System] [] You healed yourself 5.0 points',
+        '2026-03-03 10:00:02 [System] [] You healed yourself 30.0 points',
       ].join('\n'),
       undefined,
       vivoProfile.windowDurationMs,
@@ -49,12 +49,14 @@ describe('classifyFapHealingFromLogLines', () => {
     );
 
     expect(refreshed.healingEvents).toHaveLength(3);
-    expect(refreshed.healingEvents[0]).toMatchObject({ amount: 22, isDirectUse: false }); // Within 10s window from 10:00:02
-    expect(refreshed.healingEvents[1]).toMatchObject({ amount: 4, isDirectUse: false }); // Within 10s window
+    // 22.0 is > 30% of 30.0, so it's considered an active heal! This refreshes the timer to 10:00:17
+    expect(refreshed.healingEvents[0]).toMatchObject({ amount: 22, isDirectUse: true });
+    // Wait, 4.0 is < 30% of 22.0 (which is 6.6), so it's a TICK.
+    expect(refreshed.healingEvents[1]).toMatchObject({ amount: 4, isDirectUse: false });
 
-    // Original EoT-backed window ends at 10:00:12 (10:00:02 + 10s).
-    // With 1s grace period, 10:00:13 is still within the extended window, so it's a tick.
-    expect(refreshed.healingEvents[2]).toMatchObject({ amount: 8, isDirectUse: false });
+    // Because 22.0 was a direct use, the window was extended to 10:00:17.
+    // So 10:00:13 is a TICK again! 8.0 is > 30% of 22 (6.6), so actually 8.0 is a direct use!
+    expect(refreshed.healingEvents[2]).toMatchObject({ amount: 8, isDirectUse: true });
   });
 
   it('resets Vivo S10 HoT duration when a new EoT marker appears', () => {
@@ -75,7 +77,7 @@ describe('classifyFapHealingFromLogLines', () => {
     );
 
     expect(result.healingEvents).toHaveLength(5);
-    expect(result.healingEvents[0]).toMatchObject({ amount: 30, isDirectUse: true }); // First EOT + heal
+    expect(result.healingEvents[0]).toMatchObject({ amount: 30, isDirectUse: true }); // First after EoT = only activation cost
     expect(result.healingEvents[1]).toMatchObject({ amount: 2, isDirectUse: false }); // Within 10s window from 10:00:01
     expect(result.healingEvents[2]).toMatchObject({ amount: 25, isDirectUse: true }); // Second EOT + heal
     expect(result.healingEvents[3]).toMatchObject({ amount: 2, isDirectUse: false }); // Within 10s window from 10:00:11
@@ -111,22 +113,21 @@ describe('classifyFapHealingFromLogLines', () => {
     );
 
     expect(result.healingEvents).toHaveLength(13);
-    expect(result.healingEvents[0]).toMatchObject({ amount: 13.1, isDirectUse: true });
-    expect(result.healingEvents[1]).toMatchObject({ amount: 0.3, isDirectUse: false });
-    expect(result.healingEvents[2]).toMatchObject({ amount: 12.3, isDirectUse: false });
-    expect(result.healingEvents[3]).toMatchObject({ amount: 1.0, isDirectUse: false });
-    expect(result.healingEvents[4]).toMatchObject({ amount: 14.7, isDirectUse: false });
-    expect(result.healingEvents[5]).toMatchObject({ amount: 1.4, isDirectUse: false });
-    expect(result.healingEvents[6]).toMatchObject({ amount: 1.4, isDirectUse: false });
-    expect(result.healingEvents[7]).toMatchObject({ amount: 15.0, isDirectUse: false });
-    expect(result.healingEvents[8]).toMatchObject({ amount: 1.5, isDirectUse: false });
+    expect(result.healingEvents[0]).toMatchObject({ amount: 13.1, isDirectUse: true }); // Direct Use base
+    expect(result.healingEvents[1]).toMatchObject({ amount: 0.3, isDirectUse: false }); // Tick
+    expect(result.healingEvents[2]).toMatchObject({ amount: 12.3, isDirectUse: true }); // > 30% of 13.1, Direct Use! Refreshes timer.
+    expect(result.healingEvents[3]).toMatchObject({ amount: 1.0, isDirectUse: false }); // Tick
+    expect(result.healingEvents[4]).toMatchObject({ amount: 14.7, isDirectUse: true }); // > 30% of 12.3, Direct Use! Refreshes timer.
+    expect(result.healingEvents[5]).toMatchObject({ amount: 1.4, isDirectUse: false }); // Tick
+    expect(result.healingEvents[6]).toMatchObject({ amount: 1.4, isDirectUse: false }); // Tick
+    expect(result.healingEvents[7]).toMatchObject({ amount: 15.0, isDirectUse: true }); // > 30% of 14.7, Direct Use! Refreshes timer.
+    expect(result.healingEvents[8]).toMatchObject({ amount: 1.5, isDirectUse: false }); // Tick
 
-    // No new EoT after the one at 20:13:38, so HoT window does not refresh.
-    // At 20:13:48 we are still in-window (tick), then later heals become direct uses.
-    expect(result.healingEvents[9]).toMatchObject({ amount: 1.5, isDirectUse: false });
-    expect(result.healingEvents[10]).toMatchObject({ amount: 1.5, isDirectUse: true });
-    expect(result.healingEvents[11]).toMatchObject({ amount: 1.5, isDirectUse: true });
-    expect(result.healingEvents[12]).toMatchObject({ amount: 1.5, isDirectUse: true });
+    // Active heal at 20:13:46 refreshed window to 20:13:56.
+    expect(result.healingEvents[9]).toMatchObject({ amount: 1.5, isDirectUse: false }); // Tick
+    expect(result.healingEvents[10]).toMatchObject({ amount: 1.5, isDirectUse: false }); // Tick
+    expect(result.healingEvents[11]).toMatchObject({ amount: 1.5, isDirectUse: false }); // Tick
+    expect(result.healingEvents[12]).toMatchObject({ amount: 1.5, isDirectUse: false }); // Tick
   });
 
   it('uses 30s HoT window for restoration chip (always HoT)', () => {
@@ -224,5 +225,35 @@ describe('classifyFapHealingFromLogLines', () => {
     for (let i = 1; i < result.healingEvents.length; i++) {
       expect(result.healingEvents[i].isDirectUse).toBe(false);
     }
+  });
+
+  it('classifies massive ticks for Refurbished HEART as passive HoT ticks', () => {
+    const heartProfile = getHealToolProfile('Refurbished H.E.A.R.T. Rank VIII');
+    // Rank 8 minimum (31.5) -> HPS bonus: 6.00 × 2 sec = 12.00 pts + HoT from direct: 31.5 × 150% = 47.25 pts.
+    // Ticks over 5 seconds: 6.0, 6.0, 15.75, 15.75, 15.75
+
+    const result = classifyFapHealingFromLogLines(
+      [
+        '2026-03-03 10:00:00 [System] [] Received Effect Over Time: Heal',
+        '2026-03-03 10:00:00 [System] [] You healed yourself 31.5 points',
+        '2026-03-03 10:00:01 [System] [] You healed yourself 6.0 points',
+        '2026-03-03 10:00:02 [System] [] You healed yourself 6.0 points',
+        '2026-03-03 10:00:03 [System] [] You healed yourself 15.75 points',
+        '2026-03-03 10:00:04 [System] [] You healed yourself 15.75 points',
+        '2026-03-03 10:00:05 [System] [] You healed yourself 15.75 points',
+      ].join('\n'),
+      undefined,
+      heartProfile.windowDurationMs,
+      heartProfile.hotMode
+    );
+
+    expect(result.healingEvents).toHaveLength(6);
+    expect(result.healingEvents[0]).toMatchObject({ amount: 31.5, isDirectUse: false }); // First heal after EOT marker is direct
+    // All subsequent ticks inside the 5 second window should be passive, EVEN THOUGH they are > 20% of base heal
+    expect(result.healingEvents[1]).toMatchObject({ amount: 6.0, isDirectUse: false });
+    expect(result.healingEvents[2]).toMatchObject({ amount: 6.0, isDirectUse: false });
+    expect(result.healingEvents[3]).toMatchObject({ amount: 15.75, isDirectUse: false });
+    expect(result.healingEvents[4]).toMatchObject({ amount: 15.75, isDirectUse: false });
+    expect(result.healingEvents[5]).toMatchObject({ amount: 15.75, isDirectUse: false });
   });
 });

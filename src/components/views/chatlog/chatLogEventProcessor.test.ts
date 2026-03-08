@@ -69,6 +69,7 @@ const initialFapState: FapHotClassifierState = {
   hotWindowEndMs: null,
   lastHealTimestampMs: null,
   lastHealAmount: null,
+  baseActiveHealAmount: null,
   pendingDirectHealTimestampMs: null,
   expectingDirectUseHeal: false,
 };
