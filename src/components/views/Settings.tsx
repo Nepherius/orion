@@ -113,7 +113,7 @@ export function Settings() {
             value={settings.theme}
             onChange={(e) =>
               updateSettings({
-                theme: e.target.value as 'dark' | 'light' | 'high-contrast' | 'calypso' | 'arkadia',
+                theme: e.target.value as 'dark' | 'light' | 'high-contrast' | 'calypso' | 'arkadia' | 'rocktropia' | 'cyrene' | 'monria' | 'next-island' | 'toulan',
               })
             }
             className="input w-full"
@@ -123,6 +123,11 @@ export function Settings() {
             <option value="high-contrast">High Contrast</option>
             <option value="calypso">Calypso</option>
             <option value="arkadia">Arkadia</option>
+            <option value="rocktropia">Rocktropia</option>
+            <option value="cyrene">Cyrene</option>
+            <option value="monria">Monria</option>
+            <option value="next-island">Next Island</option>
+            <option value="toulan">Toulan</option>
           </select>
         </div>
       </SettingSection>

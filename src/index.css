@@ -70,19 +70,19 @@
   --color-banner-border: #1d4ed8;
 }
 
-/* Calypso Theme (Desert / Sand / Bronze base) */
+/* Calypso Theme (Eudorian Jungle / Deep Sci-Fi) */
 :root.theme-calypso {
   color-scheme: dark;
-  background-color: #17120e;
-  --color-bg: #17120e;
-  --color-surface: #261f18;
-  --color-surface-hover: #352b22;
-  --color-surface-active: #45382b;
-  --color-border: #4d3a24;
-  --color-text: #f5eedc;
-  --color-text-muted: #bdae93;
-  --color-banner-bg: #1e3a8a;
-  --color-banner-border: #1d4ed8;
+  background-color: #020d14;
+  --color-bg: #020d14;
+  --color-surface: #0a1f2c;
+  --color-surface-hover: #123040;
+  --color-surface-active: #1a4255;
+  --color-border: #10b981;
+  --color-text: #f0fdf4;
+  --color-text-muted: #6ee7b7;
+  --color-banner-bg: #065f46;
+  --color-banner-border: #047857;
 }
 
 /* Arkadia Theme (Jungle / Deep Forest base) */
@@ -98,6 +98,81 @@
   --color-text-muted: #8eb39d;
   --color-banner-bg: #1e3a8a;
   --color-banner-border: #1d4ed8;
+}
+
+/* Rocktropia Theme (Cyberpunk / Neon City) */
+:root.theme-rocktropia {
+  color-scheme: dark;
+  background-color: #0a0a0c;
+  --color-bg: #0a0a0c;
+  --color-surface: #141417;
+  --color-surface-hover: #1e1e24;
+  --color-surface-active: #292930;
+  --color-border: #ff2a6d;
+  --color-text: #ffffff;
+  --color-text-muted: #05d9e8;
+  --color-banner-bg: #2d0a42;
+  --color-banner-border: #4f1271;
+}
+
+/* Cyrene Theme (Volcanic / Scifi) */
+:root.theme-cyrene {
+  color-scheme: dark;
+  background-color: #0f0b0a;
+  --color-bg: #0f0b0a;
+  --color-surface: #1c1412;
+  --color-surface-hover: #2e221f;
+  --color-surface-active: #3c2c28;
+  --color-border: #e67e22;
+  --color-text: #fdf5e6;
+  --color-text-muted: #d35400;
+  --color-banner-bg: #4a1911;
+  --color-banner-border: #73261a;
+}
+
+/* Monria Theme (Cosmic Horror / Lunar) */
+:root.theme-monria {
+  color-scheme: dark;
+  background-color: #030508;
+  --color-bg: #030508;
+  --color-surface: #15181e;
+  --color-surface-hover: #222730;
+  --color-surface-active: #2f3642;
+  --color-border: #8ba3c7;
+  --color-text: #e2e8f0;
+  --color-text-muted: #60728c;
+  --color-banner-bg: #0d1b2a;
+  --color-banner-border: #1b263b;
+}
+
+/* Next Island Theme (Tropical / Oasis) */
+:root.theme-next-island {
+  color-scheme: dark;
+  background-color: #081724;
+  --color-bg: #081724;
+  --color-surface: #112a3d;
+  --color-surface-hover: #193c59;
+  --color-surface-active: #225075;
+  --color-border: #4db8ff;
+  --color-text: #f0fdfa;
+  --color-text-muted: #f5dab0;
+  --color-banner-bg: #0369a1;
+  --color-banner-border: #0284c7;
+}
+
+/* Toulan Theme (Desert / Arabian Nights) */
+:root.theme-toulan {
+  color-scheme: dark;
+  background-color: #150e1f;
+  --color-bg: #150e1f;
+  --color-surface: #2b1c2b;
+  --color-surface-hover: #3d283d;
+  --color-surface-active: #523752;
+  --color-border: #cc7722;
+  --color-text: #fffdf5;
+  --color-text-muted: #ffd700;
+  --color-banner-bg: #4c1d95;
+  --color-banner-border: #5b21b6;
 }
 
 body {

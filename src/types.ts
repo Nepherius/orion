@@ -57,14 +57,14 @@ export interface DamageEvent {
 export interface CombatEvent {
   id: string;
   type:
-    | 'hit'
-    | 'crit'
-    | 'player_miss'
-    | 'player_dodge'
-    | 'player_evade'
-    | 'enemy_miss'
-    | 'enemy_evade'
-    | 'enemy_dodge';
+  | 'hit'
+  | 'crit'
+  | 'player_miss'
+  | 'player_dodge'
+  | 'player_evade'
+  | 'enemy_miss'
+  | 'enemy_evade'
+  | 'enemy_dodge';
   timestamp: number;
 }
 
@@ -157,7 +157,7 @@ export interface AppSettings {
   avatarName: string;
   defaultMarkup: number;
   autoSave: boolean;
-  theme: 'dark' | 'light' | 'high-contrast' | 'calypso' | 'arkadia';
+  theme: 'dark' | 'light' | 'high-contrast' | 'calypso' | 'arkadia' | 'rocktropia' | 'cyrene' | 'monria' | 'next-island' | 'toulan';
   chatLogPath?: string;
   autoStartSession?: boolean;
   overlayX?: number;
