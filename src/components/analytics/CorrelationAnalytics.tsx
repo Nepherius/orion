@@ -38,7 +38,7 @@ export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsP
 
     if (!correlationData) {
         return (
-            <div className="card p-6 border border-border">
+            <div className="card p-6">
                 <h3 className="text-lg font-bold mb-2">Loot Correlation Analysis</h3>
                 <p className="text-sm text-muted">
                     Not enough completed sessions to calculate reliable correlation metrics. Need at least 4 completed sessions.
@@ -67,7 +67,7 @@ export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsP
     };
 
     return (
-        <div className="card p-6 border border-border">
+        <div className="card p-6">
             <div className="mb-4">
                 <h3 className="text-lg font-bold">Loot Factors Correlation</h3>
                 <p className="text-sm text-muted mt-1">
@@ -76,7 +76,7 @@ export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsP
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-                <div className="border border-border rounded p-4 bg-surface-active">
+                <div className="border border-border rounded p-4">
                     <div className="text-sm text-muted mb-2 font-medium">Session Duration vs. Loot</div>
                     <div className="flex justify-between items-end mb-2">
                         <div>
@@ -94,7 +94,7 @@ export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsP
                     </div>
                 </div>
 
-                <div className="border border-border rounded p-4 bg-surface-active">
+                <div className="border border-border rounded p-4">
                     <div className="text-sm text-muted mb-2 font-medium">PED Cycled (Cost) vs. Loot</div>
                     <div className="flex justify-between items-end mb-2">
                         <div>
@@ -112,7 +112,7 @@ export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsP
                     </div>
                 </div>
 
-                <div className="border border-border rounded p-4 bg-surface-active">
+                <div className="border border-border rounded p-4">
                     <div className="text-sm text-muted mb-2 font-medium">Combined Mix (Multiple R²)</div>
                     <div className="flex justify-between items-end mb-2">
                         <div>

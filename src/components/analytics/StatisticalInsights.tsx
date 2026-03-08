@@ -66,7 +66,7 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
 
     if (!insightsData) {
         return (
-            <div className="card p-6 border border-border">
+            <div className="card p-6">
                 <h3 className="text-lg font-bold mb-2">Advanced Statistical Modeling</h3>
                 <p className="text-sm text-muted">
                     Not enough data to calculate advanced volatility and confidence interval models. Need at least 4 valid sessions.
@@ -103,7 +103,7 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
     };
 
     return (
-        <div className="card p-6 border border-border">
+        <div className="card p-6">
             <div className="mb-4">
                 <h3 className="text-lg font-bold">Advanced Statistical Modeling</h3>
                 <p className="text-sm text-muted mt-1">
@@ -113,7 +113,7 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
 
             <div className="grid grid-cols-2 gap-4 mb-4">
                 {/* Metric 1: 95% Expected Value */}
-                <div className="border border-border rounded p-4 bg-surface-active">
+                <div className="border border-border rounded p-4">
                     <div className="flex items-center gap-2 mb-2">
                         <TrendingUp className="w-4 h-4 text-blue-400" />
                         <div className="text-sm text-muted font-medium">95% Expected Mean Return</div>
@@ -130,7 +130,7 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
                 </div>
 
                 {/* Metric 2: Loot Volatility Index */}
-                <div className="border border-border rounded p-4 bg-surface-active">
+                <div className="border border-border rounded p-4">
                     <div className="flex items-center gap-2 mb-2">
                         <Activity className="w-4 h-4 text-purple-400" />
                         <div className="text-sm text-muted font-medium">Loot Volatility Index (CV)</div>
@@ -149,7 +149,7 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
 
             <div className="grid grid-cols-2 gap-4">
                 {/* Metric 3: Hit Rate Importance */}
-                <div className="border border-border rounded p-4 bg-surface-active">
+                <div className="border border-border rounded p-4">
                     <div className="flex items-center gap-2 mb-2">
                         <Target className="w-4 h-4 text-red-400" />
                         <div className="text-sm text-muted font-medium">Accuracy vs. Profitability</div>
@@ -171,7 +171,7 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
                 </div>
 
                 {/* Metric 4: Burn Rate Importance */}
-                <div className="border border-border rounded p-4 bg-surface-active">
+                <div className="border border-border rounded p-4">
                     <div className="flex items-center gap-2 mb-2">
                         <BarChart2 className="w-4 h-4 text-green-400" />
                         <div className="text-sm text-muted font-medium">Burn Rate (Cost/Min) vs. Profitability</div>
