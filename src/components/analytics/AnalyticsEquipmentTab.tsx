@@ -6,6 +6,7 @@ const CostBreakdownPanel = lazy(() => import('./panels/CostBreakdownPanel'));
 const WeaponPerformancePanel = lazy(() => import('./panels/WeaponPerformancePanel'));
 const TopSkillsPanel = lazy(() => import('./panels/TopSkillsPanel'));
 const ArmorPerformancePanel = lazy(() => import('./panels/ArmorPerformancePanel'));
+const HealingPerformancePanel = lazy(() => import('./panels/HealingPerformancePanel'));
 
 const panelFallback = (
   <div className="h-32 flex items-center justify-center text-muted">
@@ -25,6 +26,7 @@ export function AnalyticsEquipmentTab() {
         <WeaponPerformancePanel />
         <TopSkillsPanel />
         <ArmorPerformancePanel />
+        <HealingPerformancePanel />
       </Suspense>
     </div>
   );

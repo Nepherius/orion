@@ -405,14 +405,23 @@ export function OverlayWindow() {
 
         <div className="h-6 w-px bg-surface shrink-0"></div>
 
+        {/* Kills */}
+        <div className="flex flex-col items-center leading-none px-2 min-w-[40px]">
+          <span className="text-muted text-[10px] text-center whitespace-nowrap">Kills</span>
+          <span className="font-bold text-xs whitespace-nowrap text-red-400">
+            {activeSession.stats.kills}
+          </span>
+        </div>
+
+        <div className="h-6 w-px bg-surface shrink-0"></div>
+
         {/* Pause/Resume Button */}
         <button
           onClick={handleTogglePause}
-          className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-            activeSession.status === 'active'
+          className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeSession.status === 'active'
               ? 'text-orange-400 hover:bg-orange-500/20'
               : 'text-green-400 hover:bg-green-500/20'
-          }`}
+            }`}
           title={activeSession.status === 'active' ? 'Pause' : 'Resume'}
         >
           {activeSession.status === 'active' ? (
