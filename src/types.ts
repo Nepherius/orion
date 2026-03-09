@@ -240,3 +240,17 @@ export interface Loadout {
   ammoBurn: number;
   totalUses: number | null;
 }
+
+export interface AdvancedCreatureStats {
+  creature: string;
+  trueReturnPercent: number;
+  volatilityCv: number;
+  cycleToStabilize: number;
+  depositPerMonthUSD: number;
+  fatigueDropoff: number;
+  trend10: number;
+  trend50: number;
+  dataPoints: number;
+  totalCost: number;
+  totalLoot: number;
+}

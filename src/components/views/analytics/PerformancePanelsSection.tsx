@@ -64,6 +64,21 @@ export interface ArmorData {
   avgDamageTaken: number;
 }
 
+export interface CreatureAnalysisData {
+  creature: string;
+  count: number;
+  returnRate: number;
+  profit: number;
+  totalKills: number;
+  totalGlobals: number;
+}
+
+// Ensure HuntSession is imported at top
+import type { HuntSession } from '../../../types';
+import { InfoTooltip } from '../../common/InfoTooltip';
+import { CreatureAnalytics } from '../../analytics/CreatureAnalytics';
+import { KillTrackingAnalytics } from '../../analytics/KillTrackingAnalytics';
+
 interface PerformancePanelsSectionProps {
   recentSessions: RecentSession[];
   loadoutData: LoadoutData[];
@@ -72,6 +87,9 @@ interface PerformancePanelsSectionProps {
   weaponData: WeaponData[];
   topSkills: TopSkill[];
   armorData: ArmorData[];
+  defaultTab?: 'performance' | 'equipment' | 'loot' | 'creatures';
+  creatureAnalysis?: CreatureAnalysisData[];
+  filteredSessions?: HuntSession[];
 }
 
 export function PerformancePanelsSection({
@@ -82,11 +100,16 @@ export function PerformancePanelsSection({
   weaponData,
   topSkills,
   armorData,
+  defaultTab,
+  creatureAnalysis = [],
+  filteredSessions = [],
 }: PerformancePanelsSectionProps) {
+  const showEquipment = !defaultTab || defaultTab === 'performance' || defaultTab === 'equipment';
+  const showCreatures = !defaultTab || defaultTab === 'performance' || defaultTab === 'creatures';
   return (
     <>
       {/* Performance Over Time */}
-      {recentSessions.length > 0 && (
+      {showCreatures && recentSessions.length > 0 && (
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Performance Trend (Last 30 Sessions)</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -122,7 +145,7 @@ export function PerformancePanelsSection({
         </div>
       )}
       {/* Loadout Performance */}
-      {loadoutData.length > 0 && (
+      {showEquipment && loadoutData.length > 0 && (
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Loadout Performance</h3>
           <div className="space-y-2">
@@ -236,7 +259,7 @@ export function PerformancePanelsSection({
       </div>
 
       {/* Weapon Performance */}
-      {weaponData.length > 0 && (
+      {showEquipment && weaponData.length > 0 && (
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Weapon Performance</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -290,7 +313,7 @@ export function PerformancePanelsSection({
       )}
 
       {/* Armor Performance */}
-      {armorData.length > 0 && armorData.some((a) => a.armor !== 'None') && (
+      {showEquipment && armorData.length > 0 && armorData.some((a) => a.armor !== 'None') && (
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Armor Performance</h3>
           <div className="space-y-2">
@@ -320,6 +343,54 @@ export function PerformancePanelsSection({
           </div>
         </div>
       )}
+
+      {/* Category 7: Creature Analysis */}
+      {showCreatures && creatureAnalysis.length > 0 && (
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-lg font-bold">Creature Analysis</h3>
+            <InfoTooltip tooltip="Profitability and frequency by creature type" />
+          </div>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            <div className="grid grid-cols-6 gap-2 text-xs font-bold text-muted pb-2 border-b border-border sticky top-0 bg-surface">
+              <div>Creature</div>
+              <div className="text-right">Sessions</div>
+              <div className="text-right">Return %</div>
+              <div className="text-right">Profit</div>
+              <div className="text-right">Kills</div>
+              <div className="text-right">Globals</div>
+            </div>
+            {creatureAnalysis.map((creature) => (
+              <div
+                key={creature.creature}
+                className="grid grid-cols-6 gap-2 text-sm py-2 hover:bg-surface-hover"
+              >
+                <div className="font-semibold truncate">{creature.creature}</div>
+                <div className="text-right text-muted">{creature.count}</div>
+                <div
+                  className={`text-right ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
+                >
+                  {creature.returnRate.toFixed(2)}%
+                </div>
+                <div
+                  className={`text-right ${creature.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                >
+                  {creature.profit >= 0 ? '+' : ''}
+                  {creature.profit.toFixed(2)}
+                </div>
+                <div className="text-right">{creature.totalKills}</div>
+                <div className="text-right text-yellow-400">{creature.totalGlobals}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Category 7b: Kill Tracking Analytics */}
+      {showCreatures && filteredSessions.length > 0 && <KillTrackingAnalytics sessions={filteredSessions} />}
+
+      {/* Category 7c: Detailed Creature Analytics */}
+      {showCreatures && filteredSessions.length > 0 && <CreatureAnalytics sessions={filteredSessions} />}
     </>
   );
 }

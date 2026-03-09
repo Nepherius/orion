@@ -12,7 +12,9 @@ import {
   WeaponData,
   TopSkill,
   ArmorData,
+  CreatureAnalysisData,
 } from '../views/analytics/PerformancePanelsSection';
+import type { HuntSession } from '../../types';
 
 export interface AnalyticsPerformanceTabProps {
   avgLootValue: number;
@@ -35,12 +37,19 @@ export interface AnalyticsPerformanceTabProps {
   weaponData: WeaponData[];
   topSkills: TopSkill[];
   armorData: ArmorData[];
+  defaultTab?: 'performance' | 'equipment' | 'loot' | 'creatures';
+  creatureAnalysis?: CreatureAnalysisData[];
+  filteredSessions?: HuntSession[];
 }
 
 export function AnalyticsPerformanceTab(props: AnalyticsPerformanceTabProps) {
+  const showLoot = !props.defaultTab || props.defaultTab === 'performance' || props.defaultTab === 'loot';
+  const showPanels = !props.defaultTab || props.defaultTab === 'performance' || props.defaultTab === 'equipment' || props.defaultTab === 'creatures';
+
   return (
     <div className="space-y-6">
-      <LootPerformanceSection
+      {showLoot && (
+        <LootPerformanceSection
         avgLootValue={props.avgLootValue}
         overallLootStdDev={props.overallLootStdDev}
         largestDropValue={props.largestDropValue}
@@ -55,8 +64,10 @@ export function AnalyticsPerformanceTab(props: AnalyticsPerformanceTabProps) {
         topLootItems={props.topLootItems}
         allGlobals={props.allGlobals}
       />
+      )}
 
-      <PerformancePanelsSection
+      {showPanels && (
+        <PerformancePanelsSection
         recentSessions={props.recentSessions}
         loadoutData={props.loadoutData}
         locationData={props.locationData}
@@ -64,7 +75,11 @@ export function AnalyticsPerformanceTab(props: AnalyticsPerformanceTabProps) {
         weaponData={props.weaponData}
         topSkills={props.topSkills}
         armorData={props.armorData}
+        defaultTab={props.defaultTab}
+        creatureAnalysis={props.creatureAnalysis}
+        filteredSessions={props.filteredSessions}
       />
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 const AnalyticsOverviewTab = lazy(() => import('../analytics/AnalyticsOverviewTab'));
 const AnalyticsPerformanceTab = lazy(() => import('../analytics/AnalyticsPerformanceTab'));
 const AnalyticsAdvancedTab = lazy(() => import('../analytics/AnalyticsAdvancedTab'));
+const ProjectionsTab = lazy(() => import('../analytics/ProjectionsTab'));
 import {
   calculateAverageDropValue,
   getLargestDrop,
@@ -135,7 +136,9 @@ export function Analytics() {
   >('lifetime');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'advanced'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'sessions' | 'equipment' | 'loot' | 'creatures' | 'projections'
+  >('overview');
   const [lifetimeStats, setLifetimeStats] = useState<AnalyticsStats>({
     totalLoot: 0,
     totalCost: 0,
@@ -941,9 +944,9 @@ export function Analytics() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-border">
+      <div className="flex border-b border-border overflow-x-auto pb-1 no-scrollbar">
         <button
-          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
             activeTab === 'overview'
               ? 'border-primary-500 text-primary-400'
               : 'border-transparent text-muted hover:text-body'
@@ -953,24 +956,54 @@ export function Analytics() {
           Overview
         </button>
         <button
-          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
-            activeTab === 'performance'
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+            activeTab === 'sessions'
               ? 'border-primary-500 text-primary-400'
               : 'border-transparent text-muted hover:text-body'
           }`}
-          onClick={() => setActiveTab('performance')}
+          onClick={() => setActiveTab('sessions')}
         >
-          Performance Deep-Dive
+          Sessions
         </button>
         <button
-          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
-            activeTab === 'advanced'
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+            activeTab === 'equipment'
               ? 'border-primary-500 text-primary-400'
               : 'border-transparent text-muted hover:text-body'
           }`}
-          onClick={() => setActiveTab('advanced')}
+          onClick={() => setActiveTab('equipment')}
         >
-          Advanced Analytics
+          Equipment
+        </button>
+        <button
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+            activeTab === 'loot'
+              ? 'border-primary-500 text-primary-400'
+              : 'border-transparent text-muted hover:text-body'
+          }`}
+          onClick={() => setActiveTab('loot')}
+        >
+          Loot
+        </button>
+        <button
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+            activeTab === 'creatures'
+              ? 'border-primary-500 text-primary-400'
+              : 'border-transparent text-muted hover:text-body'
+          }`}
+          onClick={() => setActiveTab('creatures')}
+        >
+          Creatures
+        </button>
+        <button
+          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+            activeTab === 'projections'
+              ? 'border-primary-500 text-primary-400'
+              : 'border-transparent text-muted hover:text-body'
+          }`}
+          onClick={() => setActiveTab('projections')}
+        >
+          Projections & Predictions
         </button>
       </div>
 
@@ -994,7 +1027,34 @@ export function Analytics() {
           />
         )}
 
-        {activeTab === 'performance' && (
+        {activeTab === 'sessions' && (
+          <AnalyticsAdvancedTab
+            sessionWinRate={advancedSqlData?.sessionWinRate ?? sessionWinRate}
+            profitableStreaks={advancedSqlData?.profitableStreaks ?? profitableStreaks}
+            bestWeapon={bestWeapon}
+            bestLocation={bestLocation}
+            bestLoadout={bestLoadout}
+            temporalInsights={advancedSqlData?.temporalInsights ?? temporalInsights}
+            filteredSessions={filteredSessions}
+            skillsByLocation={advancedSqlData?.skillsByLocation ?? skillsByLocation}
+            skillsByWeapon={advancedSqlData?.skillsByWeapon ?? skillsByWeapon}
+            lifetimeAttributeGains={
+              advancedSqlData?.lifetimeAttributeGains ?? lifetimeAttributeGains
+            }
+            allSkillNames={advancedSqlData?.allSkillNames ?? allSkillNames}
+            skillGainVariance={advancedSqlData?.skillGainVariance ?? skillGainVariance}
+            skillValuePerCost={advancedSqlData?.skillValuePerCost ?? skillValuePerCost}
+            totalSkillGains={
+              advancedSqlData?.totalSkillGains ??
+              filteredSessions.reduce(
+                (sum, s) => sum + s.skills.reduce((ss, sk) => ss + sk.gainAmount, 0),
+                0
+              )
+            }
+          />
+        )}
+
+        {['performance', 'equipment', 'loot', 'creatures'].includes(activeTab) && (
           <AnalyticsPerformanceTab
             avgLootValue={performanceSqlData?.avgLootValue ?? avgLootValue}
             overallLootStdDev={performanceSqlData?.overallLootStdDev ?? overallLootStdDev}
@@ -1027,38 +1087,18 @@ export function Analytics() {
             weaponData={performanceSqlData?.weaponData ?? weaponData}
             topSkills={performanceSqlData?.topSkills ?? topSkills}
             armorData={performanceSqlData?.armorData ?? armorData}
+            creatureAnalysis={advancedSqlData?.creatureAnalysis ?? creatureAnalysis}
+            filteredSessions={filteredSessions}
+            defaultTab={activeTab === 'equipment' || activeTab === 'loot' || activeTab === 'creatures' ? activeTab : 'performance'}
           />
         )}
 
-        {activeTab === 'advanced' && (
-          <AnalyticsAdvancedTab
-            sessionWinRate={advancedSqlData?.sessionWinRate ?? sessionWinRate}
-            profitableStreaks={advancedSqlData?.profitableStreaks ?? profitableStreaks}
-            bestWeapon={bestWeapon}
-            bestLocation={bestLocation}
-            bestLoadout={bestLoadout}
-            temporalInsights={advancedSqlData?.temporalInsights ?? temporalInsights}
-            creatureAnalysis={advancedSqlData?.creatureAnalysis ?? creatureAnalysis}
-            filteredSessions={filteredSessions}
-            skillsByLocation={advancedSqlData?.skillsByLocation ?? skillsByLocation}
-            skillsByWeapon={advancedSqlData?.skillsByWeapon ?? skillsByWeapon}
-            lifetimeAttributeGains={
-              advancedSqlData?.lifetimeAttributeGains ?? lifetimeAttributeGains
-            }
-            allSkillNames={advancedSqlData?.allSkillNames ?? allSkillNames}
-            skillGainVariance={advancedSqlData?.skillGainVariance ?? skillGainVariance}
-            skillValuePerCost={advancedSqlData?.skillValuePerCost ?? skillValuePerCost}
-            totalSkillGains={
-              advancedSqlData?.totalSkillGains ??
-              filteredSessions.reduce(
-                (sum, s) => sum + s.skills.reduce((ss, sk) => ss + sk.gainAmount, 0),
-                0
-              )
-            }
-            projectedLifetimeProfit={
-              advancedSqlData?.projectedLifetimeProfit ?? projectedLifetimeProfit
-            }
+        {activeTab === 'projections' && (
+          <ProjectionsTab 
+            creatureList={Array.from(new Set(filteredSessions.flatMap((s) => [s.creature || 'Unknown', ...s.kills.map((k) => k.creatureName)]))).filter((c) => c && c !== 'Unknown').sort()} 
+            projectedLifetimeProfit={advancedSqlData?.projectedLifetimeProfit ?? projectedLifetimeProfit}
             sessionsToBreakEven={advancedSqlData?.sessionsToBreakEven ?? sessionsToBreakEven}
+            totalSessions={filteredSessions.length}
           />
         )}
       </Suspense>

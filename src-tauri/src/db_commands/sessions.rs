@@ -1362,3 +1362,189 @@ pub fn db_get_analytics_advanced_data(
         "sessionsToBreakEven": sessions_to_break_even
     }))
 }
+
+#[derive(serde::Deserialize)]
+pub struct AdvancedCreatureStatsParams {
+    creature: String,
+}
+
+#[tauri::command]
+pub fn db_get_advanced_creature_stats(
+    params: AdvancedCreatureStatsParams,
+    state: State<'_, DbState>,
+) -> Result<JsonValue, String> {
+    let conn = state.db.lock().unwrap();
+    let creature = params.creature;
+
+    // 1. Overall True Return and Total Kills
+    let mut stats_stmt = conn.prepare(
+        "WITH creature_sessions AS (
+            SELECT
+                s.uuid,
+                s.start_time,
+                (s.ammo_cost + s.weapon_decay + s.healing_cost + s.other_costs) as cost,
+                MAX(
+                    (
+                        CASE
+                            WHEN s.end_time IS NOT NULL THEN s.end_time - s.start_time
+                            ELSE (strftime('%s','now') * 1000) - s.start_time
+                        END
+                    ) - (
+                        COALESCE(s.total_paused_ms, 0) +
+                        CASE
+                            WHEN s.status = 'paused' AND s.paused_at IS NOT NULL
+                                THEN (strftime('%s','now') * 1000) - s.paused_at
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ) / (1000.0 * 60.0 * 60.0) AS duration_hours
+            FROM sessions s
+            WHERE s.creature = ?1
+               OR s.name LIKE '%' || ?1 || '%'
+               OR EXISTS (SELECT 1 FROM kills k WHERE k.session_uuid = s.uuid AND k.creature_name = ?1)
+        ),
+        session_loot AS (
+            SELECT session_uuid, COALESCE(SUM(total_value), 0) AS loot
+            FROM loot_items
+            GROUP BY session_uuid
+        )
+        SELECT 
+            cs.uuid, 
+            cs.start_time,
+            cs.cost, 
+            COALESCE(sl.loot, 0) as loot,
+            cs.duration_hours
+        FROM creature_sessions cs
+        LEFT JOIN session_loot sl ON sl.session_uuid = cs.uuid
+        ORDER BY cs.start_time ASC"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stats_stmt.query_map(params![creature], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, i64>(1)?,
+            row.get::<_, f64>(2)?,
+            row.get::<_, f64>(3)?,
+            row.get::<_, f64>(4)?,
+        ))
+    }).map_err(|e| e.to_string())?;
+
+    let mut total_cost = 0.0;
+    let mut total_loot = 0.0;
+    let mut session_returns = Vec::new(); // Store returns as percentage
+    let mut total_duration_hours = 0.0;
+
+    let mut sessions = Vec::new();
+
+    for row in rows {
+        let (_uuid, start_time, cost, loot, duration) = row.map_err(|e| e.to_string())?;
+        total_cost += cost;
+        total_loot += loot;
+        total_duration_hours += duration;
+        
+        if cost > 0.0 {
+            let ret = (loot / cost) * 100.0;
+            session_returns.push(ret);
+            sessions.push((start_time, ret, cost, duration));
+        }
+    }
+
+    let true_return_percent = if total_cost > 0.0 {
+        (total_loot / total_cost) * 100.0
+    } else {
+        0.0
+    };
+
+    // Calculate Volatility (Coefficient of Variation) = StdDev(session returns) / Mean(session returns)
+    let n = session_returns.len() as f64;
+    let (volatility_cv, variance) = if n > 1.0 {
+        let mean = session_returns.iter().sum::<f64>() / n;
+        let variance = session_returns.iter().map(|value| {
+            let diff = mean - *value;
+            diff * diff
+        }).sum::<f64>() / (n - 1.0);
+        let std_dev = variance.sqrt();
+        let cv = if mean > 0.0 { std_dev / mean } else { 0.0 };
+        (cv, variance)
+    } else {
+        (0.0, 0.0)
+    };
+
+    // Cycle to Stabilize (Rough estimation using standard error)
+    // To be 95% confident (Z=1.96) we are within E=5% of the true mean:
+    // N (number of standard sessions needed) = (1.96 * StdDev / E)^2
+    let standard_error_target = 5.0; // 5% error margin
+    let cycle_to_stabilize = if n > 1.0 && variance > 0.0 {
+        let std_dev = variance.sqrt();
+        let sessions_needed = ((1.96 * std_dev) / standard_error_target).powi(2);
+        let avg_cost_per_session = total_cost / n;
+        sessions_needed * avg_cost_per_session
+    } else {
+        0.0
+    };
+
+    // Monthly Deposit (Loss Rate * Extrapolated Playtime)
+    // Assume 30 days a month. Estimate playtime based on lifetime total over elapsed days.
+    // If we only have little data, this will be highly inaccurate, so we cap/fallback logically.
+    let deposit_per_month = if total_cost > total_loot && total_duration_hours > 0.0 {
+        let loss_per_hour = (total_cost - total_loot) / total_duration_hours;
+        // Let's assume a casual 20 hours a month if we can't extrapolate well, or use their actual rate if we have > 30 days of data.
+        let hours_per_month = 20.0; // Hardcoded baseline for now, could be dynamic
+        let monthly_loss_ped = loss_per_hour * hours_per_month;
+        monthly_loss_ped / 10.0 // USD format (10 PED = $1)
+    } else {
+        0.0 // Profitable or no data
+    };
+
+    // Fatigue Dropoff: Compare first 20% of session durations to last 20% of session durations.
+    // We don't have event-level granularity easily here without a massive join, so we analyze long vs short sessions instead.
+    let fatigue_dropoff = {
+        let mut short_sessions = Vec::new();
+        let mut long_sessions = Vec::new();
+        
+        let avg_duration = if n > 0.0 { total_duration_hours / n } else { 0.0 };
+        
+        for &(_, ret, _, duration) in &sessions {
+            if duration < avg_duration {
+                short_sessions.push(ret);
+            } else {
+                long_sessions.push(ret);
+            }
+        }
+
+        let short_avg = if !short_sessions.is_empty() { short_sessions.iter().sum::<f64>() / short_sessions.len() as f64 } else { 0.0 };
+        let long_avg = if !long_sessions.is_empty() { long_sessions.iter().sum::<f64>() / long_sessions.len() as f64 } else { 0.0 };
+        
+        short_avg - long_avg // Positive means short sessions are better (fatigue exists). Negative means long sessions are better.
+    };
+
+    // Trend Analysis (Last 10 sessions, Last 50 sessions)
+    let trend_10 = if sessions.len() >= 10 {
+        let last_10: f64 = sessions.iter().rev().take(10).map(|s| s.1).sum();
+        last_10 / 10.0
+    } else {
+        0.0
+    };
+
+    let trend_50 = if sessions.len() >= 50 {
+        let last_50: f64 = sessions.iter().rev().take(50).map(|s| s.1).sum();
+        last_50 / 50.0
+    } else {
+        0.0
+    };
+
+    Ok(json!({
+        "creature": creature,
+        "trueReturnPercent": true_return_percent,
+        "volatilityCv": volatility_cv,
+        "cycleToStabilize": cycle_to_stabilize,
+        "depositPerMonthUSD": deposit_per_month,
+        "fatigueDropoff": fatigue_dropoff,
+        "trend10": trend_10,
+        "trend50": trend_50,
+        "dataPoints": n,
+        "totalCost": total_cost,
+        "totalLoot": total_loot
+    }))
+}

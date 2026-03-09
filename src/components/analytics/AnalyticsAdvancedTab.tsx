@@ -27,16 +27,6 @@ export interface AnalyticsAdvancedTabProps {
     bestHourReturnRate: number;
     avgGapHours: number;
   };
-  creatureAnalysis: {
-    creature: string;
-    count: number;
-    returnRate: number;
-    profit: number;
-    totalKills: number;
-    totalGlobals: number;
-    totalLoot: number;
-    totalCost: number;
-  }[];
   filteredSessions: HuntSession[];
   skillsByLocation: { location: string; skillGains: number }[];
   skillsByWeapon: { weapon: string; skillGains: number }[];
@@ -45,8 +35,6 @@ export interface AnalyticsAdvancedTabProps {
   skillGainVariance: number;
   skillValuePerCost: number;
   totalSkillGains: number;
-  projectedLifetimeProfit: number;
-  sessionsToBreakEven: number | null;
 }
 
 export function AnalyticsAdvancedTab(props: AnalyticsAdvancedTabProps) {
@@ -59,8 +47,6 @@ export function AnalyticsAdvancedTab(props: AnalyticsAdvancedTabProps) {
         bestLocation={props.bestLocation}
         bestLoadout={props.bestLoadout}
         temporalInsights={props.temporalInsights}
-        creatureAnalysis={props.creatureAnalysis}
-        filteredSessions={props.filteredSessions}
         skillsByLocation={props.skillsByLocation}
         skillsByWeapon={props.skillsByWeapon}
         lifetimeAttributeGains={props.lifetimeAttributeGains}
@@ -68,8 +54,6 @@ export function AnalyticsAdvancedTab(props: AnalyticsAdvancedTabProps) {
         skillGainVariance={props.skillGainVariance}
         skillValuePerCost={props.skillValuePerCost}
         totalSkillGains={props.totalSkillGains}
-        projectedLifetimeProfit={props.projectedLifetimeProfit}
-        sessionsToBreakEven={props.sessionsToBreakEven}
       />
 
       <CorrelationAnalytics filteredSessions={props.filteredSessions} />

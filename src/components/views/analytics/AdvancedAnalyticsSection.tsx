@@ -1,7 +1,4 @@
 import { InfoTooltip } from '../../common/InfoTooltip';
-import { CreatureAnalytics } from '../../analytics/CreatureAnalytics';
-import { KillTrackingAnalytics } from '../../analytics/KillTrackingAnalytics';
-import type { HuntSession } from '../../../types';
 
 interface AdvancedAnalyticsSectionProps {
   sessionWinRate: number;
@@ -27,15 +24,6 @@ interface AdvancedAnalyticsSectionProps {
     bestHourReturnRate: number;
     avgGapHours: number;
   };
-  creatureAnalysis: Array<{
-    creature: string;
-    count: number;
-    returnRate: number;
-    profit: number;
-    totalKills: number;
-    totalGlobals: number;
-  }>;
-  filteredSessions: HuntSession[];
   skillsByLocation: Array<{
     location: string;
     skillGains: number;
@@ -49,8 +37,6 @@ interface AdvancedAnalyticsSectionProps {
   skillGainVariance: number;
   skillValuePerCost: number;
   totalSkillGains: number;
-  projectedLifetimeProfit: number;
-  sessionsToBreakEven: number | null;
 }
 
 export function AdvancedAnalyticsSection({
@@ -60,8 +46,6 @@ export function AdvancedAnalyticsSection({
   bestLocation,
   bestLoadout,
   temporalInsights,
-  creatureAnalysis,
-  filteredSessions,
   skillsByLocation,
   skillsByWeapon,
   lifetimeAttributeGains,
@@ -69,8 +53,6 @@ export function AdvancedAnalyticsSection({
   skillGainVariance,
   skillValuePerCost,
   totalSkillGains,
-  projectedLifetimeProfit,
-  sessionsToBreakEven,
 }: AdvancedAnalyticsSectionProps) {
   return (
     <>
@@ -202,53 +184,7 @@ export function AdvancedAnalyticsSection({
         </div>
       </div>
 
-      {/* Category 7: Creature Analysis */}
-      {creatureAnalysis.length > 0 && (
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-lg font-bold">Creature Analysis</h3>
-            <InfoTooltip tooltip="Profitability and frequency by creature type" />
-          </div>
-          <div className="space-y-2 max-h-80 overflow-y-auto">
-            <div className="grid grid-cols-6 gap-2 text-xs font-bold text-muted pb-2 border-b border-border sticky top-0 bg-surface">
-              <div>Creature</div>
-              <div className="text-right">Sessions</div>
-              <div className="text-right">Return %</div>
-              <div className="text-right">Profit</div>
-              <div className="text-right">Kills</div>
-              <div className="text-right">Globals</div>
-            </div>
-            {creatureAnalysis.map((creature) => (
-              <div
-                key={creature.creature}
-                className="grid grid-cols-6 gap-2 text-sm py-2 hover:bg-surface-hover"
-              >
-                <div className="font-semibold truncate">{creature.creature}</div>
-                <div className="text-right text-muted">{creature.count}</div>
-                <div
-                  className={`text-right ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-                >
-                  {creature.returnRate.toFixed(2)}%
-                </div>
-                <div
-                  className={`text-right ${creature.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-                >
-                  {creature.profit >= 0 ? '+' : ''}
-                  {creature.profit.toFixed(2)}
-                </div>
-                <div className="text-right">{creature.totalKills}</div>
-                <div className="text-right text-yellow-400">{creature.totalGlobals}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Category 7b: Kill Tracking Analytics */}
-      {filteredSessions.length > 0 && <KillTrackingAnalytics sessions={filteredSessions} />}
-
-      {/* Category 7c: Detailed Creature Analytics */}
-      {filteredSessions.length > 0 && <CreatureAnalytics sessions={filteredSessions} />}
 
       {/* Category 10: Skill Efficiency */}
       <div className="grid grid-cols-2 gap-6">
@@ -380,44 +316,6 @@ export function AdvancedAnalyticsSection({
           <div className="border border-border rounded p-4">
             <div className="text-sm text-muted mb-2">Total Skill Gains</div>
             <div className="text-2xl font-bold text-green-400">{totalSkillGains.toFixed(2)}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Category 12: Projections & Predictions */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Projections & Predictions</h3>
-          <InfoTooltip tooltip="Based on recent session trends (last 10 sessions)" />
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="border border-border rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-muted mb-2">
-              Projected Lifetime Profit
-              <InfoTooltip tooltip="Projection = all-time total + average recent trend" />
-            </div>
-            <div
-              className={`text-2xl font-bold ${projectedLifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-            >
-              {projectedLifetimeProfit >= 0 ? '+' : ''}
-              {projectedLifetimeProfit.toFixed(2)} PED
-            </div>
-          </div>
-          {sessionsToBreakEven !== null && (
-            <div className="border border-border rounded p-4">
-              <div className="flex items-center gap-1 text-sm text-muted mb-2">
-                Sessions to Break Even
-                <InfoTooltip tooltip="Sessions needed at current avg profit to reach 0" />
-              </div>
-              <div className="text-2xl font-bold text-orange-400">{sessionsToBreakEven}</div>
-            </div>
-          )}
-          <div className="border border-border rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-muted mb-2">
-              Data Points
-              <InfoTooltip tooltip="Number of sessions analyzed" />
-            </div>
-            <div className="text-2xl font-bold text-body">{filteredSessions.length}</div>
           </div>
         </div>
       </div>
