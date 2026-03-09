@@ -826,6 +826,8 @@ pub fn db_get_analytics_performance_data(
                 "totalLoot": total_loot,
                 "totalCost": total_cost,
                 "avgDamage": if total_kills > 0 { total_damage / total_kills as f64 } else { 0.0 },
+                "totalDamage": total_damage,
+                "totalKills": total_kills,
             }))
         })
         .map_err(|e| e.to_string())?;

@@ -18,7 +18,7 @@ export default function HealingPerformancePanel() {
     for (const session of sessions) {
       if (timeRange.startTime !== null && session.startTime < timeRange.startTime) continue;
       if (timeRange.endTime !== null && session.startTime > timeRange.endTime) continue;
-      
+
       sessionCount++;
       totalHealing += session.stats.totalHealing || 0;
       healsUsed += session.stats.healsUsed || 0;
@@ -43,7 +43,7 @@ export default function HealingPerformancePanel() {
       costPerHeal,
       healingEfficiency,
       healingToDamageRatio,
-      costPercentage
+      costPercentage,
     };
   }, [sessions, timeRange]);
 
@@ -61,31 +61,27 @@ export default function HealingPerformancePanel() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="p-4 bg-surface rounded">
           <div className="text-sm text-muted mb-1">Total Healing</div>
-          <div className="text-2xl font-bold text-green-400">
-            {stats.totalHealing.toFixed(0)}
-          </div>
+          <div className="text-2xl font-bold text-green-400">{stats.totalHealing.toFixed(0)}</div>
         </div>
         <div className="p-4 bg-surface rounded">
           <div className="text-sm text-muted flex items-center gap-2 mb-1">
             Heals Used
             <InfoTooltip tooltip="Direct uses only (for decay/cost). Passive ticks not counted." />
           </div>
-          <div className="text-2xl font-bold text-body">
-            {stats.healsUsed}
-          </div>
+          <div className="text-2xl font-bold text-body">{stats.healsUsed}</div>
         </div>
         <div className="p-4 bg-surface rounded">
           <div className="text-sm text-muted mb-1">Total Cost</div>
-          <div className="text-2xl font-bold text-red-400">
-            {stats.healingCost.toFixed(2)} PED
-          </div>
+          <div className="text-2xl font-bold text-red-400">{stats.healingCost.toFixed(2)} PED</div>
         </div>
         <div className="p-4 bg-surface rounded">
           <div className="text-sm text-muted mb-1 flex items-center gap-1">
             vs Damage Taken
             <InfoTooltip tooltip="Total healing divided by total damage taken. >= 1x means you completely healed the damage." />
           </div>
-          <div className={`text-2xl font-bold ${stats.healingToDamageRatio >= 1 ? 'text-green-400' : 'text-yellow-400'}`}>
+          <div
+            className={`text-2xl font-bold ${stats.healingToDamageRatio >= 1 ? 'text-green-400' : 'text-yellow-400'}`}
+          >
             {stats.healingToDamageRatio.toFixed(2)}x
           </div>
         </div>
@@ -93,7 +89,8 @@ export default function HealingPerformancePanel() {
         <div className="p-4 bg-surface rounded">
           <div className="text-sm text-muted mb-1">Avg Heal Amount</div>
           <div className="text-2xl font-bold text-body">
-            {stats.avgHealAmount.toFixed(1)} <span className="text-base font-normal text-muted">HP</span>
+            {stats.avgHealAmount.toFixed(1)}{' '}
+            <span className="text-base font-normal text-muted">HP</span>
           </div>
         </div>
         <div className="p-4 bg-surface rounded">
@@ -102,7 +99,8 @@ export default function HealingPerformancePanel() {
             <InfoTooltip tooltip="Healing cost divided by direct uses (decay is per use, not per tick)" />
           </div>
           <div className="text-2xl font-bold text-blue-400">
-            {stats.costPerHeal.toFixed(4)} <span className="text-base font-normal text-muted">PED</span>
+            {stats.costPerHeal.toFixed(4)}{' '}
+            <span className="text-base font-normal text-muted">PED</span>
           </div>
         </div>
         <div className="p-4 bg-surface rounded">
@@ -110,8 +108,11 @@ export default function HealingPerformancePanel() {
             Healing Efficiency
             <InfoTooltip tooltip="Amount healed per PED spent on healing. Higher is better." />
           </div>
-          <div className={`text-2xl font-bold ${stats.healingEfficiency > 1 ? 'text-green-400' : 'text-body'}`}>
-            {stats.healingEfficiency.toFixed(1)} <span className="text-base font-normal text-muted">HP/PED</span>
+          <div
+            className={`text-2xl font-bold ${stats.healingEfficiency > 1 ? 'text-green-400' : 'text-body'}`}
+          >
+            {stats.healingEfficiency.toFixed(1)}{' '}
+            <span className="text-base font-normal text-muted">HP/PED</span>
           </div>
         </div>
         <div className="p-4 bg-surface rounded">
@@ -120,7 +121,8 @@ export default function HealingPerformancePanel() {
             <InfoTooltip tooltip="The percentage of your total session costs spent solely on healing." />
           </div>
           <div className="text-2xl font-bold text-body">
-            {stats.costPercentage.toFixed(1)} <span className="text-base font-normal text-muted">%</span>
+            {stats.costPercentage.toFixed(1)}{' '}
+            <span className="text-base font-normal text-muted">%</span>
           </div>
         </div>
       </div>

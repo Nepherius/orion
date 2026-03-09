@@ -61,6 +61,8 @@ export interface AnalyticsPerformanceSqlData {
     totalLoot: number;
     totalCost: number;
     avgDamage: number;
+    totalDamage: number;
+    totalKills: number;
   }>;
   topSkills: Array<{ name: string; total: number }>;
   armorData: Array<{ armor: string; sessions: number; returnRate: number; avgDamageTaken: number }>;

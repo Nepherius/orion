@@ -22,7 +22,6 @@ export default function SecondaryStatsPanel() {
       : 0;
   }, [sessions, timeRange, lifetimeStats.totalShotsFired]);
 
-
   return (
     <div className="grid grid-cols-4 gap-4">
       <div className="card p-4">

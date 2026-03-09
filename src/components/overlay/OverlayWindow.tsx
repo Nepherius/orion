@@ -418,10 +418,11 @@ export function OverlayWindow() {
         {/* Pause/Resume Button */}
         <button
           onClick={handleTogglePause}
-          className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeSession.status === 'active'
+          className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+            activeSession.status === 'active'
               ? 'text-orange-400 hover:bg-orange-500/20'
               : 'text-green-400 hover:bg-green-500/20'
-            }`}
+          }`}
           title={activeSession.status === 'active' ? 'Pause' : 'Resume'}
         >
           {activeSession.status === 'active' ? (

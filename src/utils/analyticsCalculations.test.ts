@@ -4,8 +4,10 @@ import {
   calculateMinutesPerLootEvent,
 } from './analytics/lootMetrics';
 import {
+  calculateMarkupDependencyMetrics,
   calculateProjectedLifetimeProfit,
   calculateSessionsToBreakEven,
+  calculateTimeToVarianceMetrics,
 } from './analytics/performanceMetrics';
 import type { HuntSession } from '../types';
 
@@ -156,5 +158,113 @@ describe('analytics calculations', () => {
     const sessionsNeeded = calculateSessionsToBreakEven([oldNegative, ...newerPositives]);
     // current = -1000, recent 10 avg = +100 => should need exactly 10 more similar sessions
     expect(sessionsNeeded).toBe(10);
+  });
+
+  it('calculates time-to-variance stabilization from rolling return volatility', () => {
+    const sessions = [
+      createSession({
+        id: 's1',
+        startTime: 1,
+        status: 'completed',
+        stats: { totalLoot: 30, totalCost: 100, duration: 3600 },
+      }), // 30%
+      createSession({
+        id: 's2',
+        startTime: 2,
+        status: 'completed',
+        stats: { totalLoot: 160, totalCost: 100, duration: 3600 },
+      }), // 160%
+      createSession({
+        id: 's3',
+        startTime: 3,
+        status: 'completed',
+        stats: { totalLoot: 40, totalCost: 100, duration: 3600 },
+      }), // 40%
+      createSession({
+        id: 's4',
+        startTime: 4,
+        status: 'completed',
+        stats: { totalLoot: 150, totalCost: 100, duration: 3600 },
+      }), // 150%
+      createSession({
+        id: 's5',
+        startTime: 5,
+        status: 'completed',
+        stats: { totalLoot: 35, totalCost: 100, duration: 3600 },
+      }), // 35%
+      createSession({
+        id: 's6',
+        startTime: 6,
+        status: 'completed',
+        stats: { totalLoot: 101, totalCost: 100, duration: 3600 },
+      }), // 101%
+      createSession({
+        id: 's7',
+        startTime: 7,
+        status: 'completed',
+        stats: { totalLoot: 99, totalCost: 100, duration: 3600 },
+      }), // 99%
+      createSession({
+        id: 's8',
+        startTime: 8,
+        status: 'completed',
+        stats: { totalLoot: 100, totalCost: 100, duration: 3600 },
+      }), // 100%
+      createSession({
+        id: 's9',
+        startTime: 9,
+        status: 'completed',
+        stats: { totalLoot: 100.5, totalCost: 100, duration: 3600 },
+      }), // 100.5%
+      createSession({
+        id: 's10',
+        startTime: 10,
+        status: 'completed',
+        stats: { totalLoot: 99.5, totalCost: 100, duration: 3600 },
+      }), // 99.5%
+    ];
+
+    const metrics = calculateTimeToVarianceMetrics(sessions, 5);
+    expect(metrics).not.toBeNull();
+    expect(metrics?.sampleCount).toBe(10);
+    expect(metrics?.sessionsToStability).toBe(9);
+    expect(metrics?.hoursToStability).toBeCloseTo(9, 8);
+  });
+
+  it('calculates markup dependency against TT-only baseline', () => {
+    const session = createSession({
+      id: 'markup-1',
+      status: 'completed',
+      stats: { totalCost: 8 },
+      loot: [
+        {
+          id: 'l1',
+          name: 'Oil',
+          quantity: 2,
+          value: 2,
+          markup: 120,
+          totalValue: 4.8,
+          timestamp: 1,
+        },
+        {
+          id: 'l2',
+          name: 'Wool',
+          quantity: 1,
+          value: 1,
+          markup: 100,
+          totalValue: 1,
+          timestamp: 2,
+        },
+      ],
+    });
+
+    const metrics = calculateMarkupDependencyMetrics([session]);
+    expect(metrics).not.toBeNull();
+    expect(metrics?.totalTtLoot).toBeCloseTo(5, 8);
+    expect(metrics?.totalAdjustedLoot).toBeCloseTo(5.8, 8);
+    expect(metrics?.totalMarkupGain).toBeCloseTo(0.8, 8);
+    expect(metrics?.netAtTt).toBeCloseTo(-3, 8);
+    expect(metrics?.netWithMarkup).toBeCloseTo(-2.2, 8);
+    expect(metrics?.breakEvenMarkupPercent).toBeCloseTo(160, 8);
   });
 });

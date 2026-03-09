@@ -1,5 +1,53 @@
 import { HuntSession } from '../../types';
 
+interface RollingVolatilityPoint {
+  endIndex: number;
+  stdDev: number;
+}
+
+export interface TimeToVarianceMetrics {
+  sampleCount: number;
+  rollingWindow: number;
+  overallReturnStdDev: number;
+  recentReturnStdDev: number;
+  stabilityThreshold: number;
+  sessionsToStability: number | null;
+  hoursToStability: number | null;
+}
+
+export interface MarkupDependencyMetrics {
+  sessionsCount: number;
+  totalCost: number;
+  totalTtLoot: number;
+  totalAdjustedLoot: number;
+  totalMarkupGain: number;
+  netAtTt: number;
+  netWithMarkup: number;
+  markupShareOfLoot: number;
+  breakEvenMarkupPercent: number | null;
+}
+
+function standardDeviation(values: number[]): number {
+  if (values.length === 0) return 0;
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const variance =
+    values.reduce((sum, value) => sum + (value - mean) * (value - mean), 0) / values.length;
+  return Math.sqrt(variance);
+}
+
+function getRollingVolatility(values: number[], windowSize: number): RollingVolatilityPoint[] {
+  if (values.length < windowSize) return [];
+  const points: RollingVolatilityPoint[] = [];
+  for (let i = windowSize - 1; i < values.length; i++) {
+    const window = values.slice(i - windowSize + 1, i + 1);
+    points.push({
+      endIndex: i,
+      stdDev: standardDeviation(window),
+    });
+  }
+  return points;
+}
+
 /**
  * Find consecutive profitable sessions (win streaks)
  */
@@ -281,4 +329,100 @@ export function calculateCreatureStatsByLocation(sessions: HuntSession[]): Recor
   });
 
   return result;
+}
+
+/**
+ * Estimate how quickly session return volatility stabilizes.
+ * Stabilization is considered reached when rolling volatility drops by at least 40%
+ * from the initial rolling volatility.
+ */
+export function calculateTimeToVarianceMetrics(
+  sessions: HuntSession[],
+  rollingWindow: number = 5
+): TimeToVarianceMetrics | null {
+  if (rollingWindow < 2) {
+    return null;
+  }
+
+  const completed = sessions
+    .filter((s) => s.status === 'completed' && s.stats.totalCost > 0)
+    .sort((a, b) => a.startTime - b.startTime);
+
+  if (completed.length < rollingWindow) {
+    return null;
+  }
+
+  const returnRates = completed.map((s) => (s.stats.totalLoot / s.stats.totalCost) * 100);
+  const rolling = getRollingVolatility(returnRates, rollingWindow);
+  if (rolling.length === 0) {
+    return null;
+  }
+
+  const initialStdDev = rolling[0].stdDev;
+  const stabilityThreshold = Math.max(3, initialStdDev * 0.6);
+
+  const stablePoint = rolling.find((point) => point.stdDev <= stabilityThreshold) ?? null;
+  const sessionsToStability = stablePoint ? stablePoint.endIndex + 1 : null;
+
+  const hoursToStability =
+    sessionsToStability !== null
+      ? completed
+          .slice(0, sessionsToStability)
+          .reduce((sum, session) => sum + session.stats.duration / 3600, 0)
+      : null;
+
+  return {
+    sampleCount: completed.length,
+    rollingWindow,
+    overallReturnStdDev: standardDeviation(returnRates),
+    recentReturnStdDev: rolling[rolling.length - 1].stdDev,
+    stabilityThreshold,
+    sessionsToStability,
+    hoursToStability,
+  };
+}
+
+/**
+ * Compare profitability with and without markup/fixed-value uplift.
+ */
+export function calculateMarkupDependencyMetrics(
+  sessions: HuntSession[]
+): MarkupDependencyMetrics | null {
+  const completed = sessions.filter((s) => s.status === 'completed');
+  if (completed.length === 0) {
+    return null;
+  }
+
+  const totals = completed.reduce(
+    (acc, session) => {
+      acc.totalCost += session.stats.totalCost;
+      for (const item of session.loot) {
+        const baseTt = item.value * item.quantity;
+        acc.totalTtLoot += baseTt;
+        acc.totalAdjustedLoot += item.totalValue;
+      }
+      return acc;
+    },
+    { totalCost: 0, totalTtLoot: 0, totalAdjustedLoot: 0 }
+  );
+
+  const totalMarkupGain = totals.totalAdjustedLoot - totals.totalTtLoot;
+  const netAtTt = totals.totalTtLoot - totals.totalCost;
+  const netWithMarkup = totals.totalAdjustedLoot - totals.totalCost;
+  const markupShareOfLoot =
+    totals.totalAdjustedLoot > 0 ? (totalMarkupGain / totals.totalAdjustedLoot) * 100 : 0;
+  const breakEvenMarkupPercent =
+    totals.totalTtLoot > 0 ? (totals.totalCost / totals.totalTtLoot) * 100 : null;
+
+  return {
+    sessionsCount: completed.length,
+    totalCost: totals.totalCost,
+    totalTtLoot: totals.totalTtLoot,
+    totalAdjustedLoot: totals.totalAdjustedLoot,
+    totalMarkupGain,
+    netAtTt,
+    netWithMarkup,
+    markupShareOfLoot,
+    breakEvenMarkupPercent,
+  };
 }

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -13,13 +14,24 @@ import { useHuntStore } from '../../../store';
 export default function WeaponPerformancePanel() {
   const weaponData = useHuntStore((state) => state.analyticsData.performance?.weaponData);
 
-  if (!weaponData || weaponData.length === 0) return null;
+  const weapons = useMemo(() => {
+    if (!weaponData) return [];
+    return weaponData.map((wpn) => {
+      const costPer1kDamage = wpn.totalDamage > 0 ? (wpn.totalCost / wpn.totalDamage) * 1000 : 0;
+      return {
+        ...wpn,
+        costPer1kDamage,
+      };
+    });
+  }, [weaponData]);
+
+  if (weapons.length === 0) return null;
 
   return (
     <div className="card p-6">
       <h3 className="text-lg font-bold mb-4">Weapon Performance</h3>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={weaponData}>
+        <BarChart data={weapons}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis
             dataKey="weapon"
@@ -39,6 +51,7 @@ export default function WeaponPerformancePanel() {
           />
           <Legend />
           <Bar dataKey="returnRate" fill="#10B981" name="Return Rate %" />
+          <Bar dataKey="costPer1kDamage" fill="#F59E0B" name="Cost / 1k Dmg (PED)" />
           <Bar dataKey="sessions" fill="#3B82F6" name="Sessions" />
         </BarChart>
       </ResponsiveContainer>

@@ -12,7 +12,6 @@ export function AnalyticsCreaturesTab() {
   return (
     <div className="space-y-6">
       <Suspense fallback={panelFallback}>
-
         <CreatureAnalysisPanel />
       </Suspense>
     </div>

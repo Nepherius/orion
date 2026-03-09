@@ -425,7 +425,7 @@ async fn show_overlay(
             let _ = window.set_visible_on_all_workspaces(true);
             let _ = window.set_always_on_top(true);
         }
-        
+
         window.show().map_err(|e| e.to_string())?;
         if cfg!(target_os = "windows") {
             window.set_focus().map_err(|e| e.to_string())?;
@@ -439,8 +439,12 @@ async fn show_overlay(
     let mut win_width = width.unwrap_or(750.0);
     let mut win_height = height.unwrap_or(56.0);
 
-    if win_width <= 0.0 { win_width = 750.0; }
-    if win_height <= 0.0 { win_height = 56.0; }
+    if win_width <= 0.0 {
+        win_width = 750.0;
+    }
+    if win_height <= 0.0 {
+        win_height = 56.0;
+    }
 
     // Create new overlay window
     let overlay_window = tauri::WebviewWindowBuilder::new(
