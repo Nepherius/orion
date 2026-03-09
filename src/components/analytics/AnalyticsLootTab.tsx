@@ -4,6 +4,7 @@ const LootQualityPanel = lazy(() => import('./panels/LootQualityPanel'));
 const GlobalAnalysisPanel = lazy(() => import('./panels/GlobalAnalysisPanel'));
 const TopLootItemsPanel = lazy(() => import('./panels/TopLootItemsPanel'));
 const TopGlobalsPanel = lazy(() => import('./panels/TopGlobalsPanel'));
+const LootDistributionPanel = lazy(() => import('./panels/LootDistributionPanel'));
 
 const panelFallback = (
   <div className="h-32 flex items-center justify-center text-muted">
@@ -22,6 +23,7 @@ export function AnalyticsLootTab() {
         <LootQualityPanel />
         <GlobalAnalysisPanel />
         <TopLootItemsPanel />
+        <LootDistributionPanel />
         <TopGlobalsPanel />
       </Suspense>
     </div>
