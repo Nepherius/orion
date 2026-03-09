@@ -1,11 +1,7 @@
-import { useState, useEffect } from 'react';
-import { HuntSession } from '../../types';
+import { useState, useEffect, useMemo } from 'react';
+import { useHuntStore } from '../../store';
 
 import type { WorkerRequest, WorkerResponse } from '../../workers/analytics.worker';
-
-interface CorrelationAnalyticsProps {
-  filteredSessions: HuntSession[];
-}
 
 interface CorrelationData {
   n: number;
@@ -24,7 +20,18 @@ type WorkerResultMap = {
 };
 type WorkerTaskType = keyof WorkerResultMap;
 
-export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsProps) {
+export function CorrelationAnalytics() {
+  const sessions = useHuntStore((state) => state.sessions);
+  const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((s) => {
+      if (timeRange.startTime !== null && s.startTime < timeRange.startTime) return false;
+      if (timeRange.endTime !== null && s.startTime > timeRange.endTime) return false;
+      return true;
+    });
+  }, [sessions, timeRange.startTime, timeRange.endTime]);
+
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 

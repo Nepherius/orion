@@ -9,6 +9,7 @@ import { createEventActions } from './actionsEvents';
 import { createItemActions } from './actionsItems';
 import { createLoadoutActions } from './actionsLoadouts';
 import { createSettingsActions } from './actionsSettings';
+import { createAnalyticsActions } from './actionsAnalytics';
 
 export const useHuntStore = create<HuntStore>()((set, get) => ({
   sessions: [],
@@ -19,7 +20,29 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   goals: [],
   pendingKills: new Map(),
   creatureData: null,
+  analyticsData: {
+    performance: null,
+    advanced: null,
+    isLoading: false,
+    error: null,
+  },
+  analyticsTimeRange: {
+    startTime: null,
+    endTime: null,
+  },
+  analyticsLifetimeStats: {
+    totalLoot: 0,
+    totalCost: 0,
+    totalKills: 0,
+    totalGlobals: 0,
+    totalHofs: 0,
+    totalDamage: 0,
+    totalShotsFired: 0,
+    totalDuration: 0,
+    totalSessions: 0,
+  },
 
+  ...createAnalyticsActions(set, get),
   ...createInternalActions(set, get),
   ...createGoalActions(set),
   ...createSessionActions(set, get),

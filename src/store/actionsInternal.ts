@@ -51,6 +51,10 @@ export const createInternalActions = (
               return {
                 ...s,
                 kills: [...s.kills, kill],
+                stats: {
+                  ...s.stats,
+                  kills: s.stats.kills + 1,
+                },
                 loot: s.loot.map((item) =>
                   pendingKill.lootItemIds.includes(item.id) ? { ...item, killUuid: kill.id } : item
                 ),

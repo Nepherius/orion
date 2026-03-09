@@ -20,7 +20,6 @@ export function OverlayWindow() {
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
-  const updateSettings = useHuntStore((state) => state.updateSettings);
   const loadouts = useHuntStore((state) => state.loadouts);
   const syncSetupRef = useRef(false);
 
@@ -150,12 +149,9 @@ export function OverlayWindow() {
           height: number;
         } | null>('get_overlay_geometry');
         if (geometry) {
-          updateSettings({
-            overlayX: geometry.x,
-            overlayY: geometry.y,
-            overlayWidth: geometry.width,
-            overlayHeight: geometry.height,
-          });
+          // Tell the main window to update and persist the settings
+          // We don't call updateSettings here directly because the overlay store doesn't sync upwards to the main window.
+          emit('overlay-geometry-changed', geometry).catch(console.error);
         }
       } catch (error) {
         console.error('Failed to save overlay geometry:', error);
@@ -184,7 +180,7 @@ export function OverlayWindow() {
     return () => {
       cleanup.then((fn) => fn());
     };
-  }, [updateSettings]);
+  }, []);
 
   const handleTogglePause = () => {
     if (!activeSession) return;

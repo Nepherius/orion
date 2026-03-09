@@ -17,6 +17,104 @@ export interface PendingKill {
   lootItemIds: string[];
 }
 
+export interface AnalyticsPerformanceSqlData {
+  avgLootValue: number;
+  overallLootStdDev: number;
+  largestDropValue: number;
+  avgMinutesPerLoot: number;
+  totalLootEvents: number;
+  totalGlobalsCount: number;
+  totalHoFsCount: number;
+  globalDropRatePerKill: number;
+  globalDropRatePerHour: number;
+  avgGlobalValue: number;
+  bestGlobalValue: number;
+  topLootItems: Array<{
+    name: string;
+    totalValue: number;
+    quantity: number;
+    drops: number;
+    avgValue: number;
+  }>;
+  allGlobals: Array<{
+    id: string;
+    creature: string;
+    value: number;
+    isHoF: boolean;
+    sessionName: string;
+    location?: string;
+    timestamp: number;
+  }>;
+  recentSessions: Array<{ startTime: number; returnRate: number; profit: number; loot: number }>;
+  locationData: Array<{
+    location: string;
+    sessions: number;
+    returnRate: number;
+    profit: number;
+    globals: number;
+  }>;
+  costData: Array<{ name: string; value: number; color: string }>;
+  weaponData: Array<{
+    weapon: string;
+    sessions: number;
+    returnRate: number;
+    totalLoot: number;
+    totalCost: number;
+    avgDamage: number;
+  }>;
+  topSkills: Array<{ name: string; total: number }>;
+  armorData: Array<{ armor: string; sessions: number; returnRate: number; avgDamageTaken: number }>;
+  loadoutData: Array<{
+    loadoutId: string;
+    sessions: number;
+    returnRate: number;
+    profit: number;
+    avgKills: number;
+  }>;
+}
+
+export interface AnalyticsAdvancedSqlData {
+  sessionWinRate: number;
+  profitableStreaks: { currentStreak: number; longestStreak: number };
+  temporalInsights: {
+    avgSessionHours: number;
+    bestHourLabel: string;
+    bestHourReturnRate: number;
+    avgGapHours: number;
+  };
+  creatureAnalysis: Array<{
+    creature: string;
+    count: number;
+    returnRate: number;
+    profit: number;
+    totalKills: number;
+    totalGlobals: number;
+    totalLoot: number;
+    totalCost: number;
+  }>;
+  skillsByLocation: Array<{ location: string; skillGains: number }>;
+  skillsByWeapon: Array<{ weapon: string; skillGains: number }>;
+  lifetimeAttributeGains: Record<string, { gains: number; count: number }>;
+  allSkillNames: string[];
+  skillGainVariance: number;
+  skillValuePerCost: number;
+  totalSkillGains: number;
+  projectedLifetimeProfit: number;
+  sessionsToBreakEven: number | null;
+}
+
+export interface AnalyticsLifetimeStats {
+  totalLoot: number;
+  totalCost: number;
+  totalKills: number;
+  totalGlobals: number;
+  totalHofs: number;
+  totalDamage: number;
+  totalShotsFired: number;
+  totalDuration: number;
+  totalSessions: number;
+}
+
 export interface HuntStore {
   sessions: HuntSession[];
   activeSessionId: string | null;
@@ -28,7 +126,22 @@ export interface HuntStore {
   pendingKills: Map<string, PendingKill>;
   creatureData: Array<{ name: string; maturity: string; hp: number }> | null;
 
+  analyticsData: {
+    performance: AnalyticsPerformanceSqlData | null;
+    advanced: AnalyticsAdvancedSqlData | null;
+    isLoading: boolean;
+    error: string | null;
+  };
+  analyticsTimeRange: {
+    startTime: number | null;
+    endTime: number | null;
+  };
+  analyticsLifetimeStats: AnalyticsLifetimeStats;
+
   _loadCreatureData: () => Promise<void>;
+  fetchAnalyticsData: (startTime: number | null, endTime: number | null) => Promise<void>;
+  setAnalyticsTimeRange: (startTime: number | null, endTime: number | null) => void;
+  fetchLifetimeStats: (startTime: number | null, endTime: number | null) => Promise<void>;
   _finalizePendingKill: (sessionId: string) => Promise<void>;
 
   addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;

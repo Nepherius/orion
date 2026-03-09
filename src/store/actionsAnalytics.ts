@@ -1,0 +1,103 @@
+import { invoke } from '@tauri-apps/api/core';
+import type {
+  StoreSetState,
+  StoreGetState,
+  AnalyticsPerformanceSqlData,
+  AnalyticsAdvancedSqlData,
+  AnalyticsLifetimeStats,
+} from './storeTypes';
+
+export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) {
+  return {
+    fetchAnalyticsData: async (startTime: number | null, endTime: number | null) => {
+      set((state) => ({
+        analyticsData: { ...state.analyticsData, isLoading: true, error: null },
+      }));
+
+      // Fetch independently so one failure doesn't block the other
+      const [performanceResult, advancedResult] = await Promise.allSettled([
+        invoke<AnalyticsPerformanceSqlData>('db_get_analytics_performance_data', {
+          params: { start_time: startTime, end_time: endTime },
+        }),
+        invoke<AnalyticsAdvancedSqlData>('db_get_analytics_advanced_data', {
+          params: { start_time: startTime, end_time: endTime },
+        }),
+      ]);
+
+      const performanceData =
+        performanceResult.status === 'fulfilled' ? performanceResult.value : null;
+      const advancedData = advancedResult.status === 'fulfilled' ? advancedResult.value : null;
+
+      if (performanceResult.status === 'rejected') {
+        console.error('Failed to fetch performance analytics:', performanceResult.reason);
+      }
+      if (advancedResult.status === 'rejected') {
+        console.error('Failed to fetch advanced analytics:', advancedResult.reason);
+      }
+
+      const hasError =
+        performanceResult.status === 'rejected' || advancedResult.status === 'rejected';
+
+      set(() => ({
+        analyticsData: {
+          performance: performanceData,
+          advanced: advancedData,
+          isLoading: false,
+          error: hasError ? 'Some analytics data failed to load' : null,
+        },
+      }));
+    },
+
+    setAnalyticsTimeRange: (startTime: number | null, endTime: number | null) => {
+      set(() => ({
+        analyticsTimeRange: { startTime, endTime },
+      }));
+    },
+
+    fetchLifetimeStats: async (startTime: number | null, endTime: number | null) => {
+      try {
+        const dbStats = await invoke<AnalyticsLifetimeStats>('db_get_analytics_stats', {
+          params: { start_time: startTime, end_time: endTime },
+        });
+        if (dbStats) {
+          set(() => ({ analyticsLifetimeStats: dbStats }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch lifetime stats from DB:', err);
+        // Fallback: compute from in-memory sessions
+        const state = _get();
+        const filtered = state.sessions.filter((s) => {
+          if (startTime !== null && s.startTime < startTime) return false;
+          if (endTime !== null && s.startTime > endTime) return false;
+          return true;
+        });
+        const fallback = filtered.reduce(
+          (acc, session) => {
+            acc.totalLoot += session.stats.totalLoot;
+            acc.totalCost += session.stats.totalCost;
+            acc.totalKills += session.stats.kills;
+            acc.totalGlobals += session.stats.globals;
+            acc.totalHofs += session.stats.hofs;
+            acc.totalDamage += session.stats.damageDealt;
+            acc.totalShotsFired += session.stats.shotsFired;
+            acc.totalDuration += session.stats.duration;
+            acc.totalSessions += 1;
+            return acc;
+          },
+          {
+            totalLoot: 0,
+            totalCost: 0,
+            totalKills: 0,
+            totalGlobals: 0,
+            totalHofs: 0,
+            totalDamage: 0,
+            totalShotsFired: 0,
+            totalDuration: 0,
+            totalSessions: 0,
+          }
+        );
+        set(() => ({ analyticsLifetimeStats: fallback }));
+      }
+    },
+  };
+}

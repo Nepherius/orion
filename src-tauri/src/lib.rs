@@ -423,8 +423,9 @@ async fn show_overlay(
     if let Some(window) = app_handle.get_webview_window("overlay") {
         if cfg!(target_os = "linux") {
             let _ = window.set_visible_on_all_workspaces(true);
-            window.set_always_on_top(true).map_err(|e| e.to_string())?;
+            let _ = window.set_always_on_top(true);
         }
+        
         window.show().map_err(|e| e.to_string())?;
         if cfg!(target_os = "windows") {
             window.set_focus().map_err(|e| e.to_string())?;
@@ -435,8 +436,11 @@ async fn show_overlay(
     // Use provided values or defaults
     let pos_x = x.unwrap_or(20.0);
     let pos_y = y.unwrap_or(20.0);
-    let win_width = width.unwrap_or(750.0);
-    let win_height = height.unwrap_or(40.0);
+    let mut win_width = width.unwrap_or(750.0);
+    let mut win_height = height.unwrap_or(56.0);
+
+    if win_width <= 0.0 { win_width = 750.0; }
+    if win_height <= 0.0 { win_height = 56.0; }
 
     // Create new overlay window
     let overlay_window = tauri::WebviewWindowBuilder::new(
@@ -504,6 +508,10 @@ async fn get_overlay_geometry(
     if let Some(window) = app_handle.get_webview_window("overlay") {
         let position = window.outer_position().map_err(|e| e.to_string())?;
         let size = window.inner_size().map_err(|e| e.to_string())?;
+
+        if size.width == 0 || size.height == 0 {
+            return Ok(None);
+        }
 
         Ok(Some(OverlayGeometry {
             x: position.x as f64,

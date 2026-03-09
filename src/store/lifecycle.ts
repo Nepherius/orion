@@ -278,6 +278,23 @@ export async function setupStoreSync(useHuntStore: HuntStoreHook, delayBroadcast
     return () => {};
   });
 
+  const unlistenOverlayGeometry = await listen(
+    'overlay-geometry-changed',
+    (event: Event<{ x: number; y: number; width: number; height: number }>) => {
+      const payload = event.payload;
+      if (!payload) return;
+
+      useHuntStore.getState().updateSettings({
+        overlayX: payload.x,
+        overlayY: payload.y,
+        overlayWidth: payload.width,
+        overlayHeight: payload.height,
+      });
+    }
+  ).catch(() => {
+    return () => {};
+  });
+
   let requestInterval: number | undefined;
   if (delayBroadcastMs > 0) {
     setTimeout(() => {
@@ -301,6 +318,7 @@ export async function setupStoreSync(useHuntStore: HuntStoreHook, delayBroadcast
     unlistenSync();
     unlistenSyncRequest();
     unlistenOverlayCommand();
+    unlistenOverlayGeometry();
     if (requestInterval !== undefined) {
       window.clearInterval(requestInterval);
     }

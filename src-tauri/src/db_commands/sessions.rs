@@ -920,7 +920,7 @@ pub fn db_get_analytics_performance_data(
              JOIN sessions s ON s.uuid = k.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
-             GROUP BY loadout_id
+             GROUP BY k.loadout_id
              ORDER BY CASE WHEN total_cost > 0 THEN (total_loot / total_cost) ELSE 0 END DESC",
         )
         .map_err(|e| e.to_string())?;
