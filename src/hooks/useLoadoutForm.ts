@@ -20,6 +20,36 @@ type ArmorDataResponse = { armor?: string[] } | string[];
 type MedicalDataResponse = { medicalTools?: MedicalToolEntry[] } | MedicalToolEntry[];
 type LoadEquipmentData = EquipmentDataResponse | ArmorDataResponse | MedicalDataResponse;
 
+const toEquipmentItems = (response: LoadEquipmentData): EquipmentItem[] => {
+  if (Array.isArray(response)) {
+    return response as EquipmentItem[];
+  }
+  if ('data' in response && Array.isArray(response.data)) {
+    return response.data;
+  }
+  return [];
+};
+
+const toArmorItems = (response: LoadEquipmentData): string[] => {
+  if (Array.isArray(response)) {
+    return response as string[];
+  }
+  if ('armor' in response && Array.isArray(response.armor)) {
+    return response.armor;
+  }
+  return [];
+};
+
+const toMedicalTools = (response: LoadEquipmentData): MedicalToolEntry[] => {
+  if (Array.isArray(response)) {
+    return response as MedicalToolEntry[];
+  }
+  if ('medicalTools' in response && Array.isArray(response.medicalTools)) {
+    return response.medicalTools;
+  }
+  return [];
+};
+
 /**
  * Load equipment data from AppData first (fresh install downloads),
  * fall back to bundled public assets
@@ -76,13 +106,13 @@ export function useLoadoutForm(editLoadout?: Loadout) {
       loadEquipmentData('medical/medicaltool.json'),
     ]).then(
       ([weaponsData, ampsData, scopesData, sightsData, absorbersData, armorData, medicalData]) => {
-        setWeapons(Array.isArray(weaponsData) ? weaponsData : weaponsData.data);
-        setAmps(Array.isArray(ampsData) ? ampsData : ampsData.data);
-        setScopes(Array.isArray(scopesData) ? scopesData : scopesData.data);
-        setSights(Array.isArray(sightsData) ? sightsData : sightsData.data);
-        setAbsorbers(Array.isArray(absorbersData) ? absorbersData : absorbersData.data);
-        setArmorItems(Array.isArray(armorData) ? armorData : armorData.armor || []);
-        setMedicalTools(Array.isArray(medicalData) ? medicalData : medicalData.medicalTools || []);
+        setWeapons(toEquipmentItems(weaponsData));
+        setAmps(toEquipmentItems(ampsData));
+        setScopes(toEquipmentItems(scopesData));
+        setSights(toEquipmentItems(sightsData));
+        setAbsorbers(toEquipmentItems(absorbersData));
+        setArmorItems(toArmorItems(armorData));
+        setMedicalTools(toMedicalTools(medicalData));
       }
     );
   }, []);

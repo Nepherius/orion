@@ -69,23 +69,8 @@ export function calculateSessionStats(
 
   const shotsFiredCount = totalHits + misses + enemyDodges + enemyEvades;
 
-  // Kill Tracking: Group loot events by 3-second clusters
-  let kills = 0;
-  if (session.loot.length > 0) {
-    const sortedLoot = [...session.loot].sort((a, b) => a.timestamp - b.timestamp);
-    kills = 1;
-    let currentClusterStart = sortedLoot[0].timestamp;
-
-    for (let i = 1; i < sortedLoot.length; i++) {
-      const itemTimestamp = sortedLoot[i].timestamp;
-      const diff = itemTimestamp - currentClusterStart;
-      const isNewKill = diff > 3000;
-      if (isNewKill) {
-        kills++;
-        currentClusterStart = itemTimestamp;
-      }
-    }
-  }
+  // Authoritative kill count comes from tracked kill events.
+  const kills = session.kills?.length || 0;
 
   return {
     kills,

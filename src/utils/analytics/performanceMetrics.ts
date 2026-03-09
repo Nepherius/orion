@@ -49,11 +49,32 @@ export function calculateCreatureStats(sessions: HuntSession[]): Record<
     averageGlobalValue: number;
   }
 > {
-  return sessions.reduce(
-    (acc, session) => {
-      const creature = session.creature || 'Unknown';
-      if (!acc[creature]) {
-        acc[creature] = {
+  const stats: Record<
+    string,
+    {
+      count: number;
+      totalLoot: number;
+      totalCost: number;
+      profit: number;
+      returnRate: number;
+      totalKills: number;
+      totalGlobals: number;
+      averageGlobalValue: number;
+    }
+  > = {};
+  const sessionSets: Record<string, Set<string>> = {};
+  const globalValueTotals: Record<string, number> = {};
+
+  sessions.forEach((session) => {
+    const kills = session.kills || [];
+    if (kills.length === 0) return;
+
+    const creaturesInSession = new Set<string>();
+
+    kills.forEach((kill) => {
+      const creature = kill.creatureName || 'Unknown';
+      if (!stats[creature]) {
+        stats[creature] = {
           count: 0,
           totalLoot: 0,
           totalCost: 0,
@@ -63,39 +84,36 @@ export function calculateCreatureStats(sessions: HuntSession[]): Record<
           totalGlobals: 0,
           averageGlobalValue: 0,
         };
-      }
-      acc[creature].count += 1;
-      acc[creature].totalLoot += session.stats.totalLoot;
-      acc[creature].totalCost += session.stats.totalCost;
-      acc[creature].profit += session.stats.totalLoot - session.stats.totalCost;
-      acc[creature].totalKills += session.stats.kills;
-      const previousGlobalCount = acc[creature].totalGlobals;
-      acc[creature].totalGlobals += session.globals.length;
-
-      if (session.globals.length > 0) {
-        const creatureGlobalValue = session.globals.reduce((sum, g) => sum + g.value, 0);
-        const newGlobalCount = previousGlobalCount + session.globals.length;
-        acc[creature].averageGlobalValue =
-          (acc[creature].averageGlobalValue * previousGlobalCount + creatureGlobalValue) /
-          newGlobalCount;
+        sessionSets[creature] = new Set();
+        globalValueTotals[creature] = 0;
       }
 
-      return acc;
-    },
-    {} as Record<
-      string,
-      {
-        count: number;
-        totalLoot: number;
-        totalCost: number;
-        profit: number;
-        returnRate: number;
-        totalKills: number;
-        totalGlobals: number;
-        averageGlobalValue: number;
-      }
-    >
-  );
+      stats[creature].totalKills += 1;
+      stats[creature].totalLoot += kill.lootValue;
+      stats[creature].totalCost += kill.cost;
+      stats[creature].profit += kill.lootValue - kill.cost;
+      creaturesInSession.add(creature);
+    });
+
+    const sessionCreature = session.creature || 'Unknown';
+    if (session.globals.length > 0 && stats[sessionCreature]) {
+      stats[sessionCreature].totalGlobals += session.globals.length;
+      globalValueTotals[sessionCreature] += session.globals.reduce((sum, g) => sum + g.value, 0);
+    }
+
+    creaturesInSession.forEach((creature) => {
+      sessionSets[creature].add(session.id);
+    });
+  });
+
+  Object.entries(stats).forEach(([creature, data]) => {
+    data.count = sessionSets[creature]?.size || 0;
+    data.returnRate = data.totalCost > 0 ? (data.totalLoot / data.totalCost) * 100 : 0;
+    data.averageGlobalValue =
+      data.totalGlobals > 0 ? globalValueTotals[creature] / data.totalGlobals : 0;
+  });
+
+  return stats;
 }
 
 /**
@@ -186,22 +204,43 @@ export function calculateCreatureStatsByLocation(sessions: HuntSession[]): Recor
     >;
   }
 > {
-  return sessions.reduce(
-    (acc, session) => {
-      const location = session.location || 'Unknown';
-      const creature = session.creature || 'Unknown';
+  const result: Record<
+    string,
+    {
+      mostKilled: { creature: string; kills: number } | null;
+      mostProfitable: { creature: string; profit: number } | null;
+      totalKills: number;
+      creatures: Record<
+        string,
+        {
+          kills: number;
+          sessions: number;
+          totalLoot: number;
+          totalCost: number;
+          profit: number;
+          returnRate: number;
+        }
+      >;
+    }
+  > = {};
+  const sessionSets: Record<string, Record<string, Set<string>>> = {};
 
-      if (!acc[location]) {
-        acc[location] = {
-          mostKilled: null,
-          mostProfitable: null,
-          totalKills: 0,
-          creatures: {},
-        };
-      }
+  sessions.forEach((session) => {
+    const location = session.location || 'Unknown';
+    if (!result[location]) {
+      result[location] = {
+        mostKilled: null,
+        mostProfitable: null,
+        totalKills: 0,
+        creatures: {},
+      };
+      sessionSets[location] = {};
+    }
 
-      if (!acc[location].creatures[creature]) {
-        acc[location].creatures[creature] = {
+    (session.kills || []).forEach((kill) => {
+      const creature = kill.creatureName || 'Unknown';
+      if (!result[location].creatures[creature]) {
+        result[location].creatures[creature] = {
           kills: 0,
           sessions: 0,
           totalLoot: 0,
@@ -209,52 +248,37 @@ export function calculateCreatureStatsByLocation(sessions: HuntSession[]): Recor
           profit: 0,
           returnRate: 0,
         };
+        sessionSets[location][creature] = new Set();
       }
 
-      const creatureStats = acc[location].creatures[creature];
-      creatureStats.kills += session.stats.kills;
-      creatureStats.sessions += 1;
-      creatureStats.totalLoot += session.stats.totalLoot;
-      creatureStats.totalCost += session.stats.totalCost;
+      const creatureStats = result[location].creatures[creature];
+      creatureStats.kills += 1;
+      creatureStats.totalLoot += kill.lootValue;
+      creatureStats.totalCost += kill.cost;
       creatureStats.profit = creatureStats.totalLoot - creatureStats.totalCost;
       creatureStats.returnRate =
         creatureStats.totalCost > 0 ? (creatureStats.totalLoot / creatureStats.totalCost) * 100 : 0;
+      sessionSets[location][creature].add(session.id);
+      result[location].totalKills += 1;
+    });
+  });
 
-      acc[location].totalKills += session.stats.kills;
+  Object.entries(result).forEach(([location, locationData]) => {
+    Object.entries(locationData.creatures).forEach(([creature, creatureStats]) => {
+      creatureStats.sessions = sessionSets[location][creature]?.size || 0;
 
-      // Update mostKilled
-      if (!acc[location].mostKilled || creatureStats.kills > acc[location].mostKilled.kills) {
-        acc[location].mostKilled = { creature, kills: creatureStats.kills };
+      if (!locationData.mostKilled || creatureStats.kills > locationData.mostKilled.kills) {
+        locationData.mostKilled = { creature, kills: creatureStats.kills };
       }
 
-      // Update mostProfitable
       if (
-        !acc[location].mostProfitable ||
-        creatureStats.profit > acc[location].mostProfitable.profit
+        !locationData.mostProfitable ||
+        creatureStats.profit > locationData.mostProfitable.profit
       ) {
-        acc[location].mostProfitable = { creature, profit: creatureStats.profit };
+        locationData.mostProfitable = { creature, profit: creatureStats.profit };
       }
+    });
+  });
 
-      return acc;
-    },
-    {} as Record<
-      string,
-      {
-        mostKilled: { creature: string; kills: number } | null;
-        mostProfitable: { creature: string; profit: number } | null;
-        totalKills: number;
-        creatures: Record<
-          string,
-          {
-            kills: number;
-            sessions: number;
-            totalLoot: number;
-            totalCost: number;
-            profit: number;
-            returnRate: number;
-          }
-        >;
-      }
-    >
-  );
+  return result;
 }

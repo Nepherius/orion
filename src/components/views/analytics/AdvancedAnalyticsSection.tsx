@@ -48,6 +48,7 @@ interface AdvancedAnalyticsSectionProps {
   allSkillNames: string[];
   skillGainVariance: number;
   skillValuePerCost: number;
+  totalSkillGains: number;
   projectedLifetimeProfit: number;
   sessionsToBreakEven: number | null;
 }
@@ -67,6 +68,7 @@ export function AdvancedAnalyticsSection({
   allSkillNames,
   skillGainVariance,
   skillValuePerCost,
+  totalSkillGains,
   projectedLifetimeProfit,
   sessionsToBreakEven,
 }: AdvancedAnalyticsSectionProps) {
@@ -377,11 +379,7 @@ export function AdvancedAnalyticsSection({
           </div>
           <div className="border border-border rounded p-4">
             <div className="text-sm text-muted mb-2">Total Skill Gains</div>
-            <div className="text-2xl font-bold text-green-400">
-              {filteredSessions
-                .reduce((sum, s) => sum + s.skills.reduce((ss, sk) => ss + sk.gainAmount, 0), 0)
-                .toFixed(2)}
-            </div>
+            <div className="text-2xl font-bold text-green-400">{totalSkillGains.toFixed(2)}</div>
           </div>
         </div>
       </div>

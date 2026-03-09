@@ -18,6 +18,14 @@ interface InsightsData {
   burnRateVsReturn: { r: number; p: number };
 }
 
+type WorkerSuccessResponse = Exclude<WorkerResponse, { type: 'ERROR' }>;
+type WorkerResultMap = {
+  CALC_CONFIDENCE_INTERVAL: { lower: number; upper: number; mean: number };
+  CALC_CV: number;
+  CALC_CORRELATION: { r: number; p: number };
+};
+type WorkerTaskType = keyof WorkerResultMap;
+
 export function StatisticalInsights({ filteredSessions }: StatisticalInsightsProps) {
   const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -49,19 +57,22 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
       type: 'module',
     });
 
-    // We will build a promise wrapper to execute the worker tasks sequentially for simplicity
-    const runWorkerTask = <T extends WorkerResponse['data']>(
-      type: WorkerRequest['type'],
-      payload: Extract<WorkerRequest, { type: typeof type }>['payload']
-    ): Promise<T> => {
+    const runWorkerTask = <T extends WorkerTaskType>(
+      type: T,
+      payload: Extract<WorkerRequest, { type: T }>['payload']
+    ): Promise<WorkerResultMap[T]> => {
       return new Promise((resolve, reject) => {
+        const resultType = `RESULT_${type.replace('CALC_', '')}` as WorkerSuccessResponse['type'];
         const handler = (e: MessageEvent<WorkerResponse>) => {
-          if (e.data.type === `RESULT_${type.replace('CALC_', '')}`) {
-            worker.removeEventListener('message', handler);
-            resolve(e.data.data as T);
-          } else if (e.data.type === 'ERROR') {
+          if (e.data.type === 'ERROR') {
             worker.removeEventListener('message', handler);
             reject(new Error(e.data.error));
+            return;
+          }
+
+          if (e.data.type === resultType && 'data' in e.data) {
+            worker.removeEventListener('message', handler);
+            resolve(e.data.data as WorkerResultMap[T]);
           }
         };
         worker.addEventListener('message', handler);
@@ -73,13 +84,13 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
       try {
         const meanReturn = returnRates.reduce((a, b) => a + b, 0) / returnRates.length;
 
-        const ciResult = await runWorkerTask<{ lower: number; upper: number; mean: number }>('CALC_CONFIDENCE_INTERVAL', returnRates);
-        const cv = await runWorkerTask<number>('CALC_CV', returnRates);
-        const hitRateVsReturn = await runWorkerTask<{ r: number; p: number }>('CALC_CORRELATION', {
+        const ciResult = await runWorkerTask('CALC_CONFIDENCE_INTERVAL', returnRates);
+        const cv = await runWorkerTask('CALC_CV', returnRates);
+        const hitRateVsReturn = await runWorkerTask('CALC_CORRELATION', {
           x: hitRates,
           y: returnRates,
         });
-        const burnRateVsReturn = await runWorkerTask<{ r: number; p: number }>('CALC_CORRELATION', {
+        const burnRateVsReturn = await runWorkerTask('CALC_CORRELATION', {
           x: costPerMinutes,
           y: returnRates,
         });
@@ -87,8 +98,8 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
         setInsightsData({
           n: validSessions.length,
           meanReturn,
-          ciLower: ciResult.lower,
-          ciUpper: ciResult.upper,
+          ciLower: Number.isFinite(ciResult.lower) ? ciResult.lower : meanReturn,
+          ciUpper: Number.isFinite(ciResult.upper) ? ciResult.upper : meanReturn,
           cv,
           hitRateVsReturn,
           burnRateVsReturn,
@@ -182,8 +193,8 @@ export function StatisticalInsights({ filteredSessions }: StatisticalInsightsPro
             <span className="font-mono text-body">{ciUpper.toFixed(1)}%</span>
           </div>
           <div className="text-xs text-muted mt-2 border-t border-border pt-2">
-            Based on your session history, determining the statistical &quot;True&quot; average return
-            ceiling.
+            Based on your session history, determining the statistical &quot;True&quot; average
+            return ceiling.
           </div>
         </div>
 

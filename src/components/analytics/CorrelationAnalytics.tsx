@@ -11,8 +11,18 @@ interface CorrelationData {
   n: number;
   durationVsLoot: { r: number; p: number };
   costVsLoot: { r: number; p: number };
-  multiple: { r2: number; p: number };
+  multiple: { rSquared: number; p: number };
 }
+
+type WorkerSuccessResponse = Exclude<WorkerResponse, { type: 'ERROR' }>;
+type WorkerResultMap = {
+  CALC_CORRELATION_ANALYTICS: {
+    durationVsLoot: { r: number; p: number };
+    costVsLoot: { r: number; p: number };
+    multiple: { rSquared: number; p: number };
+  };
+};
+type WorkerTaskType = keyof WorkerResultMap;
 
 export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsProps) {
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null);
@@ -37,19 +47,24 @@ export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsP
     const worker = new Worker(new URL('../../workers/analytics.worker.ts', import.meta.url), {
       type: 'module',
     });
+    let cancelled = false;
 
-    const runWorkerTask = <T extends WorkerResponse['data']>(
-      type: WorkerRequest['type'],
-      payload: Extract<WorkerRequest, { type: typeof type }>['payload']
-    ): Promise<T> => {
+    const runWorkerTask = <T extends WorkerTaskType>(
+      type: T,
+      payload: Extract<WorkerRequest, { type: T }>['payload']
+    ): Promise<WorkerResultMap[T]> => {
       return new Promise((resolve, reject) => {
+        const resultType = `RESULT_${type.replace('CALC_', '')}` as WorkerSuccessResponse['type'];
         const handler = (e: MessageEvent<WorkerResponse>) => {
-          if (e.data.type === `RESULT_${type.replace('CALC_', '')}`) {
-            worker.removeEventListener('message', handler);
-            resolve(e.data.data as T);
-          } else if (e.data.type === 'ERROR') {
+          if (e.data.type === 'ERROR') {
             worker.removeEventListener('message', handler);
             reject(new Error(e.data.error));
+            return;
+          }
+
+          if (e.data.type === resultType && 'data' in e.data) {
+            worker.removeEventListener('message', handler);
+            resolve(e.data.data as WorkerResultMap[T]);
           }
         };
         worker.addEventListener('message', handler);
@@ -59,34 +74,41 @@ export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsP
 
     const processMath = async () => {
       try {
-        const durationVsLoot = await runWorkerTask<{ r: number; p: number }>('CALC_CORRELATION', {
-          x: durationHrs,
-          y: lootPed,
-        });
-        const costVsLoot = await runWorkerTask<{ r: number; p: number }>('CALC_CORRELATION', { x: costPed, y: lootPed });
-        const multipleR = await runWorkerTask<{ rSquared: number; p: number }>(
-          'CALC_MULTIPLE_CORRELATION',
+        const { durationVsLoot, costVsLoot, multiple } = await runWorkerTask(
+          'CALC_CORRELATION_ANALYTICS',
           {
-            X: [durationHrs, costPed],
-            y: lootPed,
+            durationHrs,
+            costPed,
+            lootPed,
           }
         );
 
-        setCorrelationData({
-          n: validSessions.length,
-          durationVsLoot,
-          costVsLoot,
-          multiple: multipleR,
-        });
+        if (!cancelled) {
+          setCorrelationData({
+            n: validSessions.length,
+            durationVsLoot,
+            costVsLoot,
+            multiple,
+          });
+        }
       } catch (err) {
-        console.error('Worker correlation failed:', err);
+        if (!cancelled) {
+          console.error('Worker correlation failed:', err);
+        }
       } finally {
-        setIsCalculating(false);
+        if (!cancelled) {
+          setIsCalculating(false);
+        }
         worker.terminate();
       }
     };
 
     processMath();
+
+    return () => {
+      cancelled = true;
+      worker.terminate();
+    };
   }, [filteredSessions]);
 
   if (isCalculating) {
@@ -189,12 +211,12 @@ export function CorrelationAnalytics({ filteredSessions }: CorrelationAnalyticsP
             <div>
               <div className="text-xs text-muted">Variance Explained</div>
               <div className="text-xl font-bold font-mono text-blue-400">
-                {(multiple.r2 * 100).toFixed(1)}%
+                {(multiple.rSquared * 100).toFixed(1)}%
               </div>
             </div>
             <div className="text-right">
               <div className="text-xs text-muted">R² Value</div>
-              <div className="text-sm font-semibold">{multiple.r2.toFixed(3)}</div>
+              <div className="text-sm font-semibold">{multiple.rSquared.toFixed(3)}</div>
             </div>
           </div>
           <div className="text-xs border-t border-border pt-2 mt-2 flex justify-between">

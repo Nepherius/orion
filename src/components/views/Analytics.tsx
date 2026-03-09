@@ -27,6 +27,104 @@ import {
   getAllSkillNames,
 } from '../../utils/analyticsCalculations';
 
+interface AnalyticsStats {
+  totalLoot: number;
+  totalCost: number;
+  totalKills: number;
+  totalGlobals: number;
+  totalHofs: number;
+  totalDamage: number;
+  totalShotsFired: number;
+  totalDuration: number;
+  totalSessions: number;
+}
+
+interface AnalyticsPerformanceSqlData {
+  avgLootValue: number;
+  overallLootStdDev: number;
+  largestDropValue: number;
+  avgMinutesPerLoot: number;
+  totalLootEvents: number;
+  totalGlobalsCount: number;
+  totalHoFsCount: number;
+  globalDropRatePerKill: number;
+  globalDropRatePerHour: number;
+  avgGlobalValue: number;
+  bestGlobalValue: number;
+  topLootItems: Array<{
+    name: string;
+    totalValue: number;
+    quantity: number;
+    drops: number;
+    avgValue: number;
+  }>;
+  allGlobals: Array<{
+    id: string;
+    creature: string;
+    value: number;
+    isHoF: boolean;
+    sessionName: string;
+    location?: string;
+    timestamp: number;
+  }>;
+  recentSessions: Array<{ startTime: number; returnRate: number; profit: number; loot: number }>;
+  locationData: Array<{
+    location: string;
+    sessions: number;
+    returnRate: number;
+    profit: number;
+    globals: number;
+  }>;
+  costData: Array<{ name: string; value: number; color: string }>;
+  weaponData: Array<{
+    weapon: string;
+    sessions: number;
+    returnRate: number;
+    totalLoot: number;
+    totalCost: number;
+    avgDamage: number;
+  }>;
+  topSkills: Array<{ name: string; total: number }>;
+  armorData: Array<{ armor: string; sessions: number; returnRate: number; avgDamageTaken: number }>;
+  loadoutData: Array<{
+    loadoutId: string;
+    sessions: number;
+    returnRate: number;
+    profit: number;
+    avgKills: number;
+  }>;
+}
+
+interface AnalyticsAdvancedSqlData {
+  sessionWinRate: number;
+  profitableStreaks: { currentStreak: number; longestStreak: number };
+  temporalInsights: {
+    avgSessionHours: number;
+    bestHourLabel: string;
+    bestHourReturnRate: number;
+    avgGapHours: number;
+  };
+  creatureAnalysis: Array<{
+    creature: string;
+    count: number;
+    returnRate: number;
+    profit: number;
+    totalKills: number;
+    totalGlobals: number;
+    totalLoot: number;
+    totalCost: number;
+  }>;
+  skillsByLocation: Array<{ location: string; skillGains: number }>;
+  skillsByWeapon: Array<{ weapon: string; skillGains: number }>;
+  lifetimeAttributeGains: Record<string, { gains: number; count: number }>;
+  allSkillNames: string[];
+  skillGainVariance: number;
+  skillValuePerCost: number;
+  totalSkillGains: number;
+  projectedLifetimeProfit: number;
+  sessionsToBreakEven: number | null;
+}
+
 export function Analytics() {
   const sessions = useHuntStore((state) => state.sessions);
   const loadouts = useHuntStore((state) => state.loadouts);
@@ -38,9 +136,26 @@ export function Analytics() {
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'advanced'>('overview');
+  const [lifetimeStats, setLifetimeStats] = useState<AnalyticsStats>({
+    totalLoot: 0,
+    totalCost: 0,
+    totalKills: 0,
+    totalGlobals: 0,
+    totalHofs: 0,
+    totalDamage: 0,
+    totalShotsFired: 0,
+    totalDuration: 0,
+    totalSessions: 0,
+  });
+  const [performanceSqlData, setPerformanceSqlData] = useState<AnalyticsPerformanceSqlData | null>(
+    null
+  );
+  const [advancedSqlData, setAdvancedSqlData] = useState<AnalyticsAdvancedSqlData | null>(null);
 
-  const filteredSessions = useMemo(() => {
-    if (timeRange === 'lifetime') return sessions;
+  const statsRange = useMemo(() => {
+    if (timeRange === 'lifetime') {
+      return { start_time: null as number | null, end_time: null as number | null };
+    }
 
     const now = Date.now();
     let startTime = 0;
@@ -61,86 +176,190 @@ export function Analytics() {
       case '1y':
         startTime = now - 365 * 24 * 60 * 60 * 1000;
         break;
-      case 'custom': {
-        const start = customStartDate ? new Date(customStartDate).getTime() : 0;
-        const end = customEndDate ? new Date(customEndDate).getTime() + 86399999 : now; // Includes end of day
-        return sessions.filter((s) => s.startTime >= start && s.startTime <= end);
-      }
+      case 'custom':
+        return {
+          start_time: customStartDate ? new Date(customStartDate).getTime() : 0,
+          end_time: customEndDate ? new Date(customEndDate).getTime() + 86399999 : now,
+        };
     }
 
-    return sessions.filter((s) => s.startTime >= startTime);
-  }, [sessions, timeRange, customStartDate, customEndDate]);
+    return { start_time: startTime, end_time: now };
+  }, [timeRange, customStartDate, customEndDate]);
 
-  // Fetch lifetime stats from Tauri strictly (Bypassing frontend TS array limits)
-  const [lifetimeStats, setLifetimeStats] = useState({
-    totalLoot: 0,
-    totalCost: 0,
-    totalKills: 0,
-    totalGlobals: 0,
-    totalHofs: 0,
-    totalDamage: 0,
-    totalShotsFired: 0,
-    totalDuration: 0,
-    totalSessions: 0,
-  });
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((s) => {
+      if (statsRange.start_time !== null && s.startTime < statsRange.start_time) return false;
+      if (statsRange.end_time !== null && s.startTime > statsRange.end_time) return false;
+      return true;
+    });
+  }, [sessions, statsRange.start_time, statsRange.end_time]);
 
   useEffect(() => {
-    const fetchLifetimeStats = async () => {
+    const fallbackStats = filteredSessions.reduce(
+      (acc, session) => {
+        acc.totalLoot += session.stats.totalLoot;
+        acc.totalCost += session.stats.totalCost;
+        acc.totalKills += session.stats.kills;
+        acc.totalGlobals += session.stats.globals;
+        acc.totalHofs += session.stats.hofs;
+        acc.totalDamage += session.stats.damageDealt;
+        acc.totalShotsFired += session.stats.shotsFired;
+        acc.totalDuration += session.stats.duration;
+        acc.totalSessions += 1;
+        return acc;
+      },
+      {
+        totalLoot: 0,
+        totalCost: 0,
+        totalKills: 0,
+        totalGlobals: 0,
+        totalHofs: 0,
+        totalDamage: 0,
+        totalShotsFired: 0,
+        totalDuration: 0,
+        totalSessions: 0,
+      }
+    );
+
+    let cancelled = false;
+
+    const fetchStats = async () => {
       try {
-        if (timeRange === 'lifetime') {
-          // For true lifetime, offload sum exactly to SQLite Rust backend for instant return
-          const stats = await invoke<typeof lifetimeStats>('db_get_lifetime_stats');
-          setLifetimeStats(stats);
-        } else {
-          // For custom narrowed time ranges we fallback to fast JS loop over just the filtered window
-          const fallbackStats = filteredSessions.reduce(
-            (acc, session) => {
-              acc.totalLoot += session.stats.totalLoot;
-              acc.totalCost += session.stats.totalCost;
-              acc.totalKills += session.stats.kills;
-              acc.totalGlobals += session.stats.globals;
-              acc.totalHofs += session.stats.hofs;
-              acc.totalDamage += session.stats.damageDealt;
-              acc.totalShotsFired += session.stats.shotsFired;
-              acc.totalDuration += session.stats.duration;
-              acc.totalSessions += 1;
-              return acc;
-            },
-            {
-              totalLoot: 0,
-              totalCost: 0,
-              totalKills: 0,
-              totalGlobals: 0,
-              totalHofs: 0,
-              totalDamage: 0,
-              totalShotsFired: 0,
-              totalDuration: 0,
-              totalSessions: 0,
-            }
-          );
-          setLifetimeStats(fallbackStats);
+        const dbStats = await invoke<AnalyticsStats>('db_get_analytics_stats', {
+          params: {
+            start_time: statsRange.start_time,
+            end_time: statsRange.end_time,
+          },
+        });
+        if (!cancelled && dbStats) {
+          setLifetimeStats(dbStats);
         }
       } catch (err) {
-        console.error('Failed to pull DB stats:', err);
+        if (!cancelled) {
+          console.error('Failed to pull analytics stats from DB:', err);
+          setLifetimeStats(fallbackStats);
+        }
       }
     };
 
-    fetchLifetimeStats();
-  }, [filteredSessions, timeRange]);
+    fetchStats();
 
-  const lifetimeProfit = lifetimeStats.totalLoot - lifetimeStats.totalCost;
+    return () => {
+      cancelled = true;
+    };
+  }, [filteredSessions, statsRange.start_time, statsRange.end_time]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchPerformanceData = async () => {
+      try {
+        const dbData = await invoke<AnalyticsPerformanceSqlData>(
+          'db_get_analytics_performance_data',
+          {
+            params: {
+              start_time: statsRange.start_time,
+              end_time: statsRange.end_time,
+            },
+          }
+        );
+        if (!cancelled) {
+          setPerformanceSqlData(dbData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to pull analytics performance data from DB:', err);
+          setPerformanceSqlData(null);
+        }
+      }
+    };
+
+    fetchPerformanceData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [statsRange.start_time, statsRange.end_time]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchAdvancedData = async () => {
+      try {
+        const dbData = await invoke<AnalyticsAdvancedSqlData>('db_get_analytics_advanced_data', {
+          params: {
+            start_time: statsRange.start_time,
+            end_time: statsRange.end_time,
+          },
+        });
+        if (!cancelled) {
+          setAdvancedSqlData(dbData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to pull analytics advanced data from DB:', err);
+          setAdvancedSqlData(null);
+        }
+      }
+    };
+
+    fetchAdvancedData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [statsRange.start_time, statsRange.end_time]);
+
+  const fallbackLifetimeStats = useMemo(
+    () =>
+      filteredSessions.reduce(
+        (acc, session) => {
+          acc.totalLoot += session.stats.totalLoot;
+          acc.totalCost += session.stats.totalCost;
+          acc.totalKills += session.stats.kills;
+          acc.totalGlobals += session.stats.globals;
+          acc.totalHofs += session.stats.hofs;
+          acc.totalDamage += session.stats.damageDealt;
+          acc.totalShotsFired += session.stats.shotsFired;
+          acc.totalDuration += session.stats.duration;
+          acc.totalSessions += 1;
+          return acc;
+        },
+        {
+          totalLoot: 0,
+          totalCost: 0,
+          totalKills: 0,
+          totalGlobals: 0,
+          totalHofs: 0,
+          totalDamage: 0,
+          totalShotsFired: 0,
+          totalDuration: 0,
+          totalSessions: 0,
+        }
+      ),
+    [filteredSessions]
+  );
+
+  const displayedLifetimeStats =
+    lifetimeStats.totalSessions > 0 || filteredSessions.length === 0
+      ? lifetimeStats
+      : fallbackLifetimeStats;
+
+  const lifetimeProfit = displayedLifetimeStats.totalLoot - displayedLifetimeStats.totalCost;
   const lifetimeReturnRate =
-    lifetimeStats.totalCost > 0 ? (lifetimeStats.totalLoot / lifetimeStats.totalCost) * 100 : 0;
+    displayedLifetimeStats.totalCost > 0
+      ? (displayedLifetimeStats.totalLoot / displayedLifetimeStats.totalCost) * 100
+      : 0;
   const lifetimeHitRate = useMemo(() => {
-    return lifetimeStats.totalShotsFired > 0
+    return displayedLifetimeStats.totalShotsFired > 0
       ? (filteredSessions.reduce(
           (sum, s) => sum + (s.stats.hits || 0) + (s.stats.criticalHits || 0),
           0
         ) /
-          lifetimeStats.totalShotsFired) *
+          displayedLifetimeStats.totalShotsFired) *
           100
       : 0;
-  }, [filteredSessions, lifetimeStats.totalShotsFired]);
+  }, [filteredSessions, displayedLifetimeStats.totalShotsFired]);
 
   // Sessions by location
   const locationData = useMemo(() => {
@@ -554,23 +773,43 @@ export function Analytics() {
     return calculateSessionsToBreakEven(filteredSessions);
   }, [filteredSessions]);
 
+  const sqlLoadoutData = useMemo(() => {
+    if (!performanceSqlData) return null;
+    return performanceSqlData.loadoutData
+      .map((item) => {
+        const loadout = loadouts.find((l) => l.id === item.loadoutId);
+        return {
+          name: loadout?.name || 'Unknown',
+          sessions: item.sessions,
+          returnRate: item.returnRate,
+          profit: item.profit,
+          avgKills: item.avgKills,
+        };
+      })
+      .filter((item) => item.name !== 'Unknown');
+  }, [performanceSqlData, loadouts]);
+
+  const effectiveWeaponData = performanceSqlData?.weaponData ?? weaponData;
+  const effectiveLocationData = performanceSqlData?.locationData ?? locationData;
+  const effectiveLoadoutData = sqlLoadoutData ?? loadoutData;
+
   // Category 8: Comparative Analytics
   const bestWeapon = useMemo(() => {
-    if (weaponData.length === 0) return null;
-    return [...weaponData].sort((a, b) => b.returnRate - a.returnRate)[0];
-  }, [weaponData]);
+    if (effectiveWeaponData.length === 0) return null;
+    return [...effectiveWeaponData].sort((a, b) => b.returnRate - a.returnRate)[0];
+  }, [effectiveWeaponData]);
 
   const bestLocation = useMemo(() => {
-    const candidates = locationData.filter((loc) => loc.sessions >= 2);
+    const candidates = effectiveLocationData.filter((loc) => loc.sessions >= 2);
     if (candidates.length === 0) return null;
     return [...candidates].sort((a, b) => b.returnRate - a.returnRate)[0];
-  }, [locationData]);
+  }, [effectiveLocationData]);
 
   const bestLoadout = useMemo(() => {
-    const candidates = loadoutData.filter((loadout) => loadout.sessions >= 2);
+    const candidates = effectiveLoadoutData.filter((loadout) => loadout.sessions >= 2);
     if (candidates.length === 0) return null;
     return [...candidates].sort((a, b) => b.returnRate - a.returnRate)[0];
-  }, [loadoutData]);
+  }, [effectiveLoadoutData]);
 
   // Category 11: Temporal Analytics
   const temporalInsights = useMemo(() => {
@@ -696,7 +935,8 @@ export function Analytics() {
           )}
         </div>
         <div className="text-sm text-muted">
-          Across {lifetimeStats.totalSessions} session{lifetimeStats.totalSessions !== 1 ? 's' : ''}
+          Across {displayedLifetimeStats.totalSessions} session
+          {displayedLifetimeStats.totalSessions !== 1 ? 's' : ''}
         </div>
       </div>
 
@@ -743,7 +983,7 @@ export function Analytics() {
       >
         {activeTab === 'overview' && (
           <AnalyticsOverviewTab
-            lifetimeStats={lifetimeStats}
+            lifetimeStats={displayedLifetimeStats}
             lifetimeProfit={lifetimeProfit}
             lifetimeReturnRate={lifetimeReturnRate}
             lifetimeHitRate={lifetimeHitRate}
@@ -756,47 +996,69 @@ export function Analytics() {
 
         {activeTab === 'performance' && (
           <AnalyticsPerformanceTab
-            avgLootValue={avgLootValue}
-            overallLootStdDev={overallLootStdDev}
-            largestDropValue={largestDropValue}
-            avgMinutesPerLoot={avgMinutesPerLoot}
-            totalLootEvents={totalLootEvents}
-            totalGlobalsCount={totalGlobalsCount}
-            totalHoFsCount={totalHoFsCount}
-            globalDropRatePerKill={globalDropRatePerKill}
-            globalDropRatePerHour={globalDropRatePerHour}
-            avgGlobalValue={avgGlobalValue}
-            bestGlobalValue={bestGlobalValue}
-            topLootItems={topLootItems}
-            allGlobals={allGlobals}
-            recentSessions={recentSessions}
-            loadoutData={loadoutData}
-            locationData={locationData}
-            costData={costData}
-            weaponData={weaponData}
-            topSkills={topSkills}
-            armorData={armorData}
+            avgLootValue={performanceSqlData?.avgLootValue ?? avgLootValue}
+            overallLootStdDev={performanceSqlData?.overallLootStdDev ?? overallLootStdDev}
+            largestDropValue={performanceSqlData?.largestDropValue ?? largestDropValue}
+            avgMinutesPerLoot={performanceSqlData?.avgMinutesPerLoot ?? avgMinutesPerLoot}
+            totalLootEvents={performanceSqlData?.totalLootEvents ?? totalLootEvents}
+            totalGlobalsCount={performanceSqlData?.totalGlobalsCount ?? totalGlobalsCount}
+            totalHoFsCount={performanceSqlData?.totalHoFsCount ?? totalHoFsCount}
+            globalDropRatePerKill={
+              performanceSqlData?.globalDropRatePerKill ?? globalDropRatePerKill
+            }
+            globalDropRatePerHour={
+              performanceSqlData?.globalDropRatePerHour ?? globalDropRatePerHour
+            }
+            avgGlobalValue={performanceSqlData?.avgGlobalValue ?? avgGlobalValue}
+            bestGlobalValue={performanceSqlData?.bestGlobalValue ?? bestGlobalValue}
+            topLootItems={performanceSqlData?.topLootItems ?? topLootItems}
+            allGlobals={performanceSqlData?.allGlobals ?? allGlobals}
+            recentSessions={
+              performanceSqlData?.recentSessions.map((s) => ({
+                date: format(s.startTime, 'MM/dd'),
+                returnRate: s.returnRate,
+                profit: s.profit,
+                loot: s.loot,
+              })) ?? recentSessions
+            }
+            loadoutData={sqlLoadoutData ?? loadoutData}
+            locationData={performanceSqlData?.locationData ?? locationData}
+            costData={performanceSqlData?.costData ?? costData}
+            weaponData={performanceSqlData?.weaponData ?? weaponData}
+            topSkills={performanceSqlData?.topSkills ?? topSkills}
+            armorData={performanceSqlData?.armorData ?? armorData}
           />
         )}
 
         {activeTab === 'advanced' && (
           <AnalyticsAdvancedTab
-            sessionWinRate={sessionWinRate}
-            profitableStreaks={profitableStreaks}
+            sessionWinRate={advancedSqlData?.sessionWinRate ?? sessionWinRate}
+            profitableStreaks={advancedSqlData?.profitableStreaks ?? profitableStreaks}
             bestWeapon={bestWeapon}
             bestLocation={bestLocation}
             bestLoadout={bestLoadout}
-            temporalInsights={temporalInsights}
-            creatureAnalysis={creatureAnalysis}
+            temporalInsights={advancedSqlData?.temporalInsights ?? temporalInsights}
+            creatureAnalysis={advancedSqlData?.creatureAnalysis ?? creatureAnalysis}
             filteredSessions={filteredSessions}
-            skillsByLocation={skillsByLocation}
-            skillsByWeapon={skillsByWeapon}
-            lifetimeAttributeGains={lifetimeAttributeGains}
-            allSkillNames={allSkillNames}
-            skillGainVariance={skillGainVariance}
-            skillValuePerCost={skillValuePerCost}
-            projectedLifetimeProfit={projectedLifetimeProfit}
-            sessionsToBreakEven={sessionsToBreakEven}
+            skillsByLocation={advancedSqlData?.skillsByLocation ?? skillsByLocation}
+            skillsByWeapon={advancedSqlData?.skillsByWeapon ?? skillsByWeapon}
+            lifetimeAttributeGains={
+              advancedSqlData?.lifetimeAttributeGains ?? lifetimeAttributeGains
+            }
+            allSkillNames={advancedSqlData?.allSkillNames ?? allSkillNames}
+            skillGainVariance={advancedSqlData?.skillGainVariance ?? skillGainVariance}
+            skillValuePerCost={advancedSqlData?.skillValuePerCost ?? skillValuePerCost}
+            totalSkillGains={
+              advancedSqlData?.totalSkillGains ??
+              filteredSessions.reduce(
+                (sum, s) => sum + s.skills.reduce((ss, sk) => ss + sk.gainAmount, 0),
+                0
+              )
+            }
+            projectedLifetimeProfit={
+              advancedSqlData?.projectedLifetimeProfit ?? projectedLifetimeProfit
+            }
+            sessionsToBreakEven={advancedSqlData?.sessionsToBreakEven ?? sessionsToBreakEven}
           />
         )}
       </Suspense>

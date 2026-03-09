@@ -1,4 +1,8 @@
-import { LootPerformanceSection, TopLootItem, GlobalEntry } from '../views/analytics/LootPerformanceSection';
+import {
+  LootPerformanceSection,
+  TopLootItem,
+  GlobalEntry,
+} from '../views/analytics/LootPerformanceSection';
 import {
   PerformancePanelsSection,
   RecentSession,

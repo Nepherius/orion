@@ -167,84 +167,47 @@ describe('calculateSessionStats', () => {
     expect(stats.hofs).toBe(1);
   });
 
-  it('counts 1 kill for loot items within 3 seconds', () => {
-    // Simulates: Shrapnel at 12:45:25, Animal Muscle Oil at 12:45:26
-    const ts1 = new Date(2026, 1, 28, 12, 45, 25).getTime();
-    const ts2 = new Date(2026, 1, 28, 12, 45, 26).getTime();
-
+  it('uses tracked kill events as authoritative kill count', () => {
     const session = makeSession({
-      loot: [
+      kills: [
         {
-          id: 'l1',
-          name: 'Shrapnel',
-          quantity: 196,
-          value: 0.0196,
-          markup: 100,
-          totalValue: 0.0196,
-          timestamp: ts1,
+          id: 'k1',
+          creatureName: 'Argonaut',
+          hpDealt: 150,
+          cost: 1.2,
+          lootValue: 0.9,
+          timestamp: 1,
         },
         {
-          id: 'l2',
-          name: 'Animal Muscle Oil',
-          quantity: 3,
-          value: 0.09,
-          markup: 100,
-          totalValue: 0.09,
-          timestamp: ts2,
+          id: 'k2',
+          creatureName: 'Argonaut',
+          hpDealt: 145,
+          cost: 1.1,
+          lootValue: 0.8,
+          timestamp: 2,
         },
       ],
     });
 
-    const stats = calculateSessionStats(session, ts2 + 1000);
-    expect(stats.kills).toBe(1);
-  });
-
-  it('counts 2 kills for loot items more than 3 seconds apart', () => {
-    const ts1 = new Date(2026, 1, 28, 12, 45, 25).getTime();
-    const ts2 = new Date(2026, 1, 28, 12, 45, 30).getTime(); // 5 seconds later
-    const session = makeSession({
-      loot: [
-        {
-          id: 'l1',
-          name: 'Shrapnel',
-          quantity: 1,
-          value: 0.01,
-          markup: 100,
-          totalValue: 0.01,
-          timestamp: ts1,
-        },
-        {
-          id: 'l2',
-          name: 'Oil',
-          quantity: 1,
-          value: 0.09,
-          markup: 100,
-          totalValue: 0.09,
-          timestamp: ts2,
-        },
-      ],
-    });
-
-    const stats = calculateSessionStats(session, ts2 + 1000);
+    const stats = calculateSessionStats(session, 5_000);
     expect(stats.kills).toBe(2);
   });
 
-  it('counts 0 kills for empty loot', () => {
-    const session = makeSession({ loot: [] });
+  it('counts 0 kills when no tracked kills exist', () => {
+    const session = makeSession({ kills: [] });
     const stats = calculateSessionStats(session);
     expect(stats.kills).toBe(0);
   });
 
-  it('counts 1 kill for a single loot item', () => {
+  it('counts 1 kill for a single tracked kill', () => {
     const session = makeSession({
-      loot: [
+      kills: [
         {
-          id: 'l1',
-          name: 'Shrapnel',
-          quantity: 1,
-          value: 0.01,
-          markup: 100,
-          totalValue: 0.01,
+          id: 'k1',
+          creatureName: 'Berycled',
+          hpDealt: 80,
+          cost: 0.4,
+          lootValue: 0.3,
           timestamp: 1000,
         },
       ],

@@ -52,8 +52,6 @@ export function calculateKillStats(sessions: HuntSession[]): Record<
 
   for (const session of sessions) {
     const trackedKills = session.kills || [];
-    let trackedCostInSession = 0;
-    let trackedLootInSession = 0;
 
     for (const kill of trackedKills) {
       const creatureName = kill.creatureName || 'Unknown';
@@ -65,34 +63,12 @@ export function calculateKillStats(sessions: HuntSession[]): Record<
       stats[creatureName].totalProfit += kill.lootValue - kill.cost;
       stats[creatureName].averageHPDealt += kill.hpDealt;
       hpSamples[creatureName] += 1;
-      trackedCostInSession += kill.cost;
-      trackedLootInSession += kill.lootValue;
 
       if (kill.maturity) {
         const sanitizedMaturity = kill.maturity || 'Unknown';
         stats[creatureName].maturities[sanitizedMaturity] =
           (stats[creatureName].maturities[sanitizedMaturity] || 0) + 1;
       }
-    }
-
-    // Reconcile kill-count gap between tracked kills and session totals
-    const expectedKills = Math.max(0, Math.round(session.stats.kills || 0));
-    const missingKills = Math.max(0, expectedKills - trackedKills.length);
-    if (missingKills > 0) {
-      const creatureName = session.creature || 'Unknown';
-      ensureCreatureStats(creatureName);
-
-      const sessionCost = session.stats.totalCost || 0;
-      const sessionLoot = session.stats.totalLoot || 0;
-      const missingCost = Math.max(0, sessionCost - trackedCostInSession);
-      const missingLoot = Math.max(0, sessionLoot - trackedLootInSession);
-
-      stats[creatureName].totalKills += missingKills;
-      stats[creatureName].totalCost += missingCost;
-      stats[creatureName].totalLoot += missingLoot;
-      stats[creatureName].totalProfit += missingLoot - missingCost;
-      stats[creatureName].maturities.Unknown =
-        (stats[creatureName].maturities.Unknown || 0) + missingKills;
     }
   }
 
@@ -143,12 +119,6 @@ export function calculateMaturityDistribution(
       const creatureName = kill.creatureName || 'Unknown';
       const maturityName = kill.maturity || 'Unknown';
       addToDistribution(creatureName, maturityName, 1);
-    }
-
-    const expectedKills = Math.max(0, Math.round(session.stats.kills || 0));
-    const missingKills = Math.max(0, expectedKills - trackedKills.length);
-    if (missingKills > 0) {
-      addToDistribution(session.creature || 'Unknown', 'Unknown', missingKills);
     }
   }
 

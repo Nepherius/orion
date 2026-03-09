@@ -44,6 +44,7 @@ export interface AnalyticsAdvancedTabProps {
   allSkillNames: string[];
   skillGainVariance: number;
   skillValuePerCost: number;
+  totalSkillGains: number;
   projectedLifetimeProfit: number;
   sessionsToBreakEven: number | null;
 }
@@ -66,6 +67,7 @@ export function AnalyticsAdvancedTab(props: AnalyticsAdvancedTabProps) {
         allSkillNames={props.allSkillNames}
         skillGainVariance={props.skillGainVariance}
         skillValuePerCost={props.skillValuePerCost}
+        totalSkillGains={props.totalSkillGains}
         projectedLifetimeProfit={props.projectedLifetimeProfit}
         sessionsToBreakEven={props.sessionsToBreakEven}
       />

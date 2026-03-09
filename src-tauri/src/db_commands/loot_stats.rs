@@ -219,6 +219,14 @@ pub fn db_get_session_stats(
         )
         .unwrap_or(0);
 
+    let kill_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM kills WHERE session_uuid = ?1",
+            [&session_uuid],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+
     let mut stmt = conn
         .prepare("SELECT COALESCE(SUM(CASE WHEN is_hof = 0 THEN 1 ELSE 0 END), 0), COALESCE(SUM(CASE WHEN is_hof = 1 THEN 1 ELSE 0 END), 0) FROM globals WHERE session_uuid = ?1")
         .map_err(|e| e.to_string())?;
@@ -324,7 +332,7 @@ pub fn db_get_session_stats(
     };
 
     Ok(json!({
-        "kills": 0,
+        "kills": kill_count,
         "lootEvents": loot_events,
         "globals": globals,
         "hofs": hofs,
@@ -385,4 +393,3 @@ pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValu
     }
     Ok(json!(sessions))
 }
-
