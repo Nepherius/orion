@@ -34,10 +34,7 @@ export default function KillEfficiencyScatterPanel() {
   }));
 
   // Determine axis max for the break-even reference line
-  const maxVal = Math.max(
-    ...points.map((p) => Math.max(p.avgCostPerKill, p.avgLootPerKill)),
-    1
-  );
+  const maxVal = Math.max(...points.map((p) => Math.max(p.avgCostPerKill, p.avgLootPerKill)), 1);
   const axisMax = Math.ceil(maxVal * 1.15);
 
   // Scale range for bubble sizes
@@ -119,11 +116,7 @@ export default function KillEfficiencyScatterPanel() {
             strokeDasharray="6 4"
             strokeWidth={1.5}
           />
-          <Scatter
-            data={points}
-            fill="#3B82F6"
-            fillOpacity={0.7}
-          />
+          <Scatter data={points} fill="#3B82F6" fillOpacity={0.7} />
         </ScatterChart>
       </ResponsiveContainer>
       <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted">

@@ -65,18 +65,16 @@ export default function MaturityReturnPanel() {
               if (name === 'Return %') return `${value.toFixed(1)}%`;
               return value;
             }}
-            labelFormatter={(_label: string, payload: Array<{ payload?: typeof chartData[0] }>) => {
+            labelFormatter={(
+              _label: string,
+              payload: Array<{ payload?: (typeof chartData)[0] }>
+            ) => {
               const point = payload?.[0]?.payload;
               if (!point) return '';
               return `${point.label} (${point.kills} kills, ${point.profit >= 0 ? '+' : ''}${point.profit.toFixed(2)} PED)`;
             }}
           />
-          <ReferenceLine
-            x={100}
-            stroke="#10B981"
-            strokeDasharray="6 4"
-            strokeWidth={1.5}
-          />
+          <ReferenceLine x={100} stroke="#10B981" strokeDasharray="6 4" strokeWidth={1.5} />
           <Bar dataKey="returnRate" name="Return %" barSize={18}>
             {chartData.map((entry, index) => (
               <Cell

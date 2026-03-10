@@ -1,4 +1,16 @@
-import { X, Trophy, Target, Crosshair, Clock, TrendingUp, TrendingDown, Skull, DollarSign, Zap, Shield } from 'lucide-react';
+import {
+  X,
+  Trophy,
+  Target,
+  Crosshair,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  Skull,
+  DollarSign,
+  Zap,
+  Shield,
+} from 'lucide-react';
 import type { HuntSession } from '../../types';
 
 interface SessionSummaryModalProps {
@@ -51,7 +63,10 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
     .slice(0, 5);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      onClick={onClose}
+    >
       <div
         className="bg-surface rounded-lg shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -67,7 +82,11 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
                 {session.weapon ? ` • ${session.weapon}` : ''}
               </p>
             </div>
-            <button onClick={onClose} className="text-muted hover:text-white transition-colors" aria-label="Close">
+            <button
+              onClick={onClose}
+              className="text-muted hover:text-white transition-colors"
+              aria-label="Close"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -84,14 +103,19 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
               )}
               <div>
                 <div className="text-xs text-muted uppercase tracking-wide">Net Profit</div>
-                <div className={`text-2xl font-bold ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
-                  {isProfitable ? '+' : ''}{profit.toFixed(2)} PED
+                <div
+                  className={`text-2xl font-bold ${isProfitable ? 'text-green-400' : 'text-red-400'}`}
+                >
+                  {isProfitable ? '+' : ''}
+                  {profit.toFixed(2)} PED
                 </div>
               </div>
             </div>
             <div className="text-right">
               <div className="text-xs text-muted uppercase tracking-wide">Return</div>
-              <div className={`text-2xl font-bold ${stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}>
+              <div
+                className={`text-2xl font-bold ${stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
+              >
                 {stats.returns.toFixed(1)}%
               </div>
             </div>
@@ -102,30 +126,78 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
         <div className="px-6 py-4 space-y-4">
           {/* Economy Row */}
           <div className="grid grid-cols-3 gap-3">
-            <StatCard icon={<DollarSign className="w-4 h-4 text-green-400" />} label="Total Loot" value={`${stats.totalLoot.toFixed(2)} PED`} />
-            <StatCard icon={<DollarSign className="w-4 h-4 text-red-400" />} label="Total Cost" value={`${stats.totalCost.toFixed(2)} PED`} />
-            <StatCard icon={<Clock className="w-4 h-4 text-blue-400" />} label="Duration" value={formatDuration(stats.duration)} />
+            <StatCard
+              icon={<DollarSign className="w-4 h-4 text-green-400" />}
+              label="Total Loot"
+              value={`${stats.totalLoot.toFixed(2)} PED`}
+            />
+            <StatCard
+              icon={<DollarSign className="w-4 h-4 text-red-400" />}
+              label="Total Cost"
+              value={`${stats.totalCost.toFixed(2)} PED`}
+            />
+            <StatCard
+              icon={<Clock className="w-4 h-4 text-blue-400" />}
+              label="Duration"
+              value={formatDuration(stats.duration)}
+            />
           </div>
 
           {/* Combat Row */}
           <div className="grid grid-cols-3 gap-3">
-            <StatCard icon={<Skull className="w-4 h-4 text-orange-400" />} label="Kills" value={stats.kills.toString()} />
-            <StatCard icon={<Crosshair className="w-4 h-4 text-yellow-400" />} label="Hit Rate" value={`${hitRate.toFixed(1)}%`} />
-            <StatCard icon={<Zap className="w-4 h-4 text-purple-400" />} label="Crit Rate" value={`${critRate.toFixed(1)}%`} />
+            <StatCard
+              icon={<Skull className="w-4 h-4 text-orange-400" />}
+              label="Kills"
+              value={stats.kills.toString()}
+            />
+            <StatCard
+              icon={<Crosshair className="w-4 h-4 text-yellow-400" />}
+              label="Hit Rate"
+              value={`${hitRate.toFixed(1)}%`}
+            />
+            <StatCard
+              icon={<Zap className="w-4 h-4 text-purple-400" />}
+              label="Crit Rate"
+              value={`${critRate.toFixed(1)}%`}
+            />
           </div>
 
           {/* Efficiency Row */}
           <div className="grid grid-cols-3 gap-3">
-            <StatCard icon={<Target className="w-4 h-4 text-cyan-400" />} label="Kills/Hour" value={killsPerHour.toFixed(1)} />
-            <StatCard icon={<DollarSign className="w-4 h-4 text-green-300" />} label="Avg Loot/Kill" value={`${avgLootPerKill.toFixed(3)}`} />
-            <StatCard icon={<DollarSign className="w-4 h-4 text-red-300" />} label="Avg Cost/Kill" value={`${avgCostPerKill.toFixed(3)}`} />
+            <StatCard
+              icon={<Target className="w-4 h-4 text-cyan-400" />}
+              label="Kills/Hour"
+              value={killsPerHour.toFixed(1)}
+            />
+            <StatCard
+              icon={<DollarSign className="w-4 h-4 text-green-300" />}
+              label="Avg Loot/Kill"
+              value={`${avgLootPerKill.toFixed(3)}`}
+            />
+            <StatCard
+              icon={<DollarSign className="w-4 h-4 text-red-300" />}
+              label="Avg Cost/Kill"
+              value={`${avgCostPerKill.toFixed(3)}`}
+            />
           </div>
 
           {/* Damage & Defense */}
           <div className="grid grid-cols-3 gap-3">
-            <StatCard icon={<Zap className="w-4 h-4 text-orange-300" />} label="DPS" value={dps.toFixed(1)} />
-            <StatCard icon={<Shield className="w-4 h-4 text-blue-300" />} label="Dmg Taken" value={stats.damageTaken.toFixed(0)} />
-            <StatCard icon={<Trophy className="w-4 h-4 text-yellow-300" />} label="Globals" value={`${stats.globals}${stats.hofs > 0 ? ` (${stats.hofs} HoF)` : ''}`} />
+            <StatCard
+              icon={<Zap className="w-4 h-4 text-orange-300" />}
+              label="DPS"
+              value={dps.toFixed(1)}
+            />
+            <StatCard
+              icon={<Shield className="w-4 h-4 text-blue-300" />}
+              label="Dmg Taken"
+              value={stats.damageTaken.toFixed(0)}
+            />
+            <StatCard
+              icon={<Trophy className="w-4 h-4 text-yellow-300" />}
+              label="Globals"
+              value={`${stats.globals}${stats.hofs > 0 ? ` (${stats.hofs} HoF)` : ''}`}
+            />
           </div>
 
           {/* Top Loot */}
@@ -134,9 +206,17 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
               <div className="text-xs text-muted uppercase tracking-wide mb-2">Top Loot Items</div>
               <div className="space-y-1">
                 {topLoot.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between text-sm bg-white/5 rounded px-3 py-1.5">
-                    <span className="truncate mr-2">{item.name}{item.count > 1 ? ` ×${item.count}` : ''}</span>
-                    <span className="text-green-400 font-medium whitespace-nowrap">{item.value.toFixed(2)} PED</span>
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between text-sm bg-white/5 rounded px-3 py-1.5"
+                  >
+                    <span className="truncate mr-2">
+                      {item.name}
+                      {item.count > 1 ? ` ×${item.count}` : ''}
+                    </span>
+                    <span className="text-green-400 font-medium whitespace-nowrap">
+                      {item.value.toFixed(2)} PED
+                    </span>
                   </div>
                 ))}
               </div>
@@ -146,7 +226,9 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border">
-          <button onClick={onClose} className="btn-primary w-full py-2">Done</button>
+          <button onClick={onClose} className="btn-primary w-full py-2">
+            Done
+          </button>
         </div>
       </div>
     </div>

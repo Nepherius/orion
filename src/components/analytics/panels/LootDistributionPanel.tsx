@@ -91,7 +91,11 @@ export default function LootDistributionPanel() {
             }}
             labelStyle={{ color: '#F3F4F6' }}
             itemStyle={{ color: '#F3F4F6' }}
-            formatter={(value: number, name: string, props: { payload?: { totalValue: number; count: number } }) => {
+            formatter={(
+              value: number,
+              name: string,
+              props: { payload?: { totalValue: number; count: number } }
+            ) => {
               if (name === 'Drops') {
                 const pct = totalDrops > 0 ? ((value / totalDrops) * 100).toFixed(1) : '0';
                 const count = props.payload?.count ?? 0;

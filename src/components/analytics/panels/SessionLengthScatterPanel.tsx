@@ -32,11 +32,13 @@ export default function SessionLengthScatterPanel() {
       return true;
     });
 
-    return filtered.map((s): ScatterPoint => ({
-      durationHours: parseFloat((s.stats.duration / 3600).toFixed(2)),
-      returnRate: parseFloat(((s.stats.totalLoot / s.stats.totalCost) * 100).toFixed(1)),
-      name: s.name,
-    }));
+    return filtered.map(
+      (s): ScatterPoint => ({
+        durationHours: parseFloat((s.stats.duration / 3600).toFixed(2)),
+        returnRate: parseFloat(((s.stats.totalLoot / s.stats.totalCost) * 100).toFixed(1)),
+        name: s.name,
+      })
+    );
   }, [sessions, timeRange.startTime, timeRange.endTime]);
 
   if (points.length < 3) return null;
@@ -97,18 +99,8 @@ export default function SessionLengthScatterPanel() {
               return point?.name || '';
             }}
           />
-          <ReferenceLine
-            y={100}
-            stroke="#10B981"
-            strokeDasharray="6 4"
-            strokeWidth={1.5}
-          />
-          <Scatter
-            data={points}
-            fill="#3B82F6"
-            fillOpacity={0.7}
-            r={5}
-          />
+          <ReferenceLine y={100} stroke="#10B981" strokeDasharray="6 4" strokeWidth={1.5} />
+          <Scatter data={points} fill="#3B82F6" fillOpacity={0.7} r={5} />
         </ScatterChart>
       </ResponsiveContainer>
     </div>

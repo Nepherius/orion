@@ -44,7 +44,9 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
       }
 
       const hasError =
-        performanceResult.status === 'rejected' || advancedResult.status === 'rejected' || factorsResult.status === 'rejected';
+        performanceResult.status === 'rejected' ||
+        advancedResult.status === 'rejected' ||
+        factorsResult.status === 'rejected';
 
       set(() => ({
         analyticsData: {

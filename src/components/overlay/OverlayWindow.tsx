@@ -366,11 +366,11 @@ export function OverlayWindow() {
 
         <div className="h-6 w-px bg-surface shrink-0"></div>
 
-        {/* Loot Value */}
+        {/* Cost Value */}
         <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-muted text-[10px] text-center whitespace-nowrap">Loot</span>
-          <span className="font-bold text-green-400 text-xs whitespace-nowrap">
-            {activeSession.stats.totalLoot.toFixed(2)} PED
+          <span className="text-muted text-[10px] text-center whitespace-nowrap">Cost</span>
+          <span className="font-bold text-red-400 text-xs whitespace-nowrap">
+            {activeSession.stats.totalCost.toFixed(2)} PED
           </span>
         </div>
 

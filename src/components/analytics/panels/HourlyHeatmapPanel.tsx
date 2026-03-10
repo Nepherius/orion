@@ -35,7 +35,7 @@ export default function HourlyHeatmapPanel() {
     if (!heatmapData || heatmapData.length === 0) return null;
 
     // Build a 7×24 lookup map
-    const lookup = new Map<string, typeof heatmapData[0]>();
+    const lookup = new Map<string, (typeof heatmapData)[0]>();
     for (const entry of heatmapData) {
       lookup.set(`${entry.dayOfWeek}-${entry.hour}`, entry);
     }

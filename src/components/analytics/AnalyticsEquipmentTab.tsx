@@ -4,7 +4,6 @@ const LoadoutPerformancePanel = lazy(() => import('./panels/LoadoutPerformancePa
 const LocationPerformancePanel = lazy(() => import('./panels/LocationPerformancePanel'));
 const CostBreakdownPanel = lazy(() => import('./panels/CostBreakdownPanel'));
 const WeaponPerformancePanel = lazy(() => import('./panels/WeaponPerformancePanel'));
-const TopSkillsPanel = lazy(() => import('./panels/TopSkillsPanel'));
 const ArmorPerformancePanel = lazy(() => import('./panels/ArmorPerformancePanel'));
 const HealingPerformancePanel = lazy(() => import('./panels/HealingPerformancePanel'));
 
@@ -24,7 +23,6 @@ export function AnalyticsEquipmentTab() {
           <CostBreakdownPanel />
         </div>
         <WeaponPerformancePanel />
-        <TopSkillsPanel />
         <ArmorPerformancePanel />
         <HealingPerformancePanel />
       </Suspense>

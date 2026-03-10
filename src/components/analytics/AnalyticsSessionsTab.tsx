@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import TopSkillsPanel from './panels/TopSkillsPanel';
 
 const SessionReliabilityPanel = lazy(() => import('./panels/SessionReliabilityPanel'));
 const ComparativeAnalyticsPanel = lazy(() => import('./panels/ComparativeAnalyticsPanel'));
@@ -29,6 +30,7 @@ export function AnalyticsSessionsTab() {
         <TimeToVariancePanel />
         <MarkupDependencyPanel />
         <SkillEfficiencyPanel />
+        <TopSkillsPanel />
       </Suspense>
     </div>
   );

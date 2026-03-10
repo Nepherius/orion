@@ -21,6 +21,7 @@ import { EditSessionModal } from './EditSessionModal';
 import { CostsPanel } from './CostsPanel';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { SessionSummaryModal } from './SessionSummaryModal';
+import { CumulativeTrajectoryChart } from './CumulativeTrajectoryChart';
 
 interface SessionDetailsProps {
   sessionId: string;
@@ -261,8 +262,9 @@ export function SessionDetails({
             <div className="bg-surface rounded-lg p-3 text-center border border-border">
               <div className="text-sm text-muted mb-1">Returns</div>
               <div
-                className={`text-2xl font-bold flex items-center justify-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-                  }`}
+                className={`text-2xl font-bold flex items-center justify-center gap-2 ${
+                  session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+                }`}
               >
                 {session.stats.returns >= 100 ? (
                   <TrendingUp className="w-5 h-5" />
@@ -299,6 +301,9 @@ export function SessionDetails({
         </div>
       )}
 
+      {/* Cumulative Trajectory Chart plotted along the session's duration */}
+      <CumulativeTrajectoryChart session={session} />
+
       {/* Costs Panel */}
       {!isLootOnly && <CostsPanel session={session} />}
 
@@ -325,10 +330,11 @@ export function SessionDetails({
             {session.globals.map((global) => (
               <div
                 key={global.id}
-                className={`p-3 rounded-lg flex items-center justify-between ${global.isHoF
-                  ? 'bg-purple-900 border border-purple-600'
-                  : 'bg-yellow-900 border border-yellow-600'
-                  }`}
+                className={`p-3 rounded-lg flex items-center justify-between ${
+                  global.isHoF
+                    ? 'bg-purple-900 border border-purple-600'
+                    : 'bg-yellow-900 border border-yellow-600'
+                }`}
               >
                 <div>
                   <span className="font-medium">{global.creature}</span>
