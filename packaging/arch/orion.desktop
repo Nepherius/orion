@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Orion
+Comment=Entropia Universe Loot Tracker
+Exec=Orion
+Icon=/usr/share/pixmaps/orion.png
+Terminal=false
+Categories=Utility;

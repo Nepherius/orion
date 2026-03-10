@@ -5,7 +5,7 @@ const path = require('path');
 const https = require('https');
 
 const API_BASE = 'https://api.entropianexus.com';
-const USER_AGENT = 'Orion-Loot-Tracker/1.1.0';
+const USER_AGENT = 'Orion/1.1.0';
 
 // Output directory for mob data
 const creaturesDir = path.join(__dirname, '../public/assets/creatures');

@@ -5,7 +5,7 @@
  */
 
 const API_BASE = 'https://api.entropianexus.com';
-const USER_AGENT = 'Orion-Loot-Tracker/1.1.0';
+const USER_AGENT = 'Orion/1.1.0';
 
 export interface NexusItem {
   Id: number;

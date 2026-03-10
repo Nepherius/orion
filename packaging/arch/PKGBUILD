@@ -1,0 +1,27 @@
+pkgname=Orion
+pkgver=1.2.3
+pkgrel=2
+pkgdesc="Entropia Universe Loot Tracker"
+arch=('x86_64')
+url="https://gitlab.com/nepherius/orion"
+license=('MIT')
+depends=('gtk3' 'webkit2gtk-4.1' 'libappindicator-gtk3')
+makedepends=('npm' 'rust' 'cargo')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir/../../"
+  # Unset makepkg flags that break rusqlite bundled compilation
+  unset CFLAGS CXXFLAGS LDFLAGS
+  npm install
+  npm run build
+  npx tauri build --no-bundle
+}
+
+package() {
+  cd "$startdir/../../"
+  install -Dm755 "src-tauri/target/release/Orion" "$pkgdir/usr/bin/Orion"
+  install -Dm644 "packaging/arch/orion.desktop" "$pkgdir/usr/share/applications/orion.desktop"
+  install -Dm644 "src-tauri/icons/icon.png" "$pkgdir/usr/share/pixmaps/orion.png"
+}

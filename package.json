@@ -1,5 +1,5 @@
 {
-  "name": "orion-loot-tracker",
+  "name": "orion",
   "version": "1.2.3",
   "description": "Entropia Universe Loot Tracker - Track your hunting sessions, loot, and returns",
   "type": "module",
@@ -36,7 +36,10 @@
     "tauri:dev": "npm run test:all && ./scripts/tauri-dev-linux-safe.sh",
     "tauri:build": "npm run test:all && tauri build",
     "build:appimg": "npm run test:all && NO_STRIP=true tauri build --bundles appimage",
-    "tauri:build:linux": "npm run test:all && tauri build --bundles deb,rpm && NO_STRIP=true tauri build --bundles appimage"
+    "tauri:build:linux": "npm run test:all && NO_STRIP=true tauri build --bundles deb,rpm,appimage",
+    "build:linux": "npm run tauri:build:linux && npm run build:arch",
+    "prebuild": "node scripts/sync-version.cjs",
+    "build:arch": "cd packaging/arch && makepkg -si"
   },
   "dependencies": {
     "@tauri-apps/plugin-dialog": "^2.6.0",
