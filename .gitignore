@@ -39,3 +39,8 @@ dist-ssr
 *.njsproj
 *.sln
 presentation.md
+
+# Arch makepkg artifacts
+*.pkg.tar.zst
+packaging/arch/pkg/
+packaging/arch/src/
