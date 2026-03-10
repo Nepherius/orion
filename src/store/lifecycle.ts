@@ -119,7 +119,8 @@ export async function initializeStoreFromDb(useHuntStore: HuntStoreHook) {
     sessions,
     activeSessionId:
       storedActiveSessionId ?? sessions.find((s) => s.status === 'active')?.id ?? null,
-    settings: storedSettings ?? defaultSettings,
+    // Merge storedSettings with defaultSettings to ensure all defaults are present
+    settings: { ...defaultSettings, ...(storedSettings ?? {}) },
     loadouts: normalizedHydratedLoadouts,
     itemDatabase: normalizedItemDatabase,
     goals: storedGoals ?? [],
@@ -280,16 +281,19 @@ export async function setupStoreSync(useHuntStore: HuntStoreHook, delayBroadcast
 
   const unlistenOverlayGeometry = await listen(
     'overlay-geometry-changed',
-    (event: Event<{ x: number; y: number; width: number; height: number }>) => {
+    (event: Event<{ x: number | null; y: number | null; width: number; height: number }>) => {
       const payload = event.payload;
       if (!payload) return;
 
-      useHuntStore.getState().updateSettings({
-        overlayX: payload.x,
-        overlayY: payload.y,
+      const updates: Partial<AppSettings> = {
         overlayWidth: payload.width,
         overlayHeight: payload.height,
-      });
+      };
+
+      if (payload.x !== null && payload.x !== undefined) updates.overlayX = payload.x;
+      if (payload.y !== null && payload.y !== undefined) updates.overlayY = payload.y;
+
+      useHuntStore.getState().updateSettings(updates);
     }
   ).catch(() => {
     return () => {};

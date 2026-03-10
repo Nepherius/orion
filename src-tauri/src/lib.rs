@@ -501,8 +501,8 @@ async fn is_overlay_visible(app_handle: tauri::AppHandle) -> Result<bool, String
 
 #[derive(Serialize)]
 struct OverlayGeometry {
-    x: f64,
-    y: f64,
+    x: Option<f64>,
+    y: Option<f64>,
     width: f64,
     height: f64,
 }
@@ -514,16 +514,22 @@ async fn get_overlay_geometry(
     use tauri::Manager;
 
     if let Some(window) = app_handle.get_webview_window("overlay") {
-        let position = window.outer_position().map_err(|e| e.to_string())?;
-        let size = window.inner_size().map_err(|e| e.to_string())?;
+        let is_wayland = get_linux_display_server() == Some("wayland".to_string());
 
-        if size.width == 0 || size.height == 0 {
-            return Ok(None);
-        }
+        let position = if is_wayland {
+            None
+        } else {
+            window.outer_position().ok()
+        };
+
+        // Window size usually works on all platforms, fallback to 0,0 just in case
+        let size = window
+            .inner_size()
+            .unwrap_or(tauri::PhysicalSize::new(0, 0));
 
         Ok(Some(OverlayGeometry {
-            x: position.x as f64,
-            y: position.y as f64,
+            x: position.map(|p| p.x as f64),
+            y: position.map(|p| p.y as f64),
             width: size.width as f64,
             height: size.height as f64,
         }))
@@ -600,9 +606,23 @@ pub fn run() {
             std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
             let db_path: PathBuf = app_dir.join("orion.db");
 
-            // Log database location for debugging
+            // Log database location for debugging (console and file)
             println!("[DB] Database path: {:?}", db_path);
             println!("[DB] Database exists: {}", db_path.exists());
+
+            // Also append to a debug log file in the app data dir
+            use std::fs::OpenOptions;
+            use std::io::Write;
+            let log_path = app_dir.join("orion-debug.log");
+            if let Ok(mut log_file) = OpenOptions::new().create(true).append(true).open(&log_path) {
+                let _ = writeln!(log_file, "[DB] Database path: {:?}", db_path);
+                let _ = writeln!(log_file, "[DB] Database exists: {}", db_path.exists());
+                let _ = writeln!(
+                    log_file,
+                    "[DB] Log time: {:?}",
+                    std::time::SystemTime::now()
+                );
+            }
 
             let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
             ensure_db_schema(&conn).map_err(|e| e.to_string())?;
