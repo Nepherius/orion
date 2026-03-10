@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import packageJson from '../package.json';
 import { useInitialDataLoader } from './hooks/useInitialDataLoader';
+import type { HuntSession } from './types';
 
 // Dynamically imported views and components to minimize bundle size
 const SessionList = lazy(() =>
@@ -37,6 +38,9 @@ const Analytics = lazy(() =>
 const Settings = lazy(() =>
   import('./components/views/Settings').then((m) => ({ default: m.Settings }))
 );
+const SessionSummaryModal = lazy(() =>
+  import('./components/sessions/SessionSummaryModal').then((m) => ({ default: m.SessionSummaryModal }))
+);
 
 import { Database, Settings as SettingsIcon, BarChart3, Sword, X } from 'lucide-react';
 
@@ -46,6 +50,7 @@ function App() {
   const [currentView, setCurrentView] = useState<View>('sessions');
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [viewStatsOverlaySessionId, setViewStatsOverlaySessionId] = useState<string | null>(null);
+  const [completedSessionSummary, setCompletedSessionSummary] = useState<HuntSession | null>(null);
   const activeSession = useHuntStore(
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
@@ -293,9 +298,10 @@ function App() {
               <div className="max-w-7xl mx-auto px-6 py-3">
                 <ActiveSessionPanel
                   session={activeSession}
-                  onSessionEnded={(sessionId) => {
+                  onSessionEnded={(completedSession) => {
                     setCurrentView('sessions');
-                    setSelectedSessionId(sessionId);
+                    setSelectedSessionId(completedSession.id);
+                    setCompletedSessionSummary(completedSession);
                   }}
                   onSessionResumed={() => setCurrentView('dashboard')}
                 />
@@ -308,109 +314,117 @@ function App() {
             <ChatLogMonitor />
           </div>
 
-          {/* Main Content */}
-          <main className="max-w-7xl mx-auto px-6 py-6">
-            <Suspense
-              fallback={
-                <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-                </div>
-              }
-            >
-              {currentView === 'dashboard' && (
-                <ViewStats
-                  sessionId={selectedSessionId ?? activeSession?.id ?? null}
-                  onSessionResumed={() => setCurrentView('dashboard')}
-                  showSidebar={true}
-                />
-              )}
-
-              {currentView === 'loot' && <Loot />}
-
-              {currentView === 'sessions' && (
-                <div className="grid grid-cols-12 gap-6">
-                  <div className="col-span-4 space-y-6">
-                    <SessionList
-                      selectedSessionId={selectedSessionId}
-                      onSelectSession={setSelectedSessionId}
-                      onNavigateToDashboard={() => setCurrentView('dashboard')}
-                    />
+            {/* Main Content */}
+            <main className="max-w-7xl mx-auto px-6 py-6">
+              <Suspense
+                fallback={
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                   </div>
-                  <div className="col-span-8">
-                    {selectedSessionId ? (
-                      <SessionDetails
-                        sessionId={selectedSessionId}
-                        onSessionResumed={() => setCurrentView('dashboard')}
-                        onOpenInDashboard={openSelectedSessionViewStatsOverlay}
+                }
+              >
+                {currentView === 'dashboard' && (
+                  <ViewStats
+                    sessionId={selectedSessionId ?? activeSession?.id ?? null}
+                    onSessionResumed={() => setCurrentView('dashboard')}
+                    showSidebar={true}
+                  />
+                )}
+
+                {currentView === 'loot' && <Loot />}
+
+                {currentView === 'sessions' && (
+                  <div className="grid grid-cols-12 gap-6">
+                    <div className="col-span-4 space-y-6">
+                      <SessionList
+                        selectedSessionId={selectedSessionId}
+                        onSelectSession={setSelectedSessionId}
+                        onNavigateToDashboard={() => setCurrentView('dashboard')}
                       />
-                    ) : (
-                      <div className="card p-8 text-center text-muted">
-                        <p>Select a session to view details</p>
-                      </div>
-                    )}
+                    </div>
+                    <div className="col-span-8">
+                      {selectedSessionId ? (
+                        <SessionDetails
+                          sessionId={selectedSessionId}
+                          onSessionResumed={() => setCurrentView('dashboard')}
+                          onOpenInDashboard={openSelectedSessionViewStatsOverlay}
+                        />
+                      ) : (
+                        <div className="card p-8 text-center text-muted">
+                          <p>Select a session to view details</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {currentView === 'loadouts' && <Loadouts />}
+                {currentView === 'loadouts' && <Loadouts />}
 
-              {currentView === 'database' && <ItemDatabase />}
+                {currentView === 'database' && <ItemDatabase />}
 
-              {currentView === 'analytics' && <Analytics />}
+                {currentView === 'analytics' && <Analytics />}
 
-              {currentView === 'settings' && <Settings />}
-            </Suspense>
-          </main>
+                {currentView === 'settings' && <Settings />}
+              </Suspense>
+            </main>
 
-          {viewStatsOverlaySessionId && (
-            <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-              onClick={() => setViewStatsOverlaySessionId(null)}
-            >
-              <div className="h-full w-full p-6">
-                <div
-                  className="card h-full max-w-7xl mx-auto flex flex-col overflow-hidden"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                    <h2 className="text-lg font-semibold">Overview</h2>
-                    <button
-                      onClick={() => setViewStatsOverlaySessionId(null)}
-                      className="btn-secondary h-8 w-8 p-0 flex items-center justify-center"
-                      title="Close Overview"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-auto p-4">
-                    <ViewStats
-                      sessionId={viewStatsOverlaySessionId}
-                      showHeader={false}
-                      showSidebar={false}
-                      onSessionResumed={() => {
-                        setViewStatsOverlaySessionId(null);
-                        setCurrentView('dashboard');
-                      }}
-                    />
+            {viewStatsOverlaySessionId && (
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+                onClick={() => setViewStatsOverlaySessionId(null)}
+              >
+                <div className="h-full w-full p-6">
+                  <div
+                    className="card h-full max-w-7xl mx-auto flex flex-col overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                      <h2 className="text-lg font-semibold">Overview</h2>
+                      <button
+                        onClick={() => setViewStatsOverlaySessionId(null)}
+                        className="btn-secondary h-8 w-8 p-0 flex items-center justify-center"
+                        title="Close Overview"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-auto p-4">
+                      <ViewStats
+                        sessionId={viewStatsOverlaySessionId}
+                        showHeader={false}
+                        showSidebar={false}
+                        onSessionResumed={() => {
+                          setViewStatsOverlaySessionId(null);
+                          setCurrentView('dashboard');
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Footer */}
-          <footer className="border-t border-border px-6 py-4 mt-12 bg-surface">
-            <div className="max-w-7xl mx-auto text-center text-sm text-muted">
-              <p>
-                Orion Loot Tracker v{packageJson.version} - Track your Entropia Universe hunting
-                sessions
-              </p>
-              <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
-            </div>
-          </footer>
-        </>
-      )}
-    </div>
+            {completedSessionSummary && (
+              <SessionSummaryModal
+                isOpen={!!completedSessionSummary}
+                onClose={() => setCompletedSessionSummary(null)}
+                session={completedSessionSummary}
+              />
+            )}
+
+            {/* Footer */}
+            <footer className="border-t border-border px-6 py-4 mt-12 bg-surface">
+              <div className="max-w-7xl mx-auto text-center text-sm text-muted">
+                <p>
+                  Orion Loot Tracker v{packageJson.version} - Track your Entropia Universe hunting
+                  sessions
+                </p>
+                <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
+              </div>
+            </footer>
+          </>
+        )}
+      </div>
   );
 }
 

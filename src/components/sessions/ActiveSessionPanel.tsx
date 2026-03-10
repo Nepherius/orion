@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 interface ActiveSessionPanelProps {
   session: HuntSession;
-  onSessionEnded?: (sessionId: string) => void;
+  onSessionEnded?: (completedSession: HuntSession) => void;
   onSessionResumed?: () => void;
 }
 
@@ -42,9 +42,15 @@ export function ActiveSessionPanel({
   };
 
   const handleEndSession = async () => {
-    endSession(session.id);
-    onSessionEnded?.(session.id);
-    // Close overlay when session ends (safety feature)
+    await endSession(session.id);
+    const completedSession = useHuntStore.getState().sessions.find((s) => s.id === session.id);
+    if (completedSession) {
+      onSessionEnded?.(completedSession);
+    } else {
+      // Fallback if not found for some reason, though it should be in the store
+      onSessionEnded?.({ ...session, status: 'completed' });
+    }
+
     try {
       await invoke('hide_overlay');
     } catch (error) {

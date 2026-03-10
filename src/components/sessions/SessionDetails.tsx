@@ -20,6 +20,7 @@ import { AddGlobalModal } from '../loot/AddGlobalModal';
 import { EditSessionModal } from './EditSessionModal';
 import { CostsPanel } from './CostsPanel';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { SessionSummaryModal } from './SessionSummaryModal';
 
 interface SessionDetailsProps {
   sessionId: string;
@@ -55,6 +56,7 @@ export function SessionDetails({
   const [showAddGlobal, setShowAddGlobal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [isLootExpanded, setIsLootExpanded] = useState(false);
   const [groupedLoot, setGroupedLoot] = useState<GroupedLootItem[]>([]);
 
@@ -127,6 +129,9 @@ export function SessionDetails({
 
   const isLootOnly = displayMode === 'loot-only';
 
+  const btnWidth = 'w-31';
+  const btnHeight = 'h-6';
+
   return (
     <div className="space-y-6">
       {/* Session Overview Card */}
@@ -136,20 +141,30 @@ export function SessionDetails({
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-2xl font-bold">{session.name}</h2>
             <div className="flex gap-2">
+              {session.status === 'completed' && (
+                <button
+                  onClick={() => setShowSummaryModal(true)}
+                  className={`btn-secondary ${btnHeight} ${btnWidth} px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap`}
+                  title="View Executive Summary"
+                >
+                  <Award className="w-4 h-4 text-purple-400" />
+                  Summary
+                </button>
+              )}
               {onOpenInDashboard && session.status === 'completed' && (
                 <button
                   onClick={() => onOpenInDashboard()}
-                  className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
-                  title="Open Overview"
+                  className={`btn-secondary ${btnHeight} ${btnWidth} px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap`}
+                  title="Open Details"
                 >
                   <Zap className="w-4 h-4" />
-                  Overview
+                  Details
                 </button>
               )}
               {session.status === 'completed' ? (
                 <button
                   onClick={handleResume}
-                  className="btn-primary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                  className={`btn-primary ${btnHeight} ${btnWidth} px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap`}
                   title="Resume Session"
                 >
                   <Play className="w-4 h-4" />
@@ -158,7 +173,7 @@ export function SessionDetails({
               ) : session.status === 'active' ? (
                 <button
                   onClick={handlePause}
-                  className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                  className={`btn-secondary ${btnHeight} ${btnWidth} px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap`}
                   title="Pause Session"
                 >
                   <Pause className="w-4 h-4" />
@@ -167,7 +182,7 @@ export function SessionDetails({
               ) : (
                 <button
                   onClick={handleResume}
-                  className="btn-primary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                  className={`btn-primary ${btnHeight} ${btnWidth} px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap`}
                   title="Resume Session"
                 >
                   <Play className="w-4 h-4" />
@@ -176,7 +191,7 @@ export function SessionDetails({
               )}
               <button
                 onClick={() => setShowEditModal(true)}
-                className="btn-secondary h-6 w-32 px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap"
+                className={`btn-secondary ${btnHeight} ${btnWidth} px-3 flex items-center justify-center gap-2 text-sm whitespace-nowrap`}
                 title="Edit Session"
               >
                 <Edit2 className="w-4 h-4" />
@@ -184,7 +199,7 @@ export function SessionDetails({
               </button>
               <button
                 onClick={handleDeleteRequest}
-                className="bg-red-600 hover:bg-red-700 text-white h-6 w-32 px-3 rounded-lg flex items-center justify-center gap-2 text-sm whitespace-nowrap transition-colors"
+                className={`bg-red-600 hover:bg-red-700 text-white ${btnHeight} ${btnWidth} px-3 rounded-lg flex items-center justify-center gap-2 text-sm whitespace-nowrap transition-colors`}
                 title="Delete Session"
               >
                 <Trash2 className="w-4 h-4" />
@@ -246,9 +261,8 @@ export function SessionDetails({
             <div className="bg-surface rounded-lg p-3 text-center border border-border">
               <div className="text-sm text-muted mb-1">Returns</div>
               <div
-                className={`text-2xl font-bold flex items-center justify-center gap-2 ${
-                  session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-                }`}
+                className={`text-2xl font-bold flex items-center justify-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
+                  }`}
               >
                 {session.stats.returns >= 100 ? (
                   <TrendingUp className="w-5 h-5" />
@@ -311,11 +325,10 @@ export function SessionDetails({
             {session.globals.map((global) => (
               <div
                 key={global.id}
-                className={`p-3 rounded-lg flex items-center justify-between ${
-                  global.isHoF
-                    ? 'bg-purple-900 border border-purple-600'
-                    : 'bg-yellow-900 border border-yellow-600'
-                }`}
+                className={`p-3 rounded-lg flex items-center justify-between ${global.isHoF
+                  ? 'bg-purple-900 border border-purple-600'
+                  : 'bg-yellow-900 border border-yellow-600'
+                  }`}
               >
                 <div>
                   <span className="font-medium">{global.creature}</span>
@@ -498,6 +511,12 @@ export function SessionDetails({
         detail="This action cannot be undone. All loot, costs, and session data will be permanently deleted."
         confirmText="Delete Session"
         cancelText="Cancel"
+      />
+
+      <SessionSummaryModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        session={session}
       />
     </div>
   );
