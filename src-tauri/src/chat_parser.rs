@@ -1,8 +1,10 @@
+//! Chat log parser and event data structures for Orion
 use crate::language_patterns::LanguagePatterns;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
+/// Loot event parsed from chat log
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LootEvent {
     pub timestamp: String,
@@ -12,6 +14,7 @@ pub struct LootEvent {
     pub is_hof: bool,
 }
 
+/// Skill gain event parsed from chat log
 #[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkillGain {
@@ -20,6 +23,7 @@ pub struct SkillGain {
     pub gain: f64,
 }
 
+/// Damage event parsed from chat log
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DamageEvent {
     pub timestamp: String,
@@ -27,12 +31,14 @@ pub struct DamageEvent {
     pub is_critical: bool,
 }
 
+/// Combat event parsed from chat log
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CombatEvent {
     pub timestamp: String,
     pub event_type: String, // "player_miss", "player_dodge", "player_evade", "hit", "crit"
 }
 
+/// Healing event parsed from chat log
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealingEvent {
     pub timestamp: String,

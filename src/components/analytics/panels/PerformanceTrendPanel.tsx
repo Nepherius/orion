@@ -1,3 +1,4 @@
+// Panel showing a line chart of recent session performance trends
 import { useMemo } from 'react';
 import {
   LineChart,
@@ -12,11 +13,15 @@ import {
 import { format } from 'date-fns';
 import { useHuntStore } from '../../../store';
 
+/**
+ * Displays a line chart of return rate, profit, and loot for the last 30 sessions
+ */
 export default function PerformanceTrendPanel() {
   const recentSessionsRaw = useHuntStore(
     (state) => state.analyticsData.performance?.recentSessions
   );
 
+  // Memoize and format session data for chart
   const recentSessions = useMemo(() => {
     if (!recentSessionsRaw) return [];
     return recentSessionsRaw.map((s) => ({

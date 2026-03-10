@@ -1,5 +1,7 @@
-// ========== LOOT ITEMS ==========
+// ========== LOOT ITEMS ========== 
+// Rust module for loot item DB commands in Orion
 
+/// Parameters for adding a loot item to the database
 #[derive(serde::Deserialize)]
 pub struct AddLootParams {
     uuid: String,
@@ -15,6 +17,7 @@ pub struct AddLootParams {
     kill_uuid: Option<String>,
 }
 
+/// Parameters for updating a loot item in the database
 #[derive(serde::Deserialize)]
 pub struct UpdateLootParams {
     uuid: String,
@@ -27,6 +30,7 @@ pub struct UpdateLootParams {
     kill_uuid: Option<String>,
 }
 
+/// Add a loot item to the database
 #[tauri::command]
 pub fn db_add_loot(params: AddLootParams, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.db.lock().unwrap();

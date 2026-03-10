@@ -1,3 +1,4 @@
+// Main entry point for React DOM rendering and routing
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter, Routes, Route } from 'react-router-dom';

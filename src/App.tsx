@@ -1,3 +1,5 @@
+// Orion App main entry point
+// This file sets up the main React application, dynamic imports, and routing for all major views.
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import packageJson from '../package.json';

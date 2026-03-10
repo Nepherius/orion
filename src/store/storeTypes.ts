@@ -1,3 +1,4 @@
+// Type definitions for Zustand store state and analytics
 import type { StoreApi } from 'zustand';
 import type {
   AppSettings,
@@ -11,6 +12,9 @@ import type {
   SkillGain,
 } from '../types';
 
+/**
+ * Represents a kill event pending loot assignment
+ */
 export interface PendingKill {
   startTimestamp: number;
   endTimestamp: number;

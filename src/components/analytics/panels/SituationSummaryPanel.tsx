@@ -1,6 +1,10 @@
+// Panel showing a summary of the current hunting situation
 import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 
+/**
+ * Displays a quick summary of hunting health, best weapon/location, and win rate
+ */
 export default function SituationSummaryPanel() {
   const lifetimeStats = useHuntStore((state) => state.analyticsLifetimeStats);
   const advanced = useHuntStore((state) => state.analyticsData.advanced);
@@ -12,12 +16,14 @@ export default function SituationSummaryPanel() {
 
   const sessionWinRate = advanced?.sessionWinRate ?? 0;
 
+  // Find best weapon by return rate
   const bestWeapon = useMemo(() => {
     const weaponPerf = performance?.weaponData;
     if (!weaponPerf || weaponPerf.length === 0) return null;
     return [...weaponPerf].sort((a, b) => b.returnRate - a.returnRate)[0];
   }, [performance?.weaponData]);
 
+  // Find best location with at least 2 sessions
   const bestLocation = useMemo(() => {
     const locationPerf = performance?.locationData;
     if (!locationPerf || locationPerf.length === 0) return null;

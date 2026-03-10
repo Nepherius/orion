@@ -1,11 +1,18 @@
+// Panel showing lifetime summary stats for the user
 import { useHuntStore } from '../../../store';
 
+/**
+ * Format seconds as hours and minutes (e.g. 2h 15m)
+ */
 function formatDuration(seconds: number) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   return `${hours}h ${minutes}m`;
 }
 
+/**
+ * Displays total loot, cost, profit, and return rate for all time
+ */
 export default function LifetimeStatsPanel() {
   const lifetimeStats = useHuntStore((state) => state.analyticsLifetimeStats);
 

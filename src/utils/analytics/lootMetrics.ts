@@ -1,6 +1,10 @@
+// Analytics metrics for loot and drop statistics
 import { HuntSession } from '../../types';
 import { calculateStdDev, calculateVariance } from './stats';
 
+/**
+ * Get the total active duration of a session in hours
+ */
 function getSessionActiveDurationHours(session: HuntSession): number {
   if (session.status === 'completed') {
     return Math.max(0, Number(session.stats.duration) || 0) / 3600;

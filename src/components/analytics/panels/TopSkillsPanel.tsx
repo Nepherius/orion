@@ -1,6 +1,10 @@
+// Panel showing a bar chart of top skills gained
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useHuntStore } from '../../../store';
 
+/**
+ * Displays a vertical bar chart of the top skills gained in recent sessions
+ */
 export default function TopSkillsPanel() {
   const topSkills = useHuntStore((state) => state.analyticsData.performance?.topSkills);
 

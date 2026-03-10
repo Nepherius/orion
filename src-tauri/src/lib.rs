@@ -1,3 +1,6 @@
+//! Main library for Orion Tauri backend
+//! Contains state management, parsing, and DB logic
+
 mod chat_parser;
 mod db_commands;
 mod file_watcher;
@@ -16,6 +19,7 @@ use tauri::{Manager, State};
 use rusqlite::Connection;
 use std::path::PathBuf;
 
+/// Struct holding all parsed results from a chat log
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ParseResult {
     pub loot_events: Vec<LootEvent>,
@@ -26,13 +30,13 @@ pub struct ParseResult {
     pub skill_gains: Vec<SkillGain>,
 }
 
-// State management
+/// State management for the Tauri backend
 struct AppState {
     parser: ChatLogParser,
     watcher: Arc<Mutex<FileWatcher>>,
 }
 
-// Check if sessions table has all required columns
+/// Check if sessions table has all required columns
 fn check_schema_version(conn: &Connection) -> bool {
     // Try to query a column that should exist in the current schema
     let result = conn.query_row("SELECT loadout_id FROM sessions LIMIT 1", [], |_| Ok(()));

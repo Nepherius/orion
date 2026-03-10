@@ -1,5 +1,9 @@
+// React hook for browsing and searching Entropia Universe items
 import { useState, useEffect } from 'react';
 
+/**
+ * Represents an item from the Entropia Universe item database
+ */
 export interface EntropyItem {
   Id: number;
   Name: string;
@@ -15,6 +19,9 @@ export interface EntropyItem {
   };
 }
 
+/**
+ * Loads and filters the item database for use in item browsers
+ */
 export function useItemBrowser() {
   const [items, setItems] = useState<EntropyItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<EntropyItem[]>([]);

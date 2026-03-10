@@ -1,3 +1,7 @@
+/**
+ * Analytics Web Worker for heavy statistical calculations
+ * Handles confidence intervals, correlations, and more off the main thread
+ */
 import {
   calculateConfidenceInterval,
   calculateCoefficientOfVariation,
@@ -33,6 +37,7 @@ export type WorkerResponse =
     }
   | { type: 'ERROR'; error: string };
 
+// Main worker message handler
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   try {
     const { type, payload } = e.data;

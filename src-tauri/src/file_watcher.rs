@@ -1,3 +1,4 @@
+//! File watcher for monitoring log file changes in Orion (Rust backend)
 use notify::{Event, RecursiveMode, Result as NotifyResult, Watcher};
 use std::fs;
 use std::fs::File;
@@ -8,6 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use tauri::Emitter;
 
+/// Watches a file for changes and emits events to the Tauri frontend
 pub struct FileWatcher {
     watcher: Arc<Mutex<Option<notify::RecommendedWatcher>>>,
     current_path: Arc<Mutex<Option<PathBuf>>>,
@@ -15,6 +17,7 @@ pub struct FileWatcher {
 }
 
 impl FileWatcher {
+    /// Create a new file watcher
     pub fn new() -> Self {
         Self {
             watcher: Arc::new(Mutex::new(None)),
@@ -23,6 +26,7 @@ impl FileWatcher {
         }
     }
 
+    /// Start watching a file for changes and emit events to the frontend
     pub fn watch_file<P: AsRef<Path>>(
         &self,
         path: P,

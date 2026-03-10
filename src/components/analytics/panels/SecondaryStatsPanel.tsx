@@ -1,11 +1,16 @@
+// Panel showing secondary lifetime stats (globals, HoFs, hit rate, avg kill value)
 import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 
+/**
+ * Displays secondary stats: globals, HoFs, hit rate, and average kill value
+ */
 export default function SecondaryStatsPanel() {
   const lifetimeStats = useHuntStore((state) => state.analyticsLifetimeStats);
   const sessions = useHuntStore((state) => state.sessions);
   const timeRange = useHuntStore((state) => state.analyticsTimeRange);
 
+  // Calculate hit rate for filtered sessions
   const lifetimeHitRate = useMemo(() => {
     const { startTime, endTime } = timeRange;
     const filtered = sessions.filter((s) => {
