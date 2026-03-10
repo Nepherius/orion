@@ -653,6 +653,7 @@ pub fn run() {
             db_commands::db_get_analytics_performance_data,
             db_commands::db_get_analytics_advanced_data,
             db_commands::db_get_advanced_creature_stats,
+            db_commands::db_get_analytics_factor_data,
             db_commands::db_add_loot,
             db_commands::db_update_loot,
             db_commands::db_delete_loot,

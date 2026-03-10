@@ -4,6 +4,7 @@ import type {
   StoreGetState,
   AnalyticsPerformanceSqlData,
   AnalyticsAdvancedSqlData,
+  AnalyticsFactorSqlData,
   AnalyticsLifetimeStats,
 } from './storeTypes';
 
@@ -14,12 +15,15 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
         analyticsData: { ...state.analyticsData, isLoading: true, error: null },
       }));
 
-      // Fetch independently so one failure doesn't block the other
-      const [performanceResult, advancedResult] = await Promise.allSettled([
+      // Fetch independently so one failure doesn't block the others
+      const [performanceResult, advancedResult, factorsResult] = await Promise.allSettled([
         invoke<AnalyticsPerformanceSqlData>('db_get_analytics_performance_data', {
           params: { start_time: startTime, end_time: endTime },
         }),
         invoke<AnalyticsAdvancedSqlData>('db_get_analytics_advanced_data', {
+          params: { start_time: startTime, end_time: endTime },
+        }),
+        invoke<AnalyticsFactorSqlData>('db_get_analytics_factor_data', {
           params: { start_time: startTime, end_time: endTime },
         }),
       ]);
@@ -27,6 +31,7 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
       const performanceData =
         performanceResult.status === 'fulfilled' ? performanceResult.value : null;
       const advancedData = advancedResult.status === 'fulfilled' ? advancedResult.value : null;
+      const factorsData = factorsResult.status === 'fulfilled' ? factorsResult.value : null;
 
       if (performanceResult.status === 'rejected') {
         console.error('Failed to fetch performance analytics:', performanceResult.reason);
@@ -34,14 +39,18 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
       if (advancedResult.status === 'rejected') {
         console.error('Failed to fetch advanced analytics:', advancedResult.reason);
       }
+      if (factorsResult.status === 'rejected') {
+        console.error('Failed to fetch factor analytics:', factorsResult.reason);
+      }
 
       const hasError =
-        performanceResult.status === 'rejected' || advancedResult.status === 'rejected';
+        performanceResult.status === 'rejected' || advancedResult.status === 'rejected' || factorsResult.status === 'rejected';
 
       set(() => ({
         analyticsData: {
           performance: performanceData,
           advanced: advancedData,
+          factors: factorsData,
           isLoading: false,
           error: hasError ? 'Some analytics data failed to load' : null,
         },

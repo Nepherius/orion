@@ -117,6 +117,34 @@ export interface AnalyticsLifetimeStats {
   totalSessions: number;
 }
 
+export interface AnalyticsFactorSqlData {
+  maturityStats: Array<{
+    creature: string;
+    maturity: string;
+    totalKills: number;
+    totalCost: number;
+    totalLoot: number;
+    returnRate: number;
+    profit: number;
+  }>;
+  hourlyHeatmap: Array<{
+    dayOfWeek: number;
+    hour: number;
+    sessions: number;
+    avgReturnRate: number;
+    avgProfit: number;
+  }>;
+  killEfficiency: Array<{
+    creature: string;
+    totalKills: number;
+    totalCost: number;
+    totalLoot: number;
+    avgCostPerKill: number;
+    avgLootPerKill: number;
+    returnRate: number;
+  }>;
+}
+
 export interface HuntStore {
   sessions: HuntSession[];
   activeSessionId: string | null;
@@ -131,6 +159,7 @@ export interface HuntStore {
   analyticsData: {
     performance: AnalyticsPerformanceSqlData | null;
     advanced: AnalyticsAdvancedSqlData | null;
+    factors: AnalyticsFactorSqlData | null;
     isLoading: boolean;
     error: string | null;
   };

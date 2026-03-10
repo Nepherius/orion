@@ -23,6 +23,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   analyticsData: {
     performance: null,
     advanced: null,
+    factors: null,
     isLoading: false,
     error: null,
   },

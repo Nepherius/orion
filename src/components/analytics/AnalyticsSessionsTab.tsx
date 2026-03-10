@@ -4,6 +4,7 @@ const SessionReliabilityPanel = lazy(() => import('./panels/SessionReliabilityPa
 const ComparativeAnalyticsPanel = lazy(() => import('./panels/ComparativeAnalyticsPanel'));
 const TemporalAnalyticsPanel = lazy(() => import('./panels/TemporalAnalyticsPanel'));
 const TimeAnalysisPanel = lazy(() => import('./panels/TimeAnalysisPanel'));
+const HourlyHeatmapPanel = lazy(() => import('./panels/HourlyHeatmapPanel'));
 const SessionLengthScatterPanel = lazy(() => import('./panels/SessionLengthScatterPanel'));
 const SkillEfficiencyPanel = lazy(() => import('./panels/SkillEfficiencyPanel'));
 const TimeToVariancePanel = lazy(() => import('./panels/TimeToVariancePanel'));
@@ -23,6 +24,7 @@ export function AnalyticsSessionsTab() {
         <ComparativeAnalyticsPanel />
         <TemporalAnalyticsPanel />
         <TimeAnalysisPanel />
+        <HourlyHeatmapPanel />
         <SessionLengthScatterPanel />
         <TimeToVariancePanel />
         <MarkupDependencyPanel />
