@@ -141,6 +141,9 @@ export interface HuntSession {
 
   // Stats (calculated)
   stats: SessionStats;
+
+  // Tags (0-5, single word, alphanumeric, dash, dot)
+  tags?: string[];
 }
 
 export interface ItemTemplate {

@@ -10,7 +10,11 @@ import type {
 
 export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) {
   return {
-    fetchAnalyticsData: async (startTime: number | null, endTime: number | null) => {
+    fetchAnalyticsData: async (
+      startTime: number | null,
+      endTime: number | null,
+      tags?: string[]
+    ) => {
       set((state) => ({
         analyticsData: { ...state.analyticsData, isLoading: true, error: null },
       }));
@@ -18,13 +22,13 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
       // Fetch independently so one failure doesn't block the others
       const [performanceResult, advancedResult, factorsResult] = await Promise.allSettled([
         invoke<AnalyticsPerformanceSqlData>('db_get_analytics_performance_data', {
-          params: { start_time: startTime, end_time: endTime },
+          params: { start_time: startTime, end_time: endTime, tags },
         }),
         invoke<AnalyticsAdvancedSqlData>('db_get_analytics_advanced_data', {
-          params: { start_time: startTime, end_time: endTime },
+          params: { start_time: startTime, end_time: endTime, tags },
         }),
         invoke<AnalyticsFactorSqlData>('db_get_analytics_factor_data', {
-          params: { start_time: startTime, end_time: endTime },
+          params: { start_time: startTime, end_time: endTime, tags },
         }),
       ]);
 
@@ -65,10 +69,14 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
       }));
     },
 
-    fetchLifetimeStats: async (startTime: number | null, endTime: number | null) => {
+    fetchLifetimeStats: async (
+      startTime: number | null,
+      endTime: number | null,
+      tags?: string[]
+    ) => {
       try {
         const dbStats = await invoke<AnalyticsLifetimeStats>('db_get_analytics_stats', {
-          params: { start_time: startTime, end_time: endTime },
+          params: { start_time: startTime, end_time: endTime, tags },
         });
         if (dbStats) {
           set(() => ({ analyticsLifetimeStats: dbStats }));
@@ -80,6 +88,9 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
         const filtered = state.sessions.filter((s) => {
           if (startTime !== null && s.startTime < startTime) return false;
           if (endTime !== null && s.startTime > endTime) return false;
+          if (tags && tags.length > 0) {
+            if (!s.tags || !tags.every((t) => s.tags!.includes(t))) return false;
+          }
           return true;
         });
         const fallback = filtered.reduce(

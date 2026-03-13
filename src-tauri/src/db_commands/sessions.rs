@@ -16,6 +16,7 @@ pub struct CreateSessionParams {
     weapon_decay: f64,
     healing_cost: f64,
     other_costs: f64,
+    tags: Option<Vec<String>>,
 }
 
 #[tauri::command]
@@ -24,10 +25,12 @@ pub fn db_create_session(
     state: State<'_, DbState>,
 ) -> Result<(), String> {
     let conn = state.db.lock().unwrap();
+    // Serialize tags as JSON string, or store as NULL if not present
+    let tags_json = params.tags.as_ref().map(|tags| serde_json::to_string(tags).unwrap());
     let _result = conn.execute(
-        "INSERT INTO sessions (uuid, name, weapon, armor, location, creature, start_time, status, loadout_id, notes, ammo_cost, weapon_decay, healing_cost, other_costs) 
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
-        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.creature, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.weapon_decay, params.healing_cost, params.other_costs],
+        "INSERT INTO sessions (uuid, name, weapon, armor, location, creature, start_time, status, loadout_id, notes, ammo_cost, weapon_decay, healing_cost, other_costs, tags) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+        params![params.uuid, params.name, params.weapon, params.armor, params.location, params.creature, params.start_time, params.status, params.loadout_id, params.notes, params.ammo_cost, params.weapon_decay, params.healing_cost, params.other_costs, tags_json],
     )
     .map_err(|e| {
         let err_msg = format!("Failed to insert session: {}", e);
@@ -55,6 +58,7 @@ pub struct UpdateSessionParams {
     weapon_decay: Option<f64>,
     healing_cost: Option<f64>,
     other_costs: Option<f64>,
+    tags: Option<Vec<String>>,
 }
 
 #[tauri::command]
@@ -127,6 +131,12 @@ pub fn db_update_session(
     if let Some(v) = params.other_costs {
         updates.push("other_costs = ?");
         values.push(Box::new(v));
+    }
+    if let Some(tags) = params.tags {
+        // Serialize tags as JSON string
+        let tags_json = serde_json::to_string(&tags).unwrap();
+        updates.push("tags = ?");
+        values.push(Box::new(tags_json));
     }
 
     if updates.is_empty() {
@@ -288,6 +298,7 @@ pub fn db_get_lifetime_stats(state: State<'_, DbState>) -> Result<JsonValue, Str
 pub struct AnalyticsStatsRangeParams {
     start_time: Option<i64>,
     end_time: Option<i64>,
+    tags: Option<Vec<String>>,
 }
 
 #[tauri::command]
@@ -298,17 +309,26 @@ pub fn db_get_analytics_stats(
     let conn = state.db.lock().unwrap();
     let start_time = params.start_time;
     let end_time = params.end_time;
+    let tags = params.tags;
 
     // Summing across sessions within selected time range (inclusive on both ends).
-    let total_sessions: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM sessions s
-             WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
+        let tags_json = tags.as_ref().map(|t| serde_json::to_string(t).unwrap_or("[]".to_string())).unwrap_or("[]".to_string());
+        let total_sessions: i64 = conn
+                .query_row(
+                        "SELECT COUNT(*) FROM sessions s
+                         WHERE (?1 IS NULL OR s.start_time >= ?1)
+                             AND (?2 IS NULL OR s.start_time <= ?2)
+                             AND (?3 IS NULL OR ?3 = '[]' OR (
+                                 SELECT COUNT(*) FROM json_each(?3)
+                                 WHERE json_each.value NOT IN (
+                                     SELECT value FROM json_each(s.tags)
+                                 )
+                             ) = 0
+                         )",
+                        params![start_time, end_time, tags_json],
+                        |row| row.get(0),
+                )
+                .unwrap_or(0);
 
     // Get total cost across sessions in range.
     let total_cost: f64 = conn
@@ -436,78 +456,115 @@ pub fn db_get_analytics_performance_data(
     let start_time = params.start_time;
     let end_time = params.end_time;
 
-    let (avg_loot_value, avg_loot_squared): (f64, f64) = conn
-        .query_row(
-            "SELECT
-                COALESCE(AVG(li.total_value), 0),
-                COALESCE(AVG(li.total_value * li.total_value), 0)
-             FROM loot_items li
-             JOIN sessions s ON s.uuid = li.session_uuid
-             WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        )
-        .unwrap_or((0.0, 0.0));
+        let tags = params.tags;
+        let tags_json = tags.as_ref().map(|t| serde_json::to_string(t).unwrap_or("[]".to_string())).unwrap_or("[]".to_string());
+        let (avg_loot_value, avg_loot_squared): (f64, f64) = conn
+                .query_row(
+                        "SELECT
+                                COALESCE(AVG(li.total_value), 0),
+                                COALESCE(AVG(li.total_value * li.total_value), 0)
+                         FROM loot_items li
+                         JOIN sessions s ON s.uuid = li.session_uuid
+                         WHERE (?1 IS NULL OR s.start_time >= ?1)
+                             AND (?2 IS NULL OR s.start_time <= ?2)
+                             AND (?3 IS NULL OR ?3 = '[]' OR (
+                                 SELECT COUNT(*) FROM json_each(?3)
+                                 WHERE json_each.value NOT IN (
+                                     SELECT value FROM json_each(s.tags)
+                                 )
+                             ) = 0
+                         )",
+                        params![start_time, end_time, tags_json],
+                        |row| Ok((row.get(0)?, row.get(1)?)),
+                )
+                .unwrap_or((0.0, 0.0));
     let variance = (avg_loot_squared - (avg_loot_value * avg_loot_value)).max(0.0);
     let overall_loot_std_dev = variance.sqrt();
 
-    let largest_drop_value: f64 = conn
-        .query_row(
-            "SELECT COALESCE(MAX(li.total_value), 0)
-             FROM loot_items li
-             JOIN sessions s ON s.uuid = li.session_uuid
-             WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
-            |row| row.get(0),
-        )
-        .unwrap_or(0.0);
+        let largest_drop_value: f64 = conn
+                .query_row(
+                        "SELECT COALESCE(MAX(li.total_value), 0)
+                         FROM loot_items li
+                         JOIN sessions s ON s.uuid = li.session_uuid
+                         WHERE (?1 IS NULL OR s.start_time >= ?1)
+                             AND (?2 IS NULL OR s.start_time <= ?2)
+                             AND (?3 IS NULL OR ?3 = '[]' OR (
+                                 SELECT COUNT(*) FROM json_each(?3)
+                                 WHERE json_each.value NOT IN (
+                                     SELECT value FROM json_each(s.tags)
+                                 )
+                             ) = 0
+                         )",
+                        params![start_time, end_time, tags_json],
+                        |row| row.get(0),
+                )
+                .unwrap_or(0.0);
 
-    let total_loot_events: i64 = conn
-        .query_row(
-            "SELECT COUNT(*)
-             FROM loot_items li
-             JOIN sessions s ON s.uuid = li.session_uuid
-             WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
+        let total_loot_events: i64 = conn
+                .query_row(
+                        "SELECT COUNT(*)
+                         FROM loot_items li
+                         JOIN sessions s ON s.uuid = li.session_uuid
+                         WHERE (?1 IS NULL OR s.start_time >= ?1)
+                             AND (?2 IS NULL OR s.start_time <= ?2)
+                             AND (?3 IS NULL OR ?3 = '[]' OR (
+                                 SELECT COUNT(*) FROM json_each(?3)
+                                 WHERE json_each.value NOT IN (
+                                     SELECT value FROM json_each(s.tags)
+                                 )
+                             ) = 0
+                         )",
+                        params![start_time, end_time, tags_json],
+                        |row| row.get(0),
+                )
+                .unwrap_or(0);
 
     let (total_globals_count, total_hofs_count, avg_global_value, best_global_value): (
         i64,
         i64,
         f64,
         f64,
-    ) = conn
-        .query_row(
-            "SELECT
-                COUNT(*),
-                COALESCE(SUM(CASE WHEN g.is_hof = 1 THEN 1 ELSE 0 END), 0),
-                COALESCE(AVG(g.value), 0),
-                COALESCE(MAX(g.value), 0)
-             FROM globals g
-             JOIN sessions s ON s.uuid = g.session_uuid
-             WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
-        )
-        .unwrap_or((0, 0, 0.0, 0.0));
+        ) = conn
+                .query_row(
+                        "SELECT
+                                COUNT(*),
+                                COALESCE(SUM(CASE WHEN g.is_hof = 1 THEN 1 ELSE 0 END), 0),
+                                COALESCE(AVG(g.value), 0),
+                                COALESCE(MAX(g.value), 0)
+                         FROM globals g
+                         JOIN sessions s ON s.uuid = g.session_uuid
+                         WHERE (?1 IS NULL OR s.start_time >= ?1)
+                             AND (?2 IS NULL OR s.start_time <= ?2)
+                             AND (?3 IS NULL OR ?3 = '[]' OR (
+                                 SELECT COUNT(*) FROM json_each(?3)
+                                 WHERE json_each.value NOT IN (
+                                     SELECT value FROM json_each(s.tags)
+                                 )
+                             ) = 0
+                         )",
+                        params![start_time, end_time, tags_json],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                )
+                .unwrap_or((0, 0, 0.0, 0.0));
 
-    let total_kills: i64 = conn
-        .query_row(
-            "SELECT COUNT(*)
-             FROM kills k
-             JOIN sessions s ON s.uuid = k.session_uuid
-             WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
+        let total_kills: i64 = conn
+                .query_row(
+                        "SELECT COUNT(*)
+                         FROM kills k
+                         JOIN sessions s ON s.uuid = k.session_uuid
+                         WHERE (?1 IS NULL OR s.start_time >= ?1)
+                             AND (?2 IS NULL OR s.start_time <= ?2)
+                             AND (?3 IS NULL OR ?3 = '[]' OR (
+                                 SELECT COUNT(*) FROM json_each(?3)
+                                 WHERE json_each.value NOT IN (
+                                     SELECT value FROM json_each(s.tags)
+                                 )
+                             ) = 0
+                         )",
+                        params![start_time, end_time, tags_json],
+                        |row| row.get(0),
+                )
+                .unwrap_or(0);
 
     let total_duration_hours: f64 = conn
         .query_row(
@@ -531,8 +588,15 @@ pub fn db_get_analytics_performance_data(
             ), 0) / (1000.0 * 60.0 * 60.0)
              FROM sessions s
              WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
+               AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (
+                 SELECT COUNT(*) FROM json_each(?3)
+                 WHERE json_each.value NOT IN (
+                   SELECT value FROM json_each(s.tags)
+                 )
+               ) = 0
+             )",
+            params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
@@ -983,6 +1047,8 @@ pub fn db_get_analytics_advanced_data(
     let start_time = params.start_time;
     let end_time = params.end_time;
 
+    let tags = params.tags;
+    let tags_json = tags.as_ref().map(|t| serde_json::to_string(t).unwrap_or("[]".to_string())).unwrap_or("[]".to_string());
     let mut sessions_stmt = conn
         .prepare(
             "WITH session_loot AS (
@@ -1015,11 +1081,18 @@ pub fn db_get_analytics_advanced_data(
              LEFT JOIN session_loot sl ON sl.session_uuid = s.uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (
+                 SELECT COUNT(*) FROM json_each(?3)
+                 WHERE json_each.value NOT IN (
+                   SELECT value FROM json_each(s.tags)
+                 )
+               ) = 0
+             )
              ORDER BY s.start_time DESC",
         )
         .map_err(|e| e.to_string())?;
     let sessions_rows = sessions_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, i64>(1)?,

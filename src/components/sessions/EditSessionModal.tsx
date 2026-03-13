@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useHuntStore } from '../../store';
 import { AutocompleteInput } from '../common/AutocompleteInput';
+import { TagInput } from '../common/TagInput';
 import { X } from 'lucide-react';
 import { loadCreatureNames } from '../../services/creatureDataLoader';
 
@@ -26,7 +27,16 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
     creature: session?.creature || '',
     location: session?.location || '',
     notes: session?.notes || '',
+    tags: session?.tags || [],
   });
+  // Gather all unique tags from existing sessions for suggestions
+  const allSessions = useHuntStore((state) => state.sessions);
+  const tagSuggestions = Array.from(new Set(allSessions.flatMap((s) => s.tags || []))).sort();
+
+  // Tag handler
+  const handleTagsChange = (tags: string[]) => {
+    setFormData((prev) => ({ ...prev, tags }));
+  };
 
   const [creatures, setCreatures] = useState<string[]>([]);
   const [planets, setPlanets] = useState<string[]>([]);
@@ -52,7 +62,16 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
       ...formData,
       weapon: selectedLoadout?.weapon?.Name || formData.weapon || 'No Loadout',
       armor: selectedLoadout?.armor ?? session.armor,
+      tags: formData.tags || [],
     });
+    <TagInput
+      label="Tags (optional)"
+      value={formData.tags}
+      onChange={handleTagsChange}
+      suggestions={tagSuggestions}
+      maxTags={5}
+      placeholder="Add up to 5 tags"
+    />;
     onClose();
   };
 
@@ -109,6 +128,15 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
             onChange={(location) => setFormData({ ...formData, location })}
             options={planets}
             placeholder="e.g., Planet Calypso"
+          />
+
+          <TagInput
+            label="Tags (optional)"
+            value={formData.tags}
+            onChange={handleTagsChange}
+            suggestions={tagSuggestions}
+            maxTags={5}
+            placeholder="Add up to 5 tags"
           />
 
           <div>

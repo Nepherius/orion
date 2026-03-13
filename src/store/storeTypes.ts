@@ -174,9 +174,17 @@ export interface HuntStore {
   analyticsLifetimeStats: AnalyticsLifetimeStats;
 
   _loadCreatureData: () => Promise<void>;
-  fetchAnalyticsData: (startTime: number | null, endTime: number | null) => Promise<void>;
+  fetchAnalyticsData: (
+    startTime: number | null,
+    endTime: number | null,
+    tags?: string[]
+  ) => Promise<void>;
   setAnalyticsTimeRange: (startTime: number | null, endTime: number | null) => void;
-  fetchLifetimeStats: (startTime: number | null, endTime: number | null) => Promise<void>;
+  fetchLifetimeStats: (
+    startTime: number | null,
+    endTime: number | null,
+    tags?: string[]
+  ) => Promise<void>;
   _finalizePendingKill: (sessionId: string) => Promise<void>;
 
   addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;

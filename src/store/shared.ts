@@ -120,6 +120,7 @@ export const persistSessionToDb = async (session: HuntSession) => {
       weapon_decay: session.weaponDecay,
       healing_cost: session.healingCost,
       other_costs: session.otherCosts,
+      tags: session.tags ?? [],
     },
   });
 };
@@ -143,6 +144,7 @@ export const updateSessionInDb = async (id: string, updates: Partial<HuntSession
       weapon_decay: updates.weaponDecay,
       healing_cost: updates.healingCost,
       other_costs: updates.otherCosts,
+      tags: updates.tags ?? [],
     },
   });
 };

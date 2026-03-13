@@ -91,7 +91,8 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             ammo_cost REAL DEFAULT 0,
             weapon_decay REAL DEFAULT 0,
             healing_cost REAL DEFAULT 0,
-            other_costs REAL DEFAULT 0
+            other_costs REAL DEFAULT 0,
+            tags TEXT
         );
 
         CREATE TABLE IF NOT EXISTS loot_items (

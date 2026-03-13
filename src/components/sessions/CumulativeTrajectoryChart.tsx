@@ -121,7 +121,7 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
   }
 
   // Debugging out to console if need be
-  console.log('Trajectory Chart Data:', chartData);
+  // console.log('Trajectory Chart Data:', chartData);
 
   // Find min and max for Y-Axis dynamically roughly capping around 150% out of convention unless there's a big HoF
   const minReturn = Math.min(...chartData.map((d) => d.returnPercent));

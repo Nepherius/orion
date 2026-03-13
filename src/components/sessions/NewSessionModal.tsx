@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useHuntStore } from '../../store';
 import { AutocompleteInput } from '../common/AutocompleteInput';
+import { TagInput } from '../common/TagInput';
 import { X } from 'lucide-react';
 import { HuntSession } from '../../types';
 import { loadCreatureNames } from '../../services/creatureDataLoader';
@@ -14,14 +15,28 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
   const createSession = useHuntStore((state) => state.createSession);
   const loadouts = useHuntStore((state) => state.loadouts);
   const primaryLoadout = useHuntStore((state) => state.getPrimaryLoadout());
-
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    loadoutId: string;
+    location: string;
+    creature: string;
+    notes: string;
+    tags: string[];
+  }>({
     name: '',
     loadoutId: primaryLoadout?.id || '',
     location: '',
     creature: '',
     notes: '',
+    tags: [],
   });
+  // Gather all unique tags from existing sessions for suggestions
+  const allSessions = useHuntStore((state) => state.sessions);
+  const tagSuggestions = Array.from(new Set(allSessions.flatMap((s) => s.tags || []))).sort();
+  // Tag handler
+  const handleTagsChange = (tags: string[]) => {
+    setFormData((prev) => ({ ...prev, tags }));
+  };
 
   const [creatures, setCreatures] = useState<string[]>([]);
   const [planets, setPlanets] = useState<string[]>([]);
@@ -65,6 +80,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
       armor: selectedArmorName,
       creature: formData.creature || '',
       notes: formData.notes,
+      tags: formData.tags || [],
       startTime: Date.now(),
       status: 'active',
       ammoCost: 0,
@@ -134,6 +150,15 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
             onChange={(creature) => setFormData({ ...formData, creature })}
             options={creatures}
             placeholder="e.g., Atrox Adolescent"
+          />
+
+          <TagInput
+            label="Tags (optional)"
+            value={formData.tags}
+            onChange={handleTagsChange}
+            suggestions={tagSuggestions}
+            maxTags={5}
+            placeholder="Add up to 5 tags"
           />
 
           <div>

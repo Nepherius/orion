@@ -20,7 +20,6 @@ export default function SkillEfficiencyPanel() {
     skillsByLocation,
     skillsByWeapon,
     lifetimeAttributeGains,
-    allSkillNames,
     skillGainVariance,
     skillValuePerCost,
     totalSkillGains,
@@ -70,6 +69,34 @@ export default function SkillEfficiencyPanel() {
         )}
       </div>
 
+      {/* Skill Metrics */}
+      <div className="card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-lg font-bold">Skill Metrics</h3>
+          <InfoTooltip tooltip="Overall skill efficiency and consistency" />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
+              Skill Gain Variance
+              <InfoTooltip tooltip="Variability in skill gains per session. Lower = consistent" />
+            </div>
+            <div className="text-2xl font-bold text-body">{skillGainVariance.toFixed(2)}</div>
+          </div>
+          <div className="border border-border rounded p-4">
+            <div className="flex items-center gap-1 text-sm text-muted mb-2">
+              Skills Per PED
+              <InfoTooltip tooltip="Skill gains per PED spent. Efficiency metric" />
+            </div>
+            <div className="text-2xl font-bold text-blue-400">{skillValuePerCost.toFixed(2)}</div>
+          </div>
+          <div className="border border-border rounded p-4">
+            <div className="text-sm text-muted mb-2">Total Skill Gains</div>
+            <div className="text-2xl font-bold text-green-400">{totalSkillGains.toFixed(2)}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Attributes Panel */}
       <div className="card p-6">
         <div className="flex items-center gap-2 mb-4">
@@ -101,53 +128,6 @@ export default function SkillEfficiencyPanel() {
         ) : (
           <div className="text-center text-muted py-8">No attribute gains recorded</div>
         )}
-      </div>
-
-      {/* All Skills Tracked */}
-      <div className="card p-6 border-yellow-500/30">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-sm font-bold text-yellow-400">All Skills Tracked</h3>
-          <InfoTooltip tooltip="Complete list of skill names in your data." />
-        </div>
-        <div className="text-xs text-muted space-y-1 max-h-32 overflow-y-auto">
-          {allSkillNames.length === 0 ? (
-            <span>No skills tracked</span>
-          ) : (
-            allSkillNames.map((skill) => (
-              <div key={skill} className="p-1 bg-gray-700/20 rounded px-2">
-                {skill}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Skill Metrics */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Skill Metrics</h3>
-          <InfoTooltip tooltip="Overall skill efficiency and consistency" />
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="border border-border rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-muted mb-2">
-              Skill Gain Variance
-              <InfoTooltip tooltip="Variability in skill gains per session. Lower = consistent" />
-            </div>
-            <div className="text-2xl font-bold text-body">{skillGainVariance.toFixed(2)}</div>
-          </div>
-          <div className="border border-border rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-muted mb-2">
-              Skills Per PED
-              <InfoTooltip tooltip="Skill gains per PED spent. Efficiency metric" />
-            </div>
-            <div className="text-2xl font-bold text-blue-400">{skillValuePerCost.toFixed(2)}</div>
-          </div>
-          <div className="border border-border rounded p-4">
-            <div className="text-sm text-muted mb-2">Total Skill Gains</div>
-            <div className="text-2xl font-bold text-green-400">{totalSkillGains.toFixed(2)}</div>
-          </div>
-        </div>
       </div>
     </>
   );

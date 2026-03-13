@@ -1,4 +1,5 @@
 import { useMemo, useState, lazy, Suspense, useEffect } from 'react';
+import { TagInput } from '../common/TagInput';
 import { useHuntStore } from '../../store';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { BarChart3, AlertCircle } from 'lucide-react';
@@ -17,6 +18,14 @@ export function Analytics() {
   const fetchAnalyticsData = useHuntStore((state) => state.fetchAnalyticsData);
   const fetchLifetimeStats = useHuntStore((state) => state.fetchLifetimeStats);
   const setAnalyticsTimeRange = useHuntStore((state) => state.setAnalyticsTimeRange);
+
+  // Tag filter state for analytics
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  // Gather all unique tags from sessions for suggestions
+  const tagSuggestions = useMemo(
+    () => Array.from(new Set(sessions.flatMap((s) => s.tags || []))).sort(),
+    [sessions]
+  );
 
   const [timeRange, setTimeRange] = useState<
     '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom'
@@ -68,9 +77,15 @@ export function Analytics() {
 
   // Fetch analytics data and lifetime stats when time range changes
   useEffect(() => {
-    fetchAnalyticsData(statsRange.start_time, statsRange.end_time);
-    fetchLifetimeStats(statsRange.start_time, statsRange.end_time);
-  }, [statsRange.start_time, statsRange.end_time, fetchAnalyticsData, fetchLifetimeStats]);
+    fetchAnalyticsData(statsRange.start_time, statsRange.end_time, tagFilter);
+    fetchLifetimeStats(statsRange.start_time, statsRange.end_time, tagFilter);
+  }, [
+    statsRange.start_time,
+    statsRange.end_time,
+    tagFilter,
+    fetchAnalyticsData,
+    fetchLifetimeStats,
+  ]);
 
   if (!isPageVisible) {
     return (
@@ -131,6 +146,17 @@ export function Analytics() {
               />
             </div>
           )}
+          <div className="min-w-[220px] max-w-xs">
+            <TagInput
+              label="Filter by tags"
+              value={tagFilter}
+              onChange={setTagFilter}
+              suggestions={tagSuggestions}
+              maxTags={5}
+              allowNewTags={false}
+              placeholder="Select tags..."
+            />
+          </div>
         </div>
         <div className="text-sm text-muted">
           Across {lifetimeStats.totalSessions} session
