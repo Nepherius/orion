@@ -74,6 +74,7 @@ export async function initializeStoreFromDb(useHuntStore: HuntStoreHook) {
         weaponDecay: Number(row.weaponDecay ?? 0),
         healingCost: Number(row.healingCost ?? 0),
         otherCosts: Number(row.otherCosts ?? 0),
+        tags: row.tags ?? [],
         stats: {
           ...emptySessionStats(),
         },

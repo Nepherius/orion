@@ -31,6 +31,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     startTime: null,
     endTime: null,
   },
+  analyticsSelectedTags: [],
   analyticsLifetimeStats: {
     totalLoot: 0,
     totalCost: 0,

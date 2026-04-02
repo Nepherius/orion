@@ -1,5 +1,5 @@
 import type { LootItem } from '../types';
-import { pendingKillFlag, pendingKillStartTime } from './killTracking';
+import { pendingKillFlag, pendingKillStartTime, pendingKillFinalizeTimers } from './killTracking';
 import type { HuntStore, PendingKill, StoreGetState, StoreSetState } from './storeTypes';
 import { calculateLootTotalValue, calculateStats, generateId, safeInvoke } from './shared';
 
@@ -75,9 +75,23 @@ export const createLootActions = (
     });
 
     if (hasPendingFlag) {
-      await get()._finalizePendingKill(sessionId);
-      pendingKillFlag.set(sessionId, false);
-      pendingKillStartTime.delete(sessionId);
+      // Clear any existing debounce timer so we don't close the window prematurely
+      // while more items from the same kill are still being processed.
+      const existingTimer = pendingKillFinalizeTimers.get(sessionId);
+      if (existingTimer !== undefined) {
+        clearTimeout(existingTimer);
+      }
+
+      // Capture sessionId in closure for the timer callback
+      const capturedSessionId = sessionId;
+      const timer = setTimeout(() => {
+        pendingKillFinalizeTimers.delete(capturedSessionId);
+        pendingKillFlag.set(capturedSessionId, false);
+        pendingKillStartTime.delete(capturedSessionId);
+        void get()._finalizePendingKill(capturedSessionId);
+      }, 150);
+
+      pendingKillFinalizeTimers.set(sessionId, timer);
     }
   },
 

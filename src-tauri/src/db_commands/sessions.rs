@@ -167,11 +167,17 @@ pub fn db_delete_session(uuid: String, state: State<'_, DbState>) -> Result<(), 
 pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, weapon_decay, healing_cost, other_costs, creature FROM sessions ORDER BY start_time DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, start_time, end_time, status, paused_at, total_paused_ms, loadout_id, notes, ammo_cost, weapon_decay, healing_cost, other_costs, creature, tags FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
         .query_map([], |row| {
+            let tags_str: Option<String> = row.get(17)?;
+            let tags: Vec<String> = if let Some(s) = tags_str {
+                serde_json::from_str(&s).unwrap_or_else(|_| Vec::new())
+            } else {
+                Vec::new()
+            };
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "name": row.get::<_, String>(1)?,
@@ -190,6 +196,7 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
                 "healingCost": row.get::<_, f64>(14)?,
                 "otherCosts": row.get::<_, f64>(15)?,
                 "creature": row.get::<_, Option<String>>(16)?,
+                "tags": tags,
             }))
         })
         .map_err(|e| e.to_string())?;
@@ -336,8 +343,15 @@ pub fn db_get_analytics_stats(
             "SELECT COALESCE(SUM(s.ammo_cost + s.weapon_decay + s.healing_cost + s.other_costs), 0)
              FROM sessions s
              WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
+               AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (
+                   SELECT COUNT(*) FROM json_each(?3)
+                   WHERE json_each.value NOT IN (
+                       SELECT value FROM json_each(s.tags)
+                   )
+               ) = 0
+             )",
+            params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
@@ -349,8 +363,15 @@ pub fn db_get_analytics_stats(
              FROM loot_items li
              JOIN sessions s ON s.uuid = li.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
+               AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (
+                   SELECT COUNT(*) FROM json_each(?3)
+                   WHERE json_each.value NOT IN (
+                       SELECT value FROM json_each(s.tags)
+                   )
+               ) = 0
+             )",
+            params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
@@ -364,43 +385,54 @@ pub fn db_get_analytics_stats(
              FROM globals g
              JOIN sessions s ON s.uuid = g.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
+               AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (
+                   SELECT COUNT(*) FROM json_each(?3)
+                   WHERE json_each.value NOT IN (
+                       SELECT value FROM json_each(s.tags)
+                   )
+               ) = 0
+             )",
         )
         .map_err(|e| e.to_string())?;
     let (total_globals, total_hofs): (i64, i64) = stmt
-        .query_row(params![start_time, end_time], |row| Ok((row.get(0)?, row.get(1)?)))
+        .query_row(params![start_time, end_time, tags_json], |row| Ok((row.get(0)?, row.get(1)?)))
         .unwrap_or((0, 0));
 
     // Total kills, shots fired, and damage in range.
     let mut stmt = conn
         .prepare(
-            "SELECT
+             "SELECT
                 (SELECT COUNT(*)
                  FROM kills k
                  JOIN sessions s ON s.uuid = k.session_uuid
                  WHERE (?1 IS NULL OR s.start_time >= ?1)
-                   AND (?2 IS NULL OR s.start_time <= ?2)),
+                   AND (?2 IS NULL OR s.start_time <= ?2)
+                   AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)),
                 (SELECT COUNT(*)
                  FROM damage_events de
                  JOIN sessions s ON s.uuid = de.session_uuid
                  WHERE (?1 IS NULL OR s.start_time >= ?1)
-                   AND (?2 IS NULL OR s.start_time <= ?2))
+                   AND (?2 IS NULL OR s.start_time <= ?2)
+                   AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0))
                 +
                 (SELECT COUNT(*)
                  FROM combat_events ce
                  JOIN sessions s ON s.uuid = ce.session_uuid
                  WHERE ce.type IN ('player_miss', 'enemy_dodge', 'enemy_evade')
                    AND (?1 IS NULL OR s.start_time >= ?1)
-                   AND (?2 IS NULL OR s.start_time <= ?2)),
+                   AND (?2 IS NULL OR s.start_time <= ?2)
+                   AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)),
                 (SELECT COALESCE(SUM(de.damage), 0)
                  FROM damage_events de
                  JOIN sessions s ON s.uuid = de.session_uuid
                  WHERE (?1 IS NULL OR s.start_time >= ?1)
-                   AND (?2 IS NULL OR s.start_time <= ?2))",
+                   AND (?2 IS NULL OR s.start_time <= ?2)
+                   AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0))",
         )
         .map_err(|e| e.to_string())?;
     let (total_kills, total_shots_fired, total_damage): (i64, i64, f64) = stmt
-        .query_row(params![start_time, end_time], |row| {
+        .query_row(params![start_time, end_time, tags_json], |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?))
         })
         .unwrap_or((0, 0, 0.0));
@@ -428,8 +460,15 @@ pub fn db_get_analytics_stats(
             ), 0) / 1000
              FROM sessions s
              WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
+               AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (
+                   SELECT COUNT(*) FROM json_each(?3)
+                   WHERE json_each.value NOT IN (
+                       SELECT value FROM json_each(s.tags)
+                   )
+               ) = 0
+             )",
+            params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
         .unwrap_or(0);
@@ -642,6 +681,7 @@ pub fn db_get_analytics_performance_data(
                 FROM sessions s
                 WHERE (?1 IS NULL OR s.start_time >= ?1)
                   AND (?2 IS NULL OR s.start_time <= ?2)
+                  AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              )
              SELECT COALESCE(AVG(
                 CASE
@@ -651,7 +691,7 @@ pub fn db_get_analytics_performance_data(
              ), 0)
              FROM session_duration_min sd
              LEFT JOIN session_loot sl ON sl.session_uuid = sd.session_uuid",
-            params![start_time, end_time],
+            params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
@@ -668,13 +708,14 @@ pub fn db_get_analytics_performance_data(
              JOIN sessions s ON s.uuid = li.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY li.name
              ORDER BY total_value DESC
              LIMIT 20",
         )
         .map_err(|e| e.to_string())?;
     let top_loot_items_rows = top_loot_items_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok(json!({
                 "name": row.get::<_, String>(0)?,
                 "totalValue": row.get::<_, f64>(1)?,
@@ -703,12 +744,13 @@ pub fn db_get_analytics_performance_data(
              JOIN sessions s ON s.uuid = g.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              ORDER BY g.value DESC
              LIMIT 50",
         )
         .map_err(|e| e.to_string())?;
     let globals_rows = globals_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "creature": row.get::<_, String>(1)?,
@@ -743,6 +785,7 @@ pub fn db_get_analytics_performance_data(
                 WHERE s.status = 'completed'
                   AND (?1 IS NULL OR s.start_time >= ?1)
                   AND (?2 IS NULL OR s.start_time <= ?2)
+                  AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
                 ORDER BY s.start_time DESC
                 LIMIT 30
              )
@@ -756,7 +799,7 @@ pub fn db_get_analytics_performance_data(
         )
         .map_err(|e| e.to_string())?;
     let recent_rows = recent_sessions_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok(json!({
                 "startTime": row.get::<_, i64>(0)?,
                 "returnRate": row.get::<_, f64>(1)?,
@@ -793,12 +836,13 @@ pub fn db_get_analytics_performance_data(
              LEFT JOIN session_globals sg ON sg.session_uuid = s.uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY location
              ORDER BY loot DESC",
         )
         .map_err(|e| e.to_string())?;
     let location_rows = location_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             let loot: f64 = row.get(2)?;
             let cost: f64 = row.get(3)?;
             Ok(json!({
@@ -826,8 +870,9 @@ pub fn db_get_analytics_performance_data(
                 COALESCE(SUM(s.other_costs), 0)
              FROM sessions s
              WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
+               AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)",
+            params![start_time, end_time, tags_json],
             |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
         )
         .unwrap_or((0.0, 0.0, 0.0, 0.0));
@@ -872,13 +917,14 @@ pub fn db_get_analytics_performance_data(
              LEFT JOIN session_damage sd ON sd.session_uuid = s.uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY weapon
              ORDER BY total_cost DESC
              LIMIT 10",
         )
         .map_err(|e| e.to_string())?;
     let weapon_rows = weapon_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             let total_loot: f64 = row.get(2)?;
             let total_cost: f64 = row.get(3)?;
             let total_kills: i64 = row.get(4)?;
@@ -923,13 +969,14 @@ pub fn db_get_analytics_performance_data(
              LEFT JOIN session_damage_taken dt ON dt.session_uuid = s.uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY armor
              ORDER BY sessions DESC
              LIMIT 10",
         )
         .map_err(|e| e.to_string())?;
     let armor_rows = armor_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             let sessions_count: i64 = row.get(1)?;
             let total_loot: f64 = row.get(2)?;
             let total_cost: f64 = row.get(3)?;
@@ -956,13 +1003,14 @@ pub fn db_get_analytics_performance_data(
              JOIN sessions s ON s.uuid = sg.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY sg.skill_name
              ORDER BY total_gain DESC
              LIMIT 15",
         )
         .map_err(|e| e.to_string())?;
     let top_skills_rows = top_skills_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok(json!({
                 "name": row.get::<_, String>(0)?,
                 "total": row.get::<_, f64>(1)?,
@@ -986,12 +1034,13 @@ pub fn db_get_analytics_performance_data(
              JOIN sessions s ON s.uuid = k.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY k.loadout_id
              ORDER BY CASE WHEN total_cost > 0 THEN (total_loot / total_cost) ELSE 0 END DESC",
         )
         .map_err(|e| e.to_string())?;
     let loadout_rows = loadout_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             let sessions_count: i64 = row.get(1)?;
             let total_loot: f64 = row.get(2)?;
             let total_cost: f64 = row.get(3)?;
@@ -1214,6 +1263,7 @@ pub fn db_get_analytics_advanced_data(
                 JOIN sessions s ON s.uuid = k.session_uuid
                 WHERE (?1 IS NULL OR s.start_time >= ?1)
                   AND (?2 IS NULL OR s.start_time <= ?2)
+                  AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
                 GROUP BY creature, k.session_uuid
             ),
             globals_by_session AS (
@@ -1226,6 +1276,7 @@ pub fn db_get_analytics_advanced_data(
                 FROM sessions s
                 WHERE (?1 IS NULL OR s.start_time >= ?1)
                   AND (?2 IS NULL OR s.start_time <= ?2)
+                  AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
             )
             SELECT
                 kcs.creature,
@@ -1242,7 +1293,7 @@ pub fn db_get_analytics_advanced_data(
         )
         .map_err(|e| e.to_string())?;
     let creature_rows = creature_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             let total_loot: f64 = row.get(2)?;
             let total_cost: f64 = row.get(3)?;
             Ok(json!({
@@ -1271,13 +1322,14 @@ pub fn db_get_analytics_advanced_data(
              LEFT JOIN skill_gains sg ON sg.session_uuid = s.uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY location
              HAVING skill_gains > 0
              ORDER BY skill_gains DESC",
         )
         .map_err(|e| e.to_string())?;
     let skills_location_rows = skills_location_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok(json!({
                 "location": row.get::<_, String>(0)?,
                 "skillGains": row.get::<_, f64>(1)?,
@@ -1298,13 +1350,14 @@ pub fn db_get_analytics_advanced_data(
              LEFT JOIN skill_gains sg ON sg.session_uuid = s.uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY weapon
              HAVING skill_gains > 0
              ORDER BY skill_gains DESC",
         )
         .map_err(|e| e.to_string())?;
     let skills_weapon_rows = skills_weapon_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok(json!({
                 "weapon": row.get::<_, String>(0)?,
                 "skillGains": row.get::<_, f64>(1)?,
@@ -1323,11 +1376,12 @@ pub fn db_get_analytics_advanced_data(
              LEFT JOIN skill_gains sg ON sg.session_uuid = s.uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY s.uuid",
         )
         .map_err(|e| e.to_string())?;
     let skill_totals_rows = skill_totals_stmt
-        .query_map(params![start_time, end_time], |row| row.get::<_, f64>(1))
+        .query_map(params![start_time, end_time, tags_json], |row| row.get::<_, f64>(1))
         .map_err(|e| e.to_string())?;
     let mut skill_totals: Vec<f64> = Vec::new();
     for row in skill_totals_rows {
@@ -1357,8 +1411,9 @@ pub fn db_get_analytics_advanced_data(
             "SELECT COALESCE(SUM(s.ammo_cost + s.weapon_decay + s.healing_cost + s.other_costs), 0)
              FROM sessions s
              WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)",
-            params![start_time, end_time],
+               AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)",
+            params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
         .unwrap_or(0.0);
@@ -1380,11 +1435,12 @@ pub fn db_get_analytics_advanced_data(
              WHERE sg.skill_name IN ('Agility','Health','Intelligence','Psyche','Stamina','Strength')
                AND (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY sg.skill_name",
         )
         .map_err(|e| e.to_string())?;
     let attributes_rows = attributes_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, f64>(1)?,
@@ -1634,6 +1690,8 @@ pub fn db_get_analytics_factor_data(
     let conn = state.db.lock().unwrap();
     let start_time = params.start_time;
     let end_time = params.end_time;
+    let tags = params.tags;
+    let tags_json = tags.as_ref().map(|t| serde_json::to_string(t).unwrap_or("[]".to_string())).unwrap_or("[]".to_string());
 
     // 1. Maturity Return Stats — GROUP BY creature_name, maturity
     let mut maturity_stmt = conn
@@ -1648,6 +1706,7 @@ pub fn db_get_analytics_factor_data(
              JOIN sessions s ON s.uuid = k.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY creature, maturity
              HAVING total_kills >= 3
              ORDER BY total_kills DESC
@@ -1655,7 +1714,7 @@ pub fn db_get_analytics_factor_data(
         )
         .map_err(|e| e.to_string())?;
     let maturity_rows = maturity_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             let total_cost: f64 = row.get(3)?;
             let total_loot: f64 = row.get(4)?;
             Ok(json!({
@@ -1700,12 +1759,13 @@ pub fn db_get_analytics_factor_data(
              WHERE s.status = 'completed'
                AND (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY day_of_week, hour
              ORDER BY day_of_week, hour",
         )
         .map_err(|e| e.to_string())?;
     let heatmap_rows = heatmap_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             Ok(json!({
                 "dayOfWeek": row.get::<_, i64>(0)?,
                 "hour": row.get::<_, i64>(1)?,
@@ -1734,6 +1794,7 @@ pub fn db_get_analytics_factor_data(
              JOIN sessions s ON s.uuid = k.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              GROUP BY creature
              HAVING total_kills >= 3
              ORDER BY total_kills DESC
@@ -1741,7 +1802,7 @@ pub fn db_get_analytics_factor_data(
         )
         .map_err(|e| e.to_string())?;
     let efficiency_rows = efficiency_stmt
-        .query_map(params![start_time, end_time], |row| {
+        .query_map(params![start_time, end_time, tags_json], |row| {
             let total_cost: f64 = row.get(2)?;
             let total_loot: f64 = row.get(3)?;
             Ok(json!({

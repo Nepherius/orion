@@ -6,6 +6,7 @@ import { InfoTooltip } from '../../common/InfoTooltip';
 export default function HealingPerformancePanel() {
   const sessions = useHuntStore((state) => state.sessions);
   const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+  const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
 
   const stats = useMemo(() => {
     let totalHealing = 0;
@@ -18,6 +19,11 @@ export default function HealingPerformancePanel() {
     for (const session of sessions) {
       if (timeRange.startTime !== null && session.startTime < timeRange.startTime) continue;
       if (timeRange.endTime !== null && session.startTime > timeRange.endTime) continue;
+      if (
+        selectedTags.length > 0 &&
+        !selectedTags.every((t) => (session.tags || []).includes(t))
+      )
+        continue;
 
       sessionCount++;
       totalHealing += session.stats.totalHealing || 0;
@@ -45,7 +51,7 @@ export default function HealingPerformancePanel() {
       healingToDamageRatio,
       costPercentage,
     };
-  }, [sessions, timeRange]);
+  }, [sessions, timeRange, selectedTags]);
 
   if (stats.sessionCount === 0 || stats.totalHealing === 0) {
     return null;

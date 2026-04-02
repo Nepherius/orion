@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 import { InfoTooltip } from '../../common/InfoTooltip';
 import { CreatureAnalytics } from '../CreatureAnalytics';
@@ -6,6 +7,18 @@ import { KillTrackingAnalytics } from '../KillTrackingAnalytics';
 export default function CreatureAnalysisPanel() {
   const creatureAnalysis = useHuntStore((state) => state.analyticsData.advanced?.creatureAnalysis);
   const sessions = useHuntStore((state) => state.sessions);
+  const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+  const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
+
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((s) => {
+      if (timeRange.startTime !== null && s.startTime < timeRange.startTime) return false;
+      if (timeRange.endTime !== null && s.startTime > timeRange.endTime) return false;
+      if (selectedTags.length > 0 && !selectedTags.every((t) => (s.tags || []).includes(t)))
+        return false;
+      return true;
+    });
+  }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
   return (
     <>
@@ -52,10 +65,10 @@ export default function CreatureAnalysisPanel() {
       )}
 
       {/* Kill Tracking Analytics */}
-      {sessions.length > 0 && <KillTrackingAnalytics sessions={sessions} />}
+      {filteredSessions.length > 0 && <KillTrackingAnalytics sessions={filteredSessions} />}
 
       {/* Detailed Creature Analytics */}
-      {sessions.length > 0 && <CreatureAnalytics sessions={sessions} />}
+      {filteredSessions.length > 0 && <CreatureAnalytics sessions={filteredSessions} />}
     </>
   );
 }

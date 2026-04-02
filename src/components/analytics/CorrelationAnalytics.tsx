@@ -23,14 +23,17 @@ type WorkerTaskType = keyof WorkerResultMap;
 export function CorrelationAnalytics() {
   const sessions = useHuntStore((state) => state.sessions);
   const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+  const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
 
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
       if (timeRange.startTime !== null && s.startTime < timeRange.startTime) return false;
       if (timeRange.endTime !== null && s.startTime > timeRange.endTime) return false;
+      if (selectedTags.length > 0 && !selectedTags.every((t) => (s.tags || []).includes(t)))
+        return false;
       return true;
     });
-  }, [sessions, timeRange.startTime, timeRange.endTime]);
+  }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);

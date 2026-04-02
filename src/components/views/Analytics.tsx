@@ -18,9 +18,8 @@ export function Analytics() {
   const fetchAnalyticsData = useHuntStore((state) => state.fetchAnalyticsData);
   const fetchLifetimeStats = useHuntStore((state) => state.fetchLifetimeStats);
   const setAnalyticsTimeRange = useHuntStore((state) => state.setAnalyticsTimeRange);
-
-  // Tag filter state for analytics
-  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const tagFilter = useHuntStore((state) => state.analyticsSelectedTags);
+  const setTagFilter = useHuntStore((state) => state.setAnalyticsSelectedTags);
   // Gather all unique tags from sessions for suggestions
   const tagSuggestions = useMemo(
     () => Array.from(new Set(sessions.flatMap((s) => s.tags || []))).sort(),

@@ -24,12 +24,15 @@ interface HourBucket {
 export default function TimeAnalysisPanel() {
   const sessions = useHuntStore((state) => state.sessions);
   const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+  const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
 
   const hourlyData = useMemo(() => {
     const filtered = sessions.filter((s) => {
       if (s.status !== 'completed') return false;
       if (timeRange.startTime !== null && s.startTime < timeRange.startTime) return false;
       if (timeRange.endTime !== null && s.startTime > timeRange.endTime) return false;
+      if (selectedTags.length > 0 && !selectedTags.every((t) => (s.tags || []).includes(t)))
+        return false;
       return true;
     });
 
@@ -73,7 +76,7 @@ export default function TimeAnalysisPanel() {
     }));
 
     return data;
-  }, [sessions, timeRange.startTime, timeRange.endTime]);
+  }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
   if (hourlyData.length === 0) return null;
 

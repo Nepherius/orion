@@ -9,6 +9,7 @@ export default function SecondaryStatsPanel() {
   const lifetimeStats = useHuntStore((state) => state.analyticsLifetimeStats);
   const sessions = useHuntStore((state) => state.sessions);
   const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+  const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
 
   // Calculate hit rate for filtered sessions
   const lifetimeHitRate = useMemo(() => {
@@ -16,6 +17,8 @@ export default function SecondaryStatsPanel() {
     const filtered = sessions.filter((s) => {
       if (startTime !== null && s.startTime < startTime) return false;
       if (endTime !== null && s.startTime > endTime) return false;
+      if (selectedTags.length > 0 && !selectedTags.every((t) => (s.tags || []).includes(t)))
+        return false;
       return true;
     });
     const totalHits = filtered.reduce(
@@ -25,7 +28,7 @@ export default function SecondaryStatsPanel() {
     return lifetimeStats.totalShotsFired > 0
       ? (totalHits / lifetimeStats.totalShotsFired) * 100
       : 0;
-  }, [sessions, timeRange, lifetimeStats.totalShotsFired]);
+  }, [sessions, timeRange, selectedTags, lifetimeStats.totalShotsFired]);
 
   return (
     <div className="grid grid-cols-4 gap-4">

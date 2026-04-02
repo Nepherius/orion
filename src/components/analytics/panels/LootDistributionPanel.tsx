@@ -102,11 +102,14 @@ const BUCKETS = [
 export default function LootDistributionPanel() {
   const sessions = useHuntStore((state) => state.sessions);
   const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+  const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
 
   const data = useMemo(() => {
     const filtered = sessions.filter((s) => {
       if (timeRange.startTime !== null && s.startTime < timeRange.startTime) return false;
       if (timeRange.endTime !== null && s.startTime > timeRange.endTime) return false;
+      if (selectedTags.length > 0 && !selectedTags.every((t) => (s.tags || []).includes(t)))
+        return false;
       return true;
     });
 
@@ -124,7 +127,7 @@ export default function LootDistributionPanel() {
     }
 
     return counts;
-  }, [sessions, timeRange.startTime, timeRange.endTime]);
+  }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
   const totalDrops = data.reduce((sum, b) => sum + b.count, 0);
   if (totalDrops === 0) return null;

@@ -5,6 +5,8 @@ import { generateId, safeInvoke } from './shared';
 export const pendingKillFlag = new Map<string, boolean>();
 export const pendingKillStartTime = new Map<string, number>();
 export const finalizationInProgress = new Set<string>();
+// Tracks debounce timer IDs for kill finalization (one per session)
+export const pendingKillFinalizeTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export const finalizePendingKillRecord = async (
   session: HuntSession,

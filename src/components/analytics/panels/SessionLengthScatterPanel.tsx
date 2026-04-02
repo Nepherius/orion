@@ -21,6 +21,7 @@ interface ScatterPoint {
 export default function SessionLengthScatterPanel() {
   const sessions = useHuntStore((state) => state.sessions);
   const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+  const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
 
   const points = useMemo(() => {
     const filtered = sessions.filter((s) => {
@@ -29,6 +30,8 @@ export default function SessionLengthScatterPanel() {
       if (s.stats.duration <= 0) return false;
       if (timeRange.startTime !== null && s.startTime < timeRange.startTime) return false;
       if (timeRange.endTime !== null && s.startTime > timeRange.endTime) return false;
+      if (selectedTags.length > 0 && !selectedTags.every((t) => (s.tags || []).includes(t)))
+        return false;
       return true;
     });
 
@@ -39,7 +42,7 @@ export default function SessionLengthScatterPanel() {
         name: s.name,
       })
     );
-  }, [sessions, timeRange.startTime, timeRange.endTime]);
+  }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
   if (points.length < 3) return null;
 

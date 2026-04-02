@@ -64,14 +64,6 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
       armor: selectedLoadout?.armor ?? session.armor,
       tags: formData.tags || [],
     });
-    <TagInput
-      label="Tags (optional)"
-      value={formData.tags}
-      onChange={handleTagsChange}
-      suggestions={tagSuggestions}
-      maxTags={5}
-      placeholder="Add up to 5 tags"
-    />;
     onClose();
   };
 

@@ -144,7 +144,7 @@ export const updateSessionInDb = async (id: string, updates: Partial<HuntSession
       weapon_decay: updates.weaponDecay,
       healing_cost: updates.healingCost,
       other_costs: updates.otherCosts,
-      tags: updates.tags ?? [],
+      ...(updates.tags !== undefined ? { tags: updates.tags } : {}),
     },
   });
 };

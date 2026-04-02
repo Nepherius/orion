@@ -69,6 +69,10 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
       }));
     },
 
+    setAnalyticsSelectedTags: (tags: string[]) => {
+      set(() => ({ analyticsSelectedTags: tags }));
+    },
+
     fetchLifetimeStats: async (
       startTime: number | null,
       endTime: number | null,

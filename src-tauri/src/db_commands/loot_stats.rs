@@ -364,11 +364,17 @@ pub fn db_get_session_stats(
 pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, weapon_decay, healing_cost, other_costs, notes, loadout_id, creature FROM sessions ORDER BY start_time DESC")
+        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, weapon_decay, healing_cost, other_costs, notes, loadout_id, creature, tags FROM sessions ORDER BY start_time DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
         .query_map([], |row| {
+            let tags_str: Option<String> = row.get(17)?;
+            let tags: Vec<String> = if let Some(s) = tags_str {
+                serde_json::from_str(&s).unwrap_or_else(|_| Vec::new())
+            } else {
+                Vec::new()
+            };
             Ok(json!({
                 "id": row.get::<_, String>(0)?,
                 "name": row.get::<_, String>(1)?,
@@ -387,6 +393,7 @@ pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValu
                 "notes": row.get::<_, String>(14)?,
                 "loadoutId": row.get::<_, Option<String>>(15)?,
                 "creature": row.get::<_, Option<String>>(16)?,
+                "tags": tags,
             }))
         })
         .map_err(|e| e.to_string())?;

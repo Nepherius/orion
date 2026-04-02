@@ -171,6 +171,7 @@ export interface HuntStore {
     startTime: number | null;
     endTime: number | null;
   };
+  analyticsSelectedTags: string[];
   analyticsLifetimeStats: AnalyticsLifetimeStats;
 
   _loadCreatureData: () => Promise<void>;
@@ -180,6 +181,7 @@ export interface HuntStore {
     tags?: string[]
   ) => Promise<void>;
   setAnalyticsTimeRange: (startTime: number | null, endTime: number | null) => void;
+  setAnalyticsSelectedTags: (tags: string[]) => void;
   fetchLifetimeStats: (
     startTime: number | null,
     endTime: number | null,
