@@ -19,10 +19,7 @@ export default function HealingPerformancePanel() {
     for (const session of sessions) {
       if (timeRange.startTime !== null && session.startTime < timeRange.startTime) continue;
       if (timeRange.endTime !== null && session.startTime > timeRange.endTime) continue;
-      if (
-        selectedTags.length > 0 &&
-        !selectedTags.every((t) => (session.tags || []).includes(t))
-      )
+      if (selectedTags.length > 0 && !selectedTags.every((t) => (session.tags || []).includes(t)))
         continue;
 
       sessionCount++;
