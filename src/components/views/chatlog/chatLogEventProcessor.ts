@@ -27,7 +27,7 @@ const parseTimestamp = (ts: string): number => {
   const match = ts.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
   if (match) {
     const [, y, mo, d, h, mi, s] = match.map(Number);
-    return new Date(y, mo - 1, d, h, mi, s).getTime();
+    return Date.UTC(y, mo - 1, d, h, mi, s);
   }
   return Date.now();
 };

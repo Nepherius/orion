@@ -76,24 +76,34 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
     // We calculate a data point for every single loot event.
     // The cost at that exact moment is approximated linearly based on elapsed time.
     for (const lootEvent of sortedLoot) {
-      cumulativeLoot += lootEvent.totalValue;
-
       const elapsedMs = Math.max(0, lootEvent.timestamp - startTime);
       // Ensure we cap ratio at 1 (100%) in case a timestamp is weirdly recorded
       const elapsedRatio = Math.min(1, elapsedMs / durationMs);
 
       const approximatedCost = totalCost * elapsedRatio;
+      const safeCost = Math.max(1.0, approximatedCost);
 
-      // Calculate return percent. Avoid division by zero by setting a tiny floor.
-      const safeCost = approximatedCost > 0 ? approximatedCost : 0.01;
-      const returnPercent = (cumulativeLoot / safeCost) * 100;
+      // Add a point right before adding the new loot's value to capture the decay curve
+      if (dataPoints.length > 0) {
+        dataPoints.push({
+          time: lootEvent.timestamp - 1,
+          formattedTime: format(lootEvent.timestamp, 'HH:mm'),
+          cumulativeLoot,
+          cumulativeCost: approximatedCost,
+          returnPercent: (cumulativeLoot / safeCost) * 100,
+        });
+      }
 
+      // Record the new loot
+      cumulativeLoot += lootEvent.totalValue;
+
+      // Add the point immediately after to capture the jump
       dataPoints.push({
         time: lootEvent.timestamp,
         formattedTime: format(lootEvent.timestamp, 'HH:mm'),
         cumulativeLoot,
         cumulativeCost: approximatedCost,
-        returnPercent,
+        returnPercent: (cumulativeLoot / safeCost) * 100,
       });
     }
 

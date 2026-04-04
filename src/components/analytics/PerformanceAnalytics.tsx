@@ -2,8 +2,6 @@ import { HuntSession } from '../../types';
 import {
   LineChart,
   Line,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,6 +13,7 @@ import {
 } from 'recharts';
 import { TrendingUp, TrendingDown, Target, Award } from 'lucide-react';
 import { format } from 'date-fns';
+import { ReturnRateChart } from './ReturnRateChart';
 
 interface PerformanceAnalyticsProps {
   session: HuntSession;
@@ -22,20 +21,6 @@ interface PerformanceAnalyticsProps {
 
 export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
   const profit = session.stats.totalLoot - session.stats.totalCost;
-
-  // Return rate over time chart data
-  const returnRateChart = session.loot.map((item, index) => {
-    const cumulativeLoot = session.loot
-      .slice(0, index + 1)
-      .reduce((sum, l) => sum + l.totalValue, 0);
-    const cumulativeCost = session.stats.totalCost * ((index + 1) / session.loot.length);
-    const returnRate = cumulativeCost > 0 ? (cumulativeLoot / cumulativeCost) * 100 : 0;
-    return {
-      index: index + 1,
-      returnRate: Math.round(returnRate * 10) / 10,
-      time: format(item.timestamp, 'HH:mm:ss'),
-    };
-  });
 
   // Profit/Loss over time
   const plChart = session.loot.map((item, index) => {
@@ -145,32 +130,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
         {/* Return Rate Over Time */}
         <div className="card p-6">
           <h3 className="text-lg font-bold mb-4">Return Rate Over Time</h3>
-          {returnRateChart.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-muted">No loot data yet</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={returnRateChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="index" stroke="var(--color-text-muted)" />
-                <YAxis stroke="var(--color-text-muted)" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                  formatter={(value: number) => [`${value}%`, 'Return Rate']}
-                  labelFormatter={(label) => `Event #${label}`}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="returnRate"
-                  stroke={session.stats.returns >= 100 ? '#22C55E' : '#EF4444'}
-                  fill={session.stats.returns >= 100 ? '#22C55E33' : '#EF444433'}
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
+          <ReturnRateChart session={session} emptyHeight="h-64" />
         </div>
 
         {/* Profit/Loss Over Time */}

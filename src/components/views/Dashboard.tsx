@@ -5,15 +5,6 @@ import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { ActiveSessionSidebar } from '../layout/ActiveSessionSidebar';
 import { LiveTimer } from '../layout/LiveTimer';
 import { StatCard } from '../common/StatCard';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 import { AnalyticsModal } from '../analytics/AnalyticsModal';
 import { PerformanceAnalytics } from '../analytics/PerformanceAnalytics';
 import { EconomyAnalytics } from '../analytics/EconomyAnalytics';
@@ -23,6 +14,7 @@ import { CombatAnalytics } from '../analytics/CombatAnalytics';
 import { HourlyRatesAnalytics } from '../analytics/HourlyRatesAnalytics';
 import { HealingAnalytics } from '../analytics/HealingAnalytics';
 import { GrindGoals } from '../analytics/GrindGoals';
+import { ReturnRateChart } from '../analytics/ReturnRateChart';
 
 interface DashboardProps {
   sessionId?: string;
@@ -89,20 +81,6 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
       : durationFromTimestamps;
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
-
-  // Calculate return rate over time
-  const chartData = session.loot.map((item, index) => {
-    const cumulativeLoot = session.loot
-      .slice(0, index + 1)
-      .reduce((sum, l) => sum + l.totalValue, 0);
-    const returnRate =
-      session.stats.totalCost > 0 ? (cumulativeLoot / session.stats.totalCost) * 100 : 0;
-    return {
-      name: `${index + 1}`,
-      returnRate: Math.round(returnRate * 10) / 10, // Round to 1 decimal
-      time: item.timestamp,
-    };
-  });
 
   // Combat calculations
   const totalHits = session.stats.hits || 0;
@@ -218,42 +196,7 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
           {/* Return Rate Chart */}
           <div className="card p-6">
             <div className="text-xs text-muted uppercase mb-4">RETURN RATE OVER TIME</div>
-            {chartData.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-muted">
-                No loot data yet
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis
-                    dataKey="name"
-                    label={{ value: 'Loot Event', position: 'insideBottomRight', offset: -5 }}
-                    stroke="#9CA3AF"
-                  />
-                  <YAxis
-                    label={{ value: 'Return Rate %', angle: -90, position: 'insideLeft' }}
-                    stroke="#9CA3AF"
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'var(--color-surface)',
-                      border: '1px solid #374151',
-                    }}
-                    formatter={(value: number) => [`${value}%`, 'Return Rate']}
-                    labelFormatter={(label) => `Event #${label}`}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="returnRate"
-                    stroke={session.stats.returns >= 100 ? '#22C55E' : '#EF4444'}
-                    dot={{ fill: session.stats.returns >= 100 ? '#22C55E' : '#EF4444', r: 4 }}
-                    activeDot={{ r: 6 }}
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
+            <ReturnRateChart session={session} emptyHeight="h-48" />
           </div>
 
           {/* Stats Grid */}
