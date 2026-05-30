@@ -8,7 +8,9 @@ import {
   calculateProjectedLifetimeProfit,
   calculateSessionsToBreakEven,
   calculateTimeToVarianceMetrics,
+  calculateWinRate,
 } from './analytics/performanceMetrics';
+import { calculateVariance } from './analytics/stats';
 import type { HuntSession } from '../types';
 
 function createSession(
@@ -76,6 +78,30 @@ function createSession(
 }
 
 describe('analytics calculations', () => {
+  it('returns zero variance for an empty sample instead of NaN', () => {
+    expect(calculateVariance([])).toBe(0);
+  });
+
+  it('calculates win rate from completed sessions only', () => {
+    const completedWin = createSession({
+      id: 'completed-win',
+      status: 'completed',
+      stats: { totalLoot: 120, totalCost: 100 },
+    });
+    const completedLoss = createSession({
+      id: 'completed-loss',
+      status: 'completed',
+      stats: { totalLoot: 80, totalCost: 100 },
+    });
+    const activeWin = createSession({
+      id: 'active-win',
+      status: 'active',
+      stats: { totalLoot: 1000, totalCost: 1 },
+    });
+
+    expect(calculateWinRate([completedWin, completedLoss, activeWin])).toBeCloseTo(50, 8);
+  });
+
   it('uses completed duration for global drop rate per hour', () => {
     const session = createSession({
       startTime: Date.now() - 10 * 24 * 60 * 60 * 1000,

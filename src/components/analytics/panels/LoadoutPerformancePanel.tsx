@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
+import { DataTable, DataTableColumn } from '../../common/DataTable';
+import { Panel } from '../../common/Panel';
 
 export default function LoadoutPerformancePanel() {
   const loadoutRaw = useHuntStore((state) => state.analyticsData.performance?.loadoutData);
@@ -23,41 +25,51 @@ export default function LoadoutPerformancePanel() {
 
   if (loadoutData.length === 0) return null;
 
+  const columns: Array<DataTableColumn<(typeof loadoutData)[number]>> = [
+    {
+      key: 'name',
+      header: 'Loadout',
+      render: (loadout) => (
+        <span className="block truncate font-semibold" title={loadout.name}>
+          {loadout.name}
+        </span>
+      ),
+    },
+    { key: 'sessions', header: 'Sessions', align: 'right', render: (loadout) => loadout.sessions },
+    {
+      key: 'returnRate',
+      header: 'Return %',
+      align: 'right',
+      render: (loadout) => (
+        <span
+          className={`font-bold ${loadout.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
+        >
+          {loadout.returnRate.toFixed(2)}%
+        </span>
+      ),
+    },
+    {
+      key: 'profit',
+      header: 'Profit',
+      align: 'right',
+      render: (loadout) => (
+        <span className={loadout.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
+          {loadout.profit >= 0 ? '+' : ''}
+          {loadout.profit.toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      key: 'avgKills',
+      header: 'Avg Kills',
+      align: 'right',
+      render: (loadout) => loadout.avgKills.toFixed(2),
+    },
+  ];
+
   return (
-    <div className="card p-6">
-      <h3 className="text-lg font-bold mb-4">Loadout Performance</h3>
-      <div className="space-y-2">
-        <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted pb-2 border-b border-border">
-          <div>Loadout</div>
-          <div className="text-right">Sessions</div>
-          <div className="text-right">Return %</div>
-          <div className="text-right">Profit</div>
-          <div className="text-right">Avg Kills</div>
-        </div>
-        {loadoutData.map((loadout) => (
-          <div
-            key={loadout.name}
-            className="grid grid-cols-5 gap-2 text-sm py-2 hover:bg-surface-hover"
-          >
-            <div className="font-semibold truncate" title={loadout.name}>
-              {loadout.name}
-            </div>
-            <div className="text-right text-muted">{loadout.sessions}</div>
-            <div
-              className={`text-right font-bold ${loadout.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-            >
-              {loadout.returnRate.toFixed(2)}%
-            </div>
-            <div
-              className={`text-right ${loadout.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-            >
-              {loadout.profit >= 0 ? '+' : ''}
-              {loadout.profit.toFixed(2)}
-            </div>
-            <div className="text-right">{loadout.avgKills.toFixed(2)}</div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Panel title="Loadout Performance">
+      <DataTable columns={columns} rows={loadoutData} getRowKey={(loadout) => loadout.name} />
+    </Panel>
   );
 }

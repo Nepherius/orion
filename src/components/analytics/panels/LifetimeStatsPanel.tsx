@@ -1,14 +1,7 @@
 // Panel showing lifetime summary stats for the user
 import { useHuntStore } from '../../../store';
-
-/**
- * Format seconds as hours and minutes (e.g. 2h 15m)
- */
-function formatDuration(seconds: number) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours}h ${minutes}m`;
-}
+import { formatDurationMinutes } from '../../../utils/formatters';
+import { MetricTile } from '../../common/Panel';
 
 /**
  * Displays total loot, cost, profit, and return rate for all time
@@ -21,48 +14,29 @@ export default function LifetimeStatsPanel() {
     lifetimeStats.totalCost > 0 ? (lifetimeStats.totalLoot / lifetimeStats.totalCost) * 100 : 0;
 
   return (
-    <div className="grid grid-cols-6 gap-4">
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Total Loot</div>
-        <div className="text-2xl font-bold text-green-400">
-          {lifetimeStats.totalLoot.toFixed(2)} PED
-        </div>
-      </div>
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Total Cost</div>
-        <div className="text-2xl font-bold text-red-400">
-          {lifetimeStats.totalCost.toFixed(2)} PED
-        </div>
-      </div>
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Net Profit</div>
-        <div
-          className={`text-2xl font-bold ${lifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-        >
-          {lifetimeProfit >= 0 ? '+' : ''}
-          {lifetimeProfit.toFixed(2)} PED
-        </div>
-      </div>
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Return Rate</div>
-        <div
-          className={`text-2xl font-bold ${lifetimeReturnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-        >
-          {lifetimeReturnRate.toFixed(2)}%
-        </div>
-      </div>
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Total Kills</div>
-        <div className="text-2xl font-bold text-body">
-          {lifetimeStats.totalKills.toLocaleString()}
-        </div>
-      </div>
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Total Time</div>
-        <div className="text-2xl font-bold text-body">
-          {formatDuration(lifetimeStats.totalDuration)}
-        </div>
-      </div>
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <MetricTile
+        label="Total Loot"
+        value={`${lifetimeStats.totalLoot.toFixed(2)} PED`}
+        tone="positive"
+      />
+      <MetricTile
+        label="Total Cost"
+        value={`${lifetimeStats.totalCost.toFixed(2)} PED`}
+        tone="negative"
+      />
+      <MetricTile
+        label="Net Profit"
+        value={`${lifetimeProfit >= 0 ? '+' : ''}${lifetimeProfit.toFixed(2)} PED`}
+        tone={lifetimeProfit >= 0 ? 'positive' : 'negative'}
+      />
+      <MetricTile
+        label="Return Rate"
+        value={`${lifetimeReturnRate.toFixed(2)}%`}
+        tone={lifetimeReturnRate >= 100 ? 'positive' : 'negative'}
+      />
+      <MetricTile label="Total Kills" value={lifetimeStats.totalKills.toLocaleString()} />
+      <MetricTile label="Total Time" value={formatDurationMinutes(lifetimeStats.totalDuration)} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 // React hook for browsing and searching Entropia Universe items
 import { useState, useEffect } from 'react';
+import { EQUIPMENT_ASSET_PATHS, loadAssetJson } from '../services/assetDataLoader';
 
 /**
  * Represents an item from the Entropia Universe item database
@@ -34,11 +35,7 @@ export function useItemBrowser() {
     const loadItems = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/assets/items/entropia-items.json');
-        if (!response.ok) {
-          throw new Error('Failed to load items database');
-        }
-        const data: EntropyItem[] = await response.json();
+        const data = await loadAssetJson<EntropyItem[]>(EQUIPMENT_ASSET_PATHS.items);
         setItems(data);
         setError(null);
       } catch (err) {

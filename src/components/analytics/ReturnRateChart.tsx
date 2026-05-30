@@ -9,6 +9,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { format } from 'date-fns';
+import { InfoTooltip } from '../common/InfoTooltip';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface ReturnRateChartProps {
   session: HuntSession;
@@ -16,12 +18,13 @@ interface ReturnRateChartProps {
   margin?: { top: number; right: number; left: number; bottom: number };
 }
 
-export function ReturnRateChart({ 
-  session, 
-  emptyHeight = "h-64",
-  margin = { top: 5, right: 30, left: 0, bottom: 5 }
+export function ReturnRateChart({
+  session,
+  emptyHeight = 'h-64',
+  margin = { top: 5, right: 30, left: 0, bottom: 5 },
 }: ReturnRateChartProps) {
-  // Return rate over time chart data
+  // Estimated return rate over loot events. Costs are interpolated across loot events because
+  // individual cost events are not persisted with per-event PED deltas.
   const returnRateChart = session.loot.map((item, index) => {
     const cumulativeLoot = session.loot
       .slice(0, index + 1)
@@ -44,27 +47,30 @@ export function ReturnRateChart({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={returnRateChart} margin={margin}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-        <XAxis dataKey="index" stroke="var(--color-text-muted)" />
-        <YAxis stroke="var(--color-text-muted)" />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-          }}
-          formatter={(value: number) => [`${value}%`, 'Return Rate']}
-          labelFormatter={(label) => `Event #${label}`}
-        />
-        <Area
-          type="monotone"
-          dataKey="returnRate"
-          stroke={session.stats.returns >= 100 ? '#22C55E' : '#EF4444'}
-          fill={session.stats.returns >= 100 ? '#22C55E33' : '#EF444433'}
-          strokeWidth={2}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
+    <div>
+      <div className="flex items-center gap-1 text-sm text-muted mb-2">
+        Estimated Return Path
+        <InfoTooltip tooltip="Loot is cumulative; session cost is interpolated evenly across loot events because per-event PED cost is not stored." />
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <AreaChart data={returnRateChart} margin={margin}>
+          <CartesianGrid {...chartGridProps} />
+          <XAxis dataKey="index" {...chartAxisProps} />
+          <YAxis {...chartAxisProps} />
+          <Tooltip
+            {...chartTooltipProps}
+            formatter={(value: number) => [`${value}%`, 'Estimated Return Rate']}
+            labelFormatter={(label) => `Loot Event #${label}`}
+          />
+          <Area
+            type="monotone"
+            dataKey="returnRate"
+            stroke={session.stats.returns >= 100 ? '#22C55E' : '#EF4444'}
+            fill={session.stats.returns >= 100 ? '#22C55E33' : '#EF444433'}
+            strokeWidth={2}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

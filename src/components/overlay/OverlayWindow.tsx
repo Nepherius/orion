@@ -68,7 +68,7 @@ export function OverlayWindow() {
             loadouts: payload.loadouts,
           }));
         });
-      } catch (error) {
+      } catch {
         // Silently fail if listen not available
       }
 

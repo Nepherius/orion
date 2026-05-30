@@ -7,6 +7,7 @@ import { LootBreakdownPanels } from './LootBreakdownPanels';
 import { LootItemTable } from './LootItemTable';
 import { LootItemOptionsModal } from './LootItemOptionsModal';
 import type { GroupedLootItem, LootSortBy } from './lootTypes';
+import { EQUIPMENT_ASSET_PATHS, loadAssetJson } from '../../services/assetDataLoader';
 
 interface LootProps {
   sessionId?: string | null;
@@ -64,9 +65,7 @@ export function Loot({ sessionId = null, showSidebar = true }: LootProps) {
       try {
         // Load items.json only once
         if (!loadedItems) {
-          const response = await fetch('/assets/items/entropia-items.json');
-          if (!response.ok) return undefined;
-          const items: ItemData[] = await response.json();
+          const items = await loadAssetJson<ItemData[]>(EQUIPMENT_ASSET_PATHS.items);
           setLoadedItems(items);
 
           // Find and cache this item

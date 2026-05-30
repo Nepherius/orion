@@ -48,9 +48,11 @@ pub struct UpdateSessionParams {
     armor: Option<String>,
     location: Option<String>,
     creature: Option<String>,
+    start_time: Option<i64>,
     end_time: Option<i64>,
     status: Option<String>,
     paused_at: Option<i64>,
+    clear_paused_at: Option<bool>,
     total_paused_ms: Option<i64>,
     loadout_id: Option<String>,
     notes: Option<String>,
@@ -92,6 +94,10 @@ pub fn db_update_session(
         updates.push("creature = ?");
         values.push(Box::new(v));
     }
+    if let Some(v) = params.start_time {
+        updates.push("start_time = ?");
+        values.push(Box::new(v));
+    }
     if let Some(v) = params.end_time {
         updates.push("end_time = ?");
         values.push(Box::new(v));
@@ -100,7 +106,9 @@ pub fn db_update_session(
         updates.push("status = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = params.paused_at {
+    if params.clear_paused_at.unwrap_or(false) {
+        updates.push("paused_at = NULL");
+    } else if let Some(v) = params.paused_at {
         updates.push("paused_at = ?");
         values.push(Box::new(v));
     }
@@ -226,7 +234,7 @@ pub fn db_get_lifetime_stats(state: State<'_, DbState>) -> Result<JsonValue, Str
             [],
             |row| row.get(0),
         )
-        .unwrap_or(0.0);
+        .map_err(|e| e.to_string())?;
 
     // Get total loot across all loot_items
     let total_loot: f64 = conn
@@ -235,7 +243,7 @@ pub fn db_get_lifetime_stats(state: State<'_, DbState>) -> Result<JsonValue, Str
             [],
             |row| row.get(0),
         )
-        .unwrap_or(0.0);
+        .map_err(|e| e.to_string())?;
 
     // Total globals & hofs
     let mut stmt = conn
@@ -319,7 +327,10 @@ pub fn db_get_analytics_stats(
     let tags = params.tags;
 
     // Summing across sessions within selected time range (inclusive on both ends).
-        let tags_json = tags.as_ref().map(|t| serde_json::to_string(t).unwrap_or("[]".to_string())).unwrap_or("[]".to_string());
+        let tags_json = match tags.as_ref() {
+            Some(t) => serde_json::to_string(t).map_err(|e| e.to_string())?,
+            None => "[]".to_string(),
+        };
         let total_sessions: i64 = conn
                 .query_row(
                         "SELECT COUNT(*) FROM sessions s
@@ -335,7 +346,7 @@ pub fn db_get_analytics_stats(
                         params![start_time, end_time, tags_json],
                         |row| row.get(0),
                 )
-                .unwrap_or(0);
+                .map_err(|e| e.to_string())?;
 
     // Get total cost across sessions in range.
     let total_cost: f64 = conn
@@ -354,7 +365,7 @@ pub fn db_get_analytics_stats(
             params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
-        .unwrap_or(0.0);
+        .map_err(|e| e.to_string())?;
 
     // Get total loot for sessions in range.
     let total_loot: f64 = conn
@@ -374,7 +385,7 @@ pub fn db_get_analytics_stats(
             params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
-        .unwrap_or(0.0);
+        .map_err(|e| e.to_string())?;
 
     // Total globals & hofs in range.
     let mut stmt = conn
@@ -397,7 +408,7 @@ pub fn db_get_analytics_stats(
         .map_err(|e| e.to_string())?;
     let (total_globals, total_hofs): (i64, i64) = stmt
         .query_row(params![start_time, end_time, tags_json], |row| Ok((row.get(0)?, row.get(1)?)))
-        .unwrap_or((0, 0));
+        .map_err(|e| e.to_string())?;
 
     // Total kills, shots fired, and damage in range.
     let mut stmt = conn
@@ -435,7 +446,7 @@ pub fn db_get_analytics_stats(
         .query_row(params![start_time, end_time, tags_json], |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?))
         })
-        .unwrap_or((0, 0, 0.0));
+        .map_err(|e| e.to_string())?;
 
     // Calculate total duration from sessions in range using frontend-equivalent duration logic.
     let total_duration: i64 = conn
@@ -471,7 +482,7 @@ pub fn db_get_analytics_stats(
             params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
-        .unwrap_or(0);
+        .map_err(|e| e.to_string())?;
 
     Ok(json!({
         "totalLoot": total_loot,
@@ -496,7 +507,10 @@ pub fn db_get_analytics_performance_data(
     let end_time = params.end_time;
 
         let tags = params.tags;
-        let tags_json = tags.as_ref().map(|t| serde_json::to_string(t).unwrap_or("[]".to_string())).unwrap_or("[]".to_string());
+        let tags_json = match tags.as_ref() {
+            Some(t) => serde_json::to_string(t).map_err(|e| e.to_string())?,
+            None => "[]".to_string(),
+        };
         let (avg_loot_value, avg_loot_squared): (f64, f64) = conn
                 .query_row(
                         "SELECT
@@ -516,7 +530,7 @@ pub fn db_get_analytics_performance_data(
                         params![start_time, end_time, tags_json],
                         |row| Ok((row.get(0)?, row.get(1)?)),
                 )
-                .unwrap_or((0.0, 0.0));
+                .map_err(|e| e.to_string())?;
     let variance = (avg_loot_squared - (avg_loot_value * avg_loot_value)).max(0.0);
     let overall_loot_std_dev = variance.sqrt();
 
@@ -537,7 +551,7 @@ pub fn db_get_analytics_performance_data(
                         params![start_time, end_time, tags_json],
                         |row| row.get(0),
                 )
-                .unwrap_or(0.0);
+                .map_err(|e| e.to_string())?;
 
         let total_loot_events: i64 = conn
                 .query_row(
@@ -556,7 +570,7 @@ pub fn db_get_analytics_performance_data(
                         params![start_time, end_time, tags_json],
                         |row| row.get(0),
                 )
-                .unwrap_or(0);
+                .map_err(|e| e.to_string())?;
 
     let (total_globals_count, total_hofs_count, avg_global_value, best_global_value): (
         i64,
@@ -584,7 +598,7 @@ pub fn db_get_analytics_performance_data(
                         params![start_time, end_time, tags_json],
                         |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
                 )
-                .unwrap_or((0, 0, 0.0, 0.0));
+                .map_err(|e| e.to_string())?;
 
         let total_kills: i64 = conn
                 .query_row(
@@ -603,7 +617,7 @@ pub fn db_get_analytics_performance_data(
                         params![start_time, end_time, tags_json],
                         |row| row.get(0),
                 )
-                .unwrap_or(0);
+                .map_err(|e| e.to_string())?;
 
     let total_duration_hours: f64 = conn
         .query_row(
@@ -638,7 +652,7 @@ pub fn db_get_analytics_performance_data(
             params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
-        .unwrap_or(0.0);
+        .map_err(|e| e.to_string())?;
 
     let global_drop_rate_per_kill = if total_kills > 0 {
         total_globals_count as f64 / total_kills as f64
@@ -683,18 +697,14 @@ pub fn db_get_analytics_performance_data(
                   AND (?2 IS NULL OR s.start_time <= ?2)
                   AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
              )
-             SELECT COALESCE(AVG(
-                CASE
-                    WHEN COALESCE(sl.loot_count, 0) > 0 THEN sd.duration_min / sl.loot_count
-                    ELSE 0
-                END
-             ), 0)
+             SELECT COALESCE(AVG(sd.duration_min / sl.loot_count), 0)
              FROM session_duration_min sd
-             LEFT JOIN session_loot sl ON sl.session_uuid = sd.session_uuid",
+             JOIN session_loot sl ON sl.session_uuid = sd.session_uuid
+             WHERE sl.loot_count > 0",
             params![start_time, end_time, tags_json],
             |row| row.get(0),
         )
-        .unwrap_or(0.0);
+        .map_err(|e| e.to_string())?;
 
     let mut top_loot_items_stmt = conn
         .prepare(
@@ -875,7 +885,7 @@ pub fn db_get_analytics_performance_data(
             params![start_time, end_time, tags_json],
             |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
         )
-        .unwrap_or((0.0, 0.0, 0.0, 0.0));
+        .map_err(|e| e.to_string())?;
 
     let cost_data = vec![
         json!({"name": "Ammo", "value": ammo, "color": "#EF4444"}),
@@ -1087,6 +1097,35 @@ pub fn db_get_analytics_performance_data(
     }))
 }
 
+fn query_all_skill_names(
+    conn: &Connection,
+    start_time: Option<i64>,
+    end_time: Option<i64>,
+    tags_json: &str,
+) -> Result<Vec<String>, String> {
+    let mut all_skills_stmt = conn
+        .prepare(
+            "SELECT DISTINCT sg.skill_name
+             FROM skill_gains sg
+             JOIN sessions s ON s.uuid = sg.session_uuid
+             WHERE (?1 IS NULL OR s.start_time >= ?1)
+               AND (?2 IS NULL OR s.start_time <= ?2)
+               AND (?3 IS NULL OR ?3 = '[]' OR (SELECT COUNT(*) FROM json_each(?3) WHERE json_each.value NOT IN (SELECT value FROM json_each(s.tags))) = 0)
+             ORDER BY sg.skill_name ASC",
+        )
+        .map_err(|e| e.to_string())?;
+    let all_skills_rows = all_skills_stmt
+        .query_map(params![start_time, end_time, tags_json], |row| {
+            row.get::<_, String>(0)
+        })
+        .map_err(|e| e.to_string())?;
+    let mut all_skill_names = Vec::new();
+    for row in all_skills_rows {
+        all_skill_names.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(all_skill_names)
+}
+
 #[tauri::command]
 pub fn db_get_analytics_advanced_data(
     params: AnalyticsStatsRangeParams,
@@ -1097,7 +1136,10 @@ pub fn db_get_analytics_advanced_data(
     let end_time = params.end_time;
 
     let tags = params.tags;
-    let tags_json = tags.as_ref().map(|t| serde_json::to_string(t).unwrap_or("[]".to_string())).unwrap_or("[]".to_string());
+    let tags_json = match tags.as_ref() {
+        Some(t) => serde_json::to_string(t).map_err(|e| e.to_string())?,
+        None => "[]".to_string(),
+    };
     let mut sessions_stmt = conn
         .prepare(
             "WITH session_loot AS (
@@ -1128,7 +1170,8 @@ pub fn db_get_analytics_advanced_data(
                 ) AS duration_ms
              FROM sessions s
              LEFT JOIN session_loot sl ON sl.session_uuid = s.uuid
-             WHERE (?1 IS NULL OR s.start_time >= ?1)
+             WHERE s.status = 'completed'
+               AND (?1 IS NULL OR s.start_time >= ?1)
                AND (?2 IS NULL OR s.start_time <= ?2)
                AND (?3 IS NULL OR ?3 = '[]' OR (
                  SELECT COUNT(*) FROM json_each(?3)
@@ -1453,23 +1496,7 @@ pub fn db_get_analytics_advanced_data(
         attribute_map.insert(name, json!({"gains": gains, "count": count}));
     }
 
-    let mut all_skills_stmt = conn
-        .prepare(
-            "SELECT DISTINCT sg.skill_name
-             FROM skill_gains sg
-             JOIN sessions s ON s.uuid = sg.session_uuid
-             WHERE (?1 IS NULL OR s.start_time >= ?1)
-               AND (?2 IS NULL OR s.start_time <= ?2)
-             ORDER BY sg.skill_name ASC",
-        )
-        .map_err(|e| e.to_string())?;
-    let all_skills_rows = all_skills_stmt
-        .query_map(params![start_time, end_time], |row| row.get::<_, String>(0))
-        .map_err(|e| e.to_string())?;
-    let mut all_skill_names = Vec::new();
-    for row in all_skills_rows {
-        all_skill_names.push(row.map_err(|e| e.to_string())?);
-    }
+    let all_skill_names = query_all_skill_names(&conn, start_time, end_time, &tags_json)?;
 
     Ok(json!({
         "sessionWinRate": session_win_rate,
@@ -1691,7 +1718,10 @@ pub fn db_get_analytics_factor_data(
     let start_time = params.start_time;
     let end_time = params.end_time;
     let tags = params.tags;
-    let tags_json = tags.as_ref().map(|t| serde_json::to_string(t).unwrap_or("[]".to_string())).unwrap_or("[]".to_string());
+    let tags_json = match tags.as_ref() {
+        Some(t) => serde_json::to_string(t).map_err(|e| e.to_string())?,
+        None => "[]".to_string(),
+    };
 
     // 1. Maturity Return Stats — GROUP BY creature_name, maturity
     let mut maturity_stmt = conn
@@ -1826,4 +1856,80 @@ pub fn db_get_analytics_factor_data(
         "hourlyHeatmap": hourly_heatmap,
         "killEfficiency": kill_efficiency
     }))
+}
+
+#[cfg(test)]
+mod analytics_query_tests {
+    use super::*;
+
+    fn setup_conn() -> Connection {
+        let conn = Connection::open_in_memory().expect("in-memory db");
+        conn.execute_batch(
+            "CREATE TABLE sessions (
+                uuid TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                weapon TEXT,
+                armor TEXT,
+                location TEXT,
+                creature TEXT,
+                notes TEXT,
+                start_time INTEGER NOT NULL,
+                end_time INTEGER,
+                status TEXT NOT NULL,
+                paused_at INTEGER,
+                total_paused_ms INTEGER DEFAULT 0,
+                loadout_id TEXT,
+                ammo_cost REAL DEFAULT 0,
+                weapon_decay REAL DEFAULT 0,
+                healing_cost REAL DEFAULT 0,
+                other_costs REAL DEFAULT 0,
+                tags TEXT
+            );
+            CREATE TABLE skill_gains (
+                uuid TEXT PRIMARY KEY,
+                session_uuid TEXT NOT NULL,
+                skill_name TEXT NOT NULL,
+                gain_amount REAL NOT NULL,
+                timestamp INTEGER NOT NULL
+            );",
+        )
+        .expect("schema");
+        conn
+    }
+
+    #[test]
+    fn all_skill_names_respects_tags_and_time_range() {
+        let conn = setup_conn();
+        conn.execute(
+            "INSERT INTO sessions (uuid, name, start_time, status, tags)
+             VALUES (?1, ?2, ?3, 'completed', ?4)",
+            params!["tagged", "Tagged", 1000_i64, "[\"team\"]"],
+        )
+        .expect("insert tagged session");
+        conn.execute(
+            "INSERT INTO sessions (uuid, name, start_time, status, tags)
+             VALUES (?1, ?2, ?3, 'completed', ?4)",
+            params!["untagged", "Untagged", 2000_i64, "[]"],
+        )
+        .expect("insert untagged session");
+        conn.execute(
+            "INSERT INTO skill_gains (uuid, session_uuid, skill_name, gain_amount, timestamp)
+             VALUES (?1, ?2, ?3, 1.0, 1000)",
+            params!["skill-1", "tagged", "Rifle"],
+        )
+        .expect("insert tagged skill");
+        conn.execute(
+            "INSERT INTO skill_gains (uuid, session_uuid, skill_name, gain_amount, timestamp)
+             VALUES (?1, ?2, ?3, 1.0, 2000)",
+            params!["skill-2", "untagged", "Pistol"],
+        )
+        .expect("insert untagged skill");
+
+        let tagged =
+            query_all_skill_names(&conn, None, None, "[\"team\"]").expect("tagged query");
+        assert_eq!(tagged, vec!["Rifle"]);
+
+        let ranged = query_all_skill_names(&conn, Some(1500), None, "[]").expect("range query");
+        assert_eq!(ranged, vec!["Pistol"]);
+    }
 }

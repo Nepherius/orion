@@ -14,17 +14,14 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Zap, Target, Clock } from 'lucide-react';
+import { getSessionActiveDurationMs } from '../../utils/sessionTiming';
 
 interface EfficiencyAnalyticsProps {
   session: HuntSession;
 }
 
 export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
-  const now = Date.now();
-  const pausedMs =
-    (session.totalPausedMs || 0) +
-    (session.status === 'paused' && session.pausedAt ? now - session.pausedAt : 0);
-  const duration = Math.max(0, now - session.startTime - pausedMs);
+  const duration = getSessionActiveDurationMs(session);
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 

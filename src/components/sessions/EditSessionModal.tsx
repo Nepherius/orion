@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useHuntStore } from '../../store';
 import { AutocompleteInput } from '../common/AutocompleteInput';
 import { TagInput } from '../common/TagInput';
 import { X } from 'lucide-react';
-import { loadCreatureNames } from '../../services/creatureDataLoader';
+import { useSessionAutocompleteData } from '../../hooks/useSessionAutocompleteData';
 
 interface EditSessionModalProps {
   sessionId: string;
@@ -38,18 +38,7 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
     setFormData((prev) => ({ ...prev, tags }));
   };
 
-  const [creatures, setCreatures] = useState<string[]>([]);
-  const [planets, setPlanets] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Load creatures and planets data
-    Promise.all([
-      loadCreatureNames().then((data) => setCreatures(data)),
-      fetch('/assets/creatures/planets.json')
-        .then((res) => res.json())
-        .then((data) => setPlanets(data.planets || [])),
-    ]).catch((err) => console.error('Failed to load autocomplete data:', err));
-  }, []);
+  const { creatures, planets } = useSessionAutocompleteData();
 
   if (!session) {
     return null;

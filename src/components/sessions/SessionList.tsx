@@ -4,6 +4,7 @@ import { Plus, Search, Circle, CheckCircle, Clock } from 'lucide-react';
 import { NewSessionModal } from './NewSessionModal';
 import { AlertModal } from '../common/AlertModal';
 import { format } from 'date-fns';
+import { formatCompactDurationMs } from '../../utils/formatters';
 
 interface SessionListProps {
   selectedSessionId: string | null;
@@ -57,13 +58,6 @@ export function SessionList({
   // Calculate counts
   const activeCount = sessions.filter((s) => s.status === 'active').length;
   const completedCount = sessions.filter((s) => s.status === 'completed').length;
-
-  const formatDuration = (ms: number) => {
-    const minutes = Math.floor(ms / 1000 / 60);
-    const hours = Math.floor(minutes / 60);
-    if (hours > 0) return `${hours}h ${minutes % 60}m`;
-    return `${minutes}m`;
-  };
 
   return (
     <div
@@ -188,7 +182,7 @@ export function SessionList({
                   <div className="flex-1">
                     <div className="font-semibold text-body mb-1">{session.name}</div>
                     <div className="text-xs text-muted">
-                      {format(session.startTime, 'MMM dd')} · {formatDuration(duration)}
+                      {format(session.startTime, 'MMM dd')} · {formatCompactDurationMs(duration)}
                     </div>
                   </div>
                   <div className="text-right">

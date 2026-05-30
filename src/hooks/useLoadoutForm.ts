@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { readTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { useHuntStore } from '../store';
 import { EquipmentItem, Loadout } from '../types';
 import { calculateLoadoutStats } from '../utils/loadoutCalculations';
 import { calculateHealingCostPerUse } from '../utils/healingCost';
+import { EQUIPMENT_ASSET_PATHS, loadAssetJson } from '../services/assetDataLoader';
 
 interface MedicalToolEntry {
   name: string;
@@ -50,24 +50,6 @@ const toMedicalTools = (response: LoadEquipmentData): MedicalToolEntry[] => {
   return [];
 };
 
-/**
- * Load equipment data from AppData first (fresh install downloads),
- * fall back to bundled public assets
- */
-async function loadEquipmentData(relativePath: string): Promise<LoadEquipmentData> {
-  try {
-    // Try loading from AppData first (fresh install downloaded data)
-    const appDataContent = await readTextFile(relativePath, { baseDir: BaseDirectory.AppData });
-    const parsed = JSON.parse(appDataContent);
-    // New format: { data: [...], lastUpdateAt: timestamp }
-    return parsed.data || parsed;
-  } catch {
-    // Fall back to bundled public assets (old format: direct array)
-    const response = await fetch(`/assets/${relativePath}`);
-    return response.json();
-  }
-}
-
 export function useLoadoutForm(editLoadout?: Loadout) {
   const { createLoadout, updateLoadout } = useHuntStore();
 
@@ -97,13 +79,13 @@ export function useLoadoutForm(editLoadout?: Loadout) {
 
   useEffect(() => {
     Promise.all([
-      loadEquipmentData('items/weapons.json'),
-      loadEquipmentData('items/amps.json'),
-      loadEquipmentData('items/scopes.json'),
-      loadEquipmentData('items/sights.json'),
-      loadEquipmentData('items/absorbers.json'),
-      loadEquipmentData('armor/armor.json'),
-      loadEquipmentData('medical/medicaltool.json'),
+      loadAssetJson<LoadEquipmentData>(EQUIPMENT_ASSET_PATHS.weapons),
+      loadAssetJson<LoadEquipmentData>(EQUIPMENT_ASSET_PATHS.amplifiers),
+      loadAssetJson<LoadEquipmentData>(EQUIPMENT_ASSET_PATHS.scopes),
+      loadAssetJson<LoadEquipmentData>(EQUIPMENT_ASSET_PATHS.sights),
+      loadAssetJson<LoadEquipmentData>(EQUIPMENT_ASSET_PATHS.absorbers),
+      loadAssetJson<LoadEquipmentData>(EQUIPMENT_ASSET_PATHS.armor),
+      loadAssetJson<LoadEquipmentData>(EQUIPMENT_ASSET_PATHS.medicalTools),
     ]).then(
       ([weaponsData, ampsData, scopesData, sightsData, absorbersData, armorData, medicalData]) => {
         setWeapons(toEquipmentItems(weaponsData));

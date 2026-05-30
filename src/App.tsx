@@ -180,7 +180,7 @@ function App() {
             <div className="text-center flex flex-col items-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4"></div>
               <h3 className="text-lg font-bold mb-2">First Run Setup</h3>
-              <p className="text-muted mb-4">Downloading equipment data from Entropia Nexus...</p>
+              <p className="text-muted mb-4">Syncing equipment data from Entropia Nexus...</p>
               {initialDataProgress && (
                 <div className="w-full">
                   <p className="text-sm text-primary-400 mb-2">{initialDataProgress.fileName}</p>
@@ -188,13 +188,18 @@ function App() {
                     <div
                       className="bg-primary-500 h-full rounded-full transition-all duration-300 ease-out"
                       style={{
-                        width: `${(initialDataProgress.current / initialDataProgress.total) * 100}%`,
+                        width:
+                          initialDataProgress.total > 0
+                            ? `${(initialDataProgress.current / initialDataProgress.total) * 100}%`
+                            : '100%',
                       }}
                     ></div>
                   </div>
-                  <p className="text-xs text-muted mt-2">
-                    {initialDataProgress.current} of {initialDataProgress.total} files
-                  </p>
+                  {initialDataProgress.total > 0 && (
+                    <p className="text-xs text-muted mt-2">
+                      {initialDataProgress.current} of {initialDataProgress.total} files
+                    </p>
+                  )}
                 </div>
               )}
             </div>

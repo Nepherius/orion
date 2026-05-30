@@ -75,10 +75,11 @@ export function calculateProfitableSessionStreaks(sessions: HuntSession[]): {
  * Calculate session win rate (% profitable sessions)
  */
 export function calculateWinRate(sessions: HuntSession[]): number {
-  if (sessions.length === 0) return 0;
+  const completed = sessions.filter((s) => s.status === 'completed');
+  if (completed.length === 0) return 0;
 
-  const profitable = sessions.filter((s) => s.stats.totalLoot - s.stats.totalCost >= 0).length;
-  return (profitable / sessions.length) * 100;
+  const profitable = completed.filter((s) => s.stats.totalLoot - s.stats.totalCost >= 0).length;
+  return (profitable / completed.length) * 100;
 }
 
 /**

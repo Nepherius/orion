@@ -24,6 +24,7 @@ export const createSessionActions = (
   | 'endSession'
 > => ({
   createSession: (sessionData) => {
+    const now = Date.now();
     const newSession: HuntSession = {
       ...sessionData,
       creature: sessionData.creature || 'Unknown',
@@ -42,10 +43,11 @@ export const createSessionActions = (
         ...emptySessionStats(),
       },
     };
+    const sessionsToPause =
+      newSession.status === 'active' ? get().sessions.filter((s) => s.status === 'active') : [];
 
     set((state) => {
       if (newSession.status === 'active') {
-        const now = Date.now();
         const sessions = state.sessions.map((s) =>
           s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
         );
@@ -57,6 +59,9 @@ export const createSessionActions = (
 
     void persistSessionToDb(newSession);
     if (newSession.status === 'active') {
+      sessionsToPause.forEach((session) => {
+        void updateSessionInDb(session.id, { status: 'paused', pausedAt: now });
+      });
       void saveJsonSetting('activeSessionId', newSession.id);
     }
   },
@@ -90,6 +95,7 @@ export const createSessionActions = (
 
   startSession: (id) => {
     const now = Date.now();
+    const sessionsToPause = get().sessions.filter((s) => s.status === 'active' && s.id !== id);
     set((state) => {
       const sessions = state.sessions.map((s) =>
         s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
@@ -120,6 +126,9 @@ export const createSessionActions = (
         totalPausedMs: 0,
       });
     }
+    sessionsToPause.forEach((session) => {
+      void updateSessionInDb(session.id, { status: 'paused', pausedAt: now });
+    });
     void saveJsonSetting('activeSessionId', id);
   },
 
@@ -141,6 +150,7 @@ export const createSessionActions = (
 
   resumeSession: (id) => {
     const now = Date.now();
+    const sessionsToPause = get().sessions.filter((s) => s.status === 'active' && s.id !== id);
     set((state) => {
       const sessions = state.sessions.map((s) =>
         s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
@@ -173,6 +183,9 @@ export const createSessionActions = (
         otherCosts: resumed.otherCosts,
       });
     }
+    sessionsToPause.forEach((session) => {
+      void updateSessionInDb(session.id, { status: 'paused', pausedAt: now });
+    });
     void saveJsonSetting('activeSessionId', id);
   },
 

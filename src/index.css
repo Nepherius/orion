@@ -192,7 +192,15 @@ body {
 
 @layer components {
   .card {
-    @apply bg-surface text-body rounded-lg shadow-lg border border-border;
+    @apply bg-surface text-body rounded-lg border border-border shadow-sm;
+  }
+
+  .panel {
+    @apply card p-5;
+  }
+
+  .panel-compact {
+    @apply card p-4;
   }
 
   .btn {

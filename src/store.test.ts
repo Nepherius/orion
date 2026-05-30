@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
 import { useHuntStore } from './store';
 import { Loadout, HuntSession, SessionStats, CombatEvent } from './types';
 
@@ -91,5 +92,111 @@ describe('HuntStore - addCombatEvent Costs', () => {
       expect(session.combatEvents?.length).toBe(1);
       expect(session.combatEvents?.[0].type).toBe(eventType);
     });
+  });
+});
+
+describe('HuntStore - session lifecycle persistence', () => {
+  beforeEach(() => {
+    vi.mocked(invoke).mockReset();
+    vi.spyOn(Date, 'now').mockReturnValue(1700000000000);
+    useHuntStore.setState({
+      sessions: [],
+      loadouts: [],
+      activeSessionId: null,
+    });
+  });
+
+  const createSession = (overrides: Partial<HuntSession>): HuntSession => ({
+    id: overrides.id ?? 'session-1',
+    name: overrides.name ?? 'Session',
+    startTime: overrides.startTime ?? 1699999990000,
+    status: overrides.status ?? 'active',
+    pausedAt: overrides.pausedAt,
+    totalPausedMs: overrides.totalPausedMs ?? 0,
+    weapon: overrides.weapon ?? 'Weapon',
+    armor: overrides.armor,
+    location: overrides.location,
+    creature: overrides.creature ?? 'Creature',
+    loot: [],
+    skills: [],
+    globals: [],
+    kills: [],
+    damageEvents: [],
+    combatEvents: [],
+    healingEvents: [],
+    damageTakenEvents: [],
+    notes: overrides.notes ?? '',
+    loadoutId: overrides.loadoutId,
+    ammoCost: overrides.ammoCost ?? 0,
+    weaponDecay: overrides.weaponDecay ?? 0,
+    healingCost: overrides.healingCost ?? 0,
+    otherCosts: overrides.otherCosts ?? 0,
+    stats: {} as SessionStats,
+  });
+
+  it('persists displaced active sessions as paused when creating a new active session', () => {
+    useHuntStore.setState({
+      sessions: [createSession({ id: 'old-active', status: 'active' })],
+      activeSessionId: 'old-active',
+    });
+
+    useHuntStore.getState().createSession({
+      name: 'New Active',
+      weapon: 'Weapon',
+      creature: 'Creature',
+      startTime: 1700000000000,
+      status: 'active',
+      ammoCost: 0,
+      weaponDecay: 0,
+      healingCost: 0,
+      otherCosts: 0,
+      notes: '',
+    });
+
+    expect(invoke).toHaveBeenCalledWith(
+      'db_update_session',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          uuid: 'old-active',
+          status: 'paused',
+          paused_at: 1700000000000,
+        }),
+      })
+    );
+  });
+
+  it('persists start time and clears stale paused_at when starting a session', () => {
+    useHuntStore.setState({
+      sessions: [
+        createSession({ id: 'old-active', status: 'active' }),
+        createSession({ id: 'next-session', status: 'paused', pausedAt: 1699999995000 }),
+      ],
+      activeSessionId: 'old-active',
+    });
+
+    useHuntStore.getState().startSession('next-session');
+
+    expect(invoke).toHaveBeenCalledWith(
+      'db_update_session',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          uuid: 'next-session',
+          status: 'active',
+          start_time: 1700000000000,
+          clear_paused_at: true,
+          total_paused_ms: 0,
+        }),
+      })
+    );
+    expect(invoke).toHaveBeenCalledWith(
+      'db_update_session',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          uuid: 'old-active',
+          status: 'paused',
+          paused_at: 1700000000000,
+        }),
+      })
+    );
   });
 });

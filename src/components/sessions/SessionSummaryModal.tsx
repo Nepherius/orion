@@ -12,20 +12,12 @@ import {
   Shield,
 } from 'lucide-react';
 import type { HuntSession } from '../../types';
+import { formatDurationSeconds } from '../../utils/formatters';
 
 interface SessionSummaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   session: HuntSession;
-}
-
-function formatDuration(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
-  if (minutes > 0) return `${minutes}m ${seconds}s`;
-  return `${seconds}s`;
 }
 
 export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummaryModalProps) {
@@ -139,7 +131,7 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
             <StatCard
               icon={<Clock className="w-4 h-4 text-blue-400" />}
               label="Duration"
-              value={formatDuration(stats.duration)}
+              value={formatDurationSeconds(stats.duration)}
             />
           </div>
 

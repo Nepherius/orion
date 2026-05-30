@@ -276,6 +276,17 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     // Add loadout_id to kills table (migration for existing databases)
     let _ = conn.execute("ALTER TABLE kills ADD COLUMN loadout_id TEXT", []);
 
+    conn.execute_batch(
+        "DELETE FROM loot_items WHERE session_uuid NOT IN (SELECT uuid FROM sessions);
+         DELETE FROM skill_gains WHERE session_uuid NOT IN (SELECT uuid FROM sessions);
+         DELETE FROM globals WHERE session_uuid NOT IN (SELECT uuid FROM sessions);
+         DELETE FROM kills WHERE session_uuid NOT IN (SELECT uuid FROM sessions);
+         DELETE FROM damage_events WHERE session_uuid NOT IN (SELECT uuid FROM sessions);
+         DELETE FROM combat_events WHERE session_uuid NOT IN (SELECT uuid FROM sessions);
+         DELETE FROM healing_events WHERE session_uuid NOT IN (SELECT uuid FROM sessions);
+         DELETE FROM damage_taken_events WHERE session_uuid NOT IN (SELECT uuid FROM sessions);",
+    )?;
+
     Ok(())
 }
 
@@ -626,6 +637,8 @@ pub fn run() {
             }
 
             let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+            conn.execute("PRAGMA foreign_keys = ON", [])
+                .map_err(|e| e.to_string())?;
             ensure_db_schema(&conn).map_err(|e| e.to_string())?;
 
             let db_arc = Arc::new(Mutex::new(conn));

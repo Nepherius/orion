@@ -1,6 +1,7 @@
 // Panel showing secondary lifetime stats (globals, HoFs, hit rate, avg kill value)
 import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
+import { MetricTile } from '../../common/Panel';
 
 /**
  * Displays secondary stats: globals, HoFs, hit rate, and average kill value
@@ -31,28 +32,18 @@ export default function SecondaryStatsPanel() {
   }, [sessions, timeRange, selectedTags, lifetimeStats.totalShotsFired]);
 
   return (
-    <div className="grid grid-cols-4 gap-4">
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Globals</div>
-        <div className="text-2xl font-bold text-yellow-400">{lifetimeStats.totalGlobals}</div>
-      </div>
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Hall of Fame</div>
-        <div className="text-2xl font-bold text-purple-400">{lifetimeStats.totalHofs}</div>
-      </div>
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Hit Rate</div>
-        <div className="text-2xl font-bold text-blue-400">{lifetimeHitRate.toFixed(2)}%</div>
-      </div>
-      <div className="card p-4">
-        <div className="text-sm text-muted mb-1">Avg Kill Value</div>
-        <div className="text-2xl font-bold text-body">
-          {lifetimeStats.totalKills > 0
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <MetricTile label="Globals" value={lifetimeStats.totalGlobals} tone="warning" />
+      <MetricTile label="Hall of Fame" value={lifetimeStats.totalHofs} tone="accent" />
+      <MetricTile label="Hit Rate" value={`${lifetimeHitRate.toFixed(2)}%`} tone="accent" />
+      <MetricTile
+        label="Avg Kill Value"
+        value={`${
+          lifetimeStats.totalKills > 0
             ? (lifetimeStats.totalLoot / lifetimeStats.totalKills).toFixed(2)
-            : '0.00'}{' '}
-          PED
-        </div>
-      </div>
+            : '0.00'
+        } PED`}
+      />
     </div>
   );
 }

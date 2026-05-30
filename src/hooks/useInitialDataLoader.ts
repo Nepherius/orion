@@ -1,12 +1,12 @@
 /**
  * Hook to handle initial equipment data loading from Entropia Nexus API
- * Only runs once per app restart on fresh install
+ * Runs once per app session when data is missing or older than the refresh interval.
  */
 
 import { useEffect, useState } from 'react';
 import {
   loadInitialEquipmentData,
-  hasEquipmentData,
+  getEquipmentDataStatus,
   ProgressUpdate,
 } from '../services/initialDataLoader';
 
@@ -25,25 +25,31 @@ export function useInitialDataLoader() {
 
       setHasAttempted(true);
 
-      // Check if equipment data already exists
-      const dataExists = await hasEquipmentData();
-      if (dataExists) {
+      const status = await getEquipmentDataStatus();
+      if (status.exists && !status.needsRefresh) {
         // eslint-disable-next-line no-console
-        console.log('[InitialDataLoader] Equipment data already exists, skipping download');
+        console.log('[InitialDataLoader] Equipment data is current, skipping download');
         return;
       }
 
       // eslint-disable-next-line no-console
-      console.log('[InitialDataLoader] First run detected, loading equipment data...');
+      console.log(
+        status.exists
+          ? '[InitialDataLoader] Monthly refresh due, updating equipment data...'
+          : '[InitialDataLoader] First run detected, loading equipment data...'
+      );
       setIsLoading(true);
       setError(null);
 
       try {
-        await loadInitialEquipmentData((update) => {
-          // eslint-disable-next-line no-console
-          console.log('[InitialDataLoader]', update.message);
-          setProgress(update);
-        });
+        await loadInitialEquipmentData(
+          (update) => {
+            // eslint-disable-next-line no-console
+            console.log('[InitialDataLoader]', update.message);
+            setProgress(update);
+          },
+          status.exists ? 'refresh' : 'initial'
+        );
 
         // eslint-disable-next-line no-console
         console.log('[InitialDataLoader] Equipment data loaded successfully');

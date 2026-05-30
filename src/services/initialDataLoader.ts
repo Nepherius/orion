@@ -1,21 +1,26 @@
 /**
  * Initial Equipment Data Loader
- * Fetches equipment data from Entropia Nexus API on fresh install
+ * Fetches equipment data from Entropia Nexus API on fresh install and refreshes it periodically.
  */
 
 import { writeTextFile, readTextFile, BaseDirectory, mkdir } from '@tauri-apps/plugin-fs';
 import { fetchAllEquipmentData, NexusMob } from './entropiaNexusApi';
+import { EQUIPMENT_ASSET_PATHS, toAppDataAssetPath } from './assetDataLoader';
 
-const EQUIPMENT_PATHS = {
-  weapons: 'assets/items/weapons.json',
-  amplifiers: 'assets/items/amps.json',
-  scopes: 'assets/items/scopes.json',
-  sights: 'assets/items/sights.json',
-  absorbers: 'assets/items/absorbers.json',
-  armor: 'assets/armor/armor.json',
-  items: 'assets/items/entropia-items.json',
-  creatures: 'assets/creatures/creatures.json',
-};
+const MONTH_IN_DAYS = 30;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const EQUIPMENT_REFRESH_INTERVAL_MS = MONTH_IN_DAYS * DAY_IN_MS;
+
+const REQUIRED_EQUIPMENT_ASSET_PATHS = [
+  EQUIPMENT_ASSET_PATHS.weapons,
+  EQUIPMENT_ASSET_PATHS.amplifiers,
+  EQUIPMENT_ASSET_PATHS.scopes,
+  EQUIPMENT_ASSET_PATHS.sights,
+  EQUIPMENT_ASSET_PATHS.absorbers,
+  EQUIPMENT_ASSET_PATHS.armor,
+  EQUIPMENT_ASSET_PATHS.items,
+  EQUIPMENT_ASSET_PATHS.creatures,
+] as const;
 
 interface CreatureSummary {
   name: string;
@@ -28,6 +33,14 @@ export interface ProgressUpdate {
   current: number;
   total: number;
   message: string;
+}
+
+export interface EquipmentDataStatus {
+  exists: boolean;
+  needsRefresh: boolean;
+  oldestUpdateAt: number | null;
+  fileCount: number;
+  requiredFileCount: number;
 }
 
 function hasValidDataPayload(parsed: unknown): boolean {
@@ -84,20 +97,18 @@ function extractCreaturesFromMobs(mobs: NexusMob[]): CreatureSummary[] {
  * Check if equipment data has already been downloaded
  */
 export async function hasEquipmentData(): Promise<boolean> {
-  const requiredFiles = [
-    EQUIPMENT_PATHS.weapons,
-    EQUIPMENT_PATHS.amplifiers,
-    EQUIPMENT_PATHS.scopes,
-    EQUIPMENT_PATHS.sights,
-    EQUIPMENT_PATHS.absorbers,
-    EQUIPMENT_PATHS.armor,
-    EQUIPMENT_PATHS.items,
-    EQUIPMENT_PATHS.creatures,
-  ];
+  const status = await getEquipmentDataStatus();
+  return status.exists;
+}
 
+export async function getEquipmentDataStatus(
+  now: number = Date.now()
+): Promise<EquipmentDataStatus> {
   let timestampedFileCount = 0;
+  let oldestUpdateAt: number | null = null;
 
-  for (const path of requiredFiles) {
+  for (const assetPath of REQUIRED_EQUIPMENT_ASSET_PATHS) {
+    const path = toAppDataAssetPath(assetPath);
     try {
       const content = await readTextFile(path, { baseDir: BaseDirectory.AppData });
       const parsed = JSON.parse(content) as { lastUpdateAt?: number } | unknown;
@@ -114,33 +125,49 @@ export async function hasEquipmentData(): Promise<boolean> {
         typeof parsed.lastUpdateAt === 'number'
       ) {
         timestampedFileCount += 1;
+        oldestUpdateAt =
+          oldestUpdateAt === null
+            ? parsed.lastUpdateAt
+            : Math.min(oldestUpdateAt, parsed.lastUpdateAt);
       }
     } catch (error) {
       console.warn('[InitialDataLoader] Equipment file check failed:', path, error);
     }
   }
 
-  // Required files must exist and be timestamped.
-  if (timestampedFileCount === requiredFiles.length) {
+  const exists = timestampedFileCount === REQUIRED_EQUIPMENT_ASSET_PATHS.length;
+  const needsRefresh =
+    !exists || oldestUpdateAt === null || now - oldestUpdateAt >= EQUIPMENT_REFRESH_INTERVAL_MS;
+
+  if (exists) {
     // eslint-disable-next-line no-console
     console.log(
-      `[InitialDataLoader] Equipment data detected via timestamped files: ${timestampedFileCount}/${requiredFiles.length}`
+      `[InitialDataLoader] Equipment data detected via timestamped files: ${timestampedFileCount}/${REQUIRED_EQUIPMENT_ASSET_PATHS.length}`
     );
-    return true;
   }
 
-  return false;
+  return {
+    exists,
+    needsRefresh,
+    oldestUpdateAt,
+    fileCount: timestampedFileCount,
+    requiredFileCount: REQUIRED_EQUIPMENT_ASSET_PATHS.length,
+  };
 }
 
 export async function loadInitialEquipmentData(
-  onProgress?: (update: ProgressUpdate) => void
+  onProgress?: (update: ProgressUpdate) => void,
+  reason: 'initial' | 'refresh' = 'initial'
 ): Promise<void> {
   try {
     onProgress?.({
       fileName: 'Entropia Nexus',
       current: 0,
       total: 9,
-      message: 'Fetching equipment data...',
+      message:
+        reason === 'refresh'
+          ? 'Refreshing monthly equipment data...'
+          : 'Fetching equipment data...',
     });
     const data = await fetchAllEquipmentData();
 
@@ -157,14 +184,46 @@ export async function loadInitialEquipmentData(
 
     const now = Date.now();
     const files = [
-      { name: 'weapons', data: data.weapons, label: 'Weapons' },
-      { name: 'amplifiers', data: data.amplifiers, label: 'Amplifiers' },
-      { name: 'scopes', data: data.scopes, label: 'Scopes' },
-      { name: 'sights', data: data.sights, label: 'Sights' },
-      { name: 'absorbers', data: data.absorbers, label: 'Absorbers' },
-      { name: 'armor', data: { armor: data.armor }, label: 'Armor' },
-      { name: 'items', data: data.items, label: 'Items Database' },
-      { name: 'creatures', data: extractCreaturesFromMobs(data.mobs), label: 'Creatures' },
+      {
+        path: EQUIPMENT_ASSET_PATHS.weapons,
+        data: data.weapons,
+        label: 'Weapons',
+      },
+      {
+        path: EQUIPMENT_ASSET_PATHS.amplifiers,
+        data: data.amplifiers,
+        label: 'Amplifiers',
+      },
+      {
+        path: EQUIPMENT_ASSET_PATHS.scopes,
+        data: data.scopes,
+        label: 'Scopes',
+      },
+      {
+        path: EQUIPMENT_ASSET_PATHS.sights,
+        data: data.sights,
+        label: 'Sights',
+      },
+      {
+        path: EQUIPMENT_ASSET_PATHS.absorbers,
+        data: data.absorbers,
+        label: 'Absorbers',
+      },
+      {
+        path: EQUIPMENT_ASSET_PATHS.armor,
+        data: { armor: data.armor },
+        label: 'Armor',
+      },
+      {
+        path: EQUIPMENT_ASSET_PATHS.items,
+        data: data.items,
+        label: 'Items Database',
+      },
+      {
+        path: EQUIPMENT_ASSET_PATHS.creatures,
+        data: extractCreaturesFromMobs(data.mobs),
+        label: 'Creatures',
+      },
     ];
 
     for (let i = 0; i < files.length; i++) {
@@ -177,18 +236,13 @@ export async function loadInitialEquipmentData(
       };
       onProgress?.(progress);
 
-      const path =
-        file.name === 'armor'
-          ? EQUIPMENT_PATHS.armor
-          : EQUIPMENT_PATHS[file.name as keyof typeof EQUIPMENT_PATHS];
-
       // Wrap API data with timestamp
       const wrappedData = {
         data: file.data,
         lastUpdateAt: now,
       };
 
-      await writeTextFile(path, JSON.stringify(wrappedData, null, 2), {
+      await writeTextFile(toAppDataAssetPath(file.path), JSON.stringify(wrappedData, null, 2), {
         baseDir: BaseDirectory.AppData,
       });
     }
@@ -200,12 +254,16 @@ export async function loadInitialEquipmentData(
       message: 'Equipment data loaded successfully!',
     });
     // eslint-disable-next-line no-console
-    console.log('[InitialDataLoader] All equipment data written successfully');
+    console.log(
+      reason === 'refresh'
+        ? '[InitialDataLoader] Monthly equipment data refresh completed'
+        : '[InitialDataLoader] All equipment data written successfully'
+    );
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
 
     console.warn(
-      '[InitialDataLoader] API unavailable, using bundled assets. Will retry next restart:',
+      '[InitialDataLoader] API unavailable, using existing/bundled assets. Will retry next restart:',
       errorMsg
     );
     onProgress?.({

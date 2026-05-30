@@ -15,6 +15,9 @@ import { HourlyRatesAnalytics } from '../analytics/HourlyRatesAnalytics';
 import { HealingAnalytics } from '../analytics/HealingAnalytics';
 import { GrindGoals } from '../analytics/GrindGoals';
 import { ReturnRateChart } from '../analytics/ReturnRateChart';
+import { getSessionActiveDurationMs } from '../../utils/sessionTiming';
+import { formatSmallNumber } from '../../utils/formatters';
+import { MetricTile, Panel } from '../common/Panel';
 
 interface DashboardProps {
   sessionId?: string;
@@ -60,25 +63,9 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
     );
   }
 
-  const normalizeTimestampMs = (timestamp?: number) => {
-    if (!timestamp) return undefined;
-    return timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp;
-  };
-
   const profit = session.stats.totalLoot - session.stats.totalCost;
   const now = Date.now();
-  const startTimeMs = normalizeTimestampMs(session.startTime) ?? now;
-  const pausedAtMs = normalizeTimestampMs(session.pausedAt);
-  const endTimeMs = normalizeTimestampMs(session.endTime);
-  const elapsedReference = session.status === 'completed' && endTimeMs ? endTimeMs : now;
-  const pausedMs =
-    (session.totalPausedMs || 0) +
-    (session.status === 'paused' && pausedAtMs ? now - pausedAtMs : 0);
-  const durationFromTimestamps = Math.max(0, elapsedReference - startTimeMs - pausedMs);
-  const duration =
-    session.status === 'completed' && session.stats.duration > 0
-      ? session.stats.duration * 1000
-      : durationFromTimestamps;
+  const duration = getSessionActiveDurationMs(session, now);
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 
@@ -137,21 +124,6 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
   const costPerHeal = healsUsed > 0 ? healingCost / healsUsed : 0;
   const healingEfficiency = healingCost > 0 ? totalHealing / healingCost : 0;
 
-  const formatSmallValue = (value: number, decimals: number = 2) => {
-    const absolute = Math.abs(value);
-    const threshold = Math.pow(10, -decimals);
-
-    if (absolute === 0) {
-      return value.toFixed(decimals);
-    }
-
-    if (absolute < threshold) {
-      return `${value < 0 ? '-' : ''}<${threshold.toFixed(decimals)}`;
-    }
-
-    return value.toFixed(decimals);
-  };
-
   const mainColumnSpanClass = showSidebar ? 'col-span-9' : 'col-span-12';
 
   return (
@@ -161,53 +133,50 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
         <div className={`${mainColumnSpanClass} space-y-6`}>
           {/* Key Metrics */}
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">KEY METRICS</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+              Session Snapshot
+            </h2>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="card p-6">
-              <div className="text-sm text-muted mb-2">RETURN RATE</div>
-              <div
-                className={`text-4xl font-bold flex items-center gap-2 ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {session.stats.returns >= 100 ? (
-                  <TrendingUp className="w-6 h-6" />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <MetricTile
+              label="Return Rate"
+              value={`${session.stats.returns.toFixed(1)}%`}
+              tone={session.stats.returns >= 100 ? 'positive' : 'negative'}
+              icon={
+                session.stats.returns >= 100 ? (
+                  <TrendingUp className="h-5 w-5 shrink-0" />
                 ) : (
-                  <TrendingDown className="w-6 h-6" />
-                )}
-                {session.stats.returns.toFixed(1)}%
-              </div>
-            </div>
-            <div className="card p-6">
-              <div className="text-sm text-muted mb-2">PROFIT/LOSS</div>
-              <div
-                className={`text-4xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {profit >= 0 ? '+' : ''}
-                {profit.toFixed(2)} PED
-              </div>
-            </div>
-            <div className="card p-6">
-              <div className="text-sm text-muted mb-2">TOTAL KILLS</div>
-              <div className="text-4xl font-bold text-body">{session.stats.kills}</div>
-            </div>
+                  <TrendingDown className="h-5 w-5 shrink-0" />
+                )
+              }
+              size="lg"
+            />
+            <MetricTile
+              label="Profit/Loss"
+              value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`}
+              tone={profit >= 0 ? 'positive' : 'negative'}
+              size="lg"
+            />
+            <MetricTile label="Total Kills" value={session.stats.kills} size="lg" />
           </div>
 
           {/* Return Rate Chart */}
-          <div className="card p-6">
-            <div className="text-xs text-muted uppercase mb-4">RETURN RATE OVER TIME</div>
+          <Panel title="Return Rate Over Time">
             <ReturnRateChart session={session} emptyHeight="h-48" />
-          </div>
+          </Panel>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-4">
             {/* Performance */}
             <div
-              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
+              className="panel-compact cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('performance')}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-blue-400 uppercase">Performance</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Performance
+                </h3>
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
@@ -238,11 +207,13 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
 
             {/* Economy */}
             <div
-              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
+              className="panel-compact cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('economy')}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-blue-400 uppercase">Economy</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Economy
+                </h3>
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
@@ -269,11 +240,13 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
 
             {/* Efficiency */}
             <div
-              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
+              className="panel-compact cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('efficiency')}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-blue-400 uppercase">Efficiency</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Efficiency
+                </h3>
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
@@ -291,11 +264,11 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
           <div className="grid grid-cols-4 gap-4">
             {/* Skills */}
             <div
-              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
+              className="panel-compact cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('skills')}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-blue-400 uppercase">Skills</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Skills</h3>
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
@@ -310,11 +283,13 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
 
             {/* Healing */}
             <div
-              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
+              className="panel-compact cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('healing')}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-blue-400 uppercase">Healing</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Healing
+                </h3>
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
@@ -341,11 +316,11 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
 
             {/* Combat */}
             <div
-              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
+              className="panel-compact cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('combat')}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-blue-400 uppercase">Combat</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Combat</h3>
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
@@ -391,19 +366,21 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
 
             {/* Hourly Rates */}
             <div
-              className="card p-4 cursor-pointer hover:bg-surface-hover transition-colors"
+              className="panel-compact cursor-pointer hover:bg-surface-hover transition-colors"
               onClick={() => setAnalyticsView('hourly')}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-blue-400 uppercase">Hourly Rates</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Hourly Rates
+                </h3>
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
-                <StatCard label="Loot/Hour" value={`${formatSmallValue(lootPerHour)} PED`} />
-                <StatCard label="Spend/Hour" value={`${formatSmallValue(spendPerHour)} PED`} />
-                <StatCard label="Skills/Hour" value={formatSmallValue(skillsPerHour)} />
+                <StatCard label="Loot/Hour" value={`${formatSmallNumber(lootPerHour)} PED`} />
+                <StatCard label="Spend/Hour" value={`${formatSmallNumber(spendPerHour)} PED`} />
+                <StatCard label="Skills/Hour" value={formatSmallNumber(skillsPerHour)} />
                 <StatCard label="Kills/Hour" value={killsPerHour.toFixed(1)} />
-                <StatCard label="Dmg/Hour" value={formatSmallValue(dmgPerHour)} />
+                <StatCard label="Dmg/Hour" value={formatSmallNumber(dmgPerHour)} />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm text-muted">Combat Time</div>
                   <div className="font-semibold text-body">

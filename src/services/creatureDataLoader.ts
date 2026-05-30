@@ -1,4 +1,4 @@
-import { BaseDirectory, readTextFile } from '@tauri-apps/plugin-fs';
+import { EQUIPMENT_ASSET_PATHS, loadAssetJson } from './assetDataLoader';
 
 interface CreatureEntry {
   name: string;
@@ -83,40 +83,14 @@ function toCreatureEntries(parsed: unknown): CreatureEntry[] {
 }
 
 export async function loadCreatureNames(): Promise<string[]> {
-  let parsed: unknown;
-
-  try {
-    const content = await readTextFile('assets/creatures/creatures.json', {
-      baseDir: BaseDirectory.AppData,
-    });
-    parsed = JSON.parse(content);
-  } catch {
-    const response = await fetch('/assets/creatures/creatures.json');
-    if (!response.ok) {
-      throw new Error(`Failed to load creatures.json: ${response.status} ${response.statusText}`);
-    }
-    parsed = await response.json();
-  }
+  const parsed = await loadAssetJson<unknown>(EQUIPMENT_ASSET_PATHS.creatures);
 
   const names = toCreatureNames(parsed);
   return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
 }
 
 export async function loadCreatureEntries(): Promise<CreatureEntry[]> {
-  let parsed: unknown;
-
-  try {
-    const content = await readTextFile('assets/creatures/creatures.json', {
-      baseDir: BaseDirectory.AppData,
-    });
-    parsed = JSON.parse(content);
-  } catch {
-    const response = await fetch('/assets/creatures/creatures.json');
-    if (!response.ok) {
-      throw new Error(`Failed to load creatures.json: ${response.status} ${response.statusText}`);
-    }
-    parsed = await response.json();
-  }
+  const parsed = await loadAssetJson<unknown>(EQUIPMENT_ASSET_PATHS.creatures);
 
   return toCreatureEntries(parsed);
 }

@@ -32,6 +32,16 @@ const parseTimestamp = (ts: string): number => {
   return Date.now();
 };
 
+const createOccurrenceKeyer = () => {
+  const occurrences = new Map<string, number>();
+
+  return (baseKey: string): string => {
+    const occurrence = occurrences.get(baseKey) ?? 0;
+    occurrences.set(baseKey, occurrence + 1);
+    return `${baseKey}#${occurrence}`;
+  };
+};
+
 export async function processRecentChatLines({
   recentLines,
   processedEvents,
@@ -77,6 +87,7 @@ export async function processRecentChatLines({
   );
   const storeSettings = currentState.settings;
   debugDetail('[ChatLogMonitor] Current active session:', activeSession?.id);
+  const eventKeyFor = createOccurrenceKeyer();
 
   // If there's no active session but we have events and auto-start is enabled, auto-create one
   const hasAnyEvents =
@@ -149,7 +160,7 @@ export async function processRecentChatLines({
       const isSystemPickup = !evt.player || evt.player.trim() === '';
 
       if (isSystemPickup) {
-        const eventKey = `loot:${evt.timestamp}:${evt.creature}:${evt.value}`;
+        const eventKey = eventKeyFor(`loot:${evt.timestamp}:${evt.creature}:${evt.value}`);
 
         if (!processedEvents.has(eventKey)) {
           const ignoreList = storeSettings.ignoreListItems || [];
@@ -183,7 +194,9 @@ export async function processRecentChatLines({
           debugDetail('[ChatLogMonitor] Skipping duplicate loot event');
         }
       } else if (storeSettings.avatarName && evt.player.includes(storeSettings.avatarName)) {
-        const eventKey = `global:${evt.timestamp}:${evt.creature}:${evt.value}:${evt.is_hof}`;
+        const eventKey = eventKeyFor(
+          `global:${evt.timestamp}:${evt.creature}:${evt.value}:${evt.is_hof}`
+        );
 
         if (!processedEvents.has(eventKey)) {
           debugDetail('[ChatLogMonitor] Adding global:', evt.creature, evt.value);
@@ -212,7 +225,7 @@ export async function processRecentChatLines({
     const storeActions = useHuntStore.getState();
     let addedCount = 0;
     damageEvents.forEach((dmg) => {
-      const eventKey = `dmg:${dmg.timestamp}:${dmg.damage}:${dmg.is_critical}`;
+      const eventKey = eventKeyFor(`dmg:${dmg.timestamp}:${dmg.damage}:${dmg.is_critical}`);
       if (!processedEvents.has(eventKey)) {
         debugDetail(
           '[ChatLogMonitor] Adding damage event:',
@@ -238,7 +251,7 @@ export async function processRecentChatLines({
     const storeActions = useHuntStore.getState();
     let addedCount = 0;
     combatEvents.forEach((combat) => {
-      const eventKey = `combat:${combat.timestamp}:${combat.event_type}`;
+      const eventKey = eventKeyFor(`combat:${combat.timestamp}:${combat.event_type}`);
       if (!processedEvents.has(eventKey)) {
         debugDetail('[ChatLogMonitor] Adding combat event:', combat.event_type);
         storeActions.addCombatEvent(
@@ -261,7 +274,7 @@ export async function processRecentChatLines({
 
     let addedCount = 0;
     classifiedHealingEvents.forEach((heal) => {
-      const eventKey = `heal:${heal.timestamp}:${heal.amount}`;
+      const eventKey = eventKeyFor(`heal:${heal.timestamp}:${heal.amount}`);
       if (!processedEvents.has(eventKey)) {
         debugDetail(
           '[ChatLogMonitor] Adding healing event:',
@@ -290,7 +303,9 @@ export async function processRecentChatLines({
     const storeActions = useHuntStore.getState();
     let addedCount = 0;
     damageTakenEvents.forEach((dmgTaken) => {
-      const eventKey = `dmgtaken:${dmgTaken.timestamp}:${dmgTaken.damage}:${dmgTaken.is_critical}`;
+      const eventKey = eventKeyFor(
+        `dmgtaken:${dmgTaken.timestamp}:${dmgTaken.damage}:${dmgTaken.is_critical}`
+      );
       if (!processedEvents.has(eventKey)) {
         debugDetail('[ChatLogMonitor] Adding damage taken event:', dmgTaken.damage);
         storeActions.addDamageTakenEvent(
@@ -311,7 +326,7 @@ export async function processRecentChatLines({
     const storeActions = useHuntStore.getState();
     let addedCount = 0;
     skillGains.forEach((skill) => {
-      const eventKey = `skill:${skill.timestamp}:${skill.skill_name}:${skill.gain}`;
+      const eventKey = eventKeyFor(`skill:${skill.timestamp}:${skill.skill_name}:${skill.gain}`);
       if (!processedEvents.has(eventKey)) {
         debugDetail('[ChatLogMonitor] Adding skill gain:', skill.skill_name, skill.gain);
         storeActions.addSkillGain(activeSession.id, {

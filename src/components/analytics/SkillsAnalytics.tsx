@@ -15,6 +15,7 @@ import { TrendingUp, Award, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { InfoTooltip } from '../common/InfoTooltip';
 import { calculateSessionAttributeGains } from '../../utils/analyticsCalculations';
+import { getSessionActiveDurationHours } from '../../utils/sessionTiming';
 
 interface SkillsAnalyticsProps {
   session: HuntSession;
@@ -26,12 +27,7 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
   const skillsPerPED = session.stats.totalCost > 0 ? totalGains / session.stats.totalCost : 0;
   const avgSkillValue = skillEvents > 0 ? totalGains / skillEvents : 0;
 
-  const now = Date.now();
-  const pausedMs =
-    (session.totalPausedMs || 0) +
-    (session.status === 'paused' && session.pausedAt ? now - session.pausedAt : 0);
-  const duration = Math.max(0, now - session.startTime - pausedMs);
-  const durationHours = duration / 1000 / 60 / 60;
+  const durationHours = getSessionActiveDurationHours(session);
   const skillsPerHour = durationHours > 0 ? totalGains / durationHours : 0;
   const skillsPerKill = session.stats.kills > 0 ? totalGains / session.stats.kills : 0;
 

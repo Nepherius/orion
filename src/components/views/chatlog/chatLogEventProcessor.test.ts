@@ -11,6 +11,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 const addHealingEventMock = vi.fn();
+const addDamageEventMock = vi.fn();
+const addCombatEventMock = vi.fn();
 
 const baseState = {
   settings: {
@@ -50,8 +52,8 @@ const baseState = {
   startSession: vi.fn(),
   addLoot: vi.fn(),
   addGlobal: vi.fn(),
-  addDamageEvent: vi.fn(),
-  addCombatEvent: vi.fn(),
+  addDamageEvent: addDamageEventMock,
+  addCombatEvent: addCombatEventMock,
   addDamageTakenEvent: vi.fn(),
   addSkillGain: vi.fn(),
   itemDatabase: [],
@@ -79,6 +81,8 @@ describe('processRecentChatLines healing classification', () => {
   beforeEach(() => {
     invokeMock.mockReset();
     addHealingEventMock.mockReset();
+    addDamageEventMock.mockReset();
+    addCombatEventMock.mockReset();
     getStateMock.mockClear();
   });
 
@@ -213,5 +217,43 @@ describe('processRecentChatLines healing classification', () => {
 
     // Each call processes all events independently (no duplicate filtering needed)
     expect(addHealingEventMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('keeps identical same-second damage events distinct while still deduping replayed chunks', async () => {
+    const parseResult: ParseResult = {
+      loot_events: [],
+      damage_events: [
+        { timestamp: '2026-03-07 20:38:54', damage: 12.3, is_critical: false },
+        { timestamp: '2026-03-07 20:38:54', damage: 12.3, is_critical: false },
+      ],
+      combat_events: [],
+      damage_taken_events: [],
+      skill_gains: [],
+      healing_events: [],
+    };
+    invokeMock.mockResolvedValue(parseResult);
+
+    const processedEvents = new Set<string>();
+    const recentLines = [
+      '2026-03-07 20:38:54 [System] [] You inflicted 12.3 points of damage',
+      '2026-03-07 20:38:54 [System] [] You inflicted 12.3 points of damage',
+    ].join('\n');
+
+    await processRecentChatLines({
+      recentLines,
+      processedEvents,
+      fapHotState: initialFapState,
+      debugDetail: vi.fn(),
+    });
+
+    await processRecentChatLines({
+      recentLines,
+      processedEvents,
+      fapHotState: initialFapState,
+      debugDetail: vi.fn(),
+    });
+
+    expect(addDamageEventMock).toHaveBeenCalledTimes(2);
+    expect(addCombatEventMock).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,5 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useHuntStore } from '../../../store';
+import { Panel } from '../../common/Panel';
+import { chartTooltipProps } from '../chartStyles';
 
 export default function CostBreakdownPanel() {
   const costData = useHuntStore((state) => state.analyticsData.performance?.costData);
@@ -7,8 +9,7 @@ export default function CostBreakdownPanel() {
   if (!costData || costData.length === 0) return null;
 
   return (
-    <div className="card p-6">
-      <h3 className="text-lg font-bold mb-4">Cost Breakdown</h3>
+    <Panel title="Cost Breakdown">
       <div className="flex items-center justify-center">
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -27,16 +28,12 @@ export default function CostBreakdownPanel() {
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-              }}
-              itemStyle={{ color: 'var(--color-text)' }}
+              {...chartTooltipProps}
               formatter={(value: number) => `${value.toFixed(2)} PED`}
             />
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </Panel>
   );
 }

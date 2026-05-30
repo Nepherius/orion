@@ -126,6 +126,9 @@ export const persistSessionToDb = async (session: HuntSession) => {
 };
 
 export const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
+  const shouldClearPausedAt =
+    Object.prototype.hasOwnProperty.call(updates, 'pausedAt') && updates.pausedAt === undefined;
+
   await safeInvoke('db_update_session', {
     params: {
       uuid: id,
@@ -134,9 +137,11 @@ export const updateSessionInDb = async (id: string, updates: Partial<HuntSession
       armor: updates.armor,
       location: updates.location,
       creature: updates.creature,
+      start_time: updates.startTime,
       end_time: updates.endTime,
       status: updates.status,
       paused_at: updates.pausedAt,
+      clear_paused_at: shouldClearPausedAt,
       total_paused_ms: updates.totalPausedMs,
       loadout_id: updates.loadoutId,
       notes: updates.notes,

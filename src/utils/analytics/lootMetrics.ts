@@ -1,22 +1,7 @@
 // Analytics metrics for loot and drop statistics
 import { HuntSession } from '../../types';
+import { getSessionActiveDurationHours } from '../sessionTiming';
 import { calculateStdDev, calculateVariance } from './stats';
-
-/**
- * Get the total active duration of a session in hours
- */
-function getSessionActiveDurationHours(session: HuntSession): number {
-  if (session.status === 'completed') {
-    return Math.max(0, Number(session.stats.duration) || 0) / 3600;
-  }
-
-  const now = Date.now();
-  const pausedMs =
-    (session.totalPausedMs || 0) +
-    (session.status === 'paused' && session.pausedAt ? now - session.pausedAt : 0);
-  const durationMs = Math.max(0, now - session.startTime - pausedMs);
-  return durationMs / 1000 / 60 / 60;
-}
 
 /**
  * Calculate loot value variance (consistency of drops)

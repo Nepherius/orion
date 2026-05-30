@@ -1,4 +1,6 @@
 import { useHuntStore } from '../../../store';
+import { DataTable, DataTableColumn } from '../../common/DataTable';
+import { Panel } from '../../common/Panel';
 
 export default function ArmorPerformancePanel() {
   const armorData = useHuntStore((state) => state.analyticsData.performance?.armorData);
@@ -6,34 +8,43 @@ export default function ArmorPerformancePanel() {
   if (!armorData || armorData.length === 0 || !armorData.some((a) => a.armor !== 'None'))
     return null;
 
+  const columns: Array<DataTableColumn<(typeof armorData)[number]>> = [
+    {
+      key: 'armor',
+      header: 'Armor',
+      span: 2,
+      render: (armor) => (
+        <span className="block truncate" title={armor.armor}>
+          {armor.armor}
+        </span>
+      ),
+    },
+    { key: 'sessions', header: 'Sessions', align: 'right', render: (armor) => armor.sessions },
+    {
+      key: 'returnRate',
+      header: 'Return %',
+      align: 'right',
+      render: (armor) => (
+        <span
+          className={
+            armor.returnRate >= 100 ? 'font-semibold text-green-400' : 'font-semibold text-red-400'
+          }
+        >
+          {armor.returnRate.toFixed(1)}%
+        </span>
+      ),
+    },
+    {
+      key: 'avgDamage',
+      header: 'Avg Damage Taken',
+      align: 'right',
+      render: (armor) => armor.avgDamageTaken.toFixed(2),
+    },
+  ];
+
   return (
-    <div className="card p-6">
-      <h3 className="text-lg font-bold mb-4">Armor Performance</h3>
-      <div className="space-y-2">
-        <div className="grid grid-cols-4 gap-2 text-xs font-bold text-muted pb-2 border-b border-border">
-          <div>Armor</div>
-          <div className="text-right">Sessions</div>
-          <div className="text-right">Return %</div>
-          <div className="text-right">Avg Damage Taken</div>
-        </div>
-        {armorData.map((armor) => (
-          <div
-            key={armor.armor}
-            className="grid grid-cols-4 gap-2 text-sm py-2 hover:bg-surface-hover"
-          >
-            <div className="truncate" title={armor.armor}>
-              {armor.armor}
-            </div>
-            <div className="text-right text-muted">{armor.sessions}</div>
-            <div
-              className={`text-right font-semibold ${armor.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-            >
-              {armor.returnRate.toFixed(1)}%
-            </div>
-            <div className="text-right">{armor.avgDamageTaken.toFixed(2)}</div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Panel title="Armor Performance">
+      <DataTable columns={columns} rows={armorData} getRowKey={(armor) => armor.armor} />
+    </Panel>
   );
 }

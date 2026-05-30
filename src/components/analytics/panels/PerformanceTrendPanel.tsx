@@ -12,6 +12,8 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import { useHuntStore } from '../../../store';
+import { Panel } from '../../common/Panel';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
 
 /**
  * Displays a line chart of return rate, profit, and loot for the last 30 sessions
@@ -35,21 +37,16 @@ export default function PerformanceTrendPanel() {
   if (recentSessions.length === 0) return null;
 
   return (
-    <div className="card p-6">
-      <h3 className="text-lg font-bold mb-4">Performance Trend (Last 30 Sessions)</h3>
+    <Panel
+      title="Performance Trend"
+      action={<span className="text-xs text-muted">Last 30 sessions</span>}
+    >
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={recentSessions}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-          <XAxis dataKey="date" stroke="var(--color-text-muted)" />
-          <YAxis stroke="var(--color-text-muted)" />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-            }}
-            labelStyle={{ color: '#F3F4F6' }}
-            formatter={(value: number) => value.toFixed(2)}
-          />
+          <CartesianGrid {...chartGridProps} />
+          <XAxis dataKey="date" {...chartAxisProps} />
+          <YAxis {...chartAxisProps} />
+          <Tooltip {...chartTooltipProps} formatter={(value: number) => value.toFixed(2)} />
           <Legend />
           <Line
             type="monotone"
@@ -61,6 +58,6 @@ export default function PerformanceTrendPanel() {
           <Line type="monotone" dataKey="loot" stroke="#3B82F6" name="Loot (PED)" strokeWidth={2} />
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </Panel>
   );
 }
