@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useHuntStore } from '../../store';
+import { Panel } from '../common/Panel';
 
 import type { WorkerRequest, WorkerResponse } from '../../workers/analytics.worker';
 
@@ -37,6 +38,7 @@ export function CorrelationAnalytics() {
 
   const [correlationData, setCorrelationData] = useState<CorrelationData | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const validSessions = filteredSessions.filter(
@@ -45,10 +47,12 @@ export function CorrelationAnalytics() {
 
     if (validSessions.length < 4) {
       setCorrelationData(null);
+      setError(null);
       return;
     }
 
     setIsCalculating(true);
+    setError(null);
 
     const durationHrs = validSessions.map((s) => s.stats.duration / 3600);
     const costPed = validSessions.map((s) => s.stats.totalCost);
@@ -104,6 +108,8 @@ export function CorrelationAnalytics() {
       } catch (err) {
         if (!cancelled) {
           console.error('Worker correlation failed:', err);
+          setCorrelationData(null);
+          setError('Unable to calculate correlation metrics.');
         }
       } finally {
         if (!cancelled) {
@@ -123,24 +129,31 @@ export function CorrelationAnalytics() {
 
   if (isCalculating) {
     return (
-      <div className="card p-6 flex items-center justify-center min-h-[300px]">
+      <Panel contentClassName="flex min-h-[300px] items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-sm text-muted">Calculating correlation matrices...</p>
         </div>
-      </div>
+      </Panel>
+    );
+  }
+
+  if (error) {
+    return (
+      <Panel title="Loot Correlation Analysis">
+        <p className="text-sm text-red-400">{error}</p>
+      </Panel>
     );
   }
 
   if (!correlationData) {
     return (
-      <div className="card p-6">
-        <h3 className="text-lg font-bold mb-2">Loot Correlation Analysis</h3>
+      <Panel title="Loot Correlation Analysis">
         <p className="text-sm text-muted">
           Not enough completed sessions to calculate reliable correlation metrics. Need at least 4
           completed sessions.
         </p>
-      </div>
+      </Panel>
     );
   }
 
@@ -167,9 +180,8 @@ export function CorrelationAnalytics() {
   };
 
   return (
-    <div className="card p-6">
+    <Panel title="Loot Factors Correlation">
       <div className="mb-4">
-        <h3 className="text-lg font-bold">Loot Factors Correlation</h3>
         <p className="text-sm text-muted mt-1">
           Statistical analysis of exactly what affects your total loot across {n} completed
           sessions.
@@ -235,6 +247,6 @@ export function CorrelationAnalytics() {
           </div>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }

@@ -16,11 +16,13 @@ import {
   Scatter,
 } from 'recharts';
 import { BarChart3 } from 'lucide-react';
-import { InfoTooltip } from '../common/InfoTooltip';
 import {
   calculateKillStats,
   calculateMaturityDistribution,
 } from '../../utils/analyticsCalculations';
+import { DataTable, DataTableColumn } from '../common/DataTable';
+import { MetricTile, Panel } from '../common/Panel';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface KillTrackingAnalyticsProps {
   sessions: HuntSession[];
@@ -170,6 +172,43 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
       .slice(0, 10);
   }, [killStats]);
 
+  const costEfficiencyColumns: Array<DataTableColumn<(typeof costEfficiency)[number]>> = [
+    {
+      key: 'creature',
+      header: 'Creature',
+      render: (creature) => (
+        <span className="block truncate font-semibold">{creature.creature}</span>
+      ),
+    },
+    { key: 'kills', header: 'Kills', align: 'right', render: (creature) => creature.kills },
+    {
+      key: 'costPerKill',
+      header: 'Cost/Kill',
+      align: 'right',
+      render: (creature) => <span className="text-red-400">{creature.costPerKill.toFixed(2)}</span>,
+    },
+    {
+      key: 'lootPerKill',
+      header: 'Loot/Kill',
+      align: 'right',
+      render: (creature) => (
+        <span className="text-green-400">{creature.lootPerKill.toFixed(2)}</span>
+      ),
+    },
+    {
+      key: 'returnRate',
+      header: 'Return Rate',
+      align: 'right',
+      render: (creature) => (
+        <span
+          className={`font-semibold ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
+        >
+          {creature.returnRate.toFixed(2)}%
+        </span>
+      ),
+    },
+  ];
+
   if (totalKills === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-muted">
@@ -184,67 +223,59 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
   return (
     <div className="space-y-6">
       {/* Key metrics cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">TOTAL KILLS TRACKED</div>
-          <div className="text-3xl font-bold text-blue-400">{totalKills}</div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">UNIQUE CREATURES KILLED</div>
-          <div className="text-3xl font-bold text-green-400">{killStats.length}</div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">TOTAL KILL PROFIT</div>
-          <div
-            className={`text-3xl font-bold ${totalKillProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-          >
-            {totalKillProfit >= 0 ? '+' : ''}
-            {totalKillProfit.toFixed(2)} PED
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">AVG PROFIT PER KILL</div>
-          <div className="text-3xl font-bold text-amber-400">
-            {totalKills > 0 ? (totalKillProfit / totalKills).toFixed(1) : 0} PED
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <MetricTile label="Total Kills Tracked" value={totalKills} tone="accent" size="lg" />
+        <MetricTile
+          label="Unique Creatures Killed"
+          value={killStats.length}
+          tone="positive"
+          size="lg"
+        />
+        <MetricTile
+          label="Total Kill Profit"
+          value={`${totalKillProfit >= 0 ? '+' : ''}${totalKillProfit.toFixed(2)} PED`}
+          tone={totalKillProfit >= 0 ? 'positive' : 'negative'}
+          size="lg"
+        />
+        <MetricTile
+          label="Avg Profit Per Kill"
+          value={`${totalKills > 0 ? (totalKillProfit / totalKills).toFixed(1) : 0} PED`}
+          tone="warning"
+          size="lg"
+        />
       </div>
 
       {/* Top creatures by kills and profit */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Top Creatures by Kill Count</h3>
-          <InfoTooltip tooltip="Shows the top 10 creatures by number of kills tracked, with profit analysis" />
-        </div>
+      <Panel
+        title="Top Creatures by Kill Count"
+        tooltip="Shows the top 10 creatures by number of kills tracked, with profit analysis"
+      >
         {topCreaturesByKills.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topCreaturesByKills}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <CartesianGrid {...chartGridProps} />
               <XAxis
                 dataKey="creature"
-                tick={{ fontSize: 12 }}
                 angle={-45}
                 textAnchor="end"
                 height={80}
+                {...chartAxisProps}
               />
               <YAxis
                 yAxisId="left"
-                tick={{ fontSize: 12 }}
                 label={{ value: 'Kills', angle: -90, position: 'insideLeft' }}
+                {...chartAxisProps}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                tick={{ fontSize: 12 }}
                 label={{ value: 'Profit (PED)', angle: 90, position: 'insideRight' }}
+                {...chartAxisProps}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }}
+                {...chartTooltipProps}
                 formatter={(value) => (typeof value === 'number' ? value.toFixed(1) : value)}
               />
               <Legend />
@@ -253,33 +284,32 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
             </BarChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Panel>
 
       {/* Profit per kill vs cost per kill */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Cost vs Profit Per Kill</h3>
-          <InfoTooltip tooltip="Compares average cost and loot per kill for top creatures" />
-        </div>
+      <Panel
+        title="Cost vs Profit Per Kill"
+        tooltip="Compares average cost and loot per kill for top creatures"
+      >
         {profitPerKillChart.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={profitPerKillChart}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <CartesianGrid {...chartGridProps} />
               <XAxis
                 dataKey="creature"
-                tick={{ fontSize: 12 }}
                 angle={-45}
                 textAnchor="end"
                 height={80}
+                {...chartAxisProps}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
                 label={{ value: 'PED per Kill', angle: -90, position: 'insideLeft' }}
+                {...chartAxisProps}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }}
+                {...chartTooltipProps}
                 formatter={(value) => (typeof value === 'number' ? value.toFixed(1) : value)}
               />
               <Legend />
@@ -288,15 +318,14 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
             </BarChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Panel>
 
       {/* Maturity breakdown */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-lg font-bold">Maturity Distribution</h3>
-            <InfoTooltip tooltip="Shows the distribution of kills across different creature maturities" />
-          </div>
+        <Panel
+          title="Maturity Distribution"
+          tooltip="Shows the distribution of kills across different creature maturities"
+        >
           {maturityBreakdown.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No maturity data</div>
           ) : (
@@ -316,7 +345,7 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `${value} kills`} />
+                  <Tooltip {...chartTooltipProps} formatter={(value) => `${value} kills`} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-2 mt-4">
@@ -338,14 +367,13 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
               </div>
             </>
           )}
-        </div>
+        </Panel>
 
         {/* Top maturity/creature combos */}
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-lg font-bold">Top Creature/Maturity Combos</h3>
-            <InfoTooltip tooltip="Shows the most frequently encountered creature maturity combinations" />
-          </div>
+        <Panel
+          title="Top Creature/Maturity Combos"
+          tooltip="Shows the most frequently encountered creature maturity combinations"
+        >
           {topMaturityCreatures.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
           ) : (
@@ -353,51 +381,52 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
               {topMaturityCreatures.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-surface rounded hover:bg-surface-hover transition-colors"
+                  className="rounded-lg border border-border bg-white/[0.03] p-3 transition-colors hover:bg-surface-hover"
                 >
-                  <div>
-                    <div className="font-semibold text-sm">{item.creature}</div>
-                    <div className="text-xs text-muted">{item.maturity}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-blue-400">{item.kills} kills</div>
-                    <div
-                      className={`text-xs ${item.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-                    >
-                      {item.profit >= 0 ? '+' : ''}
-                      {item.profit.toFixed(2)} PED
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">{item.creature}</div>
+                      <div className="text-xs text-muted">{item.maturity}</div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="font-bold text-blue-400">{item.kills} kills</div>
+                      <div
+                        className={`text-xs ${item.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                      >
+                        {item.profit >= 0 ? '+' : ''}
+                        {item.profit.toFixed(2)} PED
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Panel>
       </div>
 
       {/* HP dealt vs profit scatter */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Average HP vs Profit Per Kill</h3>
-          <InfoTooltip tooltip="Visualizes the relationship between creature HP and profitability" />
-        </div>
+      <Panel
+        title="Average HP vs Profit Per Kill"
+        tooltip="Visualizes the relationship between creature HP and profitability"
+      >
         {hpVsProfitChart.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <CartesianGrid {...chartGridProps} />
               <XAxis
                 dataKey="hpDealt"
-                tick={{ fontSize: 12 }}
                 label={{ value: 'Avg HP Dealt', position: 'insideBottomRight', offset: -10 }}
+                {...chartAxisProps}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
                 label={{ value: 'Profit/Kill (PED)', angle: -90, position: 'insideLeft' }}
+                {...chartAxisProps}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }}
+                {...chartTooltipProps}
                 cursor={{ strokeDasharray: '3 3' }}
                 formatter={(value) => (typeof value === 'number' ? value.toFixed(1) : value)}
                 labelFormatter={() => ''}
@@ -406,54 +435,23 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
             </ScatterChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Panel>
 
       {/* Cost efficiency table */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Cost Efficiency Analysis</h3>
-          <InfoTooltip tooltip="Shows return on investment per creature type (loot/cost ratio)" />
-        </div>
+      <Panel
+        title="Cost Efficiency Analysis"
+        tooltip="Shows return on investment per creature type (loot/cost ratio)"
+      >
         {costEfficiency.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-3 text-muted">Creature</th>
-                  <th className="text-right p-3 text-muted">Kills</th>
-                  <th className="text-right p-3 text-muted">Cost/Kill</th>
-                  <th className="text-right p-3 text-muted">Loot/Kill</th>
-                  <th className="text-right p-3 text-muted">Return Rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {costEfficiency.map((creature, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-border hover:bg-surface-hover transition-colors"
-                  >
-                    <td className="p-3 font-semibold">{creature.creature}</td>
-                    <td className="text-right p-3 text-gray-300">{creature.kills}</td>
-                    <td className="text-right p-3 text-red-400">
-                      {creature.costPerKill.toFixed(2)}
-                    </td>
-                    <td className="text-right p-3 text-green-400">
-                      {creature.lootPerKill.toFixed(2)}
-                    </td>
-                    <td
-                      className={`text-right p-3 font-semibold ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-                    >
-                      {creature.returnRate.toFixed(2)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={costEfficiencyColumns}
+            rows={costEfficiency}
+            getRowKey={(creature) => creature.creature}
+          />
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

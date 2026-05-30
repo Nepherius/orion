@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { Panel } from '../../common/Panel';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -50,11 +50,10 @@ export default function HourlyHeatmapPanel() {
   const headerHeight = 24;
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-bold">Time-of-Day Heatmap</h3>
-        <InfoTooltip tooltip="Average return rate by day of week and hour. Greener = higher return, redder = lower return. Based on completed sessions within the selected time range." />
-      </div>
+    <Panel
+      title="Time-of-Day Heatmap"
+      tooltip="Average return rate by day of week and hour. Greener = higher return, redder = lower return. Based on completed sessions within the selected time range."
+    >
       <div className="overflow-x-auto">
         <div
           style={{
@@ -80,7 +79,7 @@ export default function HourlyHeatmapPanel() {
 
           {/* Day rows */}
           {DAY_LABELS.map((day, dayIdx) => (
-            <>
+            <Fragment key={day}>
               {/* Day label */}
               <div
                 key={`d-${dayIdx}`}
@@ -115,7 +114,7 @@ export default function HourlyHeatmapPanel() {
                   />
                 );
               })}
-            </>
+            </Fragment>
           ))}
         </div>
       </div>
@@ -138,6 +137,6 @@ export default function HourlyHeatmapPanel() {
         </div>
         <span>High return</span>
       </div>
-    </div>
+    </Panel>
   );
 }

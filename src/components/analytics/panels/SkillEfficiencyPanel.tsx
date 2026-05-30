@@ -1,5 +1,6 @@
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { MetricTile, Panel } from '../../common/Panel';
+import { StatCard } from '../../common/StatCard';
 
 const attributeDescriptions: Record<string, string> = {
   Agility:
@@ -30,79 +31,63 @@ export default function SkillEfficiencyPanel() {
       {/* Skill Efficiency: By Location & By Weapon */}
       <div className="grid grid-cols-2 gap-6">
         {skillsByLocation.length > 0 && (
-          <div className="card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-lg font-bold">Skills by Location</h3>
-              <InfoTooltip tooltip="Total skill gains grouped by location" />
-            </div>
+          <Panel title="Skills by Location" tooltip="Total skill gains grouped by location">
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {skillsByLocation.slice(0, 10).map((item) => (
-                <div
+                <StatCard
                   key={item.location}
-                  className="flex justify-between p-2 border-b border-border"
-                >
-                  <span className="text-gray-300 truncate">{item.location || 'Unknown'}</span>
-                  <span className="font-semibold text-blue-400">{item.skillGains.toFixed(2)}</span>
-                </div>
+                  label={item.location || 'Unknown'}
+                  value={item.skillGains.toFixed(2)}
+                  color="text-blue-400"
+                />
               ))}
             </div>
-          </div>
+          </Panel>
         )}
 
         {skillsByWeapon.length > 0 && (
-          <div className="card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-lg font-bold">Skills by Weapon</h3>
-              <InfoTooltip tooltip="Total skill gains grouped by weapon" />
-            </div>
+          <Panel title="Skills by Weapon" tooltip="Total skill gains grouped by weapon">
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {skillsByWeapon.slice(0, 10).map((item) => (
-                <div key={item.weapon} className="flex justify-between p-2 border-b border-border">
-                  <span className="text-gray-300 truncate">{item.weapon}</span>
-                  <span className="font-semibold text-purple-400">
-                    {item.skillGains.toFixed(2)}
-                  </span>
-                </div>
+                <StatCard
+                  key={item.weapon}
+                  label={item.weapon}
+                  value={item.skillGains.toFixed(2)}
+                  color="text-purple-400"
+                />
               ))}
             </div>
-          </div>
+          </Panel>
         )}
       </div>
 
       {/* Skill Metrics */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Skill Metrics</h3>
-          <InfoTooltip tooltip="Overall skill efficiency and consistency" />
+      <Panel title="Skill Metrics" tooltip="Overall skill efficiency and consistency">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <MetricTile
+            label="Skill Gain Variance"
+            value={skillGainVariance.toFixed(2)}
+            tooltip="Variability in skill gains per session. Lower = consistent"
+          />
+          <MetricTile
+            label="Skills Per PED"
+            value={skillValuePerCost.toFixed(2)}
+            tone="accent"
+            tooltip="Skill gains per PED spent. Efficiency metric"
+          />
+          <MetricTile
+            label="Total Skill Gains"
+            value={totalSkillGains.toFixed(2)}
+            tone="positive"
+          />
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="border border-border rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-muted mb-2">
-              Skill Gain Variance
-              <InfoTooltip tooltip="Variability in skill gains per session. Lower = consistent" />
-            </div>
-            <div className="text-2xl font-bold text-body">{skillGainVariance.toFixed(2)}</div>
-          </div>
-          <div className="border border-border rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-muted mb-2">
-              Skills Per PED
-              <InfoTooltip tooltip="Skill gains per PED spent. Efficiency metric" />
-            </div>
-            <div className="text-2xl font-bold text-blue-400">{skillValuePerCost.toFixed(2)}</div>
-          </div>
-          <div className="border border-border rounded p-4">
-            <div className="text-sm text-muted mb-2">Total Skill Gains</div>
-            <div className="text-2xl font-bold text-green-400">{totalSkillGains.toFixed(2)}</div>
-          </div>
-        </div>
-      </div>
+      </Panel>
 
       {/* Attributes Panel */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Attributes</h3>
-          <InfoTooltip tooltip="Core character attributes advancement across all hunts. These are fundamental progression elements." />
-        </div>
+      <Panel
+        title="Attributes"
+        tooltip="Core character attributes advancement across all hunts. These are fundamental progression elements."
+      >
         {Object.values(lifetimeAttributeGains).some((attr) => attr.gains > 0) ? (
           <div className="grid grid-cols-3 gap-4">
             {Object.entries(lifetimeAttributeGains)
@@ -128,7 +113,7 @@ export default function SkillEfficiencyPanel() {
         ) : (
           <div className="text-center text-muted py-8">No attribute gains recorded</div>
         )}
-      </div>
+      </Panel>
     </>
   );
 }

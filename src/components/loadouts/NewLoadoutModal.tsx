@@ -80,10 +80,10 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+      <div className="panel w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-surface border-b border-border p-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 -mx-5 -mt-5 mb-4 flex items-center justify-between border-b border-border bg-surface px-5 py-4">
           <input
             type="text"
             value={name}
@@ -323,7 +323,9 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                   label="Medical"
                   value={medicalTool}
                   onChange={setMedicalTool}
-                  options={medicalTools.map((tool) => tool.name)}
+                  options={medicalTools
+                    .map((tool) => tool.name)
+                    .filter((name): name is string => typeof name === 'string' && name.length > 0)}
                   placeholder="Search medical tools..."
                 />
               </div>

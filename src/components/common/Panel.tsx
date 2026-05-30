@@ -48,6 +48,7 @@ interface MetricTileProps {
   detail?: string;
   tooltip?: string;
   size?: 'sm' | 'md' | 'lg';
+  valueClassName?: string;
 }
 
 const toneClass = {
@@ -72,6 +73,7 @@ export function MetricTile({
   detail,
   tooltip,
   size = 'md',
+  valueClassName = '',
 }: MetricTileProps) {
   return (
     <div className="rounded-lg border border-border bg-white/[0.03] p-4">
@@ -80,7 +82,7 @@ export function MetricTile({
         {tooltip && <InfoTooltip tooltip={tooltip} />}
       </div>
       <div
-        className={`flex min-w-0 items-center gap-2 font-semibold ${sizeClass[size]} ${toneClass[tone]}`}
+        className={`flex min-w-0 items-center gap-2 font-semibold ${sizeClass[size]} ${valueClassName || toneClass[tone]}`}
       >
         {icon}
         <span className="truncate">{value}</span>

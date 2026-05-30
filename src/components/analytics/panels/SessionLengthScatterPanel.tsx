@@ -10,7 +10,8 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { Panel } from '../../common/Panel';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
 
 interface ScatterPoint {
   durationHours: number;
@@ -47,21 +48,19 @@ export default function SessionLengthScatterPanel() {
   if (points.length < 3) return null;
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-bold">Session Length vs Profitability</h3>
-        <InfoTooltip tooltip="Each dot is a completed session. X-axis is duration in hours, Y-axis is return rate %. The green line marks 100% (break-even)." />
-      </div>
+    <Panel
+      title="Session Length vs Profitability"
+      tooltip="Each dot is a completed session. X-axis is duration in hours, Y-axis is return rate %. The green line marks 100% (break-even)."
+    >
       <ResponsiveContainer width="100%" height={320}>
         <ScatterChart>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          <CartesianGrid {...chartGridProps} />
           <XAxis
             dataKey="durationHours"
             type="number"
             name="Duration"
             unit="h"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
+            {...chartAxisProps}
             label={{
               value: 'Duration (hours)',
               position: 'insideBottom',
@@ -75,8 +74,7 @@ export default function SessionLengthScatterPanel() {
             type="number"
             name="Return Rate"
             unit="%"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
+            {...chartAxisProps}
             label={{
               value: 'Return %',
               angle: -90,
@@ -86,12 +84,7 @@ export default function SessionLengthScatterPanel() {
             }}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-            }}
-            labelStyle={{ color: '#F3F4F6' }}
-            itemStyle={{ color: '#F3F4F6' }}
+            {...chartTooltipProps}
             formatter={(value: number, name: string) => {
               if (name === 'Return Rate') return `${value.toFixed(1)}%`;
               if (name === 'Duration') return `${value.toFixed(2)}h`;
@@ -106,6 +99,6 @@ export default function SessionLengthScatterPanel() {
           <Scatter data={points} fill="#3B82F6" fillOpacity={0.7} r={5} />
         </ScatterChart>
       </ResponsiveContainer>
-    </div>
+    </Panel>
   );
 }

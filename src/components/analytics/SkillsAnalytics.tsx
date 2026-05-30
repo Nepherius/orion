@@ -13,9 +13,12 @@ import {
 } from 'recharts';
 import { TrendingUp, Award, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
-import { InfoTooltip } from '../common/InfoTooltip';
 import { calculateSessionAttributeGains } from '../../utils/analyticsCalculations';
 import { getSessionActiveDurationHours } from '../../utils/sessionTiming';
+import { DataTable, DataTableColumn } from '../common/DataTable';
+import { MetricTile, Panel } from '../common/Panel';
+import { StatCard } from '../common/StatCard';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface SkillsAnalyticsProps {
   session: HuntSession;
@@ -83,45 +86,73 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
     Strength: 'Governs raw muscle power, lifting capacity, and brute force.',
   };
 
+  const skillColumns: Array<DataTableColumn<(typeof skillsByType)[number]>> = [
+    {
+      key: 'name',
+      header: 'Skill Name',
+      span: 2,
+      render: (skill) => <span className="font-medium">{skill.name}</span>,
+    },
+    {
+      key: 'gains',
+      header: 'Total Gains',
+      align: 'right',
+      render: (skill) => (
+        <span className="font-semibold text-purple-400">{skill.gains.toFixed(2)}</span>
+      ),
+    },
+    { key: 'count', header: 'Event Count', align: 'right', render: (skill) => skill.count },
+    {
+      key: 'average',
+      header: 'Avg/Event',
+      align: 'right',
+      render: (skill) => (skill.gains / skill.count).toFixed(2),
+    },
+    {
+      key: 'share',
+      header: '% of Total',
+      align: 'right',
+      render: (skill) => `${(totalGains > 0 ? (skill.gains / totalGains) * 100 : 0).toFixed(1)}%`,
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">TOTAL GAINS</div>
-          <div className="text-3xl font-bold text-purple-400">
-            <TrendingUp className="w-5 h-5 inline mr-2" />
-            {totalGains.toFixed(2)}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">SKILL EVENTS</div>
-          <div className="text-3xl font-bold text-blue-400">
-            <Award className="w-5 h-5 inline mr-2" />
-            {skillEvents}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">SKILLS/HOUR</div>
-          <div className="text-3xl font-bold text-green-400">{skillsPerHour.toFixed(2)}</div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">AVG GAIN</div>
-          <div className="text-3xl font-bold text-yellow-400">
-            <BookOpen className="w-5 h-5 inline mr-2" />
-            {avgSkillValue.toFixed(2)}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <MetricTile
+          label="Total Gains"
+          value={totalGains.toFixed(2)}
+          tone="accent"
+          icon={<TrendingUp className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Skill Events"
+          value={skillEvents}
+          tone="accent"
+          icon={<Award className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Skills/Hour"
+          value={skillsPerHour.toFixed(2)}
+          tone="positive"
+          size="lg"
+        />
+        <MetricTile
+          label="Avg Gain"
+          value={avgSkillValue.toFixed(2)}
+          tone="warning"
+          icon={<BookOpen className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-2 gap-6">
         {/* Skills Over Time */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Cumulative Skill Gains</h3>
+        <Panel title="Cumulative Skill Gains">
           {skillsChart.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">
               No skill gains yet
@@ -129,14 +160,11 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={skillsChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="index" stroke="var(--color-text-muted)" />
-                <YAxis stroke="var(--color-text-muted)" />
+                <CartesianGrid {...chartGridProps} />
+                <XAxis dataKey="index" {...chartAxisProps} />
+                <YAxis {...chartAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
+                  {...chartTooltipProps}
                   formatter={(value: number) => value.toFixed(2)}
                   labelFormatter={(label) => `Event #${label}`}
                 />
@@ -150,11 +178,10 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
               </LineChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
 
         {/* Skills by Type */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Skills by Type</h3>
+        <Panel title="Skills by Type">
           {skillsByType.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">
               No skills recorded
@@ -162,35 +189,28 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={skillsByType.slice(0, 10)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <CartesianGrid {...chartGridProps} />
                 <XAxis
                   dataKey="name"
-                  stroke="var(--color-text-muted)"
                   angle={-45}
                   textAnchor="end"
                   height={100}
+                  {...chartAxisProps}
                 />
-                <YAxis stroke="var(--color-text-muted)" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                  formatter={(value: number) => value.toFixed(2)}
-                />
+                <YAxis {...chartAxisProps} />
+                <Tooltip {...chartTooltipProps} formatter={(value: number) => value.toFixed(2)} />
                 <Bar dataKey="gains" fill="#A855F7" />
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
       </div>
 
       {/* Attributes Panel */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Attributes</h3>
-          <InfoTooltip tooltip="Core character attributes advancement. These are fundamental progression elements." />
-        </div>
+      <Panel
+        title="Attributes"
+        tooltip="Core character attributes advancement. These are fundamental progression elements."
+      >
         {sortedAttributes.some((attr) => attr.gains > 0) ? (
           <div className="grid grid-cols-2 gap-4 mb-4">
             {sortedAttributes.map((attr) => (
@@ -213,13 +233,10 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         ) : (
           <div className="text-center text-muted py-8">No attribute gains recorded</div>
         )}
-      </div>
+      </Panel>
 
       {/* Debug: Show all skill names for attribute identification */}
-      <div className="card p-6 border-yellow-500/30">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-sm font-bold text-yellow-400">All Skills This Session</h3>
-        </div>
+      <Panel title="All Skills This Session" className="border-yellow-500/30">
         {skillsByType.length > 0 ? (
           <div className="text-xs text-muted space-y-1 max-h-32 overflow-y-auto">
             {skillsByType.map((skill) => (
@@ -235,105 +252,43 @@ export function SkillsAnalytics({ session }: SkillsAnalyticsProps) {
         ) : (
           <span className="text-xs text-muted">No skills recorded</span>
         )}
-      </div>
+      </Panel>
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-3 gap-6">
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-purple-400">Performance Metrics</h3>
+        <Panel title="Performance Metrics">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Total Gains</span>
-              <span className="font-semibold">{totalGains.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Skill Events</span>
-              <span className="font-semibold">{skillEvents}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Avg Skill Value</span>
-              <span className="font-semibold">{avgSkillValue.toFixed(2)}</span>
-            </div>
+            <StatCard label="Total Gains" value={totalGains.toFixed(2)} />
+            <StatCard label="Skill Events" value={skillEvents} />
+            <StatCard label="Avg Skill Value" value={avgSkillValue.toFixed(2)} />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-blue-400">Efficiency Metrics</h3>
+        <Panel title="Efficiency Metrics">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Skills/PED</span>
-              <span className="font-semibold">{skillsPerPED.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Skills/Hour</span>
-              <span className="font-semibold">{skillsPerHour.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Skills/Kill</span>
-              <span className="font-semibold">{skillsPerKill.toFixed(2)}</span>
-            </div>
+            <StatCard label="Skills/PED" value={skillsPerPED.toFixed(2)} />
+            <StatCard label="Skills/Hour" value={skillsPerHour.toFixed(2)} />
+            <StatCard label="Skills/Kill" value={skillsPerKill.toFixed(2)} />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-green-400">Variety Metrics</h3>
+        <Panel title="Variety Metrics">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Unique Skills</span>
-              <span className="font-semibold">{skillsByType.length}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Most Gained</span>
-              <span className="font-semibold text-sm">
-                {skillsByType[0]?.name.substring(0, 15) || 'N/A'}
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Top Skill Value</span>
-              <span className="font-semibold">{skillsByType[0]?.gains.toFixed(2) || '0.00'}</span>
-            </div>
+            <StatCard label="Unique Skills" value={skillsByType.length} />
+            <StatCard label="Most Gained" value={skillsByType[0]?.name.substring(0, 15) || 'N/A'} />
+            <StatCard label="Top Skill Value" value={skillsByType[0]?.gains.toFixed(2) || '0.00'} />
           </div>
-        </div>
+        </Panel>
       </div>
 
       {/* Skill Details Table */}
-      <div className="card p-6">
-        <h3 className="text-lg font-bold mb-4">Skill Breakdown</h3>
+      <Panel title="Skill Breakdown">
         {skillsByType.length === 0 ? (
           <div className="text-center text-muted py-8">No skills recorded</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4">Skill Name</th>
-                  <th className="text-right py-3 px-4">Total Gains</th>
-                  <th className="text-right py-3 px-4">Event Count</th>
-                  <th className="text-right py-3 px-4">Avg/Event</th>
-                  <th className="text-right py-3 px-4">% of Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {skillsByType.map((skill, index) => (
-                  <tr key={index} className="border-b border-gray-800 hover:bg-surface">
-                    <td className="py-3 px-4 font-medium">{skill.name}</td>
-                    <td className="py-3 px-4 text-right text-purple-400 font-semibold">
-                      {skill.gains.toFixed(2)}
-                    </td>
-                    <td className="py-3 px-4 text-right">{skill.count}</td>
-                    <td className="py-3 px-4 text-right">
-                      {(skill.gains / skill.count).toFixed(2)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {((skill.gains / totalGains) * 100).toFixed(1)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable columns={skillColumns} rows={skillsByType} getRowKey={(skill) => skill.name} />
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

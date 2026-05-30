@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useHuntStore } from '../../../store';
 import { TrendingUp, TrendingDown, Activity, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { InfoTooltip } from '../../common/InfoTooltip';
+import { MetricTile, Panel } from '../../common/Panel';
 import { AdvancedCreatureStats } from '../../../types';
 
 export default function CreatureProjectionsPanel() {
@@ -23,6 +24,7 @@ export default function CreatureProjectionsPanel() {
   );
   const [stats, setStats] = useState<AdvancedCreatureStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedCreature) return;
@@ -31,6 +33,7 @@ export default function CreatureProjectionsPanel() {
 
     const fetchStats = async () => {
       setLoading(true);
+      setError(null);
       try {
         const data = await invoke<AdvancedCreatureStats>('db_get_advanced_creature_stats', {
           params: { creature: selectedCreature },
@@ -40,6 +43,10 @@ export default function CreatureProjectionsPanel() {
         }
       } catch (err) {
         console.error('Failed to fetch advanced creature stats:', err);
+        if (mounted) {
+          setStats(null);
+          setError('Unable to load creature projections. Please try again.');
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -81,52 +88,68 @@ export default function CreatureProjectionsPanel() {
     return 'text-yellow-400';
   };
 
+  const formatCycleToStabilize = (cycleToStabilize: number) => {
+    if (cycleToStabilize > 0 && cycleToStabilize < 1000000) {
+      return `${cycleToStabilize.toLocaleString(undefined, { maximumFractionDigits: 0 })} PED`;
+    }
+    if (cycleToStabilize >= 1000000) {
+      return '1,000,000+ PED';
+    }
+    return 'Unknown';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header / Select Creature */}
-      <div className="card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-blue-400" />
-            Creature Analytics
-          </h2>
-          <p className="text-sm text-muted mt-1">
-            Advanced statistical modeling based on your{' '}
-            <span className="font-semibold text-primary-400">entire lifetime</span> data (ignores
-            the time range filter).
-          </p>
-        </div>
+      <Panel>
+        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-blue-400" />
+              Creature Analytics
+            </h2>
+            <p className="text-sm text-muted mt-1">
+              Advanced statistical modeling based on your{' '}
+              <span className="font-semibold text-primary-400">entire lifetime</span> data (ignores
+              the time range filter).
+            </p>
+          </div>
 
-        <div className="flex flex-col gap-1 w-full md:w-64">
-          <label className="text-xs text-muted font-bold">SELECT CREATURE</label>
-          <select
-            className="input-field bg-surface-hover"
-            value={selectedCreature}
-            onChange={(e) => setSelectedCreature(e.target.value)}
-          >
-            {creatureList.length === 0 ? (
-              <option value="">No creatures tracked</option>
-            ) : (
-              creatureList.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))
-            )}
-          </select>
+          <div className="flex flex-col gap-1 w-full md:w-64">
+            <label className="text-xs text-muted font-bold">SELECT CREATURE</label>
+            <select
+              className="input-field bg-surface-hover"
+              value={selectedCreature}
+              onChange={(e) => setSelectedCreature(e.target.value)}
+            >
+              {creatureList.length === 0 ? (
+                <option value="">No creatures tracked</option>
+              ) : (
+                creatureList.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
         </div>
-      </div>
+      </Panel>
 
       {loading && !stats && (
-        <div className="h-64 flex items-center justify-center text-muted">
+        <Panel contentClassName="flex h-64 items-center justify-center text-muted">
           Calculating statistical models...
-        </div>
+        </Panel>
       )}
 
-      {!loading && !stats && selectedCreature && (
-        <div className="h-64 flex items-center justify-center text-muted">
+      {!loading && error && (
+        <Panel contentClassName="flex h-64 items-center justify-center text-red-400">{error}</Panel>
+      )}
+
+      {!loading && !error && !stats && selectedCreature && (
+        <Panel contentClassName="flex h-64 items-center justify-center text-muted">
           Not enough data to model {selectedCreature}.
-        </div>
+        </Panel>
       )}
 
       {stats && (
@@ -134,86 +157,57 @@ export default function CreatureProjectionsPanel() {
           {/* Main KPI Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* True Return */}
-            <div className="card p-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="text-sm text-muted">TRUE RETURN</div>
-                <InfoTooltip tooltip="Lifetime Return % on this creature over all recorded data" />
-              </div>
-              <div
-                className={`text-3xl font-bold ${
-                  stats.trueReturnPercent >= 100 ? 'text-green-400' : 'text-red-400'
-                }`}
-              >
-                {stats.trueReturnPercent.toFixed(2)}%
-              </div>
-              <div className="text-xs text-muted mt-1">Based on {stats.dataPoints} sessions</div>
-            </div>
+            <MetricTile
+              label="True Return"
+              tooltip="Lifetime Return % on this creature over all recorded data"
+              value={`${stats.trueReturnPercent.toFixed(2)}%`}
+              valueClassName={stats.trueReturnPercent >= 100 ? 'text-green-400' : 'text-red-400'}
+              detail={`Based on ${stats.dataPoints} sessions`}
+              size="lg"
+            />
 
             {/* Volatility Risk */}
-            <div className="card p-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="text-sm text-muted">VOLATILITY RISK</div>
-                <InfoTooltip tooltip="Measures how much your return swings from session to session. (Coefficient of Variation)" />
-              </div>
-              <div className="flex items-center gap-2">
-                {stats.volatilityCv > 0.5 ? (
-                  <AlertTriangle
-                    className={`w-6 h-6 ${getVolatilityRisk(stats.volatilityCv).color}`}
-                  />
+            <MetricTile
+              label="Volatility Risk"
+              tooltip="Measures how much your return swings from session to session. (Coefficient of Variation)"
+              value={getVolatilityRisk(stats.volatilityCv).level}
+              icon={
+                stats.volatilityCv > 0.5 ? (
+                  <AlertTriangle className="h-6 w-6" />
                 ) : (
-                  <ShieldCheck
-                    className={`w-6 h-6 ${getVolatilityRisk(stats.volatilityCv).color}`}
-                  />
-                )}
-                <div
-                  className={`text-2xl font-bold ${getVolatilityRisk(stats.volatilityCv).color}`}
-                >
-                  {getVolatilityRisk(stats.volatilityCv).level}
-                </div>
-              </div>
-              <div className="text-xs text-muted mt-1">
-                {getVolatilityRisk(stats.volatilityCv).desc}
-              </div>
-            </div>
+                  <ShieldCheck className="h-6 w-6" />
+                )
+              }
+              valueClassName={getVolatilityRisk(stats.volatilityCv).color}
+              detail={getVolatilityRisk(stats.volatilityCv).desc}
+            />
 
             {/* Bankroll Cycle Estimate */}
-            <div className="card p-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="text-sm text-muted">CYCLE TO STABILIZE</div>
-                <InfoTooltip tooltip="Estimated PED you need to cycle on this creature to hit a 95% confidence interval of your True Return." />
-              </div>
-              <div className="text-2xl font-bold text-blue-400 flex items-center gap-1">
-                {stats.cycleToStabilize > 0 && stats.cycleToStabilize < 1000000
-                  ? stats.cycleToStabilize.toLocaleString(undefined, { maximumFractionDigits: 0 })
-                  : stats.cycleToStabilize >= 1000000
-                    ? '1,000,000+'
-                    : 'Unknown'}{' '}
-                PED
-              </div>
-              <div className="text-xs text-muted mt-1">
-                Required budget to absorb variance swings
-              </div>
-            </div>
+            <MetricTile
+              label="Cycle to Stabilize"
+              tooltip="Estimated PED you need to cycle on this creature to hit a 95% confidence interval of your True Return."
+              value={formatCycleToStabilize(stats.cycleToStabilize)}
+              valueClassName="text-blue-400"
+              detail="Required budget to absorb variance swings"
+            />
 
             {/* Extrapolated Missing Deposit */}
-            <div className="card p-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="text-sm text-muted">MONTHLY DEPOSIT NEEDED</div>
-                <InfoTooltip tooltip="Extrapolated estimate of USD deposit required per month if you ONLY hunted this mob, based on your loss rate." />
-              </div>
-              <div className="text-2xl font-bold text-red-400">
-                {stats.depositPerMonthUSD > 0
+            <MetricTile
+              label="Monthly Deposit Needed"
+              tooltip="Extrapolated estimate of USD deposit required per month if you ONLY hunted this mob, based on your loss rate."
+              value={
+                stats.depositPerMonthUSD > 0
                   ? `$${stats.depositPerMonthUSD.toFixed(2)} / mo`
-                  : 'Profitable!'}
-              </div>
-              <div className="text-xs text-muted mt-1">Assuming ~20 hours hunting/month</div>
-            </div>
+                  : 'Profitable!'
+              }
+              valueClassName={stats.depositPerMonthUSD > 0 ? 'text-red-400' : 'text-green-400'}
+              detail="Assuming ~20 hours hunting/month"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Trend Analysis */}
-            <div className="card p-6">
-              <h3 className="text-lg font-bold mb-1">Trend Analysis</h3>
+            <Panel title="Trend Analysis" contentClassName="space-y-4">
               <p className="text-xs text-muted mb-6">Compare recent performance vs True Return.</p>
 
               <div className="space-y-4">
@@ -268,12 +262,14 @@ export default function CreatureProjectionsPanel() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Panel>
 
             {/* Fatigue / Session Length Dropoff */}
-            <div className="card p-6 flex flex-col justify-between">
+            <Panel
+              title="Fatigue Dropoff (Duration Analysis)"
+              contentClassName="flex h-full flex-col justify-between"
+            >
               <div>
-                <h3 className="text-lg font-bold mb-1">Fatigue Dropoff (Duration Analysis)</h3>
                 <p className="text-xs text-muted mb-6">
                   Are your short sessions better than your long marathon sessions?
                 </p>
@@ -327,7 +323,7 @@ export default function CreatureProjectionsPanel() {
                   Note: A high Negative value means long sessions yield better returns.
                 </span>
               </div>
-            </div>
+            </Panel>
           </div>
         </>
       )}

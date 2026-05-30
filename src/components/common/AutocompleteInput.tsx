@@ -10,6 +10,12 @@ interface AutocompleteInputProps {
   label?: string;
 }
 
+export function normalizeAutocompleteOptions(options: unknown[]): string[] {
+  return options.filter(
+    (option): option is string => typeof option === 'string' && option.length > 0
+  );
+}
+
 export function AutocompleteInput({
   value,
   onChange,
@@ -25,8 +31,9 @@ export function AutocompleteInput({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const filtered = options
-      .filter((option) => option.toLowerCase().includes(value.toLowerCase()))
+    const safeValue = value.toLowerCase();
+    const filtered = normalizeAutocompleteOptions(options)
+      .filter((option) => option.toLowerCase().includes(safeValue))
       .slice(0, 10); // Limit to 10 suggestions
     setFilteredOptions(filtered);
     setHighlightedIndex(-1);

@@ -3,6 +3,7 @@ import { TagInput } from '../common/TagInput';
 import { useHuntStore } from '../../store';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { BarChart3, AlertCircle } from 'lucide-react';
+import { Panel } from '../common/Panel';
 
 const AnalyticsOverviewTab = lazy(() => import('../analytics/AnalyticsOverviewTab'));
 const AnalyticsSessionsTab = lazy(() => import('../analytics/AnalyticsSessionsTab'));
@@ -88,20 +89,20 @@ export function Analytics() {
 
   if (!isPageVisible) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <Panel contentClassName="py-4 text-center text-muted">
         <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-60" />
         <p>Analytics is paused while the app is in the background.</p>
-      </div>
+      </Panel>
     );
   }
 
   if (sessions.length === 0) {
     return (
       <div className="p-6">
-        <div className="card p-8 text-center text-muted">
+        <Panel contentClassName="py-4 text-center text-muted">
           <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p>No session data available. Complete some hunting sessions to see analytics.</p>
-        </div>
+        </Panel>
       </div>
     );
   }

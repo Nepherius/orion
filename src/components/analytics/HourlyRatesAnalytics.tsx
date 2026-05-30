@@ -12,6 +12,10 @@ import {
 import { Clock, DollarSign, Target, TrendingUp } from 'lucide-react';
 import { formatDurationMs, formatSmallNumber } from '../../utils/formatters';
 import { getSessionActiveDurationMs, getSessionPausedMs } from '../../utils/sessionTiming';
+import { DataTable, DataTableColumn } from '../common/DataTable';
+import { MetricTile, Panel } from '../common/Panel';
+import { StatCard } from '../common/StatCard';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface HourlyRatesAnalyticsProps {
   session: HuntSession;
@@ -21,6 +25,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
   const now = Date.now();
   const pausedMs = getSessionPausedMs(session, now);
   const duration = getSessionActiveDurationMs(session, now);
+  const totalElapsedMs = duration + pausedMs;
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 
@@ -65,65 +70,125 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
   const totalSkillGains = session.skills.reduce((sum, s) => sum + s.gainAmount, 0);
   const skillsPerMin = durationMinutes > 0 ? totalSkillGains / durationMinutes : 0;
 
+  type HourlyRateRow = {
+    metric: string;
+    perHour: string;
+    perMinute: string;
+    total: string;
+    perHourClassName?: string;
+  };
+
+  const hourlyRateRows: HourlyRateRow[] = [
+    {
+      metric: 'Loot',
+      perHour: `${formatSmallNumber(lootPerHour)} PED`,
+      perMinute: `${formatSmallNumber(lootPerMin)} PED`,
+      total: `${session.stats.totalLoot.toFixed(2)} PED`,
+      perHourClassName: 'text-green-400',
+    },
+    {
+      metric: 'Spend',
+      perHour: `${formatSmallNumber(spendPerHour)} PED`,
+      perMinute: `${formatSmallNumber(spendPerMin)} PED`,
+      total: `${session.stats.totalCost.toFixed(2)} PED`,
+      perHourClassName: 'text-red-400',
+    },
+    {
+      metric: 'Profit/Loss',
+      perHour: `${profitPerHour >= 0 ? '+' : ''}${formatSmallNumber(profitPerHour)} PED`,
+      perMinute: `${formatSmallNumber(profitPerMin)} PED`,
+      total: `${(session.stats.totalLoot - session.stats.totalCost).toFixed(2)} PED`,
+      perHourClassName: profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400',
+    },
+    {
+      metric: 'Kills',
+      perHour: killsPerHour.toFixed(1),
+      perMinute: killsPerMin.toFixed(2),
+      total: session.stats.kills.toString(),
+      perHourClassName: 'text-body',
+    },
+    {
+      metric: 'Loot Events',
+      perHour: eventsPerHour.toFixed(1),
+      perMinute: eventsPerMin.toFixed(2),
+      total: session.stats.lootEvents.toString(),
+    },
+    {
+      metric: 'Damage Dealt',
+      perHour: dmgPerHour.toFixed(0),
+      perMinute: (durationMinutes > 0 ? session.stats.damageDealt / durationMinutes : 0).toFixed(1),
+      total: session.stats.damageDealt.toFixed(0),
+    },
+    {
+      metric: 'Skill Gains',
+      perHour: formatSmallNumber(skillsPerHour),
+      perMinute: formatSmallNumber(skillsPerMin),
+      total: formatSmallNumber(totalSkillGains),
+      perHourClassName: 'text-purple-400',
+    },
+  ];
+
+  const hourlyRateColumns: Array<DataTableColumn<HourlyRateRow>> = [
+    { key: 'metric', header: 'Metric', render: (row) => row.metric },
+    {
+      key: 'perHour',
+      header: 'Per Hour',
+      align: 'right',
+      render: (row) => (
+        <span className={`font-semibold ${row.perHourClassName ?? ''}`}>{row.perHour}</span>
+      ),
+    },
+    { key: 'perMinute', header: 'Per Minute', align: 'right', render: (row) => row.perMinute },
+    { key: 'total', header: 'Total', align: 'right', render: (row) => row.total },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">LOOT/HOUR</div>
-          <div className="text-3xl font-bold text-green-400">
-            <DollarSign className="w-5 h-5 inline mr-2" />
-            {formatSmallNumber(lootPerHour)}
-          </div>
-          <div className="text-xs text-muted mt-1">PED</div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">SPEND/HOUR</div>
-          <div className="text-3xl font-bold text-red-400">
-            <DollarSign className="w-5 h-5 inline mr-2" />
-            {formatSmallNumber(spendPerHour)}
-          </div>
-          <div className="text-xs text-muted mt-1">PED</div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">PROFIT/HOUR</div>
-          <div
-            className={`text-3xl font-bold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}
-          >
-            <TrendingUp className="w-5 h-5 inline mr-2" />
-            {profitPerHour >= 0 ? '+' : ''}
-            {formatSmallNumber(profitPerHour)}
-          </div>
-          <div className="text-xs text-muted mt-1">PED</div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">KILLS/HOUR</div>
-          <div className="text-3xl font-bold text-body">
-            <Target className="w-5 h-5 inline mr-2" />
-            {killsPerHour.toFixed(1)}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <MetricTile
+          label="Loot/Hour"
+          value={formatSmallNumber(lootPerHour)}
+          tone="positive"
+          icon={<DollarSign className="h-5 w-5 shrink-0" />}
+          detail="PED"
+          size="lg"
+        />
+        <MetricTile
+          label="Spend/Hour"
+          value={formatSmallNumber(spendPerHour)}
+          tone="negative"
+          icon={<DollarSign className="h-5 w-5 shrink-0" />}
+          detail="PED"
+          size="lg"
+        />
+        <MetricTile
+          label="Profit/Hour"
+          value={`${profitPerHour >= 0 ? '+' : ''}${formatSmallNumber(profitPerHour)}`}
+          tone={profitPerHour >= 0 ? 'accent' : 'warning'}
+          icon={<TrendingUp className="h-5 w-5 shrink-0" />}
+          detail="PED"
+          size="lg"
+        />
+        <MetricTile
+          label="Kills/Hour"
+          value={killsPerHour.toFixed(1)}
+          icon={<Target className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-2 gap-6">
         {/* Hourly Economic Metrics */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Hourly Economic Rates</h3>
+        <Panel title="Hourly Economic Rates">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={hourlyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="var(--color-text-muted)" />
-              <YAxis stroke="var(--color-text-muted)" />
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="name" {...chartAxisProps} />
+              <YAxis {...chartAxisProps} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid #374151',
-                }}
-                itemStyle={{ color: 'var(--color-text)' }}
+                {...chartTooltipProps}
                 formatter={(value: number) => [`${formatSmallNumber(value)} PED`, '']}
               />
               <Bar dataKey="value">
@@ -133,186 +198,80 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </Panel>
 
         {/* Activity Rates */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Hourly Activity Rates</h3>
+        <Panel title="Hourly Activity Rates">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={activityMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="var(--color-text-muted)" />
-              <YAxis stroke="var(--color-text-muted)" />
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="name" {...chartAxisProps} />
+              <YAxis {...chartAxisProps} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid #374151',
-                }}
-                itemStyle={{ color: 'var(--color-text)' }}
+                {...chartTooltipProps}
                 formatter={(value: number) => formatSmallNumber(value)}
               />
               <Bar dataKey="value" fill="#3B82F6" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </Panel>
       </div>
 
       {/* Detailed Metrics Table */}
-      <div className="card p-6">
-        <h3 className="text-lg font-bold mb-4">Detailed Hourly Rates</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-3 px-4">Metric</th>
-                <th className="text-right py-3 px-4">Per Hour</th>
-                <th className="text-right py-3 px-4">Per Minute</th>
-                <th className="text-right py-3 px-4">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-800 hover:bg-surface">
-                <td className="py-3 px-4">Loot</td>
-                <td className="py-3 px-4 text-right text-green-400 font-semibold">
-                  {formatSmallNumber(lootPerHour)} PED
-                </td>
-                <td className="py-3 px-4 text-right">{formatSmallNumber(lootPerMin)} PED</td>
-                <td className="py-3 px-4 text-right">{session.stats.totalLoot.toFixed(2)} PED</td>
-              </tr>
-              <tr className="border-b border-gray-800 hover:bg-surface">
-                <td className="py-3 px-4">Spend</td>
-                <td className="py-3 px-4 text-right text-red-400 font-semibold">
-                  {formatSmallNumber(spendPerHour)} PED
-                </td>
-                <td className="py-3 px-4 text-right">{formatSmallNumber(spendPerMin)} PED</td>
-                <td className="py-3 px-4 text-right">{session.stats.totalCost.toFixed(2)} PED</td>
-              </tr>
-              <tr className="border-b border-gray-800 hover:bg-surface">
-                <td className="py-3 px-4">Profit/Loss</td>
-                <td
-                  className={`py-3 px-4 text-right font-semibold ${profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400'}`}
-                >
-                  {profitPerHour >= 0 ? '+' : ''}
-                  {formatSmallNumber(profitPerHour)} PED
-                </td>
-                <td className="py-3 px-4 text-right">{formatSmallNumber(profitPerMin)} PED</td>
-                <td className="py-3 px-4 text-right">
-                  {(session.stats.totalLoot - session.stats.totalCost).toFixed(2)} PED
-                </td>
-              </tr>
-              <tr className="border-b border-gray-800 hover:bg-surface">
-                <td className="py-3 px-4">Kills</td>
-                <td className="py-3 px-4 text-right text-body font-semibold">
-                  {killsPerHour.toFixed(1)}
-                </td>
-                <td className="py-3 px-4 text-right">{killsPerMin.toFixed(2)}</td>
-                <td className="py-3 px-4 text-right">{session.stats.kills}</td>
-              </tr>
-              <tr className="border-b border-gray-800 hover:bg-surface">
-                <td className="py-3 px-4">Loot Events</td>
-                <td className="py-3 px-4 text-right font-semibold">{eventsPerHour.toFixed(1)}</td>
-                <td className="py-3 px-4 text-right">{eventsPerMin.toFixed(2)}</td>
-                <td className="py-3 px-4 text-right">{session.stats.lootEvents}</td>
-              </tr>
-              <tr className="border-b border-gray-800 hover:bg-surface">
-                <td className="py-3 px-4">Damage Dealt</td>
-                <td className="py-3 px-4 text-right font-semibold">{dmgPerHour.toFixed(0)}</td>
-                <td className="py-3 px-4 text-right">
-                  {(durationMinutes > 0 ? session.stats.damageDealt / durationMinutes : 0).toFixed(
-                    1
-                  )}
-                </td>
-                <td className="py-3 px-4 text-right">{session.stats.damageDealt.toFixed(0)}</td>
-              </tr>
-              <tr className="border-b border-gray-800 hover:bg-surface">
-                <td className="py-3 px-4">Skill Gains</td>
-                <td className="py-3 px-4 text-right text-purple-400 font-semibold">
-                  {formatSmallNumber(skillsPerHour)}
-                </td>
-                <td className="py-3 px-4 text-right">{formatSmallNumber(skillsPerMin)}</td>
-                <td className="py-3 px-4 text-right">{formatSmallNumber(totalSkillGains)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <Panel title="Detailed Hourly Rates">
+        <DataTable
+          columns={hourlyRateColumns}
+          rows={hourlyRateRows}
+          getRowKey={(row) => row.metric}
+        />
+      </Panel>
 
       {/* Time Summary */}
       <div className="grid grid-cols-3 gap-6">
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-blue-400">
-            <Clock className="w-5 h-5 inline mr-2" />
-            Time Summary
-          </h3>
+        <Panel title="Time Summary" action={<Clock className="h-5 w-5 text-blue-400" />}>
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Total Time</span>
-              <span className="font-semibold">{formatDurationMs(duration)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Paused Time</span>
-              <span className="font-semibold">{formatDurationMs(pausedMs)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Active Time</span>
-              <span className="font-semibold">{formatDurationMs(duration)}</span>
-            </div>
+            <StatCard label="Total Time" value={formatDurationMs(totalElapsedMs)} />
+            <StatCard label="Paused Time" value={formatDurationMs(pausedMs)} />
+            <StatCard label="Active Time" value={formatDurationMs(duration)} />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-green-400">ROI Metrics</h3>
+        <Panel title="ROI Metrics">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Return Rate</span>
-              <span
-                className={`font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {session.stats.returns.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Loot/Spend</span>
-              <span className="font-semibold">
-                {(session.stats.totalCost > 0
-                  ? session.stats.totalLoot / session.stats.totalCost
-                  : 0
-                ).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Net/Hour</span>
-              <span
-                className={`font-semibold ${profitPerHour >= 0 ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {profitPerHour >= 0 ? '+' : ''}
-                {formatSmallNumber(profitPerHour)} PED
-              </span>
-            </div>
+            <StatCard
+              label="Return Rate"
+              value={`${session.stats.returns.toFixed(1)}%`}
+              color={session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}
+            />
+            <StatCard
+              label="Loot/Spend"
+              value={(session.stats.totalCost > 0
+                ? session.stats.totalLoot / session.stats.totalCost
+                : 0
+              ).toFixed(2)}
+            />
+            <StatCard
+              label="Net/Hour"
+              value={`${profitPerHour >= 0 ? '+' : ''}${formatSmallNumber(profitPerHour)} PED`}
+              color={profitPerHour >= 0 ? 'text-green-400' : 'text-red-400'}
+            />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-yellow-400">Peak Rates</h3>
+        <Panel title="Peak Rates">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Best Hour Est.</span>
-              <span className="font-semibold text-green-400">
-                {formatSmallNumber(lootPerHour * 1.2)} PED
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Efficiency</span>
-              <span className="font-semibold">
-                {(session.stats.returns >= 100 ? 100 : session.stats.returns).toFixed(0)}%
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Pace</span>
-              <span className="font-semibold">{eventsPerHour.toFixed(1)} events/hr</span>
-            </div>
+            <StatCard
+              label="Best Hour Est."
+              value={`${formatSmallNumber(lootPerHour * 1.2)} PED`}
+              color="text-green-400"
+            />
+            <StatCard
+              label="Efficiency"
+              value={`${(session.stats.returns >= 100 ? 100 : session.stats.returns).toFixed(0)}%`}
+            />
+            <StatCard label="Pace" value={`${eventsPerHour.toFixed(1)} events/hr`} />
           </div>
-        </div>
+        </Panel>
       </div>
     </div>
   );

@@ -56,10 +56,10 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
 
   if (!session) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <Panel contentClassName="py-4 text-center text-muted">
         <Info className="w-16 h-16 mx-auto mb-4 opacity-50" />
         <p>No session selected. Pick a session from Sessions or start one to view Hunt View.</p>
-      </div>
+      </Panel>
     );
   }
 

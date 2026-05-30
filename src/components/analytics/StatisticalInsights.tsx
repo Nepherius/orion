@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useHuntStore } from '../../store';
 import { Target, TrendingUp, Activity, BarChart2 } from 'lucide-react';
+import { Panel } from '../common/Panel';
 
 import type { WorkerRequest, WorkerResponse } from '../../workers/analytics.worker';
 
@@ -39,6 +40,7 @@ export function StatisticalInsights() {
 
   const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const validSessions = filteredSessions.filter(
@@ -47,10 +49,12 @@ export function StatisticalInsights() {
 
     if (validSessions.length < 4) {
       setInsightsData(null);
+      setError(null);
       return;
     }
 
     setIsCalculating(true);
+    setError(null);
 
     const returnRates: number[] = [];
     const hitRates: number[] = [];
@@ -66,6 +70,7 @@ export function StatisticalInsights() {
     const worker = new Worker(new URL('../../workers/analytics.worker.ts', import.meta.url), {
       type: 'module',
     });
+    let cancelled = false;
 
     const runWorkerTask = <T extends WorkerTaskType>(
       type: T,
@@ -105,46 +110,66 @@ export function StatisticalInsights() {
           y: returnRates,
         });
 
-        setInsightsData({
-          n: validSessions.length,
-          meanReturn,
-          ciLower: Number.isFinite(ciResult.lower) ? ciResult.lower : meanReturn,
-          ciUpper: Number.isFinite(ciResult.upper) ? ciResult.upper : meanReturn,
-          cv,
-          hitRateVsReturn,
-          burnRateVsReturn,
-        });
+        if (!cancelled) {
+          setInsightsData({
+            n: validSessions.length,
+            meanReturn,
+            ciLower: Number.isFinite(ciResult.lower) ? ciResult.lower : meanReturn,
+            ciUpper: Number.isFinite(ciResult.upper) ? ciResult.upper : meanReturn,
+            cv,
+            hitRateVsReturn,
+            burnRateVsReturn,
+          });
+        }
       } catch (err) {
-        console.error('Worker math failed:', err);
+        if (!cancelled) {
+          console.error('Worker math failed:', err);
+          setInsightsData(null);
+          setError('Unable to calculate statistical insights.');
+        }
       } finally {
-        setIsCalculating(false);
+        if (!cancelled) {
+          setIsCalculating(false);
+        }
         worker.terminate();
       }
     };
 
     processMath();
+
+    return () => {
+      cancelled = true;
+      worker.terminate();
+    };
   }, [filteredSessions]);
 
   if (isCalculating) {
     return (
-      <div className="card p-6 flex items-center justify-center min-h-[300px]">
+      <Panel contentClassName="flex min-h-[300px] items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-sm text-muted">Calculating statistical models...</p>
         </div>
-      </div>
+      </Panel>
+    );
+  }
+
+  if (error) {
+    return (
+      <Panel title="Advanced Statistical Modeling">
+        <p className="text-sm text-red-400">{error}</p>
+      </Panel>
     );
   }
 
   if (!insightsData) {
     return (
-      <div className="card p-6">
-        <h3 className="text-lg font-bold mb-2">Advanced Statistical Modeling</h3>
+      <Panel title="Advanced Statistical Modeling">
         <p className="text-sm text-muted">
           Not enough data to calculate advanced volatility and confidence interval models. Need at
           least 4 valid sessions.
         </p>
-      </div>
+      </Panel>
     );
   }
 
@@ -178,9 +203,8 @@ export function StatisticalInsights() {
   };
 
   return (
-    <div className="card p-6">
+    <Panel title="Advanced Statistical Modeling">
       <div className="mb-4">
-        <h3 className="text-lg font-bold">Advanced Statistical Modeling</h3>
         <p className="text-sm text-muted mt-1">
           Deep analytics on volatility, expected value, and mechanical variance across {n} compiled
           sessions.
@@ -274,6 +298,6 @@ export function StatisticalInsights() {
           </div>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }

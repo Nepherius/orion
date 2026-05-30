@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { Panel } from '../../common/Panel';
 import { subDays, startOfDay, format, addDays, getDay, isFirstDayOfMonth } from 'date-fns';
 
 type CalendarDay = {
@@ -104,12 +104,11 @@ export default function ContributionCalendarPanel() {
   };
 
   return (
-    <div className="card p-6 overflow-x-auto scrollbar-hide">
-      <div className="flex items-center gap-2 mb-6">
-        <h3 className="text-lg font-bold">Session Contribution Heatmap</h3>
-        <InfoTooltip tooltip="Daily net profit/loss mapped over the selected 1-year timeline" />
-      </div>
-
+    <Panel
+      title="Session Contribution Heatmap"
+      tooltip="Daily net profit/loss mapped over the selected 1-year timeline"
+      className="overflow-x-auto scrollbar-hide"
+    >
       <div className="min-w-max">
         {/* Month labels row */}
         <div className="flex gap-1 mb-2 text-xs text-muted/70 font-medium h-4">
@@ -187,6 +186,6 @@ export default function ContributionCalendarPanel() {
         </div>
         <span>High Profit</span>
       </div>
-    </div>
+    </Panel>
   );
 }

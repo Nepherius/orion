@@ -11,7 +11,9 @@ import {
 } from 'recharts';
 import { Heart, Activity } from 'lucide-react';
 import { format } from 'date-fns';
-import { InfoTooltip } from '../common/InfoTooltip';
+import { MetricTile, Panel } from '../common/Panel';
+import { StatCard } from '../common/StatCard';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface HealingAnalyticsProps {
   session: HuntSession;
@@ -110,37 +112,33 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">TOTAL HEALING</div>
-          <div className="text-3xl font-bold text-green-400">
-            <Heart className="w-5 h-5 inline mr-2" />
-            {totalHealing.toFixed(0)}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2 flex items-center gap-2">
-            HEALS USED
-            <InfoTooltip tooltip="Direct uses only (for decay/cost). Passive heal-over-time ticks not counted." />
-          </div>
-          <div className="text-3xl font-bold text-body">
-            <Activity className="w-5 h-5 inline mr-2" />
-            {healsUsed}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">HEALING COST</div>
-          <div className="text-3xl font-bold text-red-400">{healingCost.toFixed(2)} PED</div>
-        </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <MetricTile
+          label="Total Healing"
+          value={totalHealing.toFixed(0)}
+          tone="positive"
+          icon={<Heart className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Heals Used"
+          value={healsUsed}
+          icon={<Activity className="h-5 w-5 shrink-0" />}
+          tooltip="Direct uses only (for decay/cost). Passive heal-over-time ticks not counted."
+          size="lg"
+        />
+        <MetricTile
+          label="Healing Cost"
+          value={`${healingCost.toFixed(2)} PED`}
+          tone="negative"
+          size="lg"
+        />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-2 gap-6">
         {/* Healing Over Time */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Healing Over Time</h3>
+        <Panel title="Healing Over Time">
           {healingChart.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">
               No healing events yet
@@ -148,14 +146,11 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={healingChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="index" stroke="var(--color-text-muted)" />
-                <YAxis stroke="var(--color-text-muted)" />
+                <CartesianGrid {...chartGridProps} />
+                <XAxis dataKey="index" {...chartAxisProps} />
+                <YAxis {...chartAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
+                  {...chartTooltipProps}
                   formatter={(value: number) => [`${value.toFixed(0)}`, 'Healing']}
                   labelFormatter={(label) => `Event #${label}`}
                 />
@@ -169,11 +164,10 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
               </LineChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
 
         {/* Healing vs Damage Taken */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Healing vs Damage Taken</h3>
+        <Panel title="Healing vs Damage Taken">
           {comparisonChart.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">
               No combat data yet
@@ -181,14 +175,11 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={comparisonChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="index" stroke="var(--color-text-muted)" />
-                <YAxis stroke="var(--color-text-muted)" />
+                <CartesianGrid {...chartGridProps} />
+                <XAxis dataKey="index" {...chartAxisProps} />
+                <YAxis {...chartAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
+                  {...chartTooltipProps}
                   formatter={(value: number) => `${value.toFixed(0)}`}
                   labelFormatter={(label) => `Event #${label}`}
                 />
@@ -210,13 +201,12 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
               </LineChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
       </div>
 
       {/* Healing Type Distribution */}
       {healingTypeData.length > 0 && (
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Healing Type Distribution</h3>
+        <Panel title="Healing Type Distribution">
           <div className="grid grid-cols-2 gap-8">
             {healingTypeData.map((item) => (
               <div key={item.name} className="flex items-center gap-4">
@@ -231,28 +221,23 @@ export function HealingAnalytics({ session }: HealingAnalyticsProps) {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Detailed Metrics */}
-      <div className="card p-6">
-        <h3 className="text-lg font-bold mb-4">Healing Metrics</h3>
+      <Panel title="Healing Metrics">
         <div className="grid grid-cols-2 gap-4">
           {performanceMetrics.map((metric, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-surface rounded">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-300">{metric.label}</span>
-                {metric.tooltip && <InfoTooltip tooltip={metric.tooltip} />}
-              </div>
-              <span
-                className={`font-bold text-lg ${metric.good ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {metric.value}
-              </span>
-            </div>
+            <StatCard
+              key={index}
+              label={metric.label}
+              value={metric.value}
+              color={metric.good ? 'text-green-400' : 'text-red-400'}
+              info={metric.tooltip}
+            />
           ))}
         </div>
-      </div>
+      </Panel>
     </div>
   );
 }

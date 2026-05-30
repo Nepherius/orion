@@ -15,6 +15,8 @@ interface DataTableProps<T> {
   className?: string;
   maxHeightClassName?: string;
   rowClassName?: (row: T) => string;
+  onRowClick?: (row: T) => void;
+  emptyMessage?: string;
 }
 
 export function DataTable<T>({
@@ -24,6 +26,8 @@ export function DataTable<T>({
   className = '',
   maxHeightClassName = '',
   rowClassName,
+  onRowClick,
+  emptyMessage = 'No rows found.',
 }: DataTableProps<T>) {
   const gridTemplateColumns = columns.map((column) => `minmax(0, ${column.span ?? 1}fr)`).join(' ');
 
@@ -41,22 +45,29 @@ export function DataTable<T>({
           ))}
         </div>
         <div className="divide-y divide-border/60">
-          {rows.map((row) => (
-            <div
-              key={getRowKey(row)}
-              className={`grid gap-2 py-2 text-sm transition-colors hover:bg-surface-hover ${rowClassName?.(row) ?? ''}`}
-              style={{ gridTemplateColumns }}
-            >
-              {columns.map((column) => (
-                <div
-                  key={column.key}
-                  className={column.align === 'right' ? 'text-right' : 'min-w-0'}
-                >
-                  {column.render(row)}
-                </div>
-              ))}
-            </div>
-          ))}
+          {rows.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted">{emptyMessage}</div>
+          ) : (
+            rows.map((row) => (
+              <div
+                key={getRowKey(row)}
+                className={`grid gap-2 py-2 text-sm transition-colors hover:bg-surface-hover ${
+                  onRowClick ? 'cursor-pointer' : ''
+                } ${rowClassName?.(row) ?? ''}`}
+                style={{ gridTemplateColumns }}
+                onClick={() => onRowClick?.(row)}
+              >
+                {columns.map((column) => (
+                  <div
+                    key={column.key}
+                    className={column.align === 'right' ? 'text-right' : 'min-w-0'}
+                  >
+                    {column.render(row)}
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -41,11 +41,14 @@ const toArmorItems = (response: LoadEquipmentData): string[] => {
 };
 
 const toMedicalTools = (response: LoadEquipmentData): MedicalToolEntry[] => {
+  const normalize = (tools: MedicalToolEntry[]) =>
+    tools.filter((tool) => typeof tool.name === 'string' && tool.name.length > 0);
+
   if (Array.isArray(response)) {
-    return response as MedicalToolEntry[];
+    return normalize(response as MedicalToolEntry[]);
   }
   if ('medicalTools' in response && Array.isArray(response.medicalTools)) {
-    return response.medicalTools;
+    return normalize(response.medicalTools);
   }
   return [];
 };

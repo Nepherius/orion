@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useHuntStore } from '../../store';
 import { Target, Plus, Trash2 } from 'lucide-react';
 import { Goal } from '../../types';
+import { Panel } from '../common/Panel';
 
 export function GrindGoals() {
   const { goals, addGoal, deleteGoal } = useHuntStore();
@@ -31,7 +32,7 @@ export function GrindGoals() {
   };
 
   return (
-    <div className="card w-full p-6 flex flex-col h-full">
+    <Panel className="flex h-full w-full flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Target className="w-5 h-5 text-purple-400" />
@@ -118,6 +119,6 @@ export function GrindGoals() {
           })}
         </div>
       )}
-    </div>
+    </Panel>
   );
 }

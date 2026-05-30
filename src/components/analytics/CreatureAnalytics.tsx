@@ -12,11 +12,14 @@ import {
   Cell,
 } from 'recharts';
 import { Zap } from 'lucide-react';
-import { InfoTooltip } from '../common/InfoTooltip';
 import {
   calculateCreatureStats,
   calculateCreatureStatsByLocation,
 } from '../../utils/analyticsCalculations';
+import { DataTable, DataTableColumn } from '../common/DataTable';
+import { MetricTile, Panel } from '../common/Panel';
+import { StatCard } from '../common/StatCard';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface CreatureAnalyticsProps {
   sessions: HuntSession[];
@@ -108,137 +111,192 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
       }));
   }, [creatureStats]);
 
+  const bestProfitableCreature =
+    creatureStats.filter((c) => c.profit > 0).sort((a, b) => b.profit - a.profit)[0] ?? null;
+
+  const returnRateColumns: Array<DataTableColumn<(typeof creatureDifficulty)[number]>> = [
+    {
+      key: 'creature',
+      header: 'Creature',
+      render: (creature) => (
+        <span className="block truncate font-semibold">{creature.creature}</span>
+      ),
+    },
+    {
+      key: 'returnRate',
+      header: 'Return %',
+      align: 'right',
+      render: (creature) => (
+        <span
+          className={`font-bold ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
+        >
+          {creature.returnRate.toFixed(2)}%
+        </span>
+      ),
+    },
+    {
+      key: 'killsPerSession',
+      header: 'Kills/Session',
+      align: 'right',
+      render: (creature) => creature.avgKillsPerSession.toFixed(2),
+    },
+    {
+      key: 'costPerKill',
+      header: 'Cost/Kill',
+      align: 'right',
+      render: (creature) => creature.costPerKill.toFixed(2),
+    },
+    {
+      key: 'lootPerKill',
+      header: 'Loot/Kill',
+      align: 'right',
+      render: (creature) => (
+        <span className="text-green-400">
+          {(creature.costPerKill * (creature.returnRate / 100)).toFixed(2)}
+        </span>
+      ),
+    },
+  ];
+
+  const creatureColumns: Array<DataTableColumn<(typeof creatureStats)[number]>> = [
+    {
+      key: 'creature',
+      header: 'Creature',
+      render: (creature) => (
+        <span className="block truncate font-semibold">{creature.creature}</span>
+      ),
+    },
+    { key: 'sessions', header: 'Sessions', align: 'right', render: (creature) => creature.count },
+    { key: 'kills', header: 'Kills', align: 'right', render: (creature) => creature.totalKills },
+    {
+      key: 'returnRate',
+      header: 'Return %',
+      align: 'right',
+      render: (creature) => (
+        <span
+          className={`font-bold ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
+        >
+          {creature.returnRate.toFixed(2)}%
+        </span>
+      ),
+    },
+    {
+      key: 'profit',
+      header: 'Profit',
+      align: 'right',
+      render: (creature) => (
+        <span className={`font-bold ${creature.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          {creature.profit >= 0 ? '+' : ''}
+          {creature.profit.toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      key: 'costPerKill',
+      header: 'Cost/Kill',
+      align: 'right',
+      render: (creature) => creature.costPerKill.toFixed(2),
+    },
+    {
+      key: 'lootPerKill',
+      header: 'Loot/Kill',
+      align: 'right',
+      render: (creature) => (
+        <span className="text-green-400">{creature.lootPerKill.toFixed(2)}</span>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Key metrics cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">TOTAL UNIQUE CREATURES</div>
-          <div className="text-3xl font-bold text-blue-400">
-            <Zap className="w-5 h-5 inline mr-2" />
-            {creatureStats.length}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">MOST KILLED CREATURE</div>
-          <div className="text-2xl font-bold text-green-400">
-            {creatureStats[0]?.creature || 'N/A'}
-          </div>
-          <div className="text-xs text-muted mt-1">{creatureStats[0]?.totalKills || 0} kills</div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">MOST PROFITABLE CREATURE</div>
-          <div className="text-2xl font-bold text-green-400">
-            {creatureStats.length > 0
-              ? creatureStats.filter((c) => c.profit > 0).sort((a, b) => b.profit - a.profit)[0]
-                  ?.creature || 'N/A'
-              : 'N/A'}
-          </div>
-          <div className="text-xs text-muted mt-1">
-            {creatureStats.length > 0
-              ? `+${
-                  creatureStats
-                    .filter((c) => c.profit > 0)
-                    .sort((a, b) => b.profit - a.profit)[0]
-                    ?.profit.toFixed(2) || 0
-                } PED`
-              : '0 PED'}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <MetricTile
+          label="Total Unique Creatures"
+          value={creatureStats.length}
+          tone="accent"
+          icon={<Zap className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Most Killed Creature"
+          value={creatureStats[0]?.creature || 'N/A'}
+          tone="positive"
+          detail={`${creatureStats[0]?.totalKills || 0} kills`}
+          size="md"
+        />
+        <MetricTile
+          label="Most Profitable Creature"
+          value={bestProfitableCreature?.creature || 'N/A'}
+          tone="positive"
+          detail={
+            bestProfitableCreature ? `+${bestProfitableCreature.profit.toFixed(2)} PED` : '0 PED'
+          }
+          size="md"
+        />
       </div>
 
       {/* Most killed per location */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-lg font-bold">Most Killed Creature by Location</h3>
-            <InfoTooltip tooltip="Shows the creature with the most kills per location" />
-          </div>
+        <Panel
+          title="Most Killed Creature by Location"
+          tooltip="Shows the creature with the most kills per location"
+        >
           {mostKilledByLocation.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {mostKilledByLocation.map((item, idx) => (
-                <div
+                <StatCard
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-surface rounded hover:bg-surface-hover transition-colors"
-                >
-                  <div>
-                    <div className="font-semibold text-sm">{item.location}</div>
-                    <div className="text-xs text-muted">{item.creature}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-green-400">{item.kills}</div>
-                    <div className="text-xs text-muted">
-                      {((item.kills / item.totalLocationKills) * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
+                  label={`${item.location} - ${item.creature}`}
+                  value={`${item.kills} (${((item.kills / item.totalLocationKills) * 100).toFixed(1)}%)`}
+                  color="text-green-400"
+                />
               ))}
             </div>
           )}
-        </div>
+        </Panel>
 
         {/* Most profitable per location */}
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-lg font-bold">Most Profitable Creature by Location</h3>
-            <InfoTooltip tooltip="Shows the creature with the highest profit per location" />
-          </div>
+        <Panel
+          title="Most Profitable Creature by Location"
+          tooltip="Shows the creature with the highest profit per location"
+        >
           {mostProfitableByLocation.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {mostProfitableByLocation.map((item, idx) => (
-                <div
+                <StatCard
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-surface rounded hover:bg-surface-hover transition-colors"
-                >
-                  <div>
-                    <div className="font-semibold text-sm">{item.location}</div>
-                    <div className="text-xs text-muted">{item.creature}</div>
-                  </div>
-                  <div
-                    className={`text-right font-bold ${item.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-                  >
-                    {item.profit >= 0 ? '+' : ''}
-                    {item.profit.toFixed(2)} PED
-                  </div>
-                </div>
+                  label={`${item.location} - ${item.creature}`}
+                  value={`${item.profit >= 0 ? '+' : ''}${item.profit.toFixed(2)} PED`}
+                  color={item.profit >= 0 ? 'text-green-400' : 'text-red-400'}
+                />
               ))}
             </div>
           )}
-        </div>
+        </Panel>
       </div>
 
       {/* Creature performance chart */}
       <div className="grid grid-cols-2 gap-6">
         {/* Cost per Kill vs Loot per Kill */}
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-lg font-bold">Creature Efficiency</h3>
-            <InfoTooltip tooltip="Cost per kill vs Loot per kill for top creatures" />
-          </div>
+        <Panel
+          title="Creature Efficiency"
+          tooltip="Cost per kill vs Loot per kill for top creatures"
+        >
           {creatureEfficiencyChart.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={creatureEfficiencyChart} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis type="number" stroke="var(--color-text-muted)" />
-                <YAxis
-                  dataKey="creature"
-                  type="category"
-                  width={100}
-                  stroke="var(--color-text-muted)"
-                />
+                <CartesianGrid {...chartGridProps} />
+                <XAxis type="number" {...chartAxisProps} />
+                <YAxis dataKey="creature" type="category" width={100} {...chartAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
+                  {...chartTooltipProps}
                   formatter={(value: number) => `${value.toFixed(2)} PED`}
                 />
                 <Legend />
@@ -247,33 +305,26 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
 
         {/* Top Profitable Creatures */}
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-lg font-bold">Top Profitable Creatures</h3>
-            <InfoTooltip tooltip="Creatures ranked by total profit" />
-          </div>
+        <Panel title="Top Profitable Creatures" tooltip="Creatures ranked by total profit">
           {topProfitableCreatures.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topProfitableCreatures}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <CartesianGrid {...chartGridProps} />
                 <XAxis
                   dataKey="creature"
-                  stroke="var(--color-text-muted)"
                   angle={-45}
                   textAnchor="end"
                   height={80}
+                  {...chartAxisProps}
                 />
-                <YAxis stroke="var(--color-text-muted)" />
+                <YAxis {...chartAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
+                  {...chartTooltipProps}
                   formatter={(value: number) => [
                     `${value >= 0 ? '+' : ''}${value.toFixed(2)} PED`,
                     'Profit',
@@ -287,95 +338,42 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
       </div>
 
       {/* Creature Return Rate Ranking */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">Best Return Rate by Creature</h3>
-          <InfoTooltip tooltip="Creatures ranked by return rate (loot/cost percentage)" />
-        </div>
+      <Panel
+        title="Best Return Rate by Creature"
+        tooltip="Creatures ranked by return rate (loot/cost percentage)"
+      >
         {creatureDifficulty.length === 0 ? (
           <div className="flex items-center justify-center text-muted h-64">No data yet</div>
         ) : (
-          <div className="space-y-2 max-h-80 overflow-y-auto">
-            <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted pb-2 border-b border-border sticky top-0 bg-surface">
-              <div>Creature</div>
-              <div className="text-right">Return %</div>
-              <div className="text-right">Kills/Session</div>
-              <div className="text-right">Cost/Kill</div>
-              <div className="text-right">Loot/Kill</div>
-            </div>
-            {creatureDifficulty.map((creature, idx) => (
-              <div
-                key={idx}
-                className="grid grid-cols-5 gap-2 text-sm py-2 hover:bg-surface-hover rounded px-2 transition-colors"
-              >
-                <div className="font-semibold truncate">{creature.creature}</div>
-                <div
-                  className={`text-right font-bold ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-                >
-                  {creature.returnRate.toFixed(2)}%
-                </div>
-                <div className="text-right text-muted">
-                  {creature.avgKillsPerSession.toFixed(2)}
-                </div>
-                <div className="text-right text-muted">{creature.costPerKill.toFixed(2)}</div>
-                <div className="text-right text-green-400">
-                  {(creature.costPerKill * (creature.returnRate / 100)).toFixed(2)}
-                </div>
-              </div>
-            ))}
-          </div>
+          <DataTable
+            columns={returnRateColumns}
+            rows={creatureDifficulty}
+            getRowKey={(creature) => creature.creature}
+            maxHeightClassName="max-h-80 overflow-y-auto"
+          />
         )}
-      </div>
+      </Panel>
 
       {/* Detailed Creature Comparison Table */}
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold">All Creatures Comparison</h3>
-          <InfoTooltip tooltip="Complete creature statistics across all sessions" />
-        </div>
+      <Panel
+        title="All Creatures Comparison"
+        tooltip="Complete creature statistics across all sessions"
+      >
         {creatureStats.length === 0 ? (
           <div className="flex items-center justify-center text-muted h-64">No data yet</div>
         ) : (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            <div className="grid grid-cols-7 gap-2 text-xs font-bold text-muted pb-2 border-b border-border sticky top-0 bg-surface">
-              <div>Creature</div>
-              <div className="text-right">Sessions</div>
-              <div className="text-right">Kills</div>
-              <div className="text-right">Return %</div>
-              <div className="text-right">Profit</div>
-              <div className="text-right">Cost/Kill</div>
-              <div className="text-right">Loot/Kill</div>
-            </div>
-            {creatureStats.map((creature, idx) => (
-              <div
-                key={idx}
-                className="grid grid-cols-7 gap-2 text-sm py-2 hover:bg-surface-hover rounded px-2 transition-colors"
-              >
-                <div className="font-semibold truncate">{creature.creature}</div>
-                <div className="text-right text-muted">{creature.count}</div>
-                <div className="text-right">{creature.totalKills}</div>
-                <div
-                  className={`text-right font-bold ${creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}`}
-                >
-                  {creature.returnRate.toFixed(2)}%
-                </div>
-                <div
-                  className={`text-right font-bold ${creature.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-                >
-                  {creature.profit >= 0 ? '+' : ''}
-                  {creature.profit.toFixed(2)}
-                </div>
-                <div className="text-right text-muted">{creature.costPerKill.toFixed(2)}</div>
-                <div className="text-right text-green-400">{creature.lootPerKill.toFixed(2)}</div>
-              </div>
-            ))}
-          </div>
+          <DataTable
+            columns={creatureColumns}
+            rows={creatureStats}
+            getRowKey={(creature) => creature.creature}
+            maxHeightClassName="max-h-96 overflow-y-auto"
+          />
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

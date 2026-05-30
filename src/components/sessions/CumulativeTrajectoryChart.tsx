@@ -12,6 +12,8 @@ import {
 import { HuntSession, LootItem } from '../../types';
 import { format } from 'date-fns';
 import { invoke } from '@tauri-apps/api/core';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from '../analytics/chartStyles';
+import { Panel } from '../common/Panel';
 
 interface CumulativeTrajectoryChartProps {
   session: HuntSession;
@@ -19,9 +21,11 @@ interface CumulativeTrajectoryChartProps {
 
 export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChartProps) {
   const [lootEvents, setLootEvents] = useState<LootItem[]>(session?.loot || []);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
+    setError(null);
 
     // If we already have the raw loot in the state (e.g. active session), use it.
     if (session.loot && session.loot.length > 0) {
@@ -37,6 +41,7 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
         setLootEvents(data);
       } catch (error) {
         console.error('Failed to fetch session loot for chart:', error);
+        setError('Unable to load timestamped loot events for this chart.');
       }
     };
 
@@ -121,12 +126,12 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
 
   if (chartData.length === 0) {
     return (
-      <div className="card p-6 mt-6 flex flex-col items-center justify-center text-muted">
-        <p>Not enough session data to generate trajectory chart.</p>
-        <p className="text-xs font-mono mt-2 opacity-50">
-          DEBUG: Session={!!session}, Duration={session?.stats?.duration}, Loot={lootEvents?.length}
-        </p>
-      </div>
+      <Panel
+        className="mt-6"
+        contentClassName="flex flex-col items-center justify-center text-muted"
+      >
+        <p>{error ?? 'Not enough session data to generate trajectory chart.'}</p>
+      </Panel>
     );
   }
 
@@ -142,9 +147,8 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
   const yAxisMax = Math.max(150, Math.ceil(maxReturn / 10) * 10 + 10);
 
   return (
-    <div className="card p-6 mt-6">
+    <Panel className="mt-6" title="Cumulative Trajectory">
       <div className="mb-4">
-        <h3 className="text-xl font-bold">Cumulative Trajectory</h3>
         <p className="text-sm text-muted">
           Return percentage mapped across the session timeline. (Cost is linearly approximated).
         </p>
@@ -153,34 +157,21 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-            <XAxis
-              dataKey="formattedTime"
-              stroke="#9ca3af"
-              fontSize={12}
-              tickMargin={10}
-              minTickGap={30}
-            />
+            <CartesianGrid {...chartGridProps} vertical={false} />
+            <XAxis dataKey="formattedTime" {...chartAxisProps} tickMargin={10} minTickGap={30} />
             <YAxis
-              stroke="#9ca3af"
-              fontSize={12}
+              {...chartAxisProps}
               tickFormatter={(value) => `${value}%`}
               domain={[yAxisMin, yAxisMax]}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '8px',
-                color: 'var(--color-text-body)',
-              }}
+              {...chartTooltipProps}
               formatter={(value: number, name: string) => {
                 if (name === 'returnPercent') return [`${value.toFixed(1)}%`, 'Return Rate'];
                 if (name === 'cumulativeLoot') return [`${value.toFixed(2)} PED`, 'Total Loot'];
                 if (name === 'cumulativeCost') return [`${value.toFixed(2)} PED`, 'Est. Cost'];
                 return [value, name];
               }}
-              labelStyle={{ color: 'var(--color-text-muted)', marginBottom: '4px' }}
             />
             {/* The break-even 100% line */}
             <ReferenceLine
@@ -201,6 +192,6 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </Panel>
   );
 }

@@ -10,33 +10,8 @@ import {
   Cell,
 } from 'recharts';
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
-
-// const BUCKETS = [
-//   { label: '0–1', min: 0, max: 1, color: '#6B7280' },
-//   { label: '1–5', min: 1, max: 5, color: '#3B82F6' },
-//   { label: '5–20', min: 5, max: 20, color: '#10B981' },
-//   { label: '20–50', min: 20, max: 50, color: '#F59E0B' },
-//   { label: '50–100', min: 50, max: 100, color: '#EF4444' },
-//   { label: '100–500', min: 100, max: 500, color: '#8B5CF6' },
-//   { label: '500+', min: 500, max: Infinity, color: '#EC4899' },
-// ];
-
-// const BUCKETS = [
-//   { label: '0 - 0.10', min: 0, max: 0.10, color: '#ff0303' },
-//   { label: '0.10 - 0.25', min: 0.10, max: 0.25, color: '#ff7f00' },
-//   { label: '0.25 - 0.50', min: 0.25, max: 0.50, color: '#fffb00' },
-//   { label: '0.50 - 1.00', min: 0.50, max: 1, color: '#00ff00' },
-//   { label: '1.00 - 5.00', min: 1, max: 5, color: '#0000ff' },
-//   { label: '5.00 - 10.00', min: 5, max: 10, color: '#4b0082' },
-//   { label: '10.00 - 25.00', min: 10, max: 25, color: '#8b00ff' },
-//   { label: '25.00 - 50.00', min: 25, max: 50, color: '#ff1493' },
-//   { label: '50.00 - 100.00', min: 50, max: 100, color: '#ff69b4' },
-//   { label: '100.00 - 250.00', min: 100, max: 250, color: '#ff4500' },
-//   { label: '250.00 - 500.00', min: 250, max: 500, color: '#2e8b57' },
-//   { label: '500.00 - 1000.00', min: 500, max: 1000, color: '#1e90ff' },
-//   { label: '1000.00+', min: 1000, max: Infinity, color: '#8b0000' },
-// ];
+import { Panel } from '../../common/Panel';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
 
 function generateBucketColor(index: number, totalBuckets: number) {
   // Use HSL for smooth transitions
@@ -58,7 +33,6 @@ function generateBucketColor(index: number, totalBuckets: number) {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
-// Usage:
 const BUCKETS = [
   { label: '0 - 0.10', min: 0, max: 0.1, midpoint: 0.05, color: generateBucketColor(0, 13) },
   { label: '0.10 - 0.25', min: 0.1, max: 0.25, midpoint: 0.175, color: generateBucketColor(1, 13) },
@@ -133,18 +107,17 @@ export default function LootDistributionPanel() {
   if (totalDrops === 0) return null;
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-bold">Loot Distribution</h3>
-        <InfoTooltip tooltip="Histogram showing how your individual loot drops are distributed by PED value. Helps identify whether you rely on many small drops or fewer large ones." />
-      </div>
+    <Panel
+      title="Loot Distribution"
+      tooltip="Histogram showing how your individual loot drops are distributed by PED value. Helps identify whether you rely on many small drops or fewer large ones."
+    >
       <ResponsiveContainer width="100%" height={350}>
         <BarChart data={data} margin={{ bottom: 60, left: 10, right: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          <CartesianGrid {...chartGridProps} />
           <XAxis
             dataKey="label"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 10 }}
+            {...chartAxisProps}
+            tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }}
             interval={0}
             angle={-45}
             textAnchor="end"
@@ -153,28 +126,22 @@ export default function LootDistributionPanel() {
               value: 'Loot Value (PED)',
               position: 'insideBottom',
               offset: -45,
-              fill: '#4bf63b',
+              fill: 'var(--color-text-muted)',
               fontSize: 11,
             }}
           />
           <YAxis
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
+            {...chartAxisProps}
             label={{
               value: 'Drops',
               angle: -90,
               position: 'insideLeft',
-              fill: '#190aee',
+              fill: 'var(--color-text-muted)',
               fontSize: 11,
             }}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-            }}
-            labelStyle={{ color: '#F3F4F6' }}
-            itemStyle={{ color: '#F3F4F6' }}
+            {...chartTooltipProps}
             formatter={(
               value: number,
               name: string,
@@ -198,6 +165,6 @@ export default function LootDistributionPanel() {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </Panel>
   );
 }

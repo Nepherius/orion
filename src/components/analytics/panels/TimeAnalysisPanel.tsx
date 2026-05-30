@@ -11,7 +11,8 @@ import {
   Legend,
 } from 'recharts';
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { Panel } from '../../common/Panel';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
 
 interface HourBucket {
   hour: string;
@@ -85,24 +86,17 @@ export default function TimeAnalysisPanel() {
   if (totalSessions === 0) return null;
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-bold">Time-of-Day Analysis</h3>
-        <InfoTooltip tooltip="Shows session frequency, average return rate, and globals by hour of day. Based on completed sessions within the selected time range." />
-      </div>
+    <Panel
+      title="Time-of-Day Analysis"
+      tooltip="Shows session frequency, average return rate, and globals by hour of day. Based on completed sessions within the selected time range."
+    >
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={hourlyData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-          <XAxis
-            dataKey="hour"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
-            interval={1}
-          />
+          <CartesianGrid {...chartGridProps} />
+          <XAxis dataKey="hour" {...chartAxisProps} interval={1} />
           <YAxis
             yAxisId="left"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
+            {...chartAxisProps}
             label={{
               value: 'Sessions',
               angle: -90,
@@ -114,8 +108,7 @@ export default function TimeAnalysisPanel() {
           <YAxis
             yAxisId="right"
             orientation="right"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
+            {...chartAxisProps}
             label={{
               value: 'Return %',
               angle: 90,
@@ -125,11 +118,7 @@ export default function TimeAnalysisPanel() {
             }}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-            }}
-            labelStyle={{ color: '#F3F4F6' }}
+            {...chartTooltipProps}
             formatter={(value: number, name: string) => {
               if (name === 'Avg Return %') return `${value.toFixed(1)}%`;
               if (name === 'Avg Profit') return `${value.toFixed(2)} PED`;
@@ -150,6 +139,6 @@ export default function TimeAnalysisPanel() {
           />
         </ComposedChart>
       </ResponsiveContainer>
-    </div>
+    </Panel>
   );
 }

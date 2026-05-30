@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { MetricTile, Panel } from '../../common/Panel';
 
 export default function ComparativeAnalyticsPanel() {
   const weaponData = useHuntStore((state) => state.analyticsData.performance?.weaponData);
@@ -37,58 +37,32 @@ export default function ComparativeAnalyticsPanel() {
   }, [loadoutRaw, loadouts]);
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-bold">Comparative Analytics</h3>
-        <InfoTooltip tooltip="Best performing setup comparisons" />
+    <Panel title="Comparative Analytics" tooltip="Best performing setup comparisons">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <MetricTile
+          label="Best Weapon"
+          tooltip="Highest return rate weapon with existing data"
+          value={bestWeapon?.weapon || 'N/A'}
+          valueClassName="text-blue-400"
+          detail={bestWeapon ? `${bestWeapon.returnRate.toFixed(1)}% return` : 'Not enough data'}
+        />
+        <MetricTile
+          label="Best Location"
+          tooltip="Highest return location with at least 2 sessions"
+          value={bestLocation?.location || 'N/A'}
+          valueClassName="text-green-400"
+          detail={
+            bestLocation ? `${bestLocation.returnRate.toFixed(1)}% return` : 'Need 2+ sessions'
+          }
+        />
+        <MetricTile
+          label="Best Loadout"
+          tooltip="Highest return loadout with at least 2 sessions"
+          value={bestLoadout?.name || 'N/A'}
+          valueClassName="text-purple-400"
+          detail={bestLoadout ? `${bestLoadout.returnRate.toFixed(1)}% return` : 'Need 2+ sessions'}
+        />
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="border border-border rounded p-4">
-          <div className="flex items-center gap-1 text-sm text-muted mb-2">
-            Best Weapon
-            <InfoTooltip tooltip="Highest return rate weapon with existing data" />
-          </div>
-          <div
-            className="text-lg font-bold text-blue-400 truncate"
-            title={bestWeapon?.weapon || 'N/A'}
-          >
-            {bestWeapon?.weapon || 'N/A'}
-          </div>
-          <div className="text-sm text-muted mt-1">
-            {bestWeapon ? `${bestWeapon.returnRate.toFixed(1)}% return` : 'Not enough data'}
-          </div>
-        </div>
-        <div className="border border-border rounded p-4">
-          <div className="flex items-center gap-1 text-sm text-muted mb-2">
-            Best Location
-            <InfoTooltip tooltip="Highest return location with at least 2 sessions" />
-          </div>
-          <div
-            className="text-lg font-bold text-green-400 truncate"
-            title={bestLocation?.location || 'N/A'}
-          >
-            {bestLocation?.location || 'N/A'}
-          </div>
-          <div className="text-sm text-muted mt-1">
-            {bestLocation ? `${bestLocation.returnRate.toFixed(1)}% return` : 'Need 2+ sessions'}
-          </div>
-        </div>
-        <div className="border border-border rounded p-4">
-          <div className="flex items-center gap-1 text-sm text-muted mb-2">
-            Best Loadout
-            <InfoTooltip tooltip="Highest return loadout with at least 2 sessions" />
-          </div>
-          <div
-            className="text-lg font-bold text-purple-400 truncate"
-            title={bestLoadout?.name || 'N/A'}
-          >
-            {bestLoadout?.name || 'N/A'}
-          </div>
-          <div className="text-sm text-muted mt-1">
-            {bestLoadout ? `${bestLoadout.returnRate.toFixed(1)}% return` : 'Need 2+ sessions'}
-          </div>
-        </div>
-      </div>
-    </div>
+    </Panel>
   );
 }

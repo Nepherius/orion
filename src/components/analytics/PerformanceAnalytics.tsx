@@ -14,6 +14,9 @@ import {
 import { TrendingUp, TrendingDown, Target, Award } from 'lucide-react';
 import { format } from 'date-fns';
 import { ReturnRateChart } from './ReturnRateChart';
+import { MetricTile, Panel } from '../common/Panel';
+import { StatCard } from '../common/StatCard';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface PerformanceAnalyticsProps {
   session: HuntSession;
@@ -66,89 +69,75 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
     { label: 'Hit Rate', value: `${hitRate.toFixed(1)}%`, good: hitRate >= 80 },
     { label: 'Crit Rate', value: `${critRate.toFixed(1)}%`, good: critRate >= 5 },
     { label: 'Total Events', value: session.stats.lootEvents, good: true },
-    { label: 'Total Kills', value: `${session.stats.kills}?`, good: true },
+    { label: 'Total Kills', value: session.stats.kills, good: true },
   ];
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-5 gap-4">
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">RETURN RATE</div>
-          <div
-            className={`text-3xl font-bold flex items-center gap-2 ${
-              session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-            }`}
-          >
-            {session.stats.returns >= 100 ? (
-              <TrendingUp className="w-5 h-5" />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+        <MetricTile
+          label="Return Rate"
+          value={`${session.stats.returns.toFixed(1)}%`}
+          tone={session.stats.returns >= 100 ? 'positive' : 'negative'}
+          icon={
+            session.stats.returns >= 100 ? (
+              <TrendingUp className="h-5 w-5 shrink-0" />
             ) : (
-              <TrendingDown className="w-5 h-5" />
-            )}
-            {session.stats.returns.toFixed(1)}%
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">NET PROFIT/LOSS</div>
-          <div className={`text-3xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {profit >= 0 ? '+' : ''}
-            {profit.toFixed(2)} PED
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">HIT RATE</div>
-          <div
-            className={`text-3xl font-bold ${hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'}`}
-          >
-            <Target className="w-5 h-5 inline mr-2" />
-            {hitRate.toFixed(1)}%
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">CRIT RATE</div>
-          <div className={`text-3xl font-bold ${critRate >= 5 ? 'text-yellow-400' : 'text-white'}`}>
-            <Award className="w-5 h-5 inline mr-2" />
-            {critRate.toFixed(1)}%
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">KILLS?</div>
-          <div className="text-3xl font-bold text-orange-400">
-            <Target className="w-5 h-5 inline mr-2" />
-            {session.stats.kills}
-          </div>
-          <div className="text-xs text-muted mt-1">Estimated from damage events</div>
-        </div>
+              <TrendingDown className="h-5 w-5 shrink-0" />
+            )
+          }
+          size="lg"
+        />
+        <MetricTile
+          label="Net Profit/Loss"
+          value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`}
+          tone={profit >= 0 ? 'positive' : 'negative'}
+          size="lg"
+        />
+        <MetricTile
+          label="Hit Rate"
+          value={`${hitRate.toFixed(1)}%`}
+          tone={hitRate >= 80 ? 'positive' : 'warning'}
+          icon={<Target className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Crit Rate"
+          value={`${critRate.toFixed(1)}%`}
+          tone={critRate >= 5 ? 'warning' : 'neutral'}
+          icon={<Award className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Kills"
+          value={session.stats.kills}
+          tone="warning"
+          icon={<Target className="h-5 w-5 shrink-0" />}
+          detail="Estimated from damage events"
+          size="lg"
+        />
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-2 gap-6">
         {/* Return Rate Over Time */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Return Rate Over Time</h3>
+        <Panel title="Return Rate Over Time">
           <ReturnRateChart session={session} emptyHeight="h-64" />
-        </div>
+        </Panel>
 
         {/* Profit/Loss Over Time */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Profit/Loss Over Time</h3>
+        <Panel title="Profit/Loss Over Time">
           {plChart.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No loot data yet</div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={plChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="index" stroke="var(--color-text-muted)" />
-                <YAxis stroke="var(--color-text-muted)" />
+                <CartesianGrid {...chartGridProps} />
+                <XAxis dataKey="index" {...chartAxisProps} />
+                <YAxis {...chartAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
+                  {...chartTooltipProps}
                   formatter={(value: number) => [`${value.toFixed(2)} PED`, 'P/L']}
                   labelFormatter={(label) => `Event #${label}`}
                 />
@@ -162,14 +151,13 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
               </LineChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
       </div>
 
       {/* Hit Distribution and Metrics */}
       <div className="grid grid-cols-2 gap-6">
         {/* Hit Distribution Pie */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Hit Distribution</h3>
+        <Panel title="Hit Distribution">
           {hitDistribution.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">
               No combat data yet
@@ -191,33 +179,25 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                />
+                <Tooltip {...chartTooltipProps} />
               </PieChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
 
         {/* Performance Metrics Table */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Performance Metrics</h3>
-          <div className="space-y-4">
+        <Panel title="Performance Metrics">
+          <div className="space-y-3">
             {performanceMetrics.map((metric, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-surface rounded">
-                <span className="text-gray-300">{metric.label}</span>
-                <span
-                  className={`font-bold text-lg ${metric.good ? 'text-green-400' : 'text-red-400'}`}
-                >
-                  {metric.value}
-                </span>
-              </div>
+              <StatCard
+                key={index}
+                label={metric.label}
+                value={metric.value}
+                color={metric.good ? 'text-green-400' : 'text-red-400'}
+              />
             ))}
           </div>
-        </div>
+        </Panel>
       </div>
     </div>
   );

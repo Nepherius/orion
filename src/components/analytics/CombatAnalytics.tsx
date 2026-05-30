@@ -16,11 +16,13 @@ import {
 } from 'recharts';
 import { Crosshair, Shield, Heart, Zap } from 'lucide-react';
 import { format } from 'date-fns';
-import { InfoTooltip } from '../common/InfoTooltip';
 import {
   calculateDamageConsistency,
   calculateHealingEfficiency,
 } from '../../utils/analyticsCalculations';
+import { MetricTile, Panel } from '../common/Panel';
+import { StatCard } from '../common/StatCard';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface CombatAnalyticsProps {
   session: HuntSession;
@@ -89,45 +91,40 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">KILLS</div>
-          <div className="text-3xl font-bold text-body">
-            <Crosshair className="w-5 h-5 inline mr-2" />
-            {kills}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">DAMAGE DEALT</div>
-          <div className="text-3xl font-bold text-green-400">
-            <Zap className="w-5 h-5 inline mr-2" />
-            {dmgDealt.toFixed(0)}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">DAMAGE TAKEN</div>
-          <div className="text-3xl font-bold text-red-400">
-            <Shield className="w-5 h-5 inline mr-2" />
-            {dmgTaken.toFixed(0)}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">HEALING</div>
-          <div className="text-3xl font-bold text-blue-400">
-            <Heart className="w-5 h-5 inline mr-2" />
-            {totalHealing.toFixed(0)}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <MetricTile
+          label="Kills"
+          value={kills}
+          icon={<Crosshair className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Damage Dealt"
+          value={dmgDealt.toFixed(0)}
+          tone="positive"
+          icon={<Zap className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Damage Taken"
+          value={dmgTaken.toFixed(0)}
+          tone="negative"
+          icon={<Shield className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Healing"
+          value={totalHealing.toFixed(0)}
+          tone="accent"
+          icon={<Heart className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-3 gap-6">
         {/* Hit Distribution */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Hit Distribution</h3>
+        <Panel title="Hit Distribution">
           {hitDistribution.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No combat data</div>
           ) : (
@@ -147,21 +144,14 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                  itemStyle={{ color: 'var(--color-text)' }}
-                />
+                <Tooltip {...chartTooltipProps} />
               </PieChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
 
         {/* Evasion Distribution */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Evasion Distribution</h3>
+        <Panel title="Evasion Distribution">
           {evasionDistribution.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No evasion data</div>
           ) : (
@@ -181,34 +171,20 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                  itemStyle={{ color: 'var(--color-text)' }}
-                />
+                <Tooltip {...chartTooltipProps} />
               </PieChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Panel>
 
         {/* Combat Comparison */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Combat Balance</h3>
+        <Panel title="Combat Balance">
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={combatComparison}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="name" stroke="var(--color-text-muted)" />
-              <YAxis stroke="var(--color-text-muted)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                }}
-                itemStyle={{ color: 'var(--color-text)' }}
-                formatter={(value: number) => value.toFixed(0)}
-              />
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="name" {...chartAxisProps} />
+              <YAxis {...chartAxisProps} />
+              <Tooltip {...chartTooltipProps} formatter={(value: number) => value.toFixed(0)} />
               <Bar dataKey="value" fill="#3B82F6">
                 {combatComparison.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -216,26 +192,21 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </Panel>
       </div>
 
       {/* Damage Over Time */}
-      <div className="card p-6">
-        <h3 className="text-lg font-bold mb-4">Cumulative Damage Dealt</h3>
+      <Panel title="Cumulative Damage Dealt">
         {damageChart.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-muted">No damage data</div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={damageChart}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="index" stroke="var(--color-text-muted)" />
-              <YAxis stroke="var(--color-text-muted)" />
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="index" {...chartAxisProps} />
+              <YAxis {...chartAxisProps} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                }}
-                itemStyle={{ color: 'var(--color-text)' }}
+                {...chartTooltipProps}
                 formatter={(value: number) => [value.toFixed(0), 'Damage']}
                 labelFormatter={(label) => `Hit #${label}`}
               />
@@ -243,137 +214,80 @@ export function CombatAnalytics({ session }: CombatAnalyticsProps) {
             </LineChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Panel>
 
       {/* Combat Metrics */}
       <div className="grid grid-cols-4 gap-6">
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-green-400">Offense</h3>
+        <Panel title="Offense">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Shots Fired</span>
-              <span className="font-semibold">{shotsFired}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Hits</span>
-              <span className="font-semibold text-green-400">{hits}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Critical Hits</span>
-              <span className="font-semibold text-yellow-400">{critHits}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Misses</span>
-              <span className="font-semibold text-muted">{misses}</span>
-            </div>
+            <StatCard label="Shots Fired" value={shotsFired} />
+            <StatCard label="Hits" value={hits} color="text-green-400" />
+            <StatCard label="Critical Hits" value={critHits} color="text-yellow-400" />
+            <StatCard label="Misses" value={misses} color="text-muted" />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-blue-400">Defense</h3>
+        <Panel title="Defense">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Dodges</span>
-              <span className="font-semibold text-red-400">{dodges}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Evades</span>
-              <span className="font-semibold text-blue-400">{evades}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Heals Used</span>
-              <span className="font-semibold">{session.stats.healsUsed}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Total Healing</span>
-              <span className="font-semibold text-blue-400">{totalHealing.toFixed(0)}</span>
-            </div>
+            <StatCard label="Dodges" value={dodges} color="text-red-400" />
+            <StatCard label="Evades" value={evades} color="text-blue-400" />
+            <StatCard label="Heals Used" value={session.stats.healsUsed} />
+            <StatCard label="Total Healing" value={totalHealing.toFixed(0)} color="text-blue-400" />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-yellow-400">Accuracy</h3>
+        <Panel title="Accuracy">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Hit Rate</span>
-              <span
-                className={`font-semibold ${hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'}`}
-              >
-                {hitRate.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Crit Rate</span>
-              <span className={`font-semibold ${critRate >= 5 ? 'text-yellow-400' : 'text-body'}`}>
-                {critRate.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Miss Rate</span>
-              <span className="font-semibold">{missRate.toFixed(1)}%</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Evasion Rate</span>
-              <span
-                className={`font-semibold ${evasionRate >= 20 ? 'text-green-400' : 'text-body'}`}
-              >
-                {evasionRate.toFixed(1)}%
-              </span>
-            </div>
+            <StatCard
+              label="Hit Rate"
+              value={`${hitRate.toFixed(1)}%`}
+              color={hitRate >= 80 ? 'text-green-400' : 'text-yellow-400'}
+            />
+            <StatCard
+              label="Crit Rate"
+              value={`${critRate.toFixed(1)}%`}
+              color={critRate >= 5 ? 'text-yellow-400' : 'text-body'}
+            />
+            <StatCard label="Miss Rate" value={`${missRate.toFixed(1)}%`} />
+            <StatCard
+              label="Evasion Rate"
+              value={`${evasionRate.toFixed(1)}%`}
+              color={evasionRate >= 20 ? 'text-green-400' : 'text-body'}
+            />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-purple-400">Averages</h3>
+        <Panel title="Averages">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Dmg/Hit</span>
-              <span className="font-semibold">
-                {(shotsFired > 0 ? dmgDealt / shotsFired : 0).toFixed(1)}
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <div className="flex items-center gap-2 text-muted">
-                Hit Consistency
-                <InfoTooltip tooltip="Std deviation of damage per hit. Lower = more consistent" />
-              </div>
-              <span className="font-semibold">{damageConsistency.toFixed(1)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Dmg/Kill</span>
-              <span className="font-semibold">{damagePerKill.toFixed(0)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Dmg Taken/Kill</span>
-              <span className="font-semibold text-red-400">{damageTakenPerKill.toFixed(0)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Shots/Kill</span>
-              <span className="font-semibold">
-                {(kills > 0 ? shotsFired / kills : 0).toFixed(1)}
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <div className="flex items-center gap-2 text-muted">
-                Healing Efficiency
-                <InfoTooltip tooltip="Healing received / damage taken. 1.0 = full recovery" />
-              </div>
-              <span
-                className={`font-semibold ${healingEfficiency >= 1 ? 'text-green-400' : 'text-yellow-400'}`}
-              >
-                {healingEfficiency.toFixed(2)}x
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Net Damage</span>
-              <span
-                className={`font-semibold ${dmgDealt - dmgTaken > 0 ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {(dmgDealt - dmgTaken).toFixed(0)}
-              </span>
-            </div>
+            <StatCard
+              label="Dmg/Hit"
+              value={(shotsFired > 0 ? dmgDealt / shotsFired : 0).toFixed(1)}
+            />
+            <StatCard
+              label="Hit Consistency"
+              value={damageConsistency.toFixed(1)}
+              info="Std deviation of damage per hit. Lower = more consistent"
+            />
+            <StatCard label="Dmg/Kill" value={damagePerKill.toFixed(0)} />
+            <StatCard
+              label="Dmg Taken/Kill"
+              value={damageTakenPerKill.toFixed(0)}
+              color="text-red-400"
+            />
+            <StatCard label="Shots/Kill" value={(kills > 0 ? shotsFired / kills : 0).toFixed(1)} />
+            <StatCard
+              label="Healing Efficiency"
+              value={`${healingEfficiency.toFixed(2)}x`}
+              color={healingEfficiency >= 1 ? 'text-green-400' : 'text-yellow-400'}
+              info="Healing received / damage taken. 1.0 = full recovery"
+            />
+            <StatCard
+              label="Net Damage"
+              value={(dmgDealt - dmgTaken).toFixed(0)}
+              color={dmgDealt - dmgTaken > 0 ? 'text-green-400' : 'text-red-400'}
+            />
           </div>
-        </div>
+        </Panel>
       </div>
     </div>
   );

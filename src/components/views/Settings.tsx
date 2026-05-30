@@ -3,6 +3,7 @@ import { useSettingsModel } from '../../hooks/useSettingsModel';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { InfoTooltip } from '../common/InfoTooltip';
+import { Panel } from '../common/Panel';
 import { open } from '@tauri-apps/plugin-shell';
 
 interface SettingSectionProps {
@@ -13,7 +14,7 @@ interface SettingSectionProps {
 }
 
 const SettingSection = ({ icon: Icon, title, description, children }: SettingSectionProps) => (
-  <div className="card p-5">
+  <Panel>
     <div className="flex items-center gap-3 mb-4">
       <Icon className="w-5 h-5 text-primary-500" />
       <div>
@@ -22,7 +23,7 @@ const SettingSection = ({ icon: Icon, title, description, children }: SettingSec
       </div>
     </div>
     <div className="space-y-3">{children}</div>
-  </div>
+  </Panel>
 );
 
 export function Settings() {
@@ -42,10 +43,10 @@ export function Settings() {
 
   if (!isPageVisible) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <Panel contentClassName="py-4 text-center text-muted">
         <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-60" />
         <p>Settings is paused while the app is in the background.</p>
-      </div>
+      </Panel>
     );
   }
 
@@ -208,8 +209,7 @@ export function Settings() {
       </SettingSection>
 
       {/* About Section */}
-      <div className="card p-5">
-        <h3 className="font-semibold text-white mb-3">About</h3>
+      <Panel title="About">
         <div className="space-y-2 text-sm text-gray-300">
           <p>
             <strong>Orion Loot Tracker</strong> - Version 0.1.0
@@ -239,18 +239,17 @@ export function Settings() {
             Not affiliated with MindArk PE AB or Entropia Universe.
           </p>
         </div>
-      </div>
+      </Panel>
 
       {/* Danger Zone */}
-      <div className="card p-5 border border-red-900 bg-red-950 bg-opacity-20">
-        <h3 className="font-semibold text-red-400 mb-3">Danger Zone</h3>
+      <Panel title="Danger Zone" className="border-red-900 bg-red-950 bg-opacity-20">
         <button onClick={requestClearData} className="btn-danger w-full">
           Clear All Data
         </button>
         <p className="text-xs text-muted mt-2">
           This will permanently delete all sessions, loot data, and settings.
         </p>
-      </div>
+      </Panel>
 
       <ConfirmModal
         isOpen={showClearDataConfirm}

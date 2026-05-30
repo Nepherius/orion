@@ -1,5 +1,6 @@
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { Panel } from '../../common/Panel';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
 import {
   ScatterChart,
   Scatter,
@@ -42,21 +43,19 @@ export default function KillEfficiencyScatterPanel() {
   const maxKills = Math.max(...points.map((p) => p.totalKills));
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-bold">Kill Efficiency Scatter</h3>
-        <InfoTooltip tooltip="Each dot is a creature type. X = average cost per kill, Y = average loot per kill. Points above the diagonal line are profitable creatures. Dot size reflects kill count." />
-      </div>
+    <Panel
+      title="Kill Efficiency Scatter"
+      tooltip="Each dot is a creature type. X = average cost per kill, Y = average loot per kill. Points above the diagonal line are profitable creatures. Dot size reflects kill count."
+    >
       <ResponsiveContainer width="100%" height={380}>
         <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          <CartesianGrid {...chartGridProps} />
           <XAxis
             dataKey="avgCostPerKill"
             type="number"
             name="Avg Cost/Kill"
             unit=" PED"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
+            {...chartAxisProps}
             domain={[0, axisMax]}
             label={{
               value: 'Avg Cost/Kill (PED)',
@@ -71,8 +70,7 @@ export default function KillEfficiencyScatterPanel() {
             type="number"
             name="Avg Loot/Kill"
             unit=" PED"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
+            {...chartAxisProps}
             domain={[0, axisMax]}
             label={{
               value: 'Avg Loot/Kill (PED)',
@@ -88,12 +86,7 @@ export default function KillEfficiencyScatterPanel() {
             name="Kills"
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-            }}
-            labelStyle={{ color: '#F3F4F6' }}
-            itemStyle={{ color: '#F3F4F6' }}
+            {...chartTooltipProps}
             formatter={(value: number, name: string) => {
               if (name === 'Avg Cost/Kill') return `${value.toFixed(3)} PED`;
               if (name === 'Avg Loot/Kill') return `${value.toFixed(3)} PED`;
@@ -124,6 +117,6 @@ export default function KillEfficiencyScatterPanel() {
         <span>Below line = unprofitable</span>
         <span>Dot size = kill count</span>
       </div>
-    </div>
+    </Panel>
   );
 }

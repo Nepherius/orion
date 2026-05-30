@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Dashboard } from './Dashboard';
 import { Loot } from '../loot/Loot';
+import { Panel } from '../common/Panel';
 
 interface ViewStatsProps {
   sessionId: string | null;
@@ -21,15 +22,15 @@ export function ViewStats({
 
   if (!sessionId) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <Panel contentClassName="py-4 text-center text-muted">
         <p>Select a session from Sessions to open Overview.</p>
-      </div>
+      </Panel>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="card p-4">
+      <Panel>
         {showHeader && (
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold">Overview</h2>
@@ -49,7 +50,7 @@ export function ViewStats({
             Loot
           </button>
         </div>
-      </div>
+      </Panel>
 
       {activeTab === 'metrics' ? (
         <Dashboard sessionId={sessionId} showSidebar={showSidebar} />

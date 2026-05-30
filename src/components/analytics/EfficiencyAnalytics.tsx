@@ -15,6 +15,9 @@ import {
 } from 'recharts';
 import { Zap, Target, Clock } from 'lucide-react';
 import { getSessionActiveDurationMs } from '../../utils/sessionTiming';
+import { MetricTile, Panel } from '../common/Panel';
+import { StatCard } from '../common/StatCard';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from './chartStyles';
 
 interface EfficiencyAnalyticsProps {
   session: HuntSession;
@@ -74,42 +77,35 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">DPP (Damage Per PED)</div>
-          <div className="text-3xl font-bold text-body">
-            <Zap className="w-5 h-5 inline mr-2" />
-            {dpp.toFixed(2)}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">KILLS/HOUR</div>
-          <div className="text-3xl font-bold text-blue-400">
-            <Clock className="w-5 h-5 inline mr-2" />
-            {killsPerHour.toFixed(1)}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">AVG DMG/HIT</div>
-          <div className="text-3xl font-bold text-yellow-400">
-            <Target className="w-5 h-5 inline mr-2" />
-            {avgDmgPerHit.toFixed(1)}
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="text-sm text-muted mb-2">SHOTS/KILL</div>
-          <div className="text-3xl font-bold text-body">{shotsPerKill.toFixed(1)}</div>
-        </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <MetricTile
+          label="DPP"
+          value={dpp.toFixed(2)}
+          icon={<Zap className="h-5 w-5 shrink-0" />}
+          detail="Damage per PED"
+          size="lg"
+        />
+        <MetricTile
+          label="Kills/Hour"
+          value={killsPerHour.toFixed(1)}
+          tone="accent"
+          icon={<Clock className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="Avg Dmg/Hit"
+          value={avgDmgPerHit.toFixed(1)}
+          tone="warning"
+          icon={<Target className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile label="Shots/Kill" value={shotsPerKill.toFixed(1)} size="lg" />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-2 gap-6">
         {/* Efficiency Radar */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Efficiency Overview</h3>
+        <Panel title="Efficiency Overview">
           <ResponsiveContainer width="100%" height={350}>
             <RadarChart data={efficiencyRadar}>
               <PolarGrid stroke="var(--color-border)" />
@@ -122,128 +118,77 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
                 fill="#3B82F6"
                 fillOpacity={0.6}
               />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                }}
-                formatter={(value: number) => value.toFixed(1)}
-              />
+              <Tooltip {...chartTooltipProps} formatter={(value: number) => value.toFixed(1)} />
             </RadarChart>
           </ResponsiveContainer>
-        </div>
+        </Panel>
 
         {/* Time Efficiency */}
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4">Time Efficiency</h3>
+        <Panel title="Time Efficiency">
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={timeMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="name" stroke="var(--color-text-muted)" />
-              <YAxis stroke="var(--color-text-muted)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                }}
-                formatter={(value: number) => value.toFixed(2)}
-              />
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="name" {...chartAxisProps} />
+              <YAxis {...chartAxisProps} />
+              <Tooltip {...chartTooltipProps} formatter={(value: number) => value.toFixed(2)} />
               <Bar dataKey="value" fill="#3B82F6" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </Panel>
       </div>
 
       {/* Detailed Metrics */}
       <div className="grid grid-cols-3 gap-6">
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-blue-400">Resource Efficiency</h3>
+        <Panel title="Resource Efficiency">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">DPP</span>
-              <span className="font-semibold">{dpp.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">DPS</span>
-              <span className="font-semibold">{dps.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Kills/PED</span>
-              <span className="font-semibold">{killsPerPED.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Loot/PED</span>
-              <span className="font-semibold">
-                {(session.stats.totalCost > 0
-                  ? session.stats.totalLoot / session.stats.totalCost
-                  : 0
-                ).toFixed(2)}
-              </span>
-            </div>
+            <StatCard label="DPP" value={dpp.toFixed(2)} />
+            <StatCard label="DPS" value={dps.toFixed(2)} />
+            <StatCard label="Kills/PED" value={killsPerPED.toFixed(2)} />
+            <StatCard
+              label="Loot/PED"
+              value={(session.stats.totalCost > 0
+                ? session.stats.totalLoot / session.stats.totalCost
+                : 0
+              ).toFixed(2)}
+            />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-green-400">Combat Efficiency</h3>
+        <Panel title="Combat Efficiency">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Avg Dmg/Hit</span>
-              <span className="font-semibold">{avgDmgPerHit.toFixed(1)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Shots/Kill</span>
-              <span className="font-semibold">{shotsPerKill.toFixed(1)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Dmg/PED</span>
-              <span className="font-semibold">
-                {(session.stats.totalCost > 0
-                  ? session.stats.damageDealt / session.stats.totalCost
-                  : 0
-                ).toFixed(1)}
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Hit Rate</span>
-              <span className="font-semibold">
-                {(session.stats.shotsFired > 0
-                  ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) *
-                    100
-                  : 0
-                ).toFixed(1)}
-                %
-              </span>
-            </div>
+            <StatCard label="Avg Dmg/Hit" value={avgDmgPerHit.toFixed(1)} />
+            <StatCard label="Shots/Kill" value={shotsPerKill.toFixed(1)} />
+            <StatCard
+              label="Dmg/PED"
+              value={(session.stats.totalCost > 0
+                ? session.stats.damageDealt / session.stats.totalCost
+                : 0
+              ).toFixed(1)}
+            />
+            <StatCard
+              label="Hit Rate"
+              value={`${(session.stats.shotsFired > 0 ? ((session.stats.hits + session.stats.criticalHits) / session.stats.shotsFired) * 100 : 0).toFixed(1)}%`}
+            />
           </div>
-        </div>
+        </Panel>
 
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-4 text-yellow-400">Time Efficiency</h3>
+        <Panel title="Time Efficiency">
           <div className="space-y-3">
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Kills/Hour</span>
-              <span className="font-semibold">{killsPerHour.toFixed(1)}</span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Loot/Hour</span>
-              <span className="font-semibold">
-                {(durationHours > 0 ? session.stats.totalLoot / durationHours : 0).toFixed(2)} PED
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Spend/Hour</span>
-              <span className="font-semibold">
-                {(durationHours > 0 ? session.stats.totalCost / durationHours : 0).toFixed(2)} PED
-              </span>
-            </div>
-            <div className="flex justify-between p-2 border-b border-border">
-              <span className="text-muted">Events/Hour</span>
-              <span className="font-semibold">
-                {(durationHours > 0 ? session.stats.lootEvents / durationHours : 0).toFixed(1)}
-              </span>
-            </div>
+            <StatCard label="Kills/Hour" value={killsPerHour.toFixed(1)} />
+            <StatCard
+              label="Loot/Hour"
+              value={`${(durationHours > 0 ? session.stats.totalLoot / durationHours : 0).toFixed(2)} PED`}
+            />
+            <StatCard
+              label="Spend/Hour"
+              value={`${(durationHours > 0 ? session.stats.totalCost / durationHours : 0).toFixed(2)} PED`}
+            />
+            <StatCard
+              label="Events/Hour"
+              value={(durationHours > 0 ? session.stats.lootEvents / durationHours : 0).toFixed(1)}
+            />
           </div>
-        </div>
+        </Panel>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { Panel } from '../../common/Panel';
 
 /**
  * Display a list of all skill names that are being tracked in the analytics data.
@@ -10,11 +10,11 @@ export default function SkillsTrackedPanel() {
   if (!allSkillNames || allSkillNames.length === 0) return null;
 
   return (
-    <div className="card p-6 border-yellow-500/30">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-sm font-bold text-yellow-400">All Skills Tracked</h3>
-        <InfoTooltip tooltip="Complete list of skill names in your data." />
-      </div>
+    <Panel
+      title="All Skills Tracked"
+      tooltip="Complete list of skill names in your data."
+      className="border-yellow-500/30"
+    >
       <div className="text-xs text-muted space-y-1 max-h-32 overflow-y-auto">
         {allSkillNames.length === 0 ? (
           <span>No skills tracked</span>
@@ -26,6 +26,6 @@ export default function SkillsTrackedPanel() {
           ))
         )}
       </div>
-    </div>
+    </Panel>
   );
 }

@@ -22,6 +22,8 @@ import { CostsPanel } from './CostsPanel';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { SessionSummaryModal } from './SessionSummaryModal';
 import { CumulativeTrajectoryChart } from './CumulativeTrajectoryChart';
+import { DataTable, DataTableColumn } from '../common/DataTable';
+import { MetricTile, Panel } from '../common/Panel';
 
 interface SessionDetailsProps {
   sessionId: string;
@@ -60,9 +62,11 @@ export function SessionDetails({
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [isLootExpanded, setIsLootExpanded] = useState(false);
   const [groupedLoot, setGroupedLoot] = useState<GroupedLootItem[]>([]);
+  const [groupedLootError, setGroupedLootError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
+    setGroupedLootError(null);
 
     const loadGroupedLoot = async () => {
       try {
@@ -72,6 +76,7 @@ export function SessionDetails({
         setGroupedLoot(result);
       } catch (error) {
         console.error('Failed to load grouped loot:', error);
+        setGroupedLootError('Unable to load stacked loot totals.');
       }
     };
 
@@ -107,7 +112,7 @@ export function SessionDetails({
   }, [session]);
 
   if (!session) {
-    return <div className="card p-6">Session not found</div>;
+    return <Panel>Session not found</Panel>;
   }
 
   const handleDeleteRequest = () => {
@@ -132,12 +137,100 @@ export function SessionDetails({
 
   const btnWidth = 'w-31';
   const btnHeight = 'h-6';
+  const detailedLootColumns: Array<DataTableColumn<(typeof session.loot)[number]>> = [
+    {
+      key: 'time',
+      header: 'Time',
+      render: (item) => <span className="text-muted">{format(item.timestamp, 'HH:mm:ss')}</span>,
+    },
+    { key: 'item', header: 'Item', span: 1.5, render: (item) => item.name },
+    { key: 'quantity', header: 'Qty', align: 'right', render: (item) => item.quantity },
+    {
+      key: 'tt',
+      header: 'TT Value',
+      align: 'right',
+      render: (item) => item.value.toFixed(2),
+    },
+    { key: 'markup', header: 'Markup', align: 'right', render: (item) => `${item.markup}%` },
+    {
+      key: 'total',
+      header: 'Total Value',
+      align: 'right',
+      render: (item) => (
+        <span className="font-semibold text-green-400">{item.totalValue.toFixed(2)} PED</span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'right',
+      render: (item) => (
+        <button
+          onClick={() => removeLoot(sessionId, item.id)}
+          className="text-red-400 hover:text-red-300"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      ),
+    },
+  ];
+
+  const groupedLootColumns: Array<DataTableColumn<GroupedLootItem>> = [
+    { key: 'item', header: 'Item', span: 1.5, render: (item) => item.name },
+    { key: 'quantity', header: 'Qty', align: 'right', render: (item) => item.quantity },
+    {
+      key: 'tt',
+      header: 'TT Value',
+      align: 'right',
+      render: (item) => item.value.toFixed(2),
+    },
+    {
+      key: 'markup',
+      header: 'Avg Markup',
+      align: 'right',
+      render: (item) => `${item.markup.toFixed(1)}%`,
+    },
+    {
+      key: 'total',
+      header: 'Total Value',
+      align: 'right',
+      render: (item) => (
+        <span className="font-semibold text-green-400">{item.totalValue.toFixed(2)} PED</span>
+      ),
+    },
+    {
+      key: 'count',
+      header: 'Count',
+      align: 'right',
+      render: (item) => <span className="text-muted">{item.count}x</span>,
+    },
+  ];
+
+  const skillColumns: Array<
+    DataTableColumn<{ skillName: string; gainAmount: number; count: number }>
+  > = [
+    { key: 'skill', header: 'Skill', span: 1.5, render: (skill) => skill.skillName },
+    {
+      key: 'gain',
+      header: 'Gain Amount',
+      align: 'right',
+      render: (skill) => (
+        <span className="font-semibold text-green-400">+{skill.gainAmount.toFixed(4)}</span>
+      ),
+    },
+    {
+      key: 'count',
+      header: 'Count',
+      align: 'right',
+      render: (skill) => <span className="text-muted">{skill.count}x</span>,
+    },
+  ];
 
   return (
     <div className="space-y-6">
       {/* Session Overview Card */}
       {!isLootOnly && (
-        <div className="card p-6">
+        <Panel>
           {/* Row 1: Title and Buttons */}
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-2xl font-bold">{session.name}</h2>
@@ -237,68 +330,58 @@ export function SessionDetails({
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-4 gap-4 mt-6">
-            <div className="bg-surface rounded-lg p-3 text-center border border-border">
-              <div className="text-sm text-muted mb-1">Total Loot</div>
-              <div className="text-2xl font-bold text-green-400">
-                {session.stats.totalLoot.toFixed(2)} PED
-              </div>
-            </div>
-            <div className="bg-surface rounded-lg p-3 text-center border border-border">
-              <div className="text-sm text-muted mb-1">Total Cost</div>
-              <div className="text-2xl font-bold text-red-400">
-                {session.stats.totalCost.toFixed(2)} PED
-              </div>
-            </div>
-            <div className="bg-surface rounded-lg p-3 text-center border border-border">
-              <div className="text-sm text-muted mb-1">Profit/Loss</div>
-              <div
-                className={`text-2xl font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {profit >= 0 ? '+' : ''}
-                {profit.toFixed(2)} PED
-              </div>
-            </div>
-            <div className="bg-surface rounded-lg p-3 text-center border border-border">
-              <div className="text-sm text-muted mb-1">Returns</div>
-              <div
-                className={`text-2xl font-bold flex items-center justify-center gap-2 ${
-                  session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'
-                }`}
-              >
-                {session.stats.returns >= 100 ? (
-                  <TrendingUp className="w-5 h-5" />
+          <div className="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              label="Total Loot"
+              value={`${session.stats.totalLoot.toFixed(2)} PED`}
+              valueClassName="text-green-400"
+            />
+            <MetricTile
+              label="Total Cost"
+              value={`${session.stats.totalCost.toFixed(2)} PED`}
+              valueClassName="text-red-400"
+            />
+            <MetricTile
+              label="Profit/Loss"
+              value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`}
+              valueClassName={profit >= 0 ? 'text-green-400' : 'text-red-400'}
+            />
+            <MetricTile
+              label="Returns"
+              value={`${session.stats.returns.toFixed(1)}%`}
+              icon={
+                session.stats.returns >= 100 ? (
+                  <TrendingUp className="h-5 w-5" />
                 ) : (
-                  <TrendingDown className="w-5 h-5" />
-                )}
-                {session.stats.returns.toFixed(1)}%
-              </div>
-            </div>
+                  <TrendingDown className="h-5 w-5" />
+                )
+              }
+              valueClassName={session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}
+            />
           </div>
 
           {/* Additional Stats */}
-          <div className="grid grid-cols-4 gap-4 mt-4">
-            <div className="bg-surface rounded-lg p-3 text-center border border-border">
-              <div className="text-xs text-muted">Loot Events</div>
-              <div className="text-lg font-semibold">{session.stats.lootEvents}</div>
-            </div>
-            <div className="bg-surface rounded-lg p-3 text-center border border-border">
-              <div className="text-xs text-muted">Globals</div>
-              <div className="text-lg font-semibold text-yellow-400">{session.stats.globals}</div>
-            </div>
-            <div className="bg-surface rounded-lg p-3 text-center border border-border">
-              <div className="text-xs text-muted">HoFs</div>
-              <div className="text-lg font-semibold text-purple-400">{session.stats.hofs}</div>
-            </div>
-            <div className="bg-surface rounded-lg p-3 text-center border border-border">
-              <div className="text-xs text-muted">Duration</div>
-              <div className="text-lg font-semibold">
-                {Math.floor(session.stats.duration / 3600)}h{' '}
-                {Math.floor((session.stats.duration % 3600) / 60)}m
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricTile label="Loot Events" value={session.stats.lootEvents} size="sm" />
+            <MetricTile
+              label="Globals"
+              value={session.stats.globals}
+              valueClassName="text-yellow-400"
+              size="sm"
+            />
+            <MetricTile
+              label="HoFs"
+              value={session.stats.hofs}
+              valueClassName="text-purple-400"
+              size="sm"
+            />
+            <MetricTile
+              label="Duration"
+              value={`${Math.floor(session.stats.duration / 3600)}h ${Math.floor((session.stats.duration % 3600) / 60)}m`}
+              size="sm"
+            />
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Cumulative Trajectory Chart plotted along the session's duration */}
@@ -308,12 +391,9 @@ export function SessionDetails({
       {!isLootOnly && <CostsPanel session={session} />}
 
       {/* Globals & HoFs */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <Award className="w-5 h-5 text-yellow-400" />
-            Globals & HoFs
-          </h3>
+      <Panel
+        title="Globals & HoFs"
+        action={
           <button
             onClick={() => setShowAddGlobal(true)}
             className="btn-primary flex items-center gap-2"
@@ -321,8 +401,8 @@ export function SessionDetails({
             <Zap className="w-4 h-4" />
             Add Global
           </button>
-        </div>
-
+        }
+      >
         {session.globals.length === 0 ? (
           <p className="text-center text-muted py-8">No globals recorded yet</p>
         ) : (
@@ -344,18 +424,23 @@ export function SessionDetails({
                 </div>
                 <div className="font-bold text-lg">
                   {global.value.toFixed(2)} PED
-                  {global.isHoF && <span className="ml-2 text-sm">🏆 HoF</span>}
+                  {global.isHoF && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-sm">
+                      <Award className="h-4 w-4" />
+                      HoF
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Panel>
 
       {/* Loot Table */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold">Loot</h3>
+      <Panel
+        title="Loot"
+        action={
           <div className="flex items-center gap-2">
             {session.loot.length > 0 && (
               <button
@@ -384,119 +469,44 @@ export function SessionDetails({
               Add Loot
             </button>
           </div>
-        </div>
-
+        }
+      >
         {session.loot.length === 0 ? (
           <p className="text-center text-muted py-8">No loot recorded yet</p>
         ) : isLootExpanded ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-2 px-3">Time</th>
-                  <th className="text-left py-2 px-3">Item</th>
-                  <th className="text-right py-2 px-3">Qty</th>
-                  <th className="text-right py-2 px-3">TT Value</th>
-                  <th className="text-right py-2 px-3">Markup</th>
-                  <th className="text-right py-2 px-3">Total Value</th>
-                  <th className="text-right py-2 px-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {session.loot.map((item) => (
-                  <tr key={item.id} className="border-b border-border hover:bg-surface">
-                    <td className="py-2 px-3 text-sm text-muted">
-                      {format(item.timestamp, 'HH:mm:ss')}
-                    </td>
-                    <td className="py-2 px-3 font-medium">{item.name}</td>
-                    <td className="py-2 px-3 text-right">{item.quantity}</td>
-                    <td className="py-2 px-3 text-right">{item.value.toFixed(2)}</td>
-                    <td className="py-2 px-3 text-right">{item.markup}%</td>
-                    <td className="py-2 px-3 text-right font-semibold text-green-400">
-                      {item.totalValue.toFixed(2)} PED
-                    </td>
-                    <td className="py-2 px-3 text-right">
-                      <button
-                        onClick={() => removeLoot(sessionId, item.id)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={detailedLootColumns}
+            rows={session.loot}
+            getRowKey={(item) => item.id}
+          />
+        ) : groupedLootError ? (
+          <p className="text-center text-red-400 py-8">{groupedLootError}</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-2 px-3">Item</th>
-                  <th className="text-right py-2 px-3">Qty</th>
-                  <th className="text-right py-2 px-3">TT Value</th>
-                  <th className="text-right py-2 px-3">Avg Markup</th>
-                  <th className="text-right py-2 px-3">Total Value</th>
-                  <th className="text-right py-2 px-3">Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groupedLoot.map((stackedItem) => (
-                  <tr key={stackedItem.name} className="border-b border-border hover:bg-surface">
-                    <td className="py-2 px-3 font-medium">{stackedItem.name}</td>
-                    <td className="py-2 px-3 text-right">{stackedItem.quantity}</td>
-                    <td className="py-2 px-3 text-right">{stackedItem.value.toFixed(2)}</td>
-                    <td className="py-2 px-3 text-right">{stackedItem.markup.toFixed(1)}%</td>
-                    <td className="py-2 px-3 text-right font-semibold text-green-400">
-                      {stackedItem.totalValue.toFixed(2)} PED
-                    </td>
-                    <td className="py-2 px-3 text-right text-sm text-muted">
-                      {stackedItem.count}x
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={groupedLootColumns}
+            rows={groupedLoot}
+            getRowKey={(item) => item.name}
+            emptyMessage="No stacked loot available."
+          />
         )}
-      </div>
+      </Panel>
 
       {/* Skills */}
       {groupedSkills.length > 0 && (
-        <div className="card p-6">
-          <h3 className="text-xl font-bold mb-4">Skill Gains</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-2 px-3">Skill</th>
-                  <th className="text-right py-2 px-3">Gain Amount</th>
-                  <th className="text-right py-2 px-3">Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groupedSkills.map((skill) => (
-                  <tr key={skill.skillName} className="border-b border-border hover:bg-surface">
-                    <td className="py-2 px-3 font-medium">{skill.skillName}</td>
-                    <td className="py-2 px-3 text-right font-semibold text-green-400">
-                      +{skill.gainAmount.toFixed(4)}
-                    </td>
-                    <td className="py-2 px-3 text-right text-sm text-muted">{skill.count}x</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <Panel title="Skill Gains">
+          <DataTable
+            columns={skillColumns}
+            rows={groupedSkills}
+            getRowKey={(skill) => skill.skillName}
+          />
+        </Panel>
       )}
 
       {/* Notes */}
       {session.notes && (
-        <div className="card p-6">
-          <h3 className="text-xl font-bold mb-4">Notes</h3>
+        <Panel title="Notes">
           <p className="text-gray-300 whitespace-pre-wrap">{session.notes}</p>
-        </div>
+        </Panel>
       )}
 
       {showAddLoot && <AddLootModal sessionId={sessionId} onClose={() => setShowAddLoot(false)} />}

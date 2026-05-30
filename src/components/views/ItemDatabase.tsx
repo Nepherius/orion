@@ -6,6 +6,8 @@ import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { useItemBrowser, EntropyItem } from '../../hooks/useItemBrowser';
 import { useHuntStore } from '../../store';
+import { DataTable, DataTableColumn } from '../common/DataTable';
+import { Panel } from '../common/Panel';
 
 export function ItemDatabase() {
   const isPageVisible = usePageVisibility();
@@ -40,10 +42,10 @@ export function ItemDatabase() {
 
   if (!isPageVisible) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <Panel contentClassName="py-4 text-center text-muted">
         <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-60" />
         <p>Item Database is paused while the app is in the background.</p>
-      </div>
+      </Panel>
     );
   }
 
@@ -78,6 +80,59 @@ export function ItemDatabase() {
     });
   };
 
+  const itemColumns: Array<DataTableColumn<ItemTemplate>> = [
+    { key: 'name', header: 'Item Name', span: 1.5, render: (item) => item.name },
+    {
+      key: 'category',
+      header: 'Category',
+      render: (item) => (
+        <span className="rounded bg-gray-600 px-2 py-1 text-xs">{item.category}</span>
+      ),
+    },
+    {
+      key: 'tt',
+      header: 'Default TT Value',
+      align: 'right',
+      render: (item) => `${item.defaultTTValue.toFixed(2)} PED`,
+    },
+    {
+      key: 'markup',
+      header: 'Default Markup',
+      align: 'right',
+      render: (item) => `${item.defaultMarkup}%`,
+    },
+    {
+      key: 'fixed',
+      header: 'Fixed Value',
+      align: 'right',
+      render: (item) =>
+        item.defaultFixedValue && item.defaultFixedValue > 0
+          ? `${item.defaultFixedValue.toFixed(2)} PED`
+          : '-',
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'right',
+      render: (item) => (
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={() => setEditingItem(item)}
+            className="text-primary-400 hover:text-primary-300"
+          >
+            <Edit2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => requestDelete(item.id)}
+            className="text-red-400 hover:text-red-300"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <button onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-2">
@@ -107,8 +162,7 @@ export function ItemDatabase() {
       </div>
 
       {/* Local Items Table */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Your Items</h3>
+      <Panel title="Your Items">
         {filteredItems.length === 0 && !searchQuery ? (
           <p className="text-center text-muted py-8">
             No items in database. Add item templates to quickly add loot with default values.
@@ -116,60 +170,13 @@ export function ItemDatabase() {
         ) : filteredItems.length === 0 ? (
           <p className="text-center text-muted py-4 text-sm">No matching items</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-2 px-3">Item Name</th>
-                  <th className="text-left py-2 px-3">Category</th>
-                  <th className="text-right py-2 px-3">Default TT Value</th>
-                  <th className="text-right py-2 px-3">Default Markup</th>
-                  <th className="text-right py-2 px-3">Fixed Value</th>
-                  <th className="text-right py-2 px-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-800 hover:bg-surface">
-                    <td className="py-2 px-3 font-medium">{item.name}</td>
-                    <td className="py-2 px-3">
-                      <span className="px-2 py-1 text-xs rounded bg-gray-600">{item.category}</span>
-                    </td>
-                    <td className="py-2 px-3 text-right">{item.defaultTTValue.toFixed(2)} PED</td>
-                    <td className="py-2 px-3 text-right">{item.defaultMarkup}%</td>
-                    <td className="py-2 px-3 text-right">
-                      {item.defaultFixedValue && item.defaultFixedValue > 0
-                        ? `${item.defaultFixedValue.toFixed(2)} PED`
-                        : '-'}
-                    </td>
-                    <td className="py-2 px-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setEditingItem(item)}
-                          className="text-primary-400 hover:text-primary-300"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => requestDelete(item.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable columns={itemColumns} rows={filteredItems} getRowKey={(item) => item.id} />
         )}
-      </div>
+      </Panel>
 
       {/* Entropia Database Results */}
       {searchQuery && filteredEntropyItems.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Entropia Database</h3>
+        <Panel title="Entropia Database">
           <div className="space-y-2">
             {filteredEntropyItems.map((item) => (
               <div
@@ -216,12 +223,11 @@ export function ItemDatabase() {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Ignore List */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Ignore List</h3>
+      <Panel title="Ignore List">
         <p className="text-sm text-muted mb-4">
           Items in this list will be skipped by ChatLogMonitor
         </p>
@@ -249,7 +255,7 @@ export function ItemDatabase() {
             <p className="text-center text-muted py-4 text-sm">No items in ignore list</p>
           )}
         </div>
-      </div>
+      </Panel>
 
       {showAddModal && <ItemModal onClose={() => setShowAddModal(false)} onSave={handleAddSave} />}
 

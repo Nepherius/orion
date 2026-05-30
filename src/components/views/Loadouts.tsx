@@ -6,6 +6,7 @@ import { LoadoutDetailsPanel } from '../loadouts/LoadoutDetailsPanel';
 import { useLoadoutsModel } from '../../hooks/useLoadoutsModel';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { Panel } from '../common/Panel';
 
 export function Loadouts() {
   const isPageVisible = usePageVisibility();
@@ -40,10 +41,10 @@ export function Loadouts() {
 
   if (!isPageVisible) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <Panel contentClassName="py-4 text-center text-muted">
         <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-60" />
         <p>Loadouts is paused while the app is in the background.</p>
-      </div>
+      </Panel>
     );
   }
 

@@ -1,5 +1,6 @@
+import { Award } from 'lucide-react';
+import { MetricTile, Panel } from '../common/Panel';
 import type { GroupedLootItem } from './lootTypes';
-import { InfoTooltip } from '../common/InfoTooltip';
 
 interface LootBreakdownPanelsProps {
   totalAdjustedValue: number;
@@ -26,11 +27,10 @@ export function LootBreakdownPanels({
 
   return (
     <>
-      <div className="card p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="text-2xl font-bold">Loot Value Distribution</div>
-          <InfoTooltip tooltip="TT = Trade Terminal Value, MU = Markup, MV = Market Value" />
-        </div>
+      <Panel
+        title="Loot Value Distribution"
+        tooltip="TT = Trade Terminal Value, MU = Markup, MV = Market Value"
+      >
         <div className="relative h-2 bg-surface rounded-full overflow-hidden">
           <div
             className="absolute top-0 left-0 h-full bg-blue-500"
@@ -78,10 +78,9 @@ export function LootBreakdownPanels({
             %)
           </span>
         </div>
-      </div>
+      </Panel>
 
-      <div className="card p-6">
-        <div className="text-xs text-muted uppercase mb-4">COMPOSITION</div>
+      <Panel title="Composition">
         <div className="space-y-2">
           {topItems.slice(0, 5).map((item, idx) => {
             const percent =
@@ -110,47 +109,38 @@ export function LootBreakdownPanels({
             );
           })}
         </div>
-      </div>
+      </Panel>
 
-      <div className="grid grid-cols-5 gap-4">
-        <div className="card p-4 text-center">
-          <div className="text-2xl font-bold">{uniqueItems}</div>
-          <div className="text-xs text-muted">Unlocks</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl font-bold">{avgMarkup.toFixed(1)}%</div>
-          <div className="text-xs text-muted">Avg MU</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl font-bold text-green-400">+{totalMarkup.toFixed(2)}</div>
-          <div className="text-xs text-muted">MU Gain</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl font-bold text-violet-400">+{totalFixedValue.toFixed(2)}</div>
-          <div className="text-xs text-muted">MV Gain</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl font-bold">{pedPerItem.toFixed(3)}</div>
-          <div className="text-xs text-muted">PED/Item</div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricTile label="Unlocks" value={uniqueItems} />
+        <MetricTile label="Avg MU" value={`${avgMarkup.toFixed(1)}%`} />
+        <MetricTile
+          label="MU Gain"
+          value={`+${totalMarkup.toFixed(2)}`}
+          valueClassName="text-green-400"
+        />
+        <MetricTile
+          label="MV Gain"
+          value={`+${totalFixedValue.toFixed(2)}`}
+          valueClassName="text-violet-400"
+        />
+        <MetricTile label="PED/Item" value={pedPerItem.toFixed(3)} />
       </div>
 
       {topValueItem && (
-        <div className="card p-6">
-          <div className="text-xs text-muted uppercase mb-4">HIGHLIGHTS</div>
+        <Panel title="Highlights">
           <div className="flex items-center gap-4">
-            <div className="text-lg">🏆</div>
+            <Award className="h-5 w-5 text-yellow-400" />
             <div>
               <div className="text-sm text-muted">Top Value</div>
               <div className="font-bold">{topValueItem.name}</div>
               <div className="text-green-400">{topValueItem.totalValue.toFixed(2)} PED</div>
             </div>
           </div>
-        </div>
+        </Panel>
       )}
 
-      <div className="card p-6">
-        <div className="text-xs text-muted uppercase mb-4">TOP ITEMS</div>
+      <Panel title="Top Items">
         <div className="space-y-2">
           {topItems.map((item, idx) => {
             const share = totalAdjustedValue > 0 ? (item.totalValue / totalAdjustedValue) * 100 : 0;
@@ -175,7 +165,7 @@ export function LootBreakdownPanels({
             );
           })}
         </div>
-      </div>
+      </Panel>
     </>
   );
 }

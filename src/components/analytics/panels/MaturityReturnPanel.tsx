@@ -1,5 +1,6 @@
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { Panel } from '../../common/Panel';
+import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
 import {
   BarChart,
   Bar,
@@ -27,18 +28,16 @@ export default function MaturityReturnPanel() {
   }));
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-bold">Return Rate by Maturity</h3>
-        <InfoTooltip tooltip="Shows return rate for each creature + maturity combination. Only combos with ≥3 kills are shown. The green line marks 100% (break-even)." />
-      </div>
+    <Panel
+      title="Return Rate by Maturity"
+      tooltip="Shows return rate for each creature + maturity combination. Only combos with ≥3 kills are shown. The green line marks 100% (break-even)."
+    >
       <ResponsiveContainer width="100%" height={Math.max(320, chartData.length * 28)}>
         <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          <CartesianGrid {...chartGridProps} />
           <XAxis
             type="number"
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
+            {...chartAxisProps}
             label={{
               value: 'Return %',
               position: 'insideBottom',
@@ -47,20 +46,9 @@ export default function MaturityReturnPanel() {
               fontSize: 11,
             }}
           />
-          <YAxis
-            dataKey="label"
-            type="category"
-            width={140}
-            stroke="var(--color-text-muted)"
-            tick={{ fontSize: 11 }}
-          />
+          <YAxis dataKey="label" type="category" width={140} {...chartAxisProps} />
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-            }}
-            labelStyle={{ color: 'var(--color-text-body)' }}
-            itemStyle={{ color: 'var(--color-text-body)' }}
+            {...chartTooltipProps}
             formatter={(value: number, name: string) => {
               if (name === 'Return %') return `${value.toFixed(1)}%`;
               return value;
@@ -86,6 +74,6 @@ export default function MaturityReturnPanel() {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </Panel>
   );
 }

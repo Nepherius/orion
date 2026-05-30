@@ -8,6 +8,7 @@ import { LootItemTable } from './LootItemTable';
 import { LootItemOptionsModal } from './LootItemOptionsModal';
 import type { GroupedLootItem, LootSortBy } from './lootTypes';
 import { EQUIPMENT_ASSET_PATHS, loadAssetJson } from '../../services/assetDataLoader';
+import { Panel } from '../common/Panel';
 
 interface LootProps {
   sessionId?: string | null;
@@ -128,23 +129,23 @@ export function Loot({ sessionId = null, showSidebar = true }: LootProps) {
 
   if (!isPageVisible) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <Panel contentClassName="py-4 text-center text-muted">
         <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-60" />
         <p>Loot is paused while the app is in the background.</p>
-      </div>
+      </Panel>
     );
   }
 
   if (!session) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <Panel contentClassName="py-4 text-center text-muted">
         <Info className="w-16 h-16 mx-auto mb-4 opacity-50" />
         <p>
           {sessionId
             ? 'Session not found.'
             : 'No active session. Start or resume a session to view loot.'}
         </p>
-      </div>
+      </Panel>
     );
   }
 

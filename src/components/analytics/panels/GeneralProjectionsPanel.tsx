@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
-import { InfoTooltip } from '../../common/InfoTooltip';
+import { MetricTile, Panel } from '../../common/Panel';
 
 export default function GeneralProjectionsPanel() {
   const sessions = useHuntStore((state) => state.sessions);
@@ -22,41 +22,31 @@ export default function GeneralProjectionsPanel() {
   }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-bold">General Projections & Predictions</h3>
-        <InfoTooltip tooltip="Based on recent session trends (last 10 sessions)" />
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="border border-border rounded p-4">
-          <div className="flex items-center gap-1 text-sm text-muted mb-2">
-            Projected Lifetime Profit
-            <InfoTooltip tooltip="Projection = all-time total + average recent trend" />
-          </div>
-          <div
-            className={`text-2xl font-bold ${projectedLifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}
-          >
-            {projectedLifetimeProfit >= 0 ? '+' : ''}
-            {projectedLifetimeProfit.toFixed(2)} PED
-          </div>
-        </div>
+    <Panel
+      title="General Projections & Predictions"
+      tooltip="Based on recent session trends (last 10 sessions)"
+    >
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <MetricTile
+          label="Projected Lifetime Profit"
+          tooltip="Projection = all-time total + average recent trend"
+          value={`${projectedLifetimeProfit >= 0 ? '+' : ''}${projectedLifetimeProfit.toFixed(2)} PED`}
+          valueClassName={projectedLifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'}
+        />
         {sessionsToBreakEven !== null && (
-          <div className="border border-border rounded p-4">
-            <div className="flex items-center gap-1 text-sm text-muted mb-2">
-              Sessions to Break Even
-              <InfoTooltip tooltip="Sessions needed at current avg profit to reach 0" />
-            </div>
-            <div className="text-2xl font-bold text-orange-400">{sessionsToBreakEven}</div>
-          </div>
+          <MetricTile
+            label="Sessions to Break Even"
+            tooltip="Sessions needed at current avg profit to reach 0"
+            value={sessionsToBreakEven}
+            valueClassName="text-orange-400"
+          />
         )}
-        <div className="border border-border rounded p-4">
-          <div className="flex items-center gap-1 text-sm text-muted mb-2">
-            Data Points Analyzed
-            <InfoTooltip tooltip="Number of sessions analyzed for general projections" />
-          </div>
-          <div className="text-2xl font-bold text-body">{totalSessions}</div>
-        </div>
+        <MetricTile
+          label="Data Points Analyzed"
+          tooltip="Number of sessions analyzed for general projections"
+          value={totalSessions}
+        />
       </div>
-    </div>
+    </Panel>
   );
 }

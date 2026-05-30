@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useHuntStore } from '../../store';
 import { HuntSession } from '../../types';
 import { DollarSign, Edit2, Save } from 'lucide-react';
+import { Panel } from '../common/Panel';
 
 interface CostsPanelProps {
   session: HuntSession;
@@ -25,13 +26,10 @@ export function CostsPanel({ session }: CostsPanelProps) {
   const totalCost = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-bold flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-red-400" />
-          Costs
-        </h3>
-        {isEditing ? (
+    <Panel
+      title="Costs"
+      action={
+        isEditing ? (
           <button onClick={handleSave} className="btn-primary flex items-center gap-2">
             <Save className="w-4 h-4" />
             Save
@@ -44,7 +42,12 @@ export function CostsPanel({ session }: CostsPanelProps) {
             <Edit2 className="w-4 h-4" />
             Edit
           </button>
-        )}
+        )
+      }
+    >
+      <div className="mb-4 flex items-center gap-2 text-sm text-muted">
+        <DollarSign className="h-4 w-4 text-red-400" />
+        Session cost breakdown
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
@@ -117,6 +120,6 @@ export function CostsPanel({ session }: CostsPanelProps) {
           <div className="text-xl font-bold text-red-400">{totalCost.toFixed(2)} PED</div>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }
