@@ -1,14 +1,25 @@
 import { X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useLoadoutForm } from '../../hooks/useLoadoutForm';
 import { Loadout } from '../../types';
 import { EquipmentSelector } from '../common/EquipmentSelector';
 import { AutocompleteInput } from '../common/AutocompleteInput';
 import { InfoTooltip } from '../common/InfoTooltip';
+import { MetricTile } from '../common/Panel';
 import { calculateHealingCostPerUse } from '../../utils/healingCost';
 
 interface NewLoadoutModalProps {
   onClose: () => void;
   editLoadout?: Loadout;
+}
+
+function LoadoutFormSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-lg border border-border bg-white/[0.03] p-4">
+      <div className="mb-3 text-xs uppercase tracking-wider text-muted">{title}</div>
+      {children}
+    </div>
+  );
 }
 
 export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) {
@@ -146,12 +157,11 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                 <div className="text-sm font-bold text-muted uppercase">Equipment</div>
 
                 {/* Stats Display */}
-                <div className="bg-surface rounded-lg p-3 text-center">
-                  <div className="text-xs text-muted uppercase mb-1">Cost/Shot</div>
-                  <div className="text-2xl font-bold text-blue-400">
-                    {stats.costPerShot.toFixed(4)} <span className="text-xs">PED</span>
-                  </div>
-                </div>
+                <MetricTile
+                  label="Cost/Shot"
+                  value={`${stats.costPerShot.toFixed(4)} PED`}
+                  valueClassName="text-blue-400"
+                />
 
                 <EquipmentSelector
                   label="Weapon"
@@ -203,8 +213,7 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
               </div>
 
               <div className="space-y-3">
-                <div className="bg-surface rounded-lg border border-border p-4">
-                  <div className="text-xs text-muted uppercase tracking-wider mb-3">Offense</div>
+                <LoadoutFormSection title="Offense">
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-300">Total Damage</span>
@@ -231,10 +240,9 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                       </span>
                     </div>
                   </div>
-                </div>
+                </LoadoutFormSection>
 
-                <div className="bg-surface rounded-lg border border-border p-4">
-                  <div className="text-xs text-muted uppercase tracking-wider mb-3">Economy</div>
+                <LoadoutFormSection title="Economy">
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-300">Efficiency</span>
@@ -255,12 +263,9 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                       </span>
                     </div>
                   </div>
-                </div>
+                </LoadoutFormSection>
 
-                <div className="bg-surface rounded-lg border border-border p-4">
-                  <div className="text-xs text-muted uppercase tracking-wider mb-3">
-                    Cost Breakdown
-                  </div>
+                <LoadoutFormSection title="Cost Breakdown">
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-300">Weapon</span>
@@ -295,7 +300,7 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                       </span>
                     </div>
                   </div>
-                </div>
+                </LoadoutFormSection>
               </div>
             </div>
 
@@ -305,12 +310,11 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                 <div className="text-sm font-bold text-muted uppercase">Defense & Healing</div>
 
                 {/* Heal Metrics */}
-                <div className="bg-surface rounded-lg p-3 text-center">
-                  <div className="text-xs text-muted uppercase mb-1">Cost per Heal</div>
-                  <div className="text-2xl font-bold text-green-400">
-                    {adjustedMedicalCostPerHeal.toFixed(4)} <span className="text-xs">PED</span>
-                  </div>
-                </div>
+                <MetricTile
+                  label="Cost per Heal"
+                  value={`${adjustedMedicalCostPerHeal.toFixed(4)} PED`}
+                  valueClassName="text-green-400"
+                />
 
                 <AutocompleteInput
                   label="Armor"
@@ -330,10 +334,7 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                 />
               </div>
 
-              <div className="bg-surface rounded-lg border border-border p-4">
-                <div className="text-xs text-muted uppercase tracking-wider mb-3">
-                  Medical Stats
-                </div>
+              <LoadoutFormSection title="Medical Stats">
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-muted uppercase block mb-1">TT</label>
@@ -380,7 +381,7 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                     <label className="text-xs text-muted uppercase block mb-1">
                       Decay (w/ Markup)
                     </label>
-                    <div className="bg-surface-hover rounded px-3 py-2 text-sm text-white font-medium">
+                    <div className="rounded border border-border bg-white/[0.03] px-3 py-2 text-sm font-medium text-white">
                       {adjustedMedicalDecayPEC.toFixed(4)} PEC
                     </div>
                   </div>
@@ -414,12 +415,12 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                     <label className="text-xs text-muted uppercase block mb-1">
                       Cost / 1 ME (Calculated)
                     </label>
-                    <div className="bg-surface-hover rounded px-3 py-2 text-sm text-blue-400 font-medium">
+                    <div className="rounded border border-border bg-white/[0.03] px-3 py-2 text-sm font-medium text-blue-400">
                       {adjustedMedicalCostPerHeal.toFixed(4)} PED
                     </div>
                   </div>
                 </div>
-              </div>
+              </LoadoutFormSection>
             </div>
           </div>
         </div>

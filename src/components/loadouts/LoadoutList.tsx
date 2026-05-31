@@ -1,6 +1,7 @@
 import { Search, Circle, Star } from 'lucide-react';
 
 import { StatusFilter, SortOption } from '../../hooks/useLoadoutsModel';
+import { Panel } from '../common/Panel';
 
 interface LoadoutListProps {
   searchQuery: string;
@@ -26,10 +27,7 @@ export function LoadoutList({
   totalCount,
 }: LoadoutListProps) {
   return (
-    <div
-      className="col-span-3 bg-surface rounded-lg p-4 flex flex-col"
-      style={{ maxHeight: 'calc(100vh - 200px)' }}
-    >
+    <Panel className="col-span-3 flex max-h-[calc(100vh-200px)] flex-col">
       {/* Search */}
       <div className="relative mb-3">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
@@ -105,6 +103,6 @@ export function LoadoutList({
           <option value="dpp">Highest DPP</option>
         </select>
       </div>
-    </div>
+    </Panel>
   );
 }

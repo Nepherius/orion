@@ -42,7 +42,7 @@ export function Panel({
 
 interface MetricTileProps {
   label: string;
-  value: string | number;
+  value: ReactNode;
   tone?: 'positive' | 'negative' | 'neutral' | 'warning' | 'accent';
   icon?: ReactNode;
   detail?: string;

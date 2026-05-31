@@ -1,6 +1,7 @@
 import { useHuntStore } from '../../store';
 import { format } from 'date-fns';
 import { LiveTimer } from './LiveTimer';
+import { MetricTile, Panel } from '../common/Panel';
 
 export function ActiveSessionSidebar() {
   const activeSession = useHuntStore(
@@ -15,12 +16,12 @@ export function ActiveSessionSidebar() {
   const rareCount = activeSession.globals.filter((g) => g.creature.startsWith('Rare:')).length;
 
   return (
-    <div className="bg-surface rounded-lg p-4 h-full flex flex-col">
-      <div className="mb-4">
-        <h3 className="text-lg font-bold">Active Session</h3>
-        <div className="text-xs text-muted">Live Statistics</div>
-      </div>
-
+    <Panel
+      title="Active Session"
+      className="flex h-full flex-col"
+      contentClassName="flex h-full flex-col"
+    >
+      <div className="mb-4 text-xs text-muted">Live Statistics</div>
       <div className="space-y-4">
         {/* Session Name */}
         <div>
@@ -29,16 +30,19 @@ export function ActiveSessionSidebar() {
         </div>
 
         {/* Duration */}
-        <div className="bg-surface-active rounded-lg p-4 text-center">
-          <div className="text-4xl font-bold text-blue-500 dark:text-blue-400 font-mono">
+        <MetricTile
+          label="Duration"
+          value={
             <LiveTimer
               startTime={activeSession.startTime}
               isRunning={activeSession.status === 'active'}
               pausedAt={activeSession.pausedAt}
               pausedDurationMs={activeSession.totalPausedMs || 0}
             />
-          </div>
-        </div>
+          }
+          valueClassName="font-mono text-blue-500 dark:text-blue-400"
+          size="lg"
+        />
 
         {/* My Globals */}
         <div className="flex-1">
@@ -105,6 +109,6 @@ export function ActiveSessionSidebar() {
           </div>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }

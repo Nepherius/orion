@@ -1,5 +1,6 @@
 import { Loadout } from '../../types';
 import { calculateHealingCostPerUse } from '../../utils/healingCost';
+import { MetricTile } from '../common/Panel';
 
 interface LoadoutStatsPanelProps {
   loadout: Loadout;
@@ -23,24 +24,18 @@ export function LoadoutStatsPanel({ loadout }: LoadoutStatsPanelProps) {
     <div className="space-y-4">
       {/* Cost per Shot and Cost per Heal */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-surface rounded p-3 text-center">
-          <div className="text-xs text-muted uppercase mb-1">Cost/Shot</div>
-          <div className="text-xl font-bold text-blue-400">
-            {loadout.costPerShot.toFixed(4)} <span className="text-xs">PED</span>
-          </div>
-        </div>
-        <div className="bg-surface rounded p-3 text-center">
-          <div className="text-xs text-muted uppercase mb-1">Cost/Heal</div>
-          <div className="text-xl font-bold text-green-400">
-            {hasMedicalTool ? (
-              <>
-                {costPerHeal.toFixed(4)} <span className="text-xs">PED</span>
-              </>
-            ) : (
-              <span className="text-muted text-sm">N/A</span>
-            )}
-          </div>
-        </div>
+        <MetricTile
+          label="Cost/Shot"
+          value={`${loadout.costPerShot.toFixed(4)} PED`}
+          valueClassName="text-blue-400"
+          size="sm"
+        />
+        <MetricTile
+          label="Cost/Heal"
+          value={hasMedicalTool ? `${costPerHeal.toFixed(4)} PED` : 'N/A'}
+          valueClassName={hasMedicalTool ? 'text-green-400' : 'text-muted'}
+          size="sm"
+        />
       </div>
 
       {/* Offense Statistics */}

@@ -1,5 +1,6 @@
 import { Circle, Star, Edit, Copy, Trash2 } from 'lucide-react';
 import { Loadout } from '../../types';
+import { Panel } from '../common/Panel';
 import { LoadoutStatsPanel } from './LoadoutStatsPanel';
 
 interface LoadoutDetailsPanelProps {
@@ -21,50 +22,43 @@ export function LoadoutDetailsPanel({
 }: LoadoutDetailsPanelProps) {
   if (!loadout) {
     return (
-      <div
-        className="col-span-3 bg-surface rounded-lg overflow-hidden flex items-center justify-center"
-        style={{ minHeight: 'calc(100vh - 200px)' }}
+      <Panel
+        className="col-span-3 min-h-[calc(100vh-200px)]"
+        contentClassName="flex h-full min-h-[calc(100vh-240px)] items-center justify-center"
       >
         <div className="text-center text-muted">
           <Circle className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p>Select a loadout to view details</p>
         </div>
-      </div>
+      </Panel>
     );
   }
 
   return (
-    <div
-      className="col-span-3 bg-surface rounded-lg overflow-hidden"
-      style={{ minHeight: 'calc(100vh - 200px)' }}
+    <Panel
+      title={loadout.name}
+      className="col-span-3 min-h-[calc(100vh-200px)] overflow-hidden"
+      action={
+        <button
+          onClick={() => onToggleFavorite(loadout.id)}
+          className={loadout.favorite ? 'p-1' : 'p-1 text-muted hover:text-yellow-400'}
+          title={loadout.favorite ? 'Remove favorite' : 'Add favorite'}
+        >
+          <Star
+            className={`h-4 w-4 ${loadout.favorite ? 'fill-yellow-400 text-yellow-400' : ''}`}
+          />
+        </button>
+      }
     >
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <h3 className="text-xl font-bold mb-1">{loadout.name}</h3>
-        <div className="flex items-center gap-2 text-xs">
-          {loadout.isPrimary && (
-            <span className="px-2 py-1 rounded bg-green-900 text-green-300 uppercase font-semibold">
-              PRIMARY
-            </span>
-          )}
-          {loadout.favorite && (
-            <button onClick={() => onToggleFavorite(loadout.id)} className="p-1">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            </button>
-          )}
-          {!loadout.favorite && (
-            <button
-              onClick={() => onToggleFavorite(loadout.id)}
-              className="p-1 text-muted hover:text-yellow-400"
-            >
-              <Star className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
+      {loadout.isPrimary && (
+        <span className="mb-4 inline-flex rounded bg-green-900 px-2 py-1 text-xs font-semibold uppercase text-green-300">
+          PRIMARY
+        </span>
+      )}
 
       {/* Action Buttons */}
-      <div className="p-4 border-b border-border space-y-2">
+      <div className="space-y-2 border-b border-border pb-4">
         {!loadout.isPrimary && (
           <button
             onClick={() => onSetPrimary(loadout.id)}
@@ -103,9 +97,9 @@ export function LoadoutDetailsPanel({
       </div>
 
       {/* Stats */}
-      <div className="p-4 space-y-4 max-h-[calc(100vh-450px)] overflow-y-auto">
+      <div className="mt-4 max-h-[calc(100vh-450px)] space-y-4 overflow-y-auto">
         <LoadoutStatsPanel loadout={loadout} />
       </div>
-    </div>
+    </Panel>
   );
 }
