@@ -82,7 +82,9 @@ build:windows:
 
     # Install supported Node.js version for Vite 8
     - choco install nodejs --version=$env:NODE_VERSION -y --no-progress
-    - refreshenv
+
+    # Manually expose Node/npm to this PowerShell session instead of using refreshenv
+    - $env:PATH = "C:\Program Files\nodejs;$env:APPDATA\npm;$env:PATH"
     - node -v
     - npm -v
 
