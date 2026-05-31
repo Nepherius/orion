@@ -104,7 +104,7 @@ jobs:
           merge-multiple: true
 
       - name: List release artifacts
-        run: find release-artifacts -type f -maxdepth 5 -print
+        run: find release-artifacts -type f -print
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
