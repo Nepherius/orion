@@ -97,22 +97,23 @@ jobs:
       contents: write
 
     steps:
-      - name: Download Linux artifacts
+      - name: Download release artifacts
         uses: actions/download-artifact@v4
         with:
-          name: orion-linux
-          path: release-artifacts/linux
+          path: release-artifacts
+          merge-multiple: true
 
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: orion-windows
-          path: release-artifacts/windows
+      - name: List release artifacts
+        run: find release-artifacts -type f -maxdepth 5 -print
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
-            release-artifacts/linux/*
-            release-artifacts/windows/*
+            release-artifacts/**/*.deb
+            release-artifacts/**/*.rpm
+            release-artifacts/**/*.AppImage
+            release-artifacts/**/*.msi
+            release-artifacts/**/*.exe
