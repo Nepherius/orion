@@ -4,54 +4,13 @@ import { EquipmentItem, Loadout } from '../types';
 import { calculateLoadoutStats } from '../utils/loadoutCalculations';
 import { calculateHealingCostPerUse } from '../utils/healingCost';
 import { EQUIPMENT_ASSET_PATHS, loadAssetJson } from '../services/assetDataLoader';
-
-interface MedicalToolEntry {
-  name: string;
-  type: string | null;
-  tt: number | null;
-  markup: number | null;
-  decay: number | null;
-  me: number | null;
-  mecost?: number | null;
-}
-
-type EquipmentDataResponse = EquipmentItem[] | { data: EquipmentItem[]; lastUpdateAt?: number };
-type ArmorDataResponse = { armor?: string[] } | string[];
-type MedicalDataResponse = { medicalTools?: MedicalToolEntry[] } | MedicalToolEntry[];
-type LoadEquipmentData = EquipmentDataResponse | ArmorDataResponse | MedicalDataResponse;
-
-const toEquipmentItems = (response: LoadEquipmentData): EquipmentItem[] => {
-  if (Array.isArray(response)) {
-    return response as EquipmentItem[];
-  }
-  if ('data' in response && Array.isArray(response.data)) {
-    return response.data;
-  }
-  return [];
-};
-
-const toArmorItems = (response: LoadEquipmentData): string[] => {
-  if (Array.isArray(response)) {
-    return response as string[];
-  }
-  if ('armor' in response && Array.isArray(response.armor)) {
-    return response.armor;
-  }
-  return [];
-};
-
-const toMedicalTools = (response: LoadEquipmentData): MedicalToolEntry[] => {
-  const normalize = (tools: MedicalToolEntry[]) =>
-    tools.filter((tool) => typeof tool.name === 'string' && tool.name.length > 0);
-
-  if (Array.isArray(response)) {
-    return normalize(response as MedicalToolEntry[]);
-  }
-  if ('medicalTools' in response && Array.isArray(response.medicalTools)) {
-    return normalize(response.medicalTools);
-  }
-  return [];
-};
+import {
+  LoadEquipmentData,
+  MedicalToolEntry,
+  validateArmorItems,
+  validateEquipmentItems,
+  validateMedicalTools,
+} from '../services/assetValidation';
 
 export function useLoadoutForm(editLoadout?: Loadout) {
   const { createLoadout, updateLoadout } = useHuntStore();
@@ -91,13 +50,13 @@ export function useLoadoutForm(editLoadout?: Loadout) {
       loadAssetJson<LoadEquipmentData>(EQUIPMENT_ASSET_PATHS.medicalTools),
     ]).then(
       ([weaponsData, ampsData, scopesData, sightsData, absorbersData, armorData, medicalData]) => {
-        setWeapons(toEquipmentItems(weaponsData));
-        setAmps(toEquipmentItems(ampsData));
-        setScopes(toEquipmentItems(scopesData));
-        setSights(toEquipmentItems(sightsData));
-        setAbsorbers(toEquipmentItems(absorbersData));
-        setArmorItems(toArmorItems(armorData));
-        setMedicalTools(toMedicalTools(medicalData));
+        setWeapons(validateEquipmentItems(weaponsData));
+        setAmps(validateEquipmentItems(ampsData));
+        setScopes(validateEquipmentItems(scopesData));
+        setSights(validateEquipmentItems(sightsData));
+        setAbsorbers(validateEquipmentItems(absorbersData));
+        setArmorItems(validateArmorItems(armorData));
+        setMedicalTools(validateMedicalTools(medicalData));
       }
     );
   }, []);

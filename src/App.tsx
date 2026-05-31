@@ -5,6 +5,8 @@ import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import packageJson from '../package.json';
 import { useInitialDataLoader } from './hooks/useInitialDataLoader';
 import type { HuntSession } from './types';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { Panel } from './components/common/Panel';
 
 // Dynamically imported views and components to minimize bundle size
 const SessionList = lazy(() =>
@@ -325,56 +327,58 @@ function App() {
 
           {/* Main Content */}
           <main className="max-w-7xl mx-auto px-6 py-6">
-            <Suspense
-              fallback={
-                <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-                </div>
-              }
-            >
-              {currentView === 'dashboard' && (
-                <ViewStats
-                  sessionId={selectedSessionId ?? activeSession?.id ?? null}
-                  onSessionResumed={() => setCurrentView('dashboard')}
-                  showSidebar={true}
-                />
-              )}
-
-              {currentView === 'loot' && <Loot />}
-
-              {currentView === 'sessions' && (
-                <div className="grid grid-cols-12 gap-6">
-                  <div className="col-span-4 space-y-6">
-                    <SessionList
-                      selectedSessionId={selectedSessionId}
-                      onSelectSession={setSelectedSessionId}
-                      onNavigateToDashboard={() => setCurrentView('dashboard')}
-                    />
+            <ErrorBoundary name="Main view" resetKey={currentView}>
+              <Suspense
+                fallback={
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                   </div>
-                  <div className="col-span-8">
-                    {selectedSessionId ? (
-                      <SessionDetails
-                        sessionId={selectedSessionId}
-                        onSessionResumed={() => setCurrentView('dashboard')}
-                        onOpenInDashboard={openSelectedSessionViewStatsOverlay}
+                }
+              >
+                {currentView === 'dashboard' && (
+                  <ViewStats
+                    sessionId={selectedSessionId ?? activeSession?.id ?? null}
+                    onSessionResumed={() => setCurrentView('dashboard')}
+                    showSidebar={true}
+                  />
+                )}
+
+                {currentView === 'loot' && <Loot />}
+
+                {currentView === 'sessions' && (
+                  <div className="grid grid-cols-12 gap-6">
+                    <div className="col-span-4 space-y-6">
+                      <SessionList
+                        selectedSessionId={selectedSessionId}
+                        onSelectSession={setSelectedSessionId}
+                        onNavigateToDashboard={() => setCurrentView('dashboard')}
                       />
-                    ) : (
-                      <div className="card p-8 text-center text-muted">
-                        <p>Select a session to view details</p>
-                      </div>
-                    )}
+                    </div>
+                    <div className="col-span-8">
+                      {selectedSessionId ? (
+                        <SessionDetails
+                          sessionId={selectedSessionId}
+                          onSessionResumed={() => setCurrentView('dashboard')}
+                          onOpenInDashboard={openSelectedSessionViewStatsOverlay}
+                        />
+                      ) : (
+                        <Panel contentClassName="py-4 text-center text-muted">
+                          <p>Select a session to view details</p>
+                        </Panel>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {currentView === 'loadouts' && <Loadouts />}
+                {currentView === 'loadouts' && <Loadouts />}
 
-              {currentView === 'database' && <ItemDatabase />}
+                {currentView === 'database' && <ItemDatabase />}
 
-              {currentView === 'analytics' && <Analytics />}
+                {currentView === 'analytics' && <Analytics />}
 
-              {currentView === 'settings' && <Settings />}
-            </Suspense>
+                {currentView === 'settings' && <Settings />}
+              </Suspense>
+            </ErrorBoundary>
           </main>
 
           {viewStatsOverlaySessionId && (

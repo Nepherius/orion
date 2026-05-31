@@ -4,6 +4,8 @@ import { useHuntStore } from '../../store';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { BarChart3, AlertCircle } from 'lucide-react';
 import { Panel } from '../common/Panel';
+import { analyzeSessionDataQuality } from '../../utils/dataQuality';
+import { AnalyticsMetricNotes } from '../analytics/AnalyticsMetricNotes';
 
 const AnalyticsOverviewTab = lazy(() => import('../analytics/AnalyticsOverviewTab'));
 const AnalyticsSessionsTab = lazy(() => import('../analytics/AnalyticsSessionsTab'));
@@ -26,6 +28,7 @@ export function Analytics() {
     () => Array.from(new Set(sessions.flatMap((s) => s.tags || []))).sort(),
     [sessions]
   );
+  const dataQualityIssues = useMemo(() => analyzeSessionDataQuality(sessions), [sessions]);
 
   const [timeRange, setTimeRange] = useState<
     '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom'
@@ -163,6 +166,20 @@ export function Analytics() {
           {lifetimeStats.totalSessions !== 1 ? 's' : ''}
         </div>
       </div>
+
+      {dataQualityIssues.length > 0 && (
+        <Panel title="Data Quality" className="border-yellow-700 bg-yellow-950/20">
+          <div className="space-y-1 text-sm text-yellow-100/90">
+            {dataQualityIssues.map((issue) => (
+              <div key={issue.code}>
+                {issue.count} {issue.message}.
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      <AnalyticsMetricNotes />
 
       {/* Tab Navigation */}
       <div className="flex border-b border-border overflow-x-auto pb-1 no-scrollbar">
