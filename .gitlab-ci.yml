@@ -55,7 +55,6 @@ build:linux:
       - src-tauri/target/
       - $HOME/.cargo/
 
-# Build for Windows (when tagged) - FIXED VERSION
 build:windows:
   stage: build
   tags:
@@ -65,21 +64,18 @@ build:windows:
   before_script:
     - Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
     - choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --quiet --norestart" -y
-    # Install Node.js LTS version 22 (compatible with your package.json requirements)
-    - choco install nodejs-lts --version=22.14.0 -y
-    - refreshenv
+    # Remove old Node.js first
+    - choco uninstall nodejs -y
+    # Install Node.js 22
+    - choco install nodejs --version=22.14.0 -y
     - Invoke-WebRequest -Uri https://win.rustup.rs/x86_64 -OutFile rustup-init.exe
     - .\rustup-init.exe -y --default-host x86_64-pc-windows-msvc --default-toolchain stable
-    - $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+    - $env:PATH += ";$env:USERPROFILE\.cargo\bin"
     - rustc -V
     - node -v
   script:
-    # Clean install to fix native binding issues
-    - Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
-    - Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
     - npm install
-    # Call Windows-specific build script directly (bypasses the wrapper script)
-    - npm run tauri:build
+    - npm run tauri:build:windows
   artifacts:
     paths:
       - src-tauri/target/release/bundle/
