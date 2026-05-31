@@ -13,20 +13,26 @@ export function useSessionAutocompleteData() {
   useEffect(() => {
     let isMounted = true;
 
-    Promise.all([
+    Promise.allSettled([
       loadCreatureNames(),
       loadAssetJson<PlanetData>(EQUIPMENT_ASSET_PATHS.planets).then((data) => data.planets || []),
-    ])
-      .then(([creatureNames, planetNames]) => {
-        if (!isMounted) {
-          return;
-        }
-        setCreatures(creatureNames);
-        setPlanets(planetNames);
-      })
-      .catch((error) => {
-        console.error('Failed to load autocomplete data:', error);
-      });
+    ]).then(([creatureResult, planetResult]) => {
+      if (!isMounted) {
+        return;
+      }
+
+      if (creatureResult.status === 'fulfilled') {
+        setCreatures(creatureResult.value);
+      } else {
+        console.error('Failed to load creature autocomplete data:', creatureResult.reason);
+      }
+
+      if (planetResult.status === 'fulfilled') {
+        setPlanets(planetResult.value);
+      } else {
+        console.error('Failed to load planet autocomplete data:', planetResult.reason);
+      }
+    });
 
     return () => {
       isMounted = false;

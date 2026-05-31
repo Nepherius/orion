@@ -115,10 +115,7 @@ build:windows:
     - tags
 
   cache:
-    key: windows-$CI_COMMIT_REF_SLUG
-    paths:
-      - node_modules/
-      - src-tauri/target/
+    policy: pull
 
 publish:release:
   stage: release
