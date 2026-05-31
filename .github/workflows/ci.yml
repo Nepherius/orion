@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Tests, lint, format, and frontend build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            rpm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run React tests
+        run: npm run test:react
+
+      - name: Run Rust tests
+        run: npm run test:rust
+
+      - name: Run React lint
+        run: npm run lint:react
+
+      - name: Run Rust check
+        run: npm run lint:rust
+
+      - name: Run Clippy
+        run: npm run lint:clippy
+
+      - name: Check formatting
+        run: npm run format
+
+      - name: Build frontend
+        run: npm run build

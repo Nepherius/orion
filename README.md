@@ -1,192 +1,259 @@
-# Orion - Entropia Universe Loot Tracker
+# Orion
 
-A modern **desktop application** for tracking Entropia Universe hunting sessions. Built with **Tauri** (Rust + React), Orion automatically monitors your chat log to detect globals, HoFs, and loot in real-time.
+Orion is a local-first desktop tracker for Entropia Universe hunting sessions. It monitors your chat log, tracks loot and costs, manages equipment loadouts, and turns completed sessions into analytics for returns, efficiency, skills, healing, globals, HoFs, and kill performance.
 
-**Key Features:**
+The app is built with Tauri 2, Rust, React, TypeScript, Vite, Tailwind CSS, Recharts, and Zustand.
 
-- **Automatic loot detection** from chat log
-- **Real-time monitoring** with file watching
-- **Tiny file size** (~10-20 MB)
-- **Local-first** - All data stays on your machine
+## Status
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+- Current version: 1.2.5
+- Repository: https://github.com/Nepherius/orion
+- License: MIT
+- Supported desktop targets: Linux and Windows
 
-## Features
+## Main Features
 
-### 🎯 Automatic Chat Log Parsing
+### Session Tracking
 
-- **Real-time monitoring** of Entropia Universe chat.log
-- **Automatic detection** of globals and Hall of Fame events
-- **Multi-language support** (English, Romanian, etc.)
-- **File watching** - Monitors log changes automatically
-- **Player filtering** - Track only your own loot
+- Create, pause, resume, and complete hunting sessions.
+- Track creature, maturity, location, notes, tags, and linked loadout.
+- Keep active session timing and completed duration stable for analytics.
+- Record ammo, weapon decay, armor decay, healing, and other costs.
+- Review session summaries, cost breakdowns, loot totals, return rate, and profit or loss.
 
-### 🎮 Session Management
+### Chat Log Monitoring
 
-- Create and manage multiple hunting sessions
-- Track active, paused, and completed sessions
-- Real-time session statistics
-- Session notes and details
+- Watch the Entropia Universe `chat.log` file in real time.
+- Detect globals, HoFs, rare items, skill gains, damage, healing, system pickup lines, and combat events.
+- Filter events to the configured player name.
+- Support the current English and Romanian patterns used by the parser.
+- Keep chat-log-derived data local on your machine.
 
-### 💎 Loot Tracking
+### Loot Tracking
 
-- Add loot items with TT value and markup
-- Track quantity and total value
-- Quick loot entry with customizable defaults
-- Item database for frequently looted items
+- Add loot manually or from detected chat log events.
+- Track item name, TT value, quantity, markup, fixed item value, and total value.
+- Maintain item templates for repeated loot entries.
+- Associate loot entries with kill events when kill tracking is enabled.
+- Edit item options and defaults from the item database.
 
-### 📊 Statistics & Analytics
+### Loadouts
 
-- Real-time returns calculation
-- Total loot vs. cost tracking
-- Profit/loss monitoring
-- Session duration tracking
-- Loot events counter
+- Create reusable equipment loadouts for weapons, amplifiers, scopes, sights, absorbers, armor, and medical tools.
+- Calculate expected cost per shot, damage, efficiency, range, healing cost, and total loadout economy.
+- Mark a primary loadout and switch loadouts during active play.
+- Load bundled asset data and refresh external equipment data monthly when the API is available.
+- Validate loaded asset data before it reaches the loadout form.
 
-### 🏆 Globals & HoFs
+### Analytics
 
-- Record global drops
-- Track Hall of Fame (HoF) events
-- Visual distinction between globals and HoFs
+- Overview charts for return rate, profit, cost, loot, globals, and session trends.
+- Equipment, creature, location, time, loot, skill, healing, and kill-tracking panels.
+- Return rate and profit calculations based on completed sessions.
+- Hourly and per-minute rates for loot, cost, profit, kills, globals, and skill gains.
+- Correlation and projection panels for long-term tracking.
+- Data quality warnings for sessions that may skew analytics.
+- Built-in metric notes describing formulas and assumptions.
 
-### 💰 Cost Management
+### Overlay and Settings
 
-- Ammo cost tracking
-- Repair cost tracking
-- Armor decay costs
-- Healing costs
-- Other miscellaneous costs
+- Optional overlay window for compact live session information.
+- Configurable player name, chat log path, default markup, overlay position, and kill tracking behavior.
+- Local persistence through the app database and settings storage.
 
-### 📦 Item Database
+## Privacy
 
-- Create item templates with default values
-- Quick-add frequently looted items
-- Categorize items (loot, weapon, armor, tool, other)
-- Default markup management
+Orion is local-first. Session data, loot, settings, and chat log parsing stay on your machine.
 
-### ⚙️ Settings
+The app can contact `https://api.entropianexus.com` to refresh equipment and creature data. That refresh is monthly, and Orion falls back to bundled assets when the API is unavailable. The app does not need an account or cloud sync.
 
-- Customizable default markup
-- Player name configuration
-- **Rust** 1.77.2+ ([install from rustup.rs](https://rustup.rs/))
-- **Node.js** 18+ and npm/yarn
-- **Linux/Windows** supported
+## Requirements
 
-### Installation
+### Development
 
-1. Clone the repository:
+- Node.js 20 or newer
+- npm
+- Rust 1.77.2 or newer
+- Tauri 2 prerequisites for your operating system
+
+### Linux Build Dependencies
+
+On Debian or Ubuntu based systems:
 
 ```bash
-git clone https://gitlab.com/Nepherius/orion.git
-cd orion
+sudo apt-get update
+sudo apt-get install -y \
+  libgtk-3-dev \
+  libwebkit2gtk-4.1-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev \
+  patchelf \
+  rpm
 ```
 
-2. Install dependencies:
+AppImage bundling may need outbound access to GitHub so `linuxdeploy` can download the AppImage runtime. In environments without FUSE, the build scripts set `APPIMAGE_EXTRACT_AND_RUN=1`.
+
+## Installation From Source
 
 ```bash
+git clone https://github.com/Nepherius/orion.git
+cd orion
 npm install
 ```
 
-3. Run in development mode:
+Run the app in development mode:
 
 ```bash
 npm run tauri:dev
 ```
 
-4. Build for production:
+Run the full local check suite:
 
 ```bash
-npm run tauri:build
+npm run check
 ```
 
-The built executable will be in `src-tauri/target/release/`
+Build the frontend only:
 
-### First Run Setup
+```bash
+npm run build
+```
 
-1. **Launch Orion** - Double-click the executable
-2. **Create a Loadout** - Navigate to the "Loadouts" tab and create your first equipment loadout.
-3. **Select your chat log** (if not auto-detected in Settings):
+## Release Builds
+
+Linux packages:
+
+```bash
+npm run tauri:build:linux
+```
+
+This builds:
+
+- `src-tauri/target/release/bundle/deb/*.deb`
+- `src-tauri/target/release/bundle/rpm/*.rpm`
+- `src-tauri/target/release/bundle/appimage/*.AppImage`
+
+Windows packages:
+
+```bash
+npm run tauri:build:windows
+```
+
+This builds:
+
+- `src-tauri/target/release/bundle/msi/*.msi`
+- `src-tauri/target/release/bundle/nsis/*.exe`
+
+Build only the AppImage:
+
+```bash
+npm run build:appimg
+```
+
+## First Run
+
+1. Launch Orion.
+2. Set your player name in Settings.
+3. Select your Entropia Universe chat log if it is not detected automatically.
    - Windows: `C:\Users\<YourName>\Documents\Entropia Universe\chat.log`
-   - Linux: `~/.wine/drive_c/users/<YourName>/Documents/Entropia Universe/chat.log`
-4. **Create a hunting session** - Click "New Session" and select your new loadout.
-5. **Hunt!** - Globals, HoFs, and loot will be automatically detected from your chat log.
+   - Linux with Wine: `~/.wine/drive_c/users/<YourName>/Documents/Entropia Universe/chat.log`
+4. Create at least one loadout.
+5. Start a hunting session.
+6. Hunt normally while Orion monitors the chat log.
+7. Complete the session and review analytics.
 
-## Usage
+## Common Workflows
 
-### Creating a Hunt Session
+### Create a Session
 
-1. Click "New Session" in the Sessions panel
-2. Fill in session details (creature, weapon, armor, location)
-3. Click "Create Session" to start tracking
+1. Open Sessions.
+2. Select New Session.
+3. Choose creature, location, loadout, and optional notes or tags.
+4. Start the session.
 
-### Adding Loot
+### Add Loot Manually
 
-1. Select an active or completed session
-2. In the Session Details view, click "Add Loot"
-3. Enter item name, quantity, TT value, and markup
-4. Click "Add Loot" to record
+1. Open the session details.
+2. Select Add Loot.
+3. Enter item name, quantity, TT value, markup, or fixed value.
+4. Save the entry.
 
-### Recording Globals & HoFs
+### Record a Global or HoF Manually
 
-1. In Session Details, click "Add Global"
-2. Enter creature name and loot value
-3. Check "This is a Hall of Fame (HoF)" if applicable
-4. Click "Add Global"
+1. Open the session details.
+2. Select Add Global.
+3. Enter creature and value.
+4. Mark the entry as HoF when appropriate.
 
-### Managing Costs
+### Create a Loadout
 
-1. In Session Details, find the Costs panel
-2. Click "Edit" to modify costs
-3. Enter ammo, repair, armor decay, healing, and other costs
-4. Click "Save" to update
+1. Open Loadouts.
+2. Select New Loadout.
+3. Choose equipment and medical tools.
+4. Review calculated economy and healing costs.
+5. Save the loadout.
 
-### Using Item Database
+### Review Analytics
 
-1. Navigate to the Database tab
-2. Click "Add Item Template"
-3. Create templates for frequently looted items with default values
-4. Use these templates for quick loot entry
+1. Complete one or more sessions.
+2. Open Analytics.
+3. Review overview, sessions, equipment, loot, creatures, projections, and advanced panels.
+4. Check Data Quality if a warning appears.
 
-## Technology Stack
+## GitHub Releases
 
-- **Tauri 2** - Rust-powered desktop framework
-- **Rust** - Backend for file operations and parsing
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **Zustand** - State management with local persistence
-- **Notify** - File system watching
-- **Regex** - Chat log parsing
+Release workflows are intended to publish Linux and Windows desktop installers from version tags.
 
-## 🤝 Contributing
+Recommended release flow:
 
-Contributions are welcome! Feel free to:
+```bash
+npm version patch
+git push
+git push --tags
+```
 
-1. Fork the project
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Tag names should use the `v` prefix, for example `v1.2.5`.
 
-## 📝 License
+The GitHub release workflow builds:
 
-This project is licensed under the MIT License.
+- Linux Debian package
+- Linux RPM package
+- Linux AppImage
+- Windows MSI installer
+- Windows NSIS executable installer
 
-## 🙏 Acknowledgments
+## Project Scripts
 
-- Inspired by [Entropia Tally](https://github.com/EntropiaTally/entropia-tally-app/)
-- Inspired by [Artemis](https://www.thedeltaproject.net/artemis)
+- `npm run dev`: start Vite.
+- `npm run tauri:dev`: run tests, then start Tauri development mode.
+- `npm run test`: run React and Rust tests.
+- `npm run lint`: run React, Rust, and Clippy checks.
+- `npm run format`: check React and Rust formatting.
+- `npm run check`: run tests, linting, and formatting checks.
+- `npm run tauri:build:linux`: build Linux `deb`, `rpm`, and `AppImage` packages.
+- `npm run tauri:build:windows`: build Windows `msi` and `exe` installers.
 
-## ⚠️ Disclaimer
+## Contributing
 
-This is an independent project and is **not affiliated with MindArk PE AB or Entropia Universe**. All trademarks are property of their respective owners.
+Issues and pull requests are welcome through GitHub.
 
-## 📧 Contact
+Before opening a pull request, run:
 
-For issues, questions, or suggestions, please use the GitLab issue tracker.
+```bash
+npm run check
+```
 
----
+Keep changes focused, include tests for logic changes, and update documentation when behavior changes.
 
-_Orion Loot Tracker v1.2.0_
+## Security
+
+Please report security issues privately when possible. Do not include personal chat logs, local database files, or private account information in public issues.
+
+## Disclaimer
+
+Orion is an independent project and is not affiliated with MindArk PE AB or Entropia Universe. All trademarks are property of their respective owners.
+
+## Acknowledgments
+
+- Inspired by Entropia Tally: https://github.com/EntropiaTally/entropia-tally-app/
+- Inspired by Artemis: https://www.thedeltaproject.net/artemis
