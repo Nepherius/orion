@@ -71,7 +71,7 @@ The app can contact `https://api.entropianexus.com` to refresh equipment and cre
 
 ### Development
 
-- Node.js 20 or newer
+- Node.js 20.19 or newer, preferably Node.js 22 LTS
 - npm
 - Rust 1.77.2 or newer
 - Tauri 2 prerequisites for your operating system
