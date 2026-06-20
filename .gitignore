@@ -27,3 +27,6 @@ presentation.md
 *.pkg.tar.zst
 packaging/arch/pkg/
 packaging/arch/src/
+
+# Build files
+Cargo.lock

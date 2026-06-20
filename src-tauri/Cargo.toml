@@ -1,6 +1,6 @@
 [package]
 name = "Orion"
-version = "1.2.6"
+version = "1.2.7"
 description = "Entropia Universe Loot Tracker"
 authors = ["Nepherius"]
 license = "MIT"
