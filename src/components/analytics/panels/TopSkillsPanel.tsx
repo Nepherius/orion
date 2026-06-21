@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useHuntStore } from '../../../store';
 import { Panel } from '../../common/Panel';
 import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 /**
  * Displays a vertical bar chart of the top skills gained in recent sessions
@@ -10,7 +11,14 @@ import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyle
 export default function TopSkillsPanel() {
   const topSkills = useHuntStore((state) => state.analyticsData.performance?.topSkills);
 
-  if (!topSkills || topSkills.length === 0) return null;
+  if (!topSkills || topSkills.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Top Skills Gained"
+        message="No skill gain events are available for the selected filters."
+      />
+    );
+  }
 
   return (
     <Panel title="Top Skills Gained">

@@ -12,6 +12,7 @@ import {
 import { useHuntStore } from '../../../store';
 import { Panel } from '../../common/Panel';
 import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function WeaponPerformancePanel() {
   const weaponData = useHuntStore((state) => state.analyticsData.performance?.weaponData);
@@ -27,7 +28,14 @@ export default function WeaponPerformancePanel() {
     });
   }, [weaponData]);
 
-  if (weapons.length === 0) return null;
+  if (weapons.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Weapon Performance"
+        message="Complete sessions with linked weapons, costs, and damage to compare performance."
+      />
+    );
+  }
 
   return (
     <Panel title="Weapon Performance">

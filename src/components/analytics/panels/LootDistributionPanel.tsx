@@ -12,6 +12,7 @@ import {
 import { useHuntStore } from '../../../store';
 import { Panel } from '../../common/Panel';
 import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 function generateBucketColor(index: number, totalBuckets: number) {
   // Use HSL for smooth transitions
@@ -104,7 +105,14 @@ export default function LootDistributionPanel() {
   }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
   const totalDrops = data.reduce((sum, b) => sum + b.count, 0);
-  if (totalDrops === 0) return null;
+  if (totalDrops === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Loot Distribution"
+        message="No tracked loot drops are available for the selected filters."
+      />
+    );
+  }
 
   return (
     <Panel

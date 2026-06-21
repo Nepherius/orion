@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 import { Heart } from 'lucide-react';
 import { MetricTile, Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function HealingPerformancePanel() {
   const sessions = useHuntStore((state) => state.sessions);
@@ -51,7 +52,12 @@ export default function HealingPerformancePanel() {
   }, [sessions, timeRange, selectedTags]);
 
   if (stats.sessionCount === 0 || stats.totalHealing === 0) {
-    return null;
+    return (
+      <AnalyticsEmptyState
+        title="Healing Performance"
+        message="No healing events are recorded for the selected sessions."
+      />
+    );
   }
 
   return (

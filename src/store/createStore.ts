@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { HuntStore } from './storeTypes';
-import { defaultSettings } from './shared';
+import { defaultSettings, setPersistenceErrorReporter } from './shared';
 import { createInternalActions } from './actionsInternal';
 import { createGoalActions } from './actionsGoals';
 import { createSessionActions } from './actionsSessions';
@@ -43,6 +43,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
     totalDuration: 0,
     totalSessions: 0,
   },
+  persistenceError: null,
 
   ...createAnalyticsActions(set, get),
   ...createInternalActions(set, get),
@@ -54,3 +55,7 @@ export const useHuntStore = create<HuntStore>()((set, get) => ({
   ...createLoadoutActions(set, get),
   ...createSettingsActions(set, get),
 }));
+
+setPersistenceErrorReporter((persistenceError) => {
+  useHuntStore.setState({ persistenceError });
+});

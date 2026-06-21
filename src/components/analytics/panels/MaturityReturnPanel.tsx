@@ -12,11 +12,19 @@ import {
   ReferenceLine,
   Cell,
 } from 'recharts';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function MaturityReturnPanel() {
   const maturityStats = useHuntStore((state) => state.analyticsData.factors?.maturityStats);
 
-  if (!maturityStats || maturityStats.length === 0) return null;
+  if (!maturityStats || maturityStats.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Return Rate by Maturity"
+        message="Track at least 3 kills for a creature and maturity combination to show this comparison."
+      />
+    );
+  }
 
   const chartData = maturityStats.map((item) => ({
     label: `${item.creature} ${item.maturity !== 'Unknown' ? item.maturity : ''}`.trim(),

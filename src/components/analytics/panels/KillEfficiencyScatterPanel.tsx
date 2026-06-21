@@ -1,6 +1,7 @@
 import { useHuntStore } from '../../../store';
 import { Panel } from '../../common/Panel';
 import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 import {
   ScatterChart,
   Scatter,
@@ -24,7 +25,14 @@ interface ScatterPoint {
 export default function KillEfficiencyScatterPanel() {
   const killEfficiency = useHuntStore((state) => state.analyticsData.factors?.killEfficiency);
 
-  if (!killEfficiency || killEfficiency.length === 0) return null;
+  if (!killEfficiency || killEfficiency.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Kill Efficiency Scatter"
+        message="Track kills with both costs and loot to compare creature efficiency."
+      />
+    );
+  }
 
   const points: ScatterPoint[] = killEfficiency.map((item) => ({
     avgCostPerKill: parseFloat(item.avgCostPerKill.toFixed(3)),

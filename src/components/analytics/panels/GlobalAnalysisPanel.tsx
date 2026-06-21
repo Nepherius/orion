@@ -1,10 +1,18 @@
 import { useHuntStore } from '../../../store';
 import { MetricTile, Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function GlobalAnalysisPanel() {
   const performance = useHuntStore((state) => state.analyticsData.performance);
 
-  if (!performance) return null;
+  if (!performance) {
+    return (
+      <AnalyticsEmptyState
+        title="Global & Hall of Fame Analysis"
+        message="Global analytics are not available for the selected filters."
+      />
+    );
+  }
 
   return (
     <Panel

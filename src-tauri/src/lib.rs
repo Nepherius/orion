@@ -707,6 +707,7 @@ pub fn run() {
             db_commands::db_delete_session,
             db_commands::db_get_all_sessions,
             db_commands::db_get_all_sessions_summary,
+            db_commands::db_clear_all_data,
             db_commands::db_get_session_stats,
             db_commands::db_get_lifetime_stats,
             db_commands::db_get_analytics_stats,

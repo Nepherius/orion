@@ -2,6 +2,7 @@ import { FolderOpen, User, FileText, Palette, Sliders, AlertCircle } from 'lucid
 import { useSettingsModel } from '../../hooks/useSettingsModel';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { AlertModal } from '../common/AlertModal';
 import { InfoTooltip } from '../common/InfoTooltip';
 import { Panel } from '../common/Panel';
 import { open } from '@tauri-apps/plugin-shell';
@@ -39,6 +40,8 @@ export function Settings() {
     confirmClearData,
     showClearDataConfirm,
     setShowClearDataConfirm,
+    clearDataError,
+    setClearDataError,
   } = useSettingsModel();
 
   if (!isPageVisible) {
@@ -261,6 +264,15 @@ export function Settings() {
         detail="All sessions, loot, loadouts, and settings will be permanently deleted."
         confirmText="Clear All Data"
         cancelText="Cancel"
+      />
+
+      <AlertModal
+        isOpen={clearDataError !== null}
+        onClose={() => setClearDataError(null)}
+        variant="error"
+        title="Could Not Clear Data"
+        message={clearDataError ?? ''}
+        detail="Your existing database has been left in place."
       />
     </div>
   );

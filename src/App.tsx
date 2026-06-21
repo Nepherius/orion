@@ -48,7 +48,14 @@ const SessionSummaryModal = lazy(() =>
   }))
 );
 
-import { Database, Settings as SettingsIcon, BarChart3, Sword, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Database,
+  Settings as SettingsIcon,
+  BarChart3,
+  Sword,
+  X,
+} from 'lucide-react';
 
 type View = 'dashboard' | 'loot' | 'loadouts' | 'sessions' | 'database' | 'analytics' | 'settings';
 
@@ -74,6 +81,8 @@ function App() {
 
   const avatarName = useHuntStore((state) => state.settings.avatarName);
   const theme = useHuntStore((state) => state.settings.theme);
+  const persistenceError = useHuntStore((state) => state.persistenceError);
+  const clearPersistenceError = useHuntStore((state) => state.clearPersistenceError);
   const [dataLoaded, setDataLoaded] = useState(false);
 
   // Load initial equipment data from API on fresh install
@@ -227,6 +236,31 @@ function App() {
               className="flex-shrink-0 text-red-300/50 hover:text-red-300 transition-colors"
             >
               ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {persistenceError && (
+        <div className="fixed bottom-6 left-6 z-[60] max-w-md rounded-lg border border-red-500/50 bg-red-950/95 p-4 shadow-xl">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-red-100">Changes may not be saved</p>
+              <p className="mt-1 text-xs text-red-200/80">
+                Orion could not write recent changes to its database. Keep the app open and retry
+                the action before restarting.
+              </p>
+              <p className="mt-2 break-all font-mono text-[11px] text-red-300/70">
+                {persistenceError.command}: {persistenceError.message}
+              </p>
+            </div>
+            <button
+              onClick={clearPersistenceError}
+              className="shrink-0 text-red-300/60 transition-colors hover:text-red-200"
+              title="Dismiss warning"
+            >
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>

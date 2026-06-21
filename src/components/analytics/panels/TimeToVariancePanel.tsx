@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 import { calculateTimeToVarianceMetrics } from '../../../utils/analyticsCalculations';
 import { MetricTile, Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function TimeToVariancePanel() {
   const sessions = useHuntStore((state) => state.sessions);
@@ -24,7 +25,12 @@ export default function TimeToVariancePanel() {
   );
 
   if (!variance) {
-    return null;
+    return (
+      <AnalyticsEmptyState
+        title="Time-to-Variance"
+        message="At least 5 completed sessions with return data are required to estimate stability."
+      />
+    );
   }
 
   return (

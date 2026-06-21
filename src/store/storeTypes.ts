@@ -21,6 +21,12 @@ export interface PendingKill {
   lootItemIds: string[];
 }
 
+export interface PersistenceError {
+  command: string;
+  message: string;
+  occurredAt: number;
+}
+
 export interface AnalyticsPerformanceSqlData {
   avgLootValue: number;
   overallLootStdDev: number;
@@ -173,6 +179,7 @@ export interface HuntStore {
   };
   analyticsSelectedTags: string[];
   analyticsLifetimeStats: AnalyticsLifetimeStats;
+  persistenceError: PersistenceError | null;
 
   _loadCreatureData: () => Promise<void>;
   fetchAnalyticsData: (
@@ -285,6 +292,8 @@ export interface HuntStore {
   updateSettings: (settings: Partial<AppSettings>) => void;
   addToIgnoreList: (itemName: string) => void;
   removeFromIgnoreList: (itemName: string) => void;
+  clearAllData: () => Promise<boolean>;
+  clearPersistenceError: () => void;
 
   getActiveSession: () => HuntSession | null;
   calculateSessionStats: (sessionId: string) => SessionStats;

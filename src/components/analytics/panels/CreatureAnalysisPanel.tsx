@@ -4,6 +4,7 @@ import { DataTable, DataTableColumn } from '../../common/DataTable';
 import { Panel } from '../../common/Panel';
 import { CreatureAnalytics } from '../CreatureAnalytics';
 import { KillTrackingAnalytics } from '../KillTrackingAnalytics';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function CreatureAnalysisPanel() {
   const creatureAnalysis = useHuntStore((state) => state.analyticsData.advanced?.creatureAnalysis);
@@ -63,7 +64,7 @@ export default function CreatureAnalysisPanel() {
   return (
     <>
       {/* Creature Analysis Table */}
-      {creatureAnalysis && creatureAnalysis.length > 0 && (
+      {creatureAnalysis && creatureAnalysis.length > 0 ? (
         <Panel title="Creature Analysis" tooltip="Profitability and frequency by creature type">
           <DataTable
             columns={creatureColumns}
@@ -72,6 +73,11 @@ export default function CreatureAnalysisPanel() {
             maxHeightClassName="max-h-80 overflow-y-auto"
           />
         </Panel>
+      ) : (
+        <AnalyticsEmptyState
+          title="Creature Analysis"
+          message="Add creatures to completed sessions to compare their profitability."
+        />
       )}
 
       {/* Kill Tracking Analytics */}

@@ -1,11 +1,19 @@
 import { useHuntStore } from '../../../store';
 import { DataTable, DataTableColumn } from '../../common/DataTable';
 import { Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function TopLootItemsPanel() {
   const topLootItems = useHuntStore((state) => state.analyticsData.performance?.topLootItems);
 
-  if (!topLootItems || topLootItems.length === 0) return null;
+  if (!topLootItems || topLootItems.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Top Loot Items"
+        message="No tracked loot items are available for the selected filters."
+      />
+    );
+  }
 
   const columns: Array<DataTableColumn<(typeof topLootItems)[number]>> = [
     {

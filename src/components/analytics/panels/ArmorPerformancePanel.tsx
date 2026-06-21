@@ -1,12 +1,19 @@
 import { useHuntStore } from '../../../store';
 import { DataTable, DataTableColumn } from '../../common/DataTable';
 import { Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function ArmorPerformancePanel() {
   const armorData = useHuntStore((state) => state.analyticsData.performance?.armorData);
 
-  if (!armorData || armorData.length === 0 || !armorData.some((a) => a.armor !== 'None'))
-    return null;
+  if (!armorData || armorData.length === 0 || !armorData.some((a) => a.armor !== 'None')) {
+    return (
+      <AnalyticsEmptyState
+        title="Armor Performance"
+        message="Complete sessions with armor equipped and recorded damage taken to compare armor performance."
+      />
+    );
+  }
 
   const columns: Array<DataTableColumn<(typeof armorData)[number]>> = [
     {

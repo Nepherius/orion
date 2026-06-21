@@ -12,6 +12,7 @@ import {
 import { useHuntStore } from '../../../store';
 import { Panel } from '../../common/Panel';
 import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 interface ScatterPoint {
   durationHours: number;
@@ -45,7 +46,14 @@ export default function SessionLengthScatterPanel() {
     );
   }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
-  if (points.length < 3) return null;
+  if (points.length < 3) {
+    return (
+      <AnalyticsEmptyState
+        title="Session Length vs Profitability"
+        message="At least 3 completed sessions with duration and cost data are required."
+      />
+    );
+  }
 
   return (
     <Panel

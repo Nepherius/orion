@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 import { InfoTooltip } from '../../common/InfoTooltip';
 import { MetricTile, Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function SessionReliabilityPanel() {
   const { advanced, sessions, analyticsTimeRange, analyticsSelectedTags } = useHuntStore(
@@ -55,7 +56,14 @@ export default function SessionReliabilityPanel() {
     };
   }, [sessions, analyticsTimeRange, analyticsSelectedTags]);
 
-  if (!advanced) return null;
+  if (!advanced) {
+    return (
+      <AnalyticsEmptyState
+        title="Session Reliability"
+        message="Complete sessions with cost and loot data to calculate reliability."
+      />
+    );
+  }
 
   const { sessionWinRate, profitableStreaks } = advanced;
   const bars = [

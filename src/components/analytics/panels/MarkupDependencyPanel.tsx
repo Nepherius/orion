@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 import { calculateMarkupDependencyMetrics } from '../../../utils/analyticsCalculations';
 import { MetricTile, Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function MarkupDependencyPanel() {
   const sessions = useHuntStore((state) => state.sessions);
@@ -24,7 +25,12 @@ export default function MarkupDependencyPanel() {
   );
 
   if (!markup) {
-    return null;
+    return (
+      <AnalyticsEmptyState
+        title="Markup Dependency"
+        message="Track session costs and loot values to compare TT and markup profitability."
+      />
+    );
   }
 
   return (

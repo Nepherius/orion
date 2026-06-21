@@ -1,10 +1,18 @@
 import { useHuntStore } from '../../../store';
 import { MetricTile, Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function LootQualityPanel() {
   const performance = useHuntStore((state) => state.analyticsData.performance);
 
-  if (!performance) return null;
+  if (!performance) {
+    return (
+      <AnalyticsEmptyState
+        title="Loot Quality & Consistency"
+        message="Loot analytics are not available for the selected filters."
+      />
+    );
+  }
 
   return (
     <Panel title="Loot Quality & Consistency">

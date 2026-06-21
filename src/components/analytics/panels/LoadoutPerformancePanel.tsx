@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 import { DataTable, DataTableColumn } from '../../common/DataTable';
 import { Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function LoadoutPerformancePanel() {
   const loadoutRaw = useHuntStore((state) => state.analyticsData.performance?.loadoutData);
@@ -23,7 +24,14 @@ export default function LoadoutPerformancePanel() {
       .filter((item) => item.name !== 'Unknown');
   }, [loadoutRaw, loadouts]);
 
-  if (loadoutData.length === 0) return null;
+  if (loadoutData.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Loadout Performance"
+        message="Complete sessions linked to saved loadouts to compare their performance."
+      />
+    );
+  }
 
   const columns: Array<DataTableColumn<(typeof loadoutData)[number]>> = [
     {

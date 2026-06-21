@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
 import { useHuntStore } from './store';
-import { Loadout, HuntSession, SessionStats, CombatEvent } from './types';
+import { Loadout, HuntSession, SessionStats, CombatEvent, ItemTemplate, Goal } from './types';
+import { safeInvoke } from './store/shared';
 
 // Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
@@ -198,5 +199,60 @@ describe('HuntStore - session lifecycle persistence', () => {
         }),
       })
     );
+  });
+});
+
+describe('HuntStore - persistence failures', () => {
+  beforeEach(() => {
+    vi.mocked(invoke).mockReset();
+    useHuntStore.setState({
+      persistenceError: null,
+      sessions: [],
+      loadouts: [],
+      itemDatabase: [],
+      goals: [],
+      activeSessionId: null,
+    });
+  });
+
+  it('surfaces failed database writes in store state', async () => {
+    vi.mocked(invoke).mockRejectedValueOnce(new Error('disk is read-only'));
+
+    await safeInvoke('db_add_loot', { params: {} });
+
+    expect(useHuntStore.getState().persistenceError).toMatchObject({
+      command: 'db_add_loot',
+      message: 'disk is read-only',
+    });
+  });
+
+  it('does not label read failures as unsaved changes', async () => {
+    vi.mocked(invoke).mockRejectedValueOnce(new Error('query failed'));
+
+    await safeInvoke('db_get_session_loot', { sessionUuid: 'session-1' });
+
+    expect(useHuntStore.getState().persistenceError).toBeNull();
+  });
+
+  it('clears persisted and in-memory user data together', async () => {
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    useHuntStore.setState({
+      sessions: [{ id: 'session-1' } as HuntSession],
+      activeSessionId: 'session-1',
+      loadouts: [{ id: 'loadout-1' } as Loadout],
+      itemDatabase: [{ id: 'item-1' } as ItemTemplate],
+      goals: [{ id: 'goal-1' } as Goal],
+    });
+
+    const cleared = await useHuntStore.getState().clearAllData();
+    const state = useHuntStore.getState();
+
+    expect(cleared).toBe(true);
+    expect(invoke).toHaveBeenCalledWith('db_clear_all_data', undefined);
+    expect(state.sessions).toEqual([]);
+    expect(state.activeSessionId).toBeNull();
+    expect(state.loadouts).toEqual([]);
+    expect(state.itemDatabase).toEqual([]);
+    expect(state.goals).toEqual([]);
   });
 });

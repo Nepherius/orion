@@ -1,6 +1,7 @@
 import { Fragment, useMemo } from 'react';
 import { useHuntStore } from '../../../store';
 import { Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -43,7 +44,14 @@ export default function HourlyHeatmapPanel() {
     return { lookup };
   }, [heatmapData]);
 
-  if (!grid) return null;
+  if (!grid) {
+    return (
+      <AnalyticsEmptyState
+        title="Time-of-Day Heatmap"
+        message="Complete sessions at different times to build the day-and-hour heatmap."
+      />
+    );
+  }
 
   const cellSize = 32;
   const labelWidth = 40;

@@ -17,6 +17,20 @@ import {
   calculateSessionStats as calculateSessionStatsCore,
   emptySessionStats,
 } from '../core/sessionCore';
+import type { PersistenceError } from './storeTypes';
+
+type PersistenceErrorReporter = (error: PersistenceError) => void;
+
+let persistenceErrorReporter: PersistenceErrorReporter | null = null;
+
+export const setPersistenceErrorReporter = (reporter: PersistenceErrorReporter | null) => {
+  persistenceErrorReporter = reporter;
+};
+
+const isPersistenceWriteCommand = (command: string): boolean =>
+  ['db_add_', 'db_create_', 'db_update_', 'db_delete_', 'db_set_', 'db_clear_'].some((prefix) =>
+    command.startsWith(prefix)
+  );
 
 export const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
 
@@ -71,6 +85,13 @@ export const safeInvoke = async <T = any>(command: string, args?: Record<string,
     return (await invoke(command, args)) as T;
   } catch (error) {
     console.error(`[DB Error] Command '${command}' failed:`, error);
+    if (isPersistenceWriteCommand(command)) {
+      persistenceErrorReporter?.({
+        command,
+        message: error instanceof Error ? error.message : String(error),
+        occurredAt: Date.now(),
+      });
+    }
     return null;
   }
 };

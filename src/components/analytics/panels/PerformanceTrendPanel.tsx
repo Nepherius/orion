@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { useHuntStore } from '../../../store';
 import { Panel } from '../../common/Panel';
 import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 /**
  * Displays a line chart of return rate, profit, and loot for the last 30 sessions
@@ -34,7 +35,14 @@ export default function PerformanceTrendPanel() {
     }));
   }, [recentSessionsRaw]);
 
-  if (recentSessions.length === 0) return null;
+  if (recentSessions.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Performance Trend"
+        message="Complete sessions with tracked costs and loot to build a performance trend."
+      />
+    );
+  }
 
   return (
     <Panel

@@ -4,10 +4,11 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useHuntStore } from '../store';
 
 export function useSettingsModel() {
-  const { settings, updateSettings } = useHuntStore();
+  const { settings, updateSettings, clearAllData } = useHuntStore();
   const [chatLogPath, setChatLogPath] = useState(settings.chatLogPath || '');
   const [detectedPath, setDetectedPath] = useState<string | null>(null);
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
+  const [clearDataError, setClearDataError] = useState<string | null>(null);
 
   const detectChatLog = async () => {
     try {
@@ -53,9 +54,17 @@ export function useSettingsModel() {
     setShowClearDataConfirm(true);
   };
 
-  const confirmClearData = () => {
-    localStorage.clear();
-    window.location.reload();
+  const confirmClearData = async () => {
+    setClearDataError(null);
+    const cleared = await clearAllData();
+    if (cleared) {
+      window.location.reload();
+      return;
+    }
+
+    setClearDataError(
+      'Orion could not clear the database. No data was intentionally removed; please try again.'
+    );
   };
 
   useEffect(() => {
@@ -74,5 +83,7 @@ export function useSettingsModel() {
     confirmClearData,
     showClearDataConfirm,
     setShowClearDataConfirm,
+    clearDataError,
+    setClearDataError,
   };
 }

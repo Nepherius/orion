@@ -1,10 +1,18 @@
 import { useHuntStore } from '../../../store';
 import { MetricTile, Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function TemporalAnalyticsPanel() {
   const advanced = useHuntStore((state) => state.analyticsData.advanced);
 
-  if (!advanced) return null;
+  if (!advanced) {
+    return (
+      <AnalyticsEmptyState
+        title="Temporal Analytics"
+        message="Complete sessions across multiple times to calculate temporal patterns."
+      />
+    );
+  }
 
   const { temporalInsights } = advanced;
 

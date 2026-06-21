@@ -2,11 +2,19 @@ import { format } from 'date-fns';
 import { useHuntStore } from '../../../store';
 import { DataTable, DataTableColumn } from '../../common/DataTable';
 import { Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function TopGlobalsPanel() {
   const allGlobals = useHuntStore((state) => state.analyticsData.performance?.allGlobals);
 
-  if (!allGlobals || allGlobals.length === 0) return null;
+  if (!allGlobals || allGlobals.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Top Globals"
+        message="No globals or Hall of Fame events are recorded for the selected filters."
+      />
+    );
+  }
 
   const columns: Array<DataTableColumn<(typeof allGlobals)[number]>> = [
     {

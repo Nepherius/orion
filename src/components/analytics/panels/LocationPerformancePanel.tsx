@@ -1,11 +1,19 @@
 import { useHuntStore } from '../../../store';
 import { DataTable, DataTableColumn } from '../../common/DataTable';
 import { Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 export default function LocationPerformancePanel() {
   const locationData = useHuntStore((state) => state.analyticsData.performance?.locationData);
 
-  if (!locationData || locationData.length === 0) return null;
+  if (!locationData || locationData.length === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Performance by Location"
+        message="Add locations to completed sessions to compare hunting areas."
+      />
+    );
+  }
 
   const columns: Array<DataTableColumn<(typeof locationData)[number]>> = [
     {

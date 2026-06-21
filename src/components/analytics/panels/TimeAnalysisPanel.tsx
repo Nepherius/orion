@@ -13,6 +13,7 @@ import {
 import { useHuntStore } from '../../../store';
 import { Panel } from '../../common/Panel';
 import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyles';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 interface HourBucket {
   hour: string;
@@ -79,11 +80,15 @@ export default function TimeAnalysisPanel() {
     return data;
   }, [sessions, timeRange.startTime, timeRange.endTime, selectedTags]);
 
-  if (hourlyData.length === 0) return null;
-
-  // Check if there is any activity at all
   const totalSessions = hourlyData.reduce((sum, h) => sum + h.sessions, 0);
-  if (totalSessions === 0) return null;
+  if (totalSessions === 0) {
+    return (
+      <AnalyticsEmptyState
+        title="Time-of-Day Analysis"
+        message="No completed sessions are available for the selected filters."
+      />
+    );
+  }
 
   return (
     <Panel

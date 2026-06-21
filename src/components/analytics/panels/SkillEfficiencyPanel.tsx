@@ -1,5 +1,6 @@
 import { useHuntStore } from '../../../store';
 import { MetricTile, Panel } from '../../common/Panel';
+import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 import { StatCard } from '../../common/StatCard';
 
 const attributeDescriptions: Record<string, string> = {
@@ -15,7 +16,14 @@ const attributeDescriptions: Record<string, string> = {
 export default function SkillEfficiencyPanel() {
   const advanced = useHuntStore((state) => state.analyticsData.advanced);
 
-  if (!advanced) return null;
+  if (!advanced) {
+    return (
+      <AnalyticsEmptyState
+        title="Skill Efficiency"
+        message="No skill analytics are available for the selected filters."
+      />
+    );
+  }
 
   const {
     skillsByLocation,
@@ -30,7 +38,7 @@ export default function SkillEfficiencyPanel() {
     <>
       {/* Skill Efficiency: By Location & By Weapon */}
       <div className="grid grid-cols-2 gap-6">
-        {skillsByLocation.length > 0 && (
+        {skillsByLocation.length > 0 ? (
           <Panel title="Skills by Location" tooltip="Total skill gains grouped by location">
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {skillsByLocation.slice(0, 10).map((item) => (
@@ -43,9 +51,14 @@ export default function SkillEfficiencyPanel() {
               ))}
             </div>
           </Panel>
+        ) : (
+          <AnalyticsEmptyState
+            title="Skills by Location"
+            message="Record skill gains in sessions with locations to populate this comparison."
+          />
         )}
 
-        {skillsByWeapon.length > 0 && (
+        {skillsByWeapon.length > 0 ? (
           <Panel title="Skills by Weapon" tooltip="Total skill gains grouped by weapon">
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {skillsByWeapon.slice(0, 10).map((item) => (
@@ -58,6 +71,11 @@ export default function SkillEfficiencyPanel() {
               ))}
             </div>
           </Panel>
+        ) : (
+          <AnalyticsEmptyState
+            title="Skills by Weapon"
+            message="Record skill gains in sessions with linked weapons to populate this comparison."
+          />
         )}
       </div>
 
