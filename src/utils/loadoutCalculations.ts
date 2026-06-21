@@ -36,8 +36,11 @@ export function calculateLoadoutStats(
   const weaponAmmoBurn = weapon?.Properties?.Economy?.AmmoBurn || 0;
   const ampAmmoBurn = amplifier?.Properties?.Economy?.AmmoBurn || 0;
   const totalAmmoBurn = weaponAmmoBurn + ampAmmoBurn;
-  // Decay is already in PED, AmmoBurn is in PEC so divide by 100 to get PED
-  const costPerShot = totalDecay + totalAmmoBurn / 100;
+  // Equipment decay is stored in PEC. AmmoBurn is stored in hundredths of a PEC.
+  // Convert both to PED before combining them (1 PED = 100 PEC).
+  const decayCostPed = totalDecay / 100;
+  const ammoCostPed = totalAmmoBurn / 10000;
+  const costPerShot = decayCostPed + ammoCostPed;
 
   const weaponDamage = weapon?.Properties?.Damage?.Penetration || 0;
   const totalDamage = weaponDamage;
@@ -56,9 +59,10 @@ export function calculateLoadoutStats(
     efficiency,
     decay: totalDecay,
     ammoBurn: totalAmmoBurn,
-    totalUses: weapon?.Properties?.Economy?.MaxTT
-      ? Math.floor(weapon.Properties.Economy.MaxTT / totalDecay)
-      : null,
+    totalUses:
+      weapon?.Properties?.Economy?.MaxTT && totalDecay > 0
+        ? Math.floor(weapon.Properties.Economy.MaxTT / decayCostPed)
+        : null,
   };
 }
 

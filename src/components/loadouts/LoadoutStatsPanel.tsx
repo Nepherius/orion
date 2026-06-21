@@ -28,13 +28,15 @@ export function LoadoutStatsPanel({ loadout }: LoadoutStatsPanelProps) {
           label="Cost/Shot"
           value={`${loadout.costPerShot.toFixed(4)} PED`}
           valueClassName="text-blue-400"
-          size="sm"
+          size="xs"
+          truncateValue={false}
         />
         <MetricTile
           label="Cost/Heal"
           value={hasMedicalTool ? `${costPerHeal.toFixed(4)} PED` : 'N/A'}
           valueClassName={hasMedicalTool ? 'text-green-400' : 'text-muted'}
-          size="sm"
+          size="xs"
+          truncateValue={false}
         />
       </div>
 

@@ -254,7 +254,9 @@ export function NewLoadoutModal({ onClose, editLoadout }: NewLoadoutModalProps) 
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-300">Ammo Burn</span>
-                      <span className="text-white font-medium">{stats.ammoBurn}</span>
+                      <span className="text-white font-medium">
+                        {(stats.ammoBurn / 100).toFixed(4)} PEC
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-300">Total Uses</span>

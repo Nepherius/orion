@@ -47,8 +47,9 @@ interface MetricTileProps {
   icon?: ReactNode;
   detail?: string;
   tooltip?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   valueClassName?: string;
+  truncateValue?: boolean;
 }
 
 const toneClass = {
@@ -60,6 +61,7 @@ const toneClass = {
 };
 
 const sizeClass = {
+  xs: 'text-base',
   sm: 'text-xl',
   md: 'text-2xl',
   lg: 'text-3xl',
@@ -74,6 +76,7 @@ export function MetricTile({
   tooltip,
   size = 'md',
   valueClassName = '',
+  truncateValue = true,
 }: MetricTileProps) {
   return (
     <div className="rounded-lg border border-border bg-white/[0.03] p-4">
@@ -85,7 +88,7 @@ export function MetricTile({
         className={`flex min-w-0 items-center gap-2 font-semibold ${sizeClass[size]} ${valueClassName || toneClass[tone]}`}
       >
         {icon}
-        <span className="truncate">{value}</span>
+        <span className={truncateValue ? 'truncate' : 'min-w-0 whitespace-normal'}>{value}</span>
       </div>
       {detail && <div className="mt-1 truncate text-xs text-muted">{detail}</div>}
     </div>

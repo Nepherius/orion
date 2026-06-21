@@ -36,10 +36,11 @@ describe('calculateLoadoutStats', () => {
 
     expect(stats.decay).toBe(3);
     expect(stats.ammoBurn).toBe(100);
-    expect(stats.costPerShot).toBeCloseTo(4, 6);
+    expect(stats.costPerShot).toBeCloseTo(0.04, 6);
     expect(stats.totalDamage).toBe(50);
-    expect(stats.dpp).toBeCloseTo(12.5, 3);
+    expect(stats.dpp).toBeCloseTo(1250, 3);
     expect(stats.range).toBe(55);
     expect(stats.efficiency).toBe(65);
+    expect(stats.totalUses).toBe(33333);
   });
 });
