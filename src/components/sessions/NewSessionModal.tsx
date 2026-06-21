@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useHuntStore } from '../../store';
 import { AutocompleteInput } from '../common/AutocompleteInput';
+import { ConfirmModal } from '../common/ConfirmModal';
 import { TagInput } from '../common/TagInput';
 import { X } from 'lucide-react';
 import { HuntSession } from '../../types';
@@ -11,10 +13,31 @@ interface NewSessionModalProps {
   onSessionCreated?: () => void;
 }
 
+type NewSessionInit = Omit<
+  HuntSession,
+  | 'id'
+  | 'stats'
+  | 'loot'
+  | 'skills'
+  | 'globals'
+  | 'kills'
+  | 'damageEvents'
+  | 'combatEvents'
+  | 'healingEvents'
+  | 'damageTakenEvents'
+>;
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalProps) {
   const createSession = useHuntStore((state) => state.createSession);
   const loadouts = useHuntStore((state) => state.loadouts);
   const primaryLoadout = useHuntStore((state) => state.getPrimaryLoadout());
+  const chatLogPath = useHuntStore((state) => state.settings.chatLogPath);
+  const [pendingSession, setPendingSession] = useState<NewSessionInit | null>(null);
+  const [chatLogWarning, setChatLogWarning] = useState('');
+  const [isValidatingChatLog, setIsValidatingChatLog] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
     loadoutId: string;
@@ -40,33 +63,21 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
 
   const { creatures, planets } = useSessionAutocompleteData();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const selectedLoadout = loadouts.find((l) => l.id === formData.loadoutId);
-    const selectedWeaponName =
-      selectedLoadout?.weapon?.Name || selectedLoadout?.name || 'No Loadout';
-    const selectedArmorName = selectedLoadout?.armor || undefined;
-    const baseHealingCost = selectedLoadout?.medicalMECost || 0;
+  const finishCreatingSession = (session: NewSessionInit) => {
+    createSession(session);
+    onClose();
+    onSessionCreated?.();
+  };
 
-    // Define the initial session object for database insertion (without stats, id, etc.)
-    const newSessionInit: Omit<
-      HuntSession,
-      | 'id'
-      | 'stats'
-      | 'loot'
-      | 'skills'
-      | 'globals'
-      | 'kills'
-      | 'damageEvents'
-      | 'combatEvents'
-      | 'healingEvents'
-      | 'damageTakenEvents'
-    > = {
+  const buildSession = (): NewSessionInit => {
+    const selectedLoadout = loadouts.find((loadout) => loadout.id === formData.loadoutId);
+
+    return {
       name: formData.name,
       location: formData.location || 'Unknown',
       loadoutId: formData.loadoutId || undefined,
-      weapon: selectedWeaponName,
-      armor: selectedArmorName,
+      weapon: selectedLoadout?.weapon?.Name || selectedLoadout?.name || 'No Loadout',
+      armor: selectedLoadout?.armor || undefined,
       creature: formData.creature || '',
       notes: formData.notes,
       tags: formData.tags || [],
@@ -74,15 +85,25 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
       status: 'active',
       ammoCost: 0,
       weaponDecay: 0,
-      healingCost: baseHealingCost,
+      healingCost: selectedLoadout?.medicalMECost || 0,
       otherCosts: 0,
     };
+  };
 
-    // Tauri db insertion creates the UUID and the store initializes omitted collections/stats.
-    createSession(newSessionInit);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newSession = buildSession();
 
-    onClose();
-    onSessionCreated?.();
+    setIsValidatingChatLog(true);
+    try {
+      await invoke('validate_chat_log_path', { path: chatLogPath || '' });
+      finishCreatingSession(newSession);
+    } catch (error) {
+      setPendingSession(newSession);
+      setChatLogWarning(getErrorMessage(error));
+    } finally {
+      setIsValidatingChatLog(false);
+    }
   };
 
   return (
@@ -161,8 +182,8 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
           </div>
 
           <div className="flex gap-3 pt-4">
-            <button type="submit" className="btn-primary flex-1">
-              Create Session
+            <button type="submit" className="btn-primary flex-1" disabled={isValidatingChatLog}>
+              {isValidatingChatLog ? 'Checking Chat Log…' : 'Create Session'}
             </button>
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
@@ -170,6 +191,22 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
           </div>
         </form>
       </div>
+
+      <ConfirmModal
+        isOpen={pendingSession !== null}
+        onClose={() => setPendingSession(null)}
+        onConfirm={() => {
+          if (pendingSession) {
+            finishCreatingSession(pendingSession);
+          }
+        }}
+        variant="warning"
+        title="Chat Log Not Found"
+        message="Orion cannot access the configured chat log, so this session will not be tracked automatically."
+        detail={`${chatLogWarning} Check the Chat Log Path in Settings, or continue without automatic tracking.`}
+        confirmText="Start Without Tracking"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

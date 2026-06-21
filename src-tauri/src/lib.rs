@@ -366,6 +366,27 @@ fn read_chat_log_tail(path: String, lines: usize) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn validate_chat_log_path(path: String) -> Result<(), String> {
+    let trimmed_path = path.trim();
+    if trimmed_path.is_empty() {
+        return Err("No chat log path is configured.".to_string());
+    }
+
+    let chat_log_path = PathBuf::from(trimmed_path);
+    let metadata = fs::metadata(&chat_log_path)
+        .map_err(|error| format!("Chat log not found at \"{}\": {}", trimmed_path, error))?;
+
+    if !metadata.is_file() {
+        return Err(format!(
+            "The configured chat log path is not a file: \"{}\"",
+            trimmed_path
+        ));
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 fn start_watching_file(
     path: String,
     state: State<AppState>,
@@ -669,6 +690,7 @@ pub fn run() {
             parse_chat_log,
             read_chat_log,
             read_chat_log_tail,
+            validate_chat_log_path,
             start_watching_file,
             stop_watching_file,
             is_watching,
