@@ -1,12 +1,16 @@
 // Orion App main entry point
 // This file sets up the main React application, dynamic imports, and routing for all major views.
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { isTauri } from '@tauri-apps/api/core';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { check, type Update } from '@tauri-apps/plugin-updater';
 import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import packageJson from '../package.json';
 import { useInitialDataLoader } from './hooks/useInitialDataLoader';
 import type { HuntSession } from './types';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Panel } from './components/common/Panel';
+import { UpdateModal } from './components/common/UpdateModal';
 
 // Dynamically imported views and components to minimize bundle size
 const SessionList = lazy(() =>
@@ -92,6 +96,12 @@ function App() {
     error: initialDataError,
   } = useInitialDataLoader();
   const [showInitialDataError, setShowInitialDataError] = useState(false);
+  const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<
+    'prompt' | 'downloading' | 'installing' | 'error'
+  >('prompt');
+  const [updateProgress, setUpdateProgress] = useState<number | null>(null);
+  const [updateError, setUpdateError] = useState<string>();
 
   // Show welcome modal only after data is loaded and avatar name is still empty
   const showWelcome = dataLoaded && !avatarName;
@@ -156,6 +166,83 @@ function App() {
     }
   }, [dataLoaded, isLiveSessionAvailable]); // Only run once when data loads
 
+  // Check GitHub Releases after startup. Failures stay non-blocking so an unavailable
+  // release endpoint never prevents Orion from opening normally.
+  useEffect(() => {
+    if (!dataLoaded || !isTauri()) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void check({ timeout: 15_000 })
+      .then((update) => {
+        if (cancelled) {
+          void update?.close();
+          return;
+        }
+        if (update) {
+          setAvailableUpdate(update);
+          setUpdateStatus('prompt');
+        }
+      })
+      .catch((error: unknown) => {
+        console.warn('[Updater] Update check failed:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dataLoaded]);
+
+  const dismissUpdate = () => {
+    if (updateStatus === 'downloading' || updateStatus === 'installing') {
+      return;
+    }
+    void availableUpdate?.close();
+    setAvailableUpdate(null);
+    setUpdateStatus('prompt');
+    setUpdateProgress(null);
+    setUpdateError(undefined);
+  };
+
+  const installUpdate = async () => {
+    if (!availableUpdate) {
+      return;
+    }
+
+    setUpdateStatus('downloading');
+    setUpdateProgress(null);
+    setUpdateError(undefined);
+
+    let downloaded = 0;
+    let contentLength: number | undefined;
+
+    try {
+      await availableUpdate.downloadAndInstall((event) => {
+        if (event.event === 'Started') {
+          contentLength = event.data.contentLength;
+          setUpdateProgress(contentLength ? 0 : null);
+        } else if (event.event === 'Progress') {
+          downloaded += event.data.chunkLength;
+          if (contentLength) {
+            setUpdateProgress(Math.min(100, Math.round((downloaded / contentLength) * 100)));
+          }
+        } else {
+          setUpdateProgress(100);
+          setUpdateStatus('installing');
+        }
+      });
+
+      setUpdateStatus('installing');
+      await relaunch();
+    } catch (error) {
+      console.error('[Updater] Update installation failed:', error);
+      setUpdateError(error instanceof Error ? error.message : String(error));
+      setUpdateStatus('error');
+    }
+  };
+
   // Sync Tailwind CSS theme classes dynamically
   useEffect(() => {
     document.documentElement.className = '';
@@ -167,6 +254,20 @@ function App() {
   return (
     <div className="min-h-screen text-body bg-background">
       {showWelcome && <WelcomeModal />}
+
+      {availableUpdate && (
+        <UpdateModal
+          currentVersion={availableUpdate.currentVersion}
+          version={availableUpdate.version}
+          notes={availableUpdate.body}
+          hasActiveSession={isLiveSessionAvailable}
+          status={updateStatus}
+          progress={updateProgress}
+          error={updateError}
+          onInstall={() => void installUpdate()}
+          onClose={dismissUpdate}
+        />
+      )}
 
       {/* Loading screen while database initializes */}
       {!dataLoaded && (

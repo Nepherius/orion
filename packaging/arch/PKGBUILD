@@ -1,5 +1,5 @@
 pkgname=Orion
-pkgver=1.2.7
+pkgver=1.2.8
 pkgrel=2
 pkgdesc="Entropia Universe Loot Tracker"
 arch=('x86_64')

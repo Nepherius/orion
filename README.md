@@ -221,6 +221,16 @@ The GitHub release workflow builds:
 - Linux AppImage
 - Windows MSI installer
 - Windows NSIS executable installer
+- Signed updater artifacts and `latest.json`
+
+Release builds require these GitHub Actions repository secrets:
+
+- `TAURI_SIGNING_PRIVATE_KEY`
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+
+Orion checks the latest GitHub release after startup. AppImage and Windows installations can
+download and install updates in-app; Debian and RPM installations should continue to be upgraded
+through their package manager or a newly downloaded package.
 
 ## Project Scripts
 
