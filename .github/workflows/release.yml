@@ -86,4 +86,19 @@ jobs:
       - name: Publish completed release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+        run: |
+          release_id="$(
+            gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+              --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\" and .draft == true) | .id" \
+              | head -n 1
+          )"
+
+          if [ -z "$release_id" ]; then
+            echo "No draft release found for $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+
+          gh api \
+            --method PATCH \
+            "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+            -F draft=false
