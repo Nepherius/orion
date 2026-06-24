@@ -53,7 +53,8 @@ pub fn db_clear_all_data(state: State<'_, DbState>) -> Result<(), String> {
 }
 
 // Include submodules for DB command implementations
-include!("db_commands/sessions.rs");
+pub(crate) mod sessions;
+
 include!("db_commands/loot_stats.rs");
 include!("db_commands/combat_tracking.rs");
 include!("db_commands/templates_settings.rs");

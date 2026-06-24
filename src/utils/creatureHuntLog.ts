@@ -7,6 +7,7 @@ export interface CreatureHuntLogRun {
   sessionName: string;
   date: number;
   kills: number;
+  skillGains: number;
   ttCost: number;
   ttReturn: number;
   adjustedReturn: number;
@@ -24,10 +25,23 @@ export interface CreatureHuntLogLootItem {
   adjustedValue: number;
 }
 
+export interface CreatureHuntLogSkillGain {
+  name: string;
+  gainAmount: number;
+  events: number;
+}
+
+export interface CreatureHuntLogFilters {
+  startTime?: number | null;
+  endTime?: number | null;
+  tags?: string[];
+}
+
 export interface CreatureHuntLog {
   creature: string;
   runs: CreatureHuntLogRun[];
   lootComposition: CreatureHuntLogLootItem[];
+  skillGains: CreatureHuntLogSkillGain[];
   summary: {
     sessionsIncluded: number;
     excludedMixedSessions: number;
@@ -36,6 +50,7 @@ export interface CreatureHuntLog {
     startTime: number | null;
     endTime: number | null;
     kills: number;
+    totalSkillGains: number;
     durationHours: number;
     globals: number;
     hofs: number;
@@ -71,9 +86,25 @@ const globalMatchesCreature = (globalCreature: string, creature: string) => {
 
 const ttValue = (item: LootItem) => item.value * item.quantity;
 
-export function buildCreatureHuntLog(sessions: HuntSession[], creature: string): CreatureHuntLog {
+const matchesFilters = (session: HuntSession, filters: CreatureHuntLogFilters) => {
+  const startTime = filters.startTime ?? null;
+  const endTime = filters.endTime ?? null;
+  const tags = filters.tags ?? [];
+
+  if (startTime !== null && session.startTime < startTime) return false;
+  if (endTime !== null && session.startTime > endTime) return false;
+  if (tags.length > 0 && !tags.every((tag) => (session.tags || []).includes(tag))) return false;
+  return true;
+};
+
+export function buildCreatureHuntLog(
+  sessions: HuntSession[],
+  creature: string,
+  filters: CreatureHuntLogFilters = {}
+): CreatureHuntLog {
   const runs: CreatureHuntLogRun[] = [];
   const lootByName = new Map<string, CreatureHuntLogLootItem>();
+  const skillsByName = new Map<string, CreatureHuntLogSkillGain>();
   const locations = new Set<string>();
   const maturities = new Set<string>();
   const equipment = new Set<string>();
@@ -88,6 +119,7 @@ export function buildCreatureHuntLog(sessions: HuntSession[], creature: string):
 
   const completedSessions = sessions
     .filter((session) => session.status === 'completed')
+    .filter((session) => matchesFilters(session, filters))
     .sort((a, b) => a.startTime - b.startTime);
 
   for (const session of completedSessions) {
@@ -131,6 +163,8 @@ export function buildCreatureHuntLog(sessions: HuntSession[], creature: string):
     const runHealingCost = session.healingCost * costShare;
     const runOtherCosts = session.otherCosts * costShare;
     const runTtCost = runAmmoCost + runWeaponDecay + runHealingCost + runOtherCosts;
+    const runSkillGains =
+      session.skills.reduce((sum, skill) => sum + skill.gainAmount, 0) * costShare;
     const selectedGlobals = isFullSession
       ? session.globals
       : session.globals.filter((global) => globalMatchesCreature(global.creature, creature));
@@ -168,11 +202,28 @@ export function buildCreatureHuntLog(sessions: HuntSession[], creature: string):
       }
     }
 
+    for (const skill of session.skills) {
+      const name = skill.skillName.trim() || 'Unknown';
+      const gainAmount = skill.gainAmount * costShare;
+      const existing = skillsByName.get(name);
+      if (existing) {
+        existing.gainAmount += gainAmount;
+        existing.events += 1;
+      } else {
+        skillsByName.set(name, {
+          name,
+          gainAmount,
+          events: 1,
+        });
+      }
+    }
+
     runs.push({
       number: runs.length + 1,
       sessionName: session.name,
       date: session.startTime,
       kills: selectedKills.length || (isFullSession ? session.stats.kills : 0),
+      skillGains: runSkillGains,
       ttCost: runTtCost,
       ttReturn: runTtReturn,
       adjustedReturn: runAdjustedReturn,
@@ -187,6 +238,7 @@ export function buildCreatureHuntLog(sessions: HuntSession[], creature: string):
   const totals = runs.reduce(
     (sum, run) => ({
       kills: sum.kills + run.kills,
+      skillGains: sum.skillGains + run.skillGains,
       durationHours: sum.durationHours + run.durationHours,
       globals: sum.globals + run.globals,
       hofs: sum.hofs + run.hofs,
@@ -196,6 +248,7 @@ export function buildCreatureHuntLog(sessions: HuntSession[], creature: string):
     }),
     {
       kills: 0,
+      skillGains: 0,
       durationHours: 0,
       globals: 0,
       hofs: 0,
@@ -209,6 +262,9 @@ export function buildCreatureHuntLog(sessions: HuntSession[], creature: string):
     creature,
     runs,
     lootComposition: Array.from(lootByName.values()).sort((a, b) => b.ttValue - a.ttValue),
+    skillGains: Array.from(skillsByName.values()).sort(
+      (a, b) => b.gainAmount - a.gainAmount || a.name.localeCompare(b.name)
+    ),
     summary: {
       sessionsIncluded: runs.length,
       excludedMixedSessions,
@@ -217,6 +273,7 @@ export function buildCreatureHuntLog(sessions: HuntSession[], creature: string):
       startTime: runs[0]?.date ?? null,
       endTime: lastIncludedTime,
       kills: totals.kills,
+      totalSkillGains: totals.skillGains,
       durationHours: totals.durationHours,
       globals: totals.globals,
       hofs: totals.hofs,
@@ -250,6 +307,7 @@ export function createCreatureHuntLogCsv(report: CreatureHuntLog): string {
     csvRow(['Summary', 'Value']),
     csvRow(['Sessions included', summary.sessionsIncluded]),
     csvRow(['Kills', summary.kills]),
+    csvRow(['Skill gains', fixed(summary.totalSkillGains)]),
     csvRow(['Hours', fixed(summary.durationHours)]),
     csvRow(['Globals', summary.globals]),
     csvRow(['HoFs', summary.hofs]),
@@ -269,6 +327,7 @@ export function createCreatureHuntLogCsv(report: CreatureHuntLog): string {
       'Date',
       'Session',
       'Kills',
+      'Skill Gains',
       'TT Cost',
       'TT Return',
       'TT Return %',
@@ -284,6 +343,7 @@ export function createCreatureHuntLogCsv(report: CreatureHuntLog): string {
         dateLabel(run.date),
         run.sessionName,
         run.kills,
+        fixed(run.skillGains),
         fixed(run.ttCost),
         fixed(run.ttReturn),
         fixed(run.ttReturnPercent),
@@ -293,6 +353,11 @@ export function createCreatureHuntLogCsv(report: CreatureHuntLog): string {
         run.hofs,
         run.allocation,
       ])
+    ),
+    '',
+    csvRow(['Skill Gains', 'Gain Amount', 'Events']),
+    ...report.skillGains.map((skill) =>
+      csvRow([skill.name, fixed(skill.gainAmount), skill.events])
     ),
     '',
     csvRow(['Loot Composition', 'Quantity', 'TT Value', 'Adjusted Value']),
@@ -322,10 +387,25 @@ export function createCreatureHuntLogMarkdown(report: CreatureHuntLog): string {
     [profitLabel, `${fixed(Math.abs(summary.ttProfit))} PED`],
     ['TT Return %', `${fixed(summary.ttReturnPercent)}%`],
     ['Kills', summary.kills],
+    ['Skill gains', fixed(summary.totalSkillGains)],
     ['Hours', fixed(summary.durationHours)],
     ['Globals', summary.globals],
     ['HoFs', summary.hofs],
   ];
+  const skillGainRows =
+    report.skillGains.length > 0
+      ? [
+          '',
+          '### Skill Gains',
+          '',
+          markdownRow(['Name', 'Gain Amount', 'Events']),
+          markdownRow(['---', '---:', '---:']),
+          ...report.skillGains.map((skill) =>
+            markdownRow([skill.name, fixed(skill.gainAmount), skill.events])
+          ),
+          markdownRow(['Total', fixed(summary.totalSkillGains), '']),
+        ]
+      : [];
 
   return [
     `## ${report.creature} Hunting Log`,
@@ -356,6 +436,7 @@ export function createCreatureHuntLogMarkdown(report: CreatureHuntLog): string {
       fixed(summary.ttReturn),
       `${fixed(summary.ttReturnPercent)}%`,
     ]),
+    ...skillGainRows,
     '',
     '### All Together',
     '',

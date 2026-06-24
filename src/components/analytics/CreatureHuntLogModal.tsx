@@ -8,11 +8,13 @@ import {
   buildCreatureHuntLog,
   createCreatureHuntLogCsv,
   createCreatureHuntLogMarkdown,
+  type CreatureHuntLogFilters,
 } from '../../utils/creatureHuntLog';
 
 interface CreatureHuntLogModalProps {
   creature: string;
   sessions: HuntSession[];
+  filters?: CreatureHuntLogFilters;
   onClose: () => void;
 }
 
@@ -32,6 +34,8 @@ const safeFileName = (value: string) =>
     .replace(/[^a-zA-Z0-9._-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .toLocaleLowerCase() || 'creature';
+
+const emptyTagFilter: string[] = [];
 
 async function copyText(value: string) {
   if (navigator.clipboard?.writeText) {
@@ -53,8 +57,24 @@ async function copyText(value: string) {
   textArea.remove();
 }
 
-export function CreatureHuntLogModal({ creature, sessions, onClose }: CreatureHuntLogModalProps) {
-  const report = useMemo(() => buildCreatureHuntLog(sessions, creature), [creature, sessions]);
+export function CreatureHuntLogModal({
+  creature,
+  sessions,
+  filters,
+  onClose,
+}: CreatureHuntLogModalProps) {
+  const filterStartTime = filters?.startTime ?? null;
+  const filterEndTime = filters?.endTime ?? null;
+  const filterTags = filters?.tags ?? emptyTagFilter;
+  const report = useMemo(
+    () =>
+      buildCreatureHuntLog(sessions, creature, {
+        startTime: filterStartTime,
+        endTime: filterEndTime,
+        tags: filterTags,
+      }),
+    [creature, sessions, filterStartTime, filterEndTime, filterTags]
+  );
   const [copied, setCopied] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -136,9 +156,10 @@ export function CreatureHuntLogModal({ creature, sessions, onClose }: CreatureHu
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
                 <SummaryValue label="Sessions" value={summary.sessionsIncluded.toLocaleString()} />
                 <SummaryValue label="Kills" value={summary.kills.toLocaleString()} />
+                <SummaryValue label="Skill Gains" value={fixed(summary.totalSkillGains)} />
                 <SummaryValue label="Hours" value={fixed(summary.durationHours)} />
                 <SummaryValue
                   label="TT Cost"
@@ -215,6 +236,7 @@ export function CreatureHuntLogModal({ creature, sessions, onClose }: CreatureHu
                         <th className="p-3">Date</th>
                         <th className="p-3">Session</th>
                         <th className="p-3 text-right">Kills</th>
+                        <th className="p-3 text-right">Skill Gains</th>
                         <th className="p-3 text-right">TT Cost</th>
                         <th className="p-3 text-right">TT Return</th>
                         <th className="p-3 text-right">Return</th>
@@ -230,6 +252,7 @@ export function CreatureHuntLogModal({ creature, sessions, onClose }: CreatureHu
                             {run.sessionName}
                           </td>
                           <td className="p-3 text-right font-mono">{run.kills}</td>
+                          <td className="p-3 text-right font-mono">{fixed(run.skillGains)}</td>
                           <td className="p-3 text-right font-mono">{fixed(run.ttCost)}</td>
                           <td className="p-3 text-right font-mono">{fixed(run.ttReturn)}</td>
                           <td className="p-3 text-right font-mono">
@@ -241,6 +264,36 @@ export function CreatureHuntLogModal({ creature, sessions, onClose }: CreatureHu
                     </tbody>
                   </table>
                 </div>
+              </section>
+
+              <section>
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide">Skill Gains</h3>
+                {report.skillGains.length === 0 ? (
+                  <div className="rounded-lg border border-border p-4 text-sm text-muted">
+                    No skill gains recorded.
+                  </div>
+                ) : (
+                  <div className="max-h-80 overflow-auto rounded-lg border border-border">
+                    <table className="w-full min-w-[420px] text-sm">
+                      <thead className="sticky top-0 bg-surface-hover text-left text-xs uppercase text-muted">
+                        <tr>
+                          <th className="p-3">Skill</th>
+                          <th className="p-3 text-right">Gain Amount</th>
+                          <th className="p-3 text-right">Events</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.skillGains.map((skill) => (
+                          <tr key={skill.name} className="border-t border-border">
+                            <td className="p-3">{skill.name}</td>
+                            <td className="p-3 text-right font-mono">{fixed(skill.gainAmount)}</td>
+                            <td className="p-3 text-right font-mono">{skill.events}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </section>
 
               <section>
@@ -277,8 +330,8 @@ export function CreatureHuntLogModal({ creature, sessions, onClose }: CreatureHu
                 Full single-creature sessions use session totals. Completely linked mixed sessions
                 are allocated by selected-creature kill cost. {summary.excludedMixedSessions}{' '}
                 incomplete mixed session{summary.excludedMixedSessions === 1 ? '' : 's'} excluded.
-                Skill levels and Codex progress are not shown because Orion does not track reliable
-                before/after values.
+                Skill gain amounts are included; skill levels and Codex progress are not shown
+                because Orion does not track reliable before/after values.
               </p>
             </>
           )}

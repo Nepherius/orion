@@ -153,6 +153,110 @@ describe('creature hunting log', () => {
     expect(report.summary.durationHours).toBeCloseTo(0.4);
   });
 
+  it('respects time range and tag filters', () => {
+    const includedStart = Date.UTC(2026, 0, 10);
+    const included = session({
+      id: 'included',
+      startTime: includedStart,
+      endTime: includedStart + 3600000,
+      tags: ['team'],
+      kills: [
+        {
+          id: 'included-kill',
+          creatureName: 'Daikiba',
+          maturity: 'Young',
+          hpDealt: 40,
+          cost: 100,
+          lootValue: 80,
+          timestamp: 1,
+        },
+      ],
+      loot: [loot('included-loot', 'Animal Hide', 80, 1, 80)],
+    });
+    const outOfRange = session({
+      id: 'old',
+      startTime: Date.UTC(2025, 11, 31),
+      endTime: Date.UTC(2025, 11, 31, 1),
+      tags: ['team'],
+      kills: [
+        {
+          id: 'old-kill',
+          creatureName: 'Daikiba',
+          maturity: 'Young',
+          hpDealt: 40,
+          cost: 100,
+          lootValue: 80,
+          timestamp: 1,
+        },
+      ],
+      loot: [loot('old-loot', 'Animal Hide', 80, 1, 80)],
+    });
+    const wrongTag = session({
+      id: 'solo',
+      startTime: Date.UTC(2026, 0, 11),
+      endTime: Date.UTC(2026, 0, 11, 1),
+      tags: ['solo'],
+      kills: [
+        {
+          id: 'solo-kill',
+          creatureName: 'Daikiba',
+          maturity: 'Young',
+          hpDealt: 40,
+          cost: 100,
+          lootValue: 80,
+          timestamp: 1,
+        },
+      ],
+      loot: [loot('solo-loot', 'Animal Hide', 80, 1, 80)],
+    });
+
+    const report = buildCreatureHuntLog([included, outOfRange, wrongTag], 'Daikiba', {
+      startTime: Date.UTC(2026, 0, 1),
+      endTime: Date.UTC(2026, 0, 31),
+      tags: ['team'],
+    });
+
+    expect(report.summary.sessionsIncluded).toBe(1);
+    expect(report.runs[0].sessionName).toBe('Daikiba run');
+    expect(report.summary.startTime).toBe(includedStart);
+  });
+
+  it('includes tracked skill gains in reports and exports', () => {
+    const report = buildCreatureHuntLog(
+      [
+        session({
+          skills: [
+            { id: 'skill-1', skillName: 'Rifle', gainAmount: 0.5, timestamp: 1 },
+            { id: 'skill-2', skillName: 'Aim', gainAmount: 0.25, timestamp: 2 },
+          ],
+          loot: [loot('loot-1', 'Animal Hide', 95, 1, 100)],
+          kills: [
+            {
+              id: 'kill-1',
+              creatureName: 'Daikiba',
+              maturity: 'Young',
+              hpDealt: 40,
+              cost: 100,
+              lootValue: 100,
+              timestamp: 1,
+            },
+          ],
+        }),
+      ],
+      'Daikiba'
+    );
+
+    expect(report.summary.totalSkillGains).toBeCloseTo(0.75);
+    expect(report.runs[0].skillGains).toBeCloseTo(0.75);
+    expect(report.skillGains).toEqual([
+      { name: 'Rifle', gainAmount: 0.5, events: 1 },
+      { name: 'Aim', gainAmount: 0.25, events: 1 },
+    ]);
+    expect(createCreatureHuntLogCsv(report)).toContain('"Skill gains","0.75"');
+    expect(createCreatureHuntLogMarkdown(report)).toContain('| Skill gains | 0.75 |');
+    expect(createCreatureHuntLogMarkdown(report)).toContain('| Rifle | 0.50 | 1 |');
+  });
+
   it('creates spreadsheet and forum-ready exports', () => {
     const report = buildCreatureHuntLog(
       [

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   TrendingUp,
@@ -26,10 +26,20 @@ export default function CreatureProjectionsPanel({
   onSelectedCreatureChange,
 }: CreatureProjectionsPanelProps) {
   const sessions = useHuntStore((state) => state.sessions);
+  const timeRange = useHuntStore((state) => state.analyticsTimeRange);
+  const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
   const [stats, setStats] = useState<AdvancedCreatureStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHuntLog, setShowHuntLog] = useState(false);
+  const huntLogFilters = useMemo(
+    () => ({
+      startTime: timeRange.startTime,
+      endTime: timeRange.endTime,
+      tags: selectedTags,
+    }),
+    [timeRange.startTime, timeRange.endTime, selectedTags]
+  );
 
   useEffect(() => {
     if (!selectedCreature) return;
@@ -132,10 +142,9 @@ export default function CreatureProjectionsPanel({
               <TrendingUp className="w-6 h-6 text-blue-400" />
               Creature Analytics
             </h2>
-            <p className="text-sm text-muted mt-1">
+            <p className="text-sm text-muted mt-1">w
               Advanced statistical modeling based on your{' '}
-              <span className="font-semibold text-primary-400">entire lifetime</span> data (ignores
-              the time range filter).
+              <span className="font-semibold text-primary-400">selected filtered </span> data.
             </p>
           </div>
 
@@ -482,6 +491,7 @@ export default function CreatureProjectionsPanel({
         <CreatureHuntLogModal
           creature={selectedCreature}
           sessions={sessions}
+          filters={huntLogFilters}
           onClose={() => setShowHuntLog(false)}
         />
       )}
