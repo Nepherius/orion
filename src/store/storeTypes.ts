@@ -217,6 +217,7 @@ export interface HuntStore {
   ) => void;
   updateSession: (id: string, updates: Partial<HuntSession>) => void;
   deleteSession: (id: string) => void;
+  deleteSessions: (ids: string[]) => Promise<void>;
   startSession: (id: string) => void;
   pauseSession: (id: string) => void;
   resumeSession: (id: string) => void;

@@ -132,6 +132,9 @@ export interface HuntSession {
   damageTakenEvents: DamageTakenEvent[];
   notes: string;
   loadoutId?: string; // Link to loadout for cost calculations
+  weaponEfficiencySnapshot?: number;
+  dppSnapshot?: number;
+  loadoutNameSnapshot?: string;
 
   // Costs
   ammoCost: number;
@@ -192,6 +195,7 @@ interface EquipmentEconomy {
 
 interface EquipmentDamage {
   Penetration?: number;
+  [damageType: string]: number | null | undefined;
 }
 
 interface EquipmentProperties {
@@ -247,13 +251,32 @@ export interface Loadout {
 export interface AdvancedCreatureStats {
   creature: string;
   trueReturnPercent: number;
+  returnWithMarkupPercent: number;
+  effectiveMarkupPercent: number;
   volatilityCv: number;
   cycleToStabilize: number;
   depositPerMonthUSD: number;
-  fatigueDropoff: number;
+  bankrollRunsAtTt: number | null;
+  bankrollRunsWithMarkup: number | null;
+  eventVolumeAnalysis: {
+    available: boolean;
+    sessionsAnalyzed: number;
+    lowAverageEvents: number;
+    highAverageEvents: number;
+    lowReturnPercent: number;
+    highReturnPercent: number;
+    differencePercentPoints: number;
+  };
+  allocationCoverage: {
+    linkedMixedSessions: number;
+    fullSessionFallbacks: number;
+    excludedMixedSessions: number;
+  };
   trend10: number;
   trend50: number;
   dataPoints: number;
   totalCost: number;
   totalLoot: number;
+  totalTtLoot: number;
+  totalMarkupGain: number;
 }

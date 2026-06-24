@@ -1,30 +1,35 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  AlertTriangle,
+  ShieldCheck,
+  FileSpreadsheet,
+} from 'lucide-react';
 import { useHuntStore } from '../../../store';
-import { TrendingUp, TrendingDown, Activity, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { InfoTooltip } from '../../common/InfoTooltip';
 import { MetricTile, Panel } from '../../common/Panel';
 import { AdvancedCreatureStats } from '../../../types';
+import { CreatureHuntLogModal } from '../CreatureHuntLogModal';
 
-export default function CreatureProjectionsPanel() {
+interface CreatureProjectionsPanelProps {
+  creatureList: string[];
+  selectedCreature: string;
+  onSelectedCreatureChange: (creature: string) => void;
+}
+
+export default function CreatureProjectionsPanel({
+  creatureList,
+  selectedCreature,
+  onSelectedCreatureChange,
+}: CreatureProjectionsPanelProps) {
   const sessions = useHuntStore((state) => state.sessions);
-
-  const creatureList = useMemo(() => {
-    return Array.from(
-      new Set(
-        sessions.flatMap((s) => [s.creature || 'Unknown', ...s.kills.map((k) => k.creatureName)])
-      )
-    )
-      .filter((c) => c && c !== 'Unknown')
-      .sort();
-  }, [sessions]);
-
-  const [selectedCreature, setSelectedCreature] = useState<string>(
-    creatureList.length > 0 ? creatureList[0] : ''
-  );
   const [stats, setStats] = useState<AdvancedCreatureStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHuntLog, setShowHuntLog] = useState(false);
 
   useEffect(() => {
     if (!selectedCreature) return;
@@ -98,6 +103,25 @@ export default function CreatureProjectionsPanel() {
     return 'Unknown';
   };
 
+  const formatBankrollRuns = (runs: number | null, returnPercent: number) => {
+    if (returnPercent >= 100) return 'Does not deplete';
+    if (runs === null) return 'Unknown';
+    return `${runs.toLocaleString()} runs`;
+  };
+
+  const formatMarkupExtension = () => {
+    if (!stats) return 'N/A';
+    if (stats.trueReturnPercent < 100 && stats.returnWithMarkupPercent >= 100) {
+      return 'Avoids depletion';
+    }
+    if (stats.bankrollRunsAtTt === null || stats.bankrollRunsWithMarkup === null) {
+      return 'No finite change';
+    }
+
+    const difference = stats.bankrollRunsWithMarkup - stats.bankrollRunsAtTt;
+    return `${difference >= 0 ? '+' : ''}${difference.toLocaleString()} runs`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header / Select Creature */}
@@ -115,12 +139,12 @@ export default function CreatureProjectionsPanel() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-1 w-full md:w-64">
+          <div className="flex w-full flex-col gap-2 md:w-72">
             <label className="text-xs text-muted font-bold">SELECT CREATURE</label>
             <select
               className="input-field bg-surface-hover"
               value={selectedCreature}
-              onChange={(e) => setSelectedCreature(e.target.value)}
+              onChange={(e) => onSelectedCreatureChange(e.target.value)}
             >
               {creatureList.length === 0 ? (
                 <option value="">No creatures tracked</option>
@@ -132,6 +156,15 @@ export default function CreatureProjectionsPanel() {
                 ))
               )}
             </select>
+            <button
+              type="button"
+              onClick={() => setShowHuntLog(true)}
+              disabled={!selectedCreature}
+              className="btn-secondary flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-green-400" />
+              View Hunting Log
+            </button>
           </div>
         </div>
       </Panel>
@@ -159,10 +192,10 @@ export default function CreatureProjectionsPanel() {
             {/* True Return */}
             <MetricTile
               label="True Return"
-              tooltip="Lifetime Return % on this creature over all recorded data"
+              tooltip="Lifetime TT return on this creature before markup or fixed-value sale uplift."
               value={`${stats.trueReturnPercent.toFixed(2)}%`}
               valueClassName={stats.trueReturnPercent >= 100 ? 'text-green-400' : 'text-red-400'}
-              detail={`Based on ${stats.dataPoints} sessions`}
+              detail={`TT-only · ${stats.dataPoints} included sessions`}
               size="lg"
             />
 
@@ -204,6 +237,81 @@ export default function CreatureProjectionsPanel() {
               detail="Assuming ~20 hours hunting/month"
             />
           </div>
+
+          <div className="flex items-start gap-2 rounded border border-border bg-surface px-4 py-3">
+            <InfoTooltip tooltip="Single-creature sessions use authoritative full-session totals. Mixed-creature sessions use loot-to-kill links only when every loot row is linked; their kill-cost proportions are normalized to the session total. Incomplete mixed sessions are excluded." />
+            <p className="text-xs text-muted">
+              Hybrid allocation:{' '}
+              <span className="text-white">
+                {stats.allocationCoverage.linkedMixedSessions} linked mixed
+              </span>
+              {' · '}
+              <span className="text-white">
+                {stats.allocationCoverage.fullSessionFallbacks} full-session
+              </span>
+              {' · '}
+              <span
+                className={
+                  stats.allocationCoverage.excludedMixedSessions > 0
+                    ? 'text-yellow-400'
+                    : 'text-white'
+                }
+              >
+                {stats.allocationCoverage.excludedMixedSessions} incomplete mixed excluded
+              </span>
+            </p>
+          </div>
+
+          <Panel
+            title="1,000 PED Recycling Projection"
+            tooltip="Each modeled run recycles the entire remaining bankroll. The estimate stops at 100 PED, a 90% depletion threshold. It assumes lifetime return repeats exactly; actual returns vary."
+          >
+            <p className="text-xs text-muted mb-4">
+              Estimated full-bankroll runs before 1,000 PED falls to 100 PED. The markup case uses
+              recorded item valuation estimates; actual sale prices and liquidity may differ.
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricTile
+                label="TT-only Runs"
+                tooltip="Compounds the selected creature's lifetime TT return until the bankroll reaches 100 PED."
+                value={formatBankrollRuns(stats.bankrollRunsAtTt, stats.trueReturnPercent)}
+                valueClassName="text-blue-400"
+                detail={`${stats.trueReturnPercent.toFixed(2)}% return per modeled run`}
+              />
+              <MetricTile
+                label="Runs With Markup"
+                tooltip="Uses TT return plus the configured markup and fixed-value estimates recorded on this creature's loot."
+                value={formatBankrollRuns(
+                  stats.bankrollRunsWithMarkup,
+                  stats.returnWithMarkupPercent
+                )}
+                valueClassName="text-green-400"
+                detail={`${stats.returnWithMarkupPercent.toFixed(2)}% effective return`}
+              />
+              <MetricTile
+                label="Recorded Effective Markup"
+                tooltip="Weighted sale value divided by TT loot value. 101% means recorded markup added roughly 1% to TT loot value."
+                value={
+                  stats.effectiveMarkupPercent > 0
+                    ? `${stats.effectiveMarkupPercent.toFixed(2)}%`
+                    : 'N/A'
+                }
+                valueClassName="text-yellow-400"
+                detail={`${stats.totalMarkupGain.toFixed(2)} PED potential lifetime uplift`}
+              />
+              <MetricTile
+                label="Markup Extension"
+                tooltip="Additional full-bankroll runs supplied by recorded markup before reaching the 100 PED threshold."
+                value={formatMarkupExtension()}
+                valueClassName={
+                  stats.returnWithMarkupPercent >= stats.trueReturnPercent
+                    ? 'text-green-400'
+                    : 'text-red-400'
+                }
+                detail="Compared with selling all loot at TT"
+              />
+            </div>
+          </Panel>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Trend Analysis */}
@@ -264,68 +372,118 @@ export default function CreatureProjectionsPanel() {
               </div>
             </Panel>
 
-            {/* Fatigue / Session Length Dropoff */}
+            {/* Loot event volume comparison */}
             <Panel
-              title="Fatigue Dropoff (Duration Analysis)"
+              title="Loot Event Volume Analysis"
               contentClassName="flex h-full flex-col justify-between"
             >
               <div>
                 <p className="text-xs text-muted mb-6">
-                  Are your short sessions better than your long marathon sessions?
+                  Are smaller creature-kill bursts associated with better TT return than sessions
+                  with more loot events?
                 </p>
 
                 <div className="flex flex-col items-center justify-center py-6 text-center">
-                  {stats.fatigueDropoff > 5 ? (
+                  {!stats.eventVolumeAnalysis.available ? (
                     <>
-                      <TrendingDown className="w-12 h-12 text-red-400 mb-3" />
-                      <h4 className="font-bold text-lg text-red-400">Yes, returns drop heavily.</h4>
+                      <Activity className="w-12 h-12 text-muted mb-3" />
+                      <h4 className="font-bold text-lg">Not enough event-volume variation.</h4>
                       <p className="text-sm text-muted mt-2 max-w-sm">
-                        Your short sessions return{' '}
-                        <span className="text-white font-bold">
-                          {Math.abs(stats.fatigueDropoff).toFixed(1)}%
-                        </span>{' '}
-                        MORE than your long sessions. The system might have a dynamic cap hitting
-                        you. Try hunting in smaller bursts.
+                        Track at least four completed {selectedCreature} sessions with different
+                        kill counts to compare smaller and larger hunting bursts.
                       </p>
                     </>
-                  ) : stats.fatigueDropoff < -5 ? (
+                  ) : stats.eventVolumeAnalysis.differencePercentPoints > 5 ? (
+                    <>
+                      <TrendingDown className="w-12 h-12 text-red-400 mb-3" />
+                      <h4 className="font-bold text-lg text-red-400">
+                        Smaller bursts returned more.
+                      </h4>
+                      <p className="text-sm text-muted mt-2 max-w-sm">
+                        Lower-volume sessions averaged{' '}
+                        <span className="text-white font-bold">
+                          {stats.eventVolumeAnalysis.lowReturnPercent.toFixed(1)}%
+                        </span>{' '}
+                        TT return versus{' '}
+                        <span className="text-white font-bold">
+                          {stats.eventVolumeAnalysis.highReturnPercent.toFixed(1)}%
+                        </span>{' '}
+                        for higher-volume sessions—a{' '}
+                        {stats.eventVolumeAnalysis.differencePercentPoints.toFixed(1)} percentage
+                        point advantage.
+                      </p>
+                    </>
+                  ) : stats.eventVolumeAnalysis.differencePercentPoints < -5 ? (
                     <>
                       <TrendingUp className="w-12 h-12 text-green-400 mb-3" />
                       <h4 className="font-bold text-lg text-green-400">
-                        No, long sessions are better!
+                        Larger bursts returned more.
                       </h4>
                       <p className="text-sm text-muted mt-2 max-w-sm">
-                        Your long sessions return{' '}
+                        Higher-volume sessions averaged{' '}
                         <span className="text-white font-bold">
-                          {Math.abs(stats.fatigueDropoff).toFixed(1)}%
+                          {stats.eventVolumeAnalysis.highReturnPercent.toFixed(1)}%
                         </span>{' '}
-                        MORE than your short sessions. Keep grinding, you are building cycle
-                        momentum.
+                        TT return versus{' '}
+                        <span className="text-white font-bold">
+                          {stats.eventVolumeAnalysis.lowReturnPercent.toFixed(1)}%
+                        </span>{' '}
+                        for lower-volume sessions—a{' '}
+                        {Math.abs(stats.eventVolumeAnalysis.differencePercentPoints).toFixed(1)}{' '}
+                        percentage point advantage.
                       </p>
                     </>
                   ) : (
                     <>
                       <Activity className="w-12 h-12 text-blue-400 mb-3" />
-                      <h4 className="font-bold text-lg">No significant difference.</h4>
+                      <h4 className="font-bold text-lg">No meaningful observed difference.</h4>
                       <p className="text-sm text-muted mt-2 max-w-sm">
-                        Your returns between short bursts and long marathons are practically
-                        identical (within {Math.abs(stats.fatigueDropoff).toFixed(1)}%). Play as
-                        long as you want!
+                        Lower-volume sessions returned{' '}
+                        {stats.eventVolumeAnalysis.lowReturnPercent.toFixed(1)}% versus{' '}
+                        {stats.eventVolumeAnalysis.highReturnPercent.toFixed(1)}% for higher-volume
+                        sessions, a difference of only{' '}
+                        {Math.abs(stats.eventVolumeAnalysis.differencePercentPoints).toFixed(1)}{' '}
+                        percentage points.
                       </p>
                     </>
                   )}
                 </div>
+
+                {stats.eventVolumeAnalysis.available && (
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div className="rounded bg-surface p-3">
+                      <div className="text-xs text-muted">Lower-volume group</div>
+                      <div className="font-mono font-bold">
+                        {stats.eventVolumeAnalysis.lowAverageEvents.toFixed(1)} events/session
+                      </div>
+                    </div>
+                    <div className="rounded bg-surface p-3">
+                      <div className="text-xs text-muted">Higher-volume group</div>
+                      <div className="font-mono font-bold">
+                        {stats.eventVolumeAnalysis.highAverageEvents.toFixed(1)} events/session
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-4 p-4 bg-surface-hover/50 rounded flex gap-2">
-                <InfoTooltip tooltip="Analyzes returns of your shortest 50% sessions vs longest 50% sessions." />
+                <InfoTooltip tooltip="Sorts completed selected-creature sessions by tracked kills, then compares the lowest 50% with the highest 50% using TT return. If the count is odd, the middle session is omitted." />
                 <span className="text-xs text-muted">
-                  Note: A high Negative value means long sessions yield better returns.
+                  This shows association, not proof that session size causes the return difference.
                 </span>
               </div>
             </Panel>
           </div>
         </>
+      )}
+
+      {showHuntLog && selectedCreature && (
+        <CreatureHuntLogModal
+          creature={selectedCreature}
+          sessions={sessions}
+          onClose={() => setShowHuntLog(false)}
+        />
       )}
     </div>
   );

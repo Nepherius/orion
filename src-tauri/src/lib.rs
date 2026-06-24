@@ -88,6 +88,9 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             paused_at INTEGER,
             total_paused_ms INTEGER DEFAULT 0,
             loadout_id TEXT,
+            weapon_efficiency_snapshot REAL,
+            dpp_snapshot REAL,
+            loadout_name_snapshot TEXT,
             ammo_cost REAL DEFAULT 0,
             weapon_decay REAL DEFAULT 0,
             healing_cost REAL DEFAULT 0,
@@ -232,6 +235,15 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     // Handle migrations for existing databases that were created before certain columns were added
     // Ignore errors for these as they will fail if the column already exists
     let _ = conn.execute("ALTER TABLE sessions ADD COLUMN creature TEXT", []);
+    let _ = conn.execute(
+        "ALTER TABLE sessions ADD COLUMN weapon_efficiency_snapshot REAL",
+        [],
+    );
+    let _ = conn.execute("ALTER TABLE sessions ADD COLUMN dpp_snapshot REAL", []);
+    let _ = conn.execute(
+        "ALTER TABLE sessions ADD COLUMN loadout_name_snapshot TEXT",
+        [],
+    );
     let _ = conn.execute("ALTER TABLE loadouts ADD COLUMN armor TEXT", []);
     let _ = conn.execute("ALTER TABLE loot_items ADD COLUMN fixed_value REAL", []);
     let _ = conn.execute("ALTER TABLE loot_items ADD COLUMN kill_uuid TEXT", []);
@@ -717,6 +729,7 @@ pub fn run() {
             db_commands::db_get_analytics_advanced_data,
             db_commands::db_get_advanced_creature_stats,
             db_commands::db_get_analytics_factor_data,
+            db_commands::db_get_loot_theory_data,
             db_commands::db_add_loot,
             db_commands::db_update_loot,
             db_commands::db_delete_loot,

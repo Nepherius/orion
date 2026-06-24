@@ -6,13 +6,22 @@ export interface DataQualityIssue {
   count: number;
 }
 
+export function isCompletedSessionWithCostOrLootAndNoDuration(session: HuntSession): boolean {
+  return (
+    session.status === 'completed' &&
+    session.stats.duration <= 0 &&
+    (session.stats.totalCost > 0 || session.stats.totalLoot > 0)
+  );
+}
+
+export function getCompletedSessionsWithCostOrLootAndNoDuration(
+  sessions: HuntSession[]
+): HuntSession[] {
+  return sessions.filter(isCompletedSessionWithCostOrLootAndNoDuration);
+}
+
 export function analyzeSessionDataQuality(sessions: HuntSession[]): DataQualityIssue[] {
-  const completedWithNoDuration = sessions.filter(
-    (session) =>
-      session.status === 'completed' &&
-      session.stats.duration <= 0 &&
-      (session.stats.totalCost > 0 || session.stats.totalLoot > 0)
-  ).length;
+  const completedWithNoDuration = getCompletedSessionsWithCostOrLootAndNoDuration(sessions).length;
 
   const lootWithoutCost = sessions.filter(
     (session) => session.stats.totalLoot > 0 && session.stats.totalCost <= 0

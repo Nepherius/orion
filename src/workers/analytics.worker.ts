@@ -19,7 +19,7 @@ export type WorkerRequest =
   | { type: 'CALC_MULTIPLE_CORRELATION'; payload: { X: number[][]; y: number[] } }
   | {
       type: 'CALC_CORRELATION_ANALYTICS';
-      payload: { durationHrs: number[]; costPed: number[]; lootPed: number[] };
+      payload: { lootEvents: number[]; costPed: number[]; lootPed: number[] };
     };
 
 export type WorkerResponse =
@@ -30,7 +30,7 @@ export type WorkerResponse =
   | {
       type: 'RESULT_CORRELATION_ANALYTICS';
       data: {
-        durationVsLoot: { r: number; p: number };
+        eventsVsLoot: { r: number; p: number };
         costVsLoot: { r: number; p: number };
         multiple: { rSquared: number; p: number };
       };
@@ -69,16 +69,16 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
       }
 
       case 'CALC_CORRELATION_ANALYTICS': {
-        const durationVsLoot = calculatePearsonCorrelation(payload.durationHrs, payload.lootPed);
+        const eventsVsLoot = calculatePearsonCorrelation(payload.lootEvents, payload.lootPed);
         const costVsLoot = calculatePearsonCorrelation(payload.costPed, payload.lootPed);
         const multiple = calculateMultipleCorrelation(
-          payload.durationHrs,
+          payload.lootEvents,
           payload.costPed,
           payload.lootPed
         );
         self.postMessage({
           type: 'RESULT_CORRELATION_ANALYTICS',
-          data: { durationVsLoot, costVsLoot, multiple },
+          data: { eventsVsLoot, costVsLoot, multiple },
         });
         break;
       }

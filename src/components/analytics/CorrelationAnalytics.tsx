@@ -6,7 +6,7 @@ import type { WorkerRequest, WorkerResponse } from '../../workers/analytics.work
 
 interface CorrelationData {
   n: number;
-  durationVsLoot: { r: number; p: number };
+  eventsVsLoot: { r: number; p: number };
   costVsLoot: { r: number; p: number };
   multiple: { rSquared: number; p: number };
 }
@@ -14,7 +14,7 @@ interface CorrelationData {
 type WorkerSuccessResponse = Exclude<WorkerResponse, { type: 'ERROR' }>;
 type WorkerResultMap = {
   CALC_CORRELATION_ANALYTICS: {
-    durationVsLoot: { r: number; p: number };
+    eventsVsLoot: { r: number; p: number };
     costVsLoot: { r: number; p: number };
     multiple: { rSquared: number; p: number };
   };
@@ -42,7 +42,7 @@ export function CorrelationAnalytics() {
 
   useEffect(() => {
     const validSessions = filteredSessions.filter(
-      (s) => s.status === 'completed' && s.stats.duration > 0 && s.stats.totalCost > 0
+      (s) => s.status === 'completed' && s.stats.kills > 0 && s.stats.totalCost > 0
     );
 
     if (validSessions.length < 4) {
@@ -54,7 +54,7 @@ export function CorrelationAnalytics() {
     setIsCalculating(true);
     setError(null);
 
-    const durationHrs = validSessions.map((s) => s.stats.duration / 3600);
+    const lootEvents = validSessions.map((s) => s.stats.kills);
     const costPed = validSessions.map((s) => s.stats.totalCost);
     const lootPed = validSessions.map((s) => s.stats.totalLoot);
 
@@ -88,10 +88,10 @@ export function CorrelationAnalytics() {
 
     const processMath = async () => {
       try {
-        const { durationVsLoot, costVsLoot, multiple } = await runWorkerTask(
+        const { eventsVsLoot, costVsLoot, multiple } = await runWorkerTask(
           'CALC_CORRELATION_ANALYTICS',
           {
-            durationHrs,
+            lootEvents,
             costPed,
             lootPed,
           }
@@ -100,7 +100,7 @@ export function CorrelationAnalytics() {
         if (!cancelled) {
           setCorrelationData({
             n: validSessions.length,
-            durationVsLoot,
+            eventsVsLoot,
             costVsLoot,
             multiple,
           });
@@ -151,13 +151,13 @@ export function CorrelationAnalytics() {
       <Panel title="Loot Correlation Analysis">
         <p className="text-sm text-muted">
           Not enough completed sessions to calculate reliable correlation metrics. Need at least 4
-          completed sessions.
+          completed sessions with tracked creature kills.
         </p>
       </Panel>
     );
   }
 
-  const { durationVsLoot, costVsLoot, multiple, n } = correlationData;
+  const { eventsVsLoot, costVsLoot, multiple, n } = correlationData;
 
   const getSignificanceLevel = (p: number) => {
     if (p < 0.001)
@@ -184,28 +184,27 @@ export function CorrelationAnalytics() {
       <div className="mb-4">
         <p className="text-sm text-muted mt-1">
           Statistical analysis of exactly what affects your total loot across {n} completed
-          sessions.
+          sessions. One loot event represents one tracked creature kill, including all items dropped
+          by that creature.
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="border border-border rounded p-4">
-          <div className="text-sm text-muted mb-2 font-medium">Session Duration vs. Loot</div>
+          <div className="text-sm text-muted mb-2 font-medium">Creature Loot Events vs. Loot</div>
           <div className="flex justify-between items-end mb-2">
             <div>
               <div className="text-xs text-muted">Pearson&apos;s r</div>
-              <div className="text-xl font-bold font-mono">{durationVsLoot.r.toFixed(3)}</div>
+              <div className="text-xl font-bold font-mono">{eventsVsLoot.r.toFixed(3)}</div>
             </div>
             <div className="text-right">
               <div className="text-xs text-muted">Strength</div>
-              <div className="text-sm font-semibold">
-                {getCorrelationStrength(durationVsLoot.r)}
-              </div>
+              <div className="text-sm font-semibold">{getCorrelationStrength(eventsVsLoot.r)}</div>
             </div>
           </div>
           <div className="text-xs border-t border-border pt-2 mt-2 flex justify-between">
-            <span className="text-muted">p-value: {durationVsLoot.p.toFixed(4)}</span>
-            {getSignificanceLevel(durationVsLoot.p)}
+            <span className="text-muted">p-value: {eventsVsLoot.p.toFixed(4)}</span>
+            {getSignificanceLevel(eventsVsLoot.p)}
           </div>
         </div>
 
@@ -228,7 +227,9 @@ export function CorrelationAnalytics() {
         </div>
 
         <div className="border border-border rounded p-4">
-          <div className="text-sm text-muted mb-2 font-medium">Combined Mix (Multiple R²)</div>
+          <div className="text-sm text-muted mb-2 font-medium">
+            Loot Events + Cost (Multiple R²)
+          </div>
           <div className="flex justify-between items-end mb-2">
             <div>
               <div className="text-xs text-muted">Variance Explained</div>

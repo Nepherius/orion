@@ -3,6 +3,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { open } from '@tauri-apps/plugin-shell';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { useHuntStore, setupStoreSync, initializeStoreFromDb } from './store';
 import packageJson from '../package.json';
@@ -564,10 +565,16 @@ function App() {
           <footer className="border-t border-border px-6 py-4 mt-12 bg-surface">
             <div className="max-w-7xl mx-auto text-center text-sm text-muted">
               <p>
-                Orion Loot Tracker v{packageJson.version} - Track your Entropia Universe hunting
-                sessions
+                Enjoying Orion Loot Tracker v{packageJson.version}?{' '}
+                <button
+                  type="button"
+                  onClick={() => open('https://buymeacoffee.com/nepheriusjc')}
+                  className="cursor-pointer text-primary-400 underline transition-colors hover:text-primary-300"
+                >
+                  Buy me a coffee
+                </button>
               </p>
-              <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe</p>
+              <p className="mt-1">Not affiliated with MindArk PE AB or Entropia Universe.</p>
             </div>
           </footer>
         </>

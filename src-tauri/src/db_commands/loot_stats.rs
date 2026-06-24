@@ -112,7 +112,7 @@ pub fn db_get_session_loot(
 ) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, quantity, value, markup, fixed_value, total_value, timestamp FROM loot_items WHERE session_uuid = ?1 ORDER BY timestamp ASC")
+        .prepare("SELECT uuid, name, quantity, value, markup, fixed_value, total_value, timestamp, kill_uuid FROM loot_items WHERE session_uuid = ?1 ORDER BY timestamp ASC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -126,6 +126,7 @@ pub fn db_get_session_loot(
                 "fixedValue": row.get::<_, Option<f64>>(5)?,
                 "totalValue": row.get::<_, f64>(6)?,
                 "timestamp": row.get::<_, i64>(7)?,
+                "killUuid": row.get::<_, Option<String>>(8)?,
             }))
         })
         .map_err(|e| e.to_string())?;
@@ -364,7 +365,15 @@ pub fn db_get_session_stats(
 pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT uuid, name, weapon, armor, location, status, start_time, end_time, total_paused_ms, paused_at, ammo_cost, weapon_decay, healing_cost, other_costs, notes, loadout_id, creature, tags FROM sessions ORDER BY start_time DESC")
+        .prepare(
+            "SELECT
+                uuid, name, weapon, armor, location, status, start_time, end_time,
+                total_paused_ms, paused_at, ammo_cost, weapon_decay, healing_cost, other_costs,
+                notes, loadout_id, creature, tags, weapon_efficiency_snapshot, dpp_snapshot,
+                loadout_name_snapshot
+             FROM sessions
+             ORDER BY start_time DESC",
+        )
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -394,6 +403,9 @@ pub fn db_get_all_sessions_summary(state: State<'_, DbState>) -> Result<JsonValu
                 "loadoutId": row.get::<_, Option<String>>(15)?,
                 "creature": row.get::<_, Option<String>>(16)?,
                 "tags": tags,
+                "weaponEfficiencySnapshot": row.get::<_, Option<f64>>(18)?,
+                "dppSnapshot": row.get::<_, Option<f64>>(19)?,
+                "loadoutNameSnapshot": row.get::<_, Option<String>>(20)?,
             }))
         })
         .map_err(|e| e.to_string())?;

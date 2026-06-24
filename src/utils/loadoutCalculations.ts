@@ -14,6 +14,13 @@ interface LoadoutStats {
   totalUses: number | null;
 }
 
+function totalItemDamage(item: EquipmentItem | undefined): number {
+  return Object.values(item?.Properties?.Damage ?? {}).reduce<number>(
+    (sum, value) => sum + (typeof value === 'number' && Number.isFinite(value) ? value : 0),
+    0
+  );
+}
+
 /**
  * Calculate comprehensive loadout statistics
  */
@@ -42,8 +49,7 @@ export function calculateLoadoutStats(
   const ammoCostPed = totalAmmoBurn / 10000;
   const costPerShot = decayCostPed + ammoCostPed;
 
-  const weaponDamage = weapon?.Properties?.Damage?.Penetration || 0;
-  const totalDamage = weaponDamage;
+  const totalDamage = totalItemDamage(weapon) + totalItemDamage(amplifier);
   const dpp = totalDamage > 0 && costPerShot > 0 ? totalDamage / costPerShot : 0;
   const range = weapon?.Properties?.Range || 0;
   const efficiency = weapon?.Properties?.Economy?.Efficiency || 0;

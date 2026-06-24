@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useHuntStore } from '../../store';
-import { Target, TrendingUp, Activity, BarChart2 } from 'lucide-react';
+import { Target, TrendingUp, Activity, BarChart2, Zap, HeartPulse } from 'lucide-react';
 import { Panel } from '../common/Panel';
 
 import type { WorkerRequest, WorkerResponse } from '../../workers/analytics.worker';
@@ -13,6 +13,8 @@ interface InsightsData {
   cv: number;
   hitRateVsReturn: { r: number; p: number };
   burnRateVsReturn: { r: number; p: number };
+  criticalRateVsReturn: { r: number; p: number };
+  healingAmountVsReturn: { r: number; p: number };
 }
 
 type WorkerSuccessResponse = Exclude<WorkerResponse, { type: 'ERROR' }>;
@@ -59,12 +61,18 @@ export function StatisticalInsights() {
     const returnRates: number[] = [];
     const hitRates: number[] = [];
     const costPerMinutes: number[] = [];
+    const criticalHitRates: number[] = [];
+    const healingAmounts: number[] = [];
 
     validSessions.forEach((s) => {
-      const { totalLoot, totalCost, hits, criticalHits, shotsFired, duration } = s.stats;
+      const { totalLoot, totalCost, hits, criticalHits, shotsFired, duration, totalHealing } =
+        s.stats;
+      const landedHits = hits + criticalHits;
       returnRates.push((totalLoot / totalCost) * 100);
-      hitRates.push(shotsFired > 0 ? ((hits + criticalHits) / shotsFired) * 100 : 0);
+      hitRates.push(shotsFired > 0 ? (landedHits / shotsFired) * 100 : 0);
       costPerMinutes.push(totalCost / (duration / 60));
+      criticalHitRates.push(landedHits > 0 ? (criticalHits / landedHits) * 100 : 0);
+      healingAmounts.push(totalHealing);
     });
 
     const worker = new Worker(new URL('../../workers/analytics.worker.ts', import.meta.url), {
@@ -109,6 +117,14 @@ export function StatisticalInsights() {
           x: costPerMinutes,
           y: returnRates,
         });
+        const criticalRateVsReturn = await runWorkerTask('CALC_CORRELATION', {
+          x: criticalHitRates,
+          y: returnRates,
+        });
+        const healingAmountVsReturn = await runWorkerTask('CALC_CORRELATION', {
+          x: healingAmounts,
+          y: returnRates,
+        });
 
         if (!cancelled) {
           setInsightsData({
@@ -119,6 +135,8 @@ export function StatisticalInsights() {
             cv,
             hitRateVsReturn,
             burnRateVsReturn,
+            criticalRateVsReturn,
+            healingAmountVsReturn,
           });
         }
       } catch (err) {
@@ -173,7 +191,17 @@ export function StatisticalInsights() {
     );
   }
 
-  const { n, meanReturn, ciLower, ciUpper, cv, hitRateVsReturn, burnRateVsReturn } = insightsData;
+  const {
+    n,
+    meanReturn,
+    ciLower,
+    ciUpper,
+    cv,
+    hitRateVsReturn,
+    burnRateVsReturn,
+    criticalRateVsReturn,
+    healingAmountVsReturn,
+  } = insightsData;
 
   const getSignificanceLevel = (p: number) => {
     if (p < 0.001)
@@ -211,7 +239,7 @@ export function StatisticalInsights() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
         {/* Metric 1: 95% Expected Value */}
         <div className="border border-border rounded p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -247,7 +275,7 @@ export function StatisticalInsights() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Metric 3: Hit Rate Importance */}
         <div className="border border-border rounded p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -295,6 +323,65 @@ export function StatisticalInsights() {
           <div className="text-xs border-t border-border pt-2 mt-2 flex justify-between">
             <span className="text-muted">p-value: {burnRateVsReturn.p.toFixed(4)}</span>
             {getSignificanceLevel(burnRateVsReturn.p)}
+          </div>
+        </div>
+
+        {/* Metric 5: Critical-hit rate */}
+        <div className="border border-border rounded p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="w-4 h-4 text-yellow-400" />
+            <div className="text-sm text-muted font-medium">
+              Critical-Hit Rate vs. Profitability
+            </div>
+          </div>
+          <div className="flex justify-between items-end mb-2">
+            <div>
+              <div className="text-xs text-muted">Pearson&apos;s r</div>
+              <div className="text-xl font-bold font-mono">{criticalRateVsReturn.r.toFixed(3)}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-muted">Strength</div>
+              <div className="text-sm font-semibold">
+                {getCorrelationStrength(criticalRateVsReturn.r)}
+              </div>
+            </div>
+          </div>
+          <div className="text-xs border-t border-border pt-2 mt-2 flex justify-between">
+            <span className="text-muted">p-value: {criticalRateVsReturn.p.toFixed(4)}</span>
+            {getSignificanceLevel(criticalRateVsReturn.p)}
+          </div>
+          <div className="text-xs text-muted mt-2">
+            Uses critical hits as a percentage of landed hits, avoiding a bias toward longer
+            sessions.
+          </div>
+        </div>
+
+        {/* Metric 6: Healing amount */}
+        <div className="border border-border rounded p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <HeartPulse className="w-4 h-4 text-pink-400" />
+            <div className="text-sm text-muted font-medium">Healing Amount vs. Profitability</div>
+          </div>
+          <div className="flex justify-between items-end mb-2">
+            <div>
+              <div className="text-xs text-muted">Pearson&apos;s r</div>
+              <div className="text-xl font-bold font-mono">
+                {healingAmountVsReturn.r.toFixed(3)}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-muted">Strength</div>
+              <div className="text-sm font-semibold">
+                {getCorrelationStrength(healingAmountVsReturn.r)}
+              </div>
+            </div>
+          </div>
+          <div className="text-xs border-t border-border pt-2 mt-2 flex justify-between">
+            <span className="text-muted">p-value: {healingAmountVsReturn.p.toFixed(4)}</span>
+            {getSignificanceLevel(healingAmountVsReturn.p)}
+          </div>
+          <div className="text-xs text-muted mt-2">
+            Uses total HP restored during each session, including sessions with no healing.
           </div>
         </div>
       </div>

@@ -2,9 +2,13 @@ import { useMemo, useState, lazy, Suspense, useEffect } from 'react';
 import { TagInput } from '../common/TagInput';
 import { useHuntStore } from '../../store';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
-import { BarChart3, AlertCircle } from 'lucide-react';
+import { BarChart3, AlertCircle, Trash2 } from 'lucide-react';
 import { Panel } from '../common/Panel';
-import { analyzeSessionDataQuality } from '../../utils/dataQuality';
+import { ConfirmModal } from '../common/ConfirmModal';
+import {
+  analyzeSessionDataQuality,
+  getCompletedSessionsWithCostOrLootAndNoDuration,
+} from '../../utils/dataQuality';
 import { AnalyticsMetricNotes } from '../analytics/AnalyticsMetricNotes';
 
 const AnalyticsOverviewTab = lazy(() => import('../analytics/AnalyticsOverviewTab'));
@@ -16,6 +20,7 @@ const AnalyticsProjectionsTab = lazy(() => import('../analytics/ProjectionsTab')
 
 export function Analytics() {
   const sessions = useHuntStore((state) => state.sessions);
+  const deleteSessions = useHuntStore((state) => state.deleteSessions);
   const isPageVisible = usePageVisibility();
   const lifetimeStats = useHuntStore((state) => state.analyticsLifetimeStats);
   const fetchAnalyticsData = useHuntStore((state) => state.fetchAnalyticsData);
@@ -29,6 +34,11 @@ export function Analytics() {
     [sessions]
   );
   const dataQualityIssues = useMemo(() => analyzeSessionDataQuality(sessions), [sessions]);
+  const noDurationSessions = useMemo(
+    () => getCompletedSessionsWithCostOrLootAndNoDuration(sessions),
+    [sessions]
+  );
+  const noDurationSessionCount = noDurationSessions.length;
 
   const [timeRange, setTimeRange] = useState<
     '24h' | '7d' | '1m' | '3m' | '1y' | 'lifetime' | 'custom'
@@ -38,6 +48,7 @@ export function Analytics() {
   const [activeTab, setActiveTab] = useState<
     'overview' | 'sessions' | 'equipment' | 'loot' | 'creatures' | 'projections'
   >('overview');
+  const [showDeleteNoDurationConfirm, setShowDeleteNoDurationConfirm] = useState(false);
 
   const statsRange = useMemo(() => {
     if (timeRange === 'lifetime') {
@@ -89,6 +100,18 @@ export function Analytics() {
     fetchAnalyticsData,
     fetchLifetimeStats,
   ]);
+
+  const handleDeleteNoDurationSessions = async () => {
+    const sessionIds = noDurationSessions.map((session) => session.id);
+    if (sessionIds.length === 0) return;
+
+    await deleteSessions(sessionIds);
+    setShowDeleteNoDurationConfirm(false);
+    await Promise.all([
+      fetchAnalyticsData(statsRange.start_time, statsRange.end_time, tagFilter),
+      fetchLifetimeStats(statsRange.start_time, statsRange.end_time, tagFilter),
+    ]);
+  };
 
   if (!isPageVisible) {
     return (
@@ -169,15 +192,47 @@ export function Analytics() {
 
       {dataQualityIssues.length > 0 && (
         <Panel title="Data Quality" className="border-yellow-700 bg-yellow-950/20">
-          <div className="space-y-1 text-sm text-yellow-100/90">
-            {dataQualityIssues.map((issue) => (
-              <div key={issue.code}>
-                {issue.count} {issue.message}.
-              </div>
-            ))}
+          <div className="space-y-2 text-sm text-yellow-100/90">
+            {dataQualityIssues.map((issue) => {
+              const canDeleteNoDurationSessions =
+                issue.code === 'completed-no-duration' && noDurationSessionCount > 0;
+
+              return (
+                <div
+                  key={issue.code}
+                  className="flex flex-col gap-2 rounded-lg border border-yellow-700/40 bg-yellow-950/20 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span>
+                    {issue.count} {issue.message}.
+                  </span>
+                  {canDeleteNoDurationSessions && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteNoDurationConfirm(true)}
+                      className="btn-danger inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete {issue.count}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Panel>
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteNoDurationConfirm}
+        onClose={() => setShowDeleteNoDurationConfirm(false)}
+        onConfirm={() => void handleDeleteNoDurationSessions()}
+        variant="danger"
+        title="Delete zero-duration sessions?"
+        message={`Delete ${noDurationSessionCount} completed session${noDurationSessionCount === 1 ? '' : 's'} with cost or loot but no duration?`}
+        detail="This permanently removes each matching session and its linked loot, kills, skills, combat, healing, and global records. Sessions without cost/loot are not included."
+        confirmText={`Delete ${noDurationSessionCount} Session${noDurationSessionCount === 1 ? '' : 's'}`}
+        cancelText="Cancel"
+      />
 
       <AnalyticsMetricNotes />
 

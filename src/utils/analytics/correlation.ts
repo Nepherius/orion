@@ -31,16 +31,16 @@ export function calculatePearsonCorrelation(x: number[], y: number[]): { r: numb
 }
 
 export function calculateMultipleCorrelation(
-  duration: number[],
+  predictor: number[],
   cost: number[],
   loot: number[]
 ): { rSquared: number; p: number } {
-  if (duration.length < 4) return { rSquared: 0, p: 1 };
+  if (predictor.length < 4) return { rSquared: 0, p: 1 };
 
   // Calculate pairs
-  const rxz = calculatePearsonCorrelation(duration, loot).r;
+  const rxz = calculatePearsonCorrelation(predictor, loot).r;
   const ryz = calculatePearsonCorrelation(cost, loot).r;
-  const rxy = calculatePearsonCorrelation(duration, cost).r;
+  const rxy = calculatePearsonCorrelation(predictor, cost).r;
 
   // Multiple correlation coefficient R^2 formula for 2 predictors
   const den = 1 - Math.pow(rxy, 2);
@@ -52,7 +52,7 @@ export function calculateMultipleCorrelation(
   // Bound R2 between 0 and 1
   rSquared = Math.max(0, Math.min(1, rSquared));
 
-  const n = duration.length;
+  const n = predictor.length;
   const k = 2; // Two predictors
 
   const df1 = k;

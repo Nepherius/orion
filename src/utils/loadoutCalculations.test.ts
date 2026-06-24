@@ -43,4 +43,30 @@ describe('calculateLoadoutStats', () => {
     expect(stats.efficiency).toBe(65);
     expect(stats.totalUses).toBe(33333);
   });
+
+  it('includes every weapon and amplifier damage type in DPP', () => {
+    const weapon = makeWeapon();
+    weapon.Properties.Damage = { Penetration: 20, Burn: 30 };
+    const amplifier: EquipmentItem = {
+      Id: 2,
+      ItemId: 2,
+      Name: 'Damage Amp',
+      Properties: {
+        Damage: { Impact: 10 },
+        Economy: { Decay: 1 },
+      },
+    };
+
+    const stats = calculateLoadoutStats(
+      weapon,
+      amplifier,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+
+    expect(stats.totalDamage).toBe(60);
+    expect(stats.dpp).toBeCloseTo(1500, 3);
+  });
 });

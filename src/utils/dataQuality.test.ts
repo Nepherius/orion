@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { HuntSession } from '../types';
-import { analyzeSessionDataQuality } from './dataQuality';
+import {
+  analyzeSessionDataQuality,
+  getCompletedSessionsWithCostOrLootAndNoDuration,
+} from './dataQuality';
 
 const session = (overrides: Partial<HuntSession>): HuntSession =>
   ({
@@ -74,5 +77,36 @@ describe('analyzeSessionDataQuality', () => {
       'loot-without-timestamp',
       'completed-without-loadout',
     ]);
+  });
+
+  it('selects only completed sessions with cost or loot and no duration for cleanup', () => {
+    const badCostSession = session({
+      id: 'bad-cost',
+      stats: { ...session({}).stats, totalCost: 5, duration: 0 },
+    });
+    const badLootSession = session({
+      id: 'bad-loot',
+      stats: { ...session({}).stats, totalLoot: 10, duration: 0 },
+    });
+
+    expect(
+      getCompletedSessionsWithCostOrLootAndNoDuration([
+        badCostSession,
+        badLootSession,
+        session({
+          id: 'empty-zero-duration',
+          stats: { ...session({}).stats, duration: 0 },
+        }),
+        session({
+          id: 'valid-duration',
+          stats: { ...session({}).stats, totalCost: 5, totalLoot: 4, duration: 60 },
+        }),
+        session({
+          id: 'active-zero-duration',
+          status: 'active',
+          stats: { ...session({}).stats, totalCost: 5, duration: 0 },
+        }),
+      ]).map((matchedSession) => matchedSession.id)
+    ).toEqual(['bad-cost', 'bad-loot']);
   });
 });

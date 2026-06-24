@@ -166,6 +166,48 @@ describe('HuntStore - session lifecycle persistence', () => {
     );
   });
 
+  it('snapshots loadout efficiency and DPP when creating a session', () => {
+    useHuntStore.setState({
+      loadouts: [
+        {
+          id: 'loadout-1',
+          name: 'Snapshot Loadout',
+          efficiency: 72.5,
+          dpp: 3.14,
+        } as Loadout,
+      ],
+    });
+
+    useHuntStore.getState().createSession({
+      name: 'Snapshot Session',
+      weapon: 'Weapon',
+      creature: 'Creature',
+      loadoutId: 'loadout-1',
+      startTime: 1700000000000,
+      status: 'active',
+      ammoCost: 0,
+      weaponDecay: 0,
+      healingCost: 0,
+      otherCosts: 0,
+      notes: '',
+    });
+
+    const session = useHuntStore.getState().sessions[0];
+    expect(session.weaponEfficiencySnapshot).toBe(72.5);
+    expect(session.dppSnapshot).toBe(3.14);
+    expect(session.loadoutNameSnapshot).toBe('Snapshot Loadout');
+    expect(invoke).toHaveBeenCalledWith(
+      'db_create_session',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          weapon_efficiency_snapshot: 72.5,
+          dpp_snapshot: 3.14,
+          loadout_name_snapshot: 'Snapshot Loadout',
+        }),
+      })
+    );
+  });
+
   it('persists start time and clears stale paused_at when starting a session', () => {
     useHuntStore.setState({
       sessions: [

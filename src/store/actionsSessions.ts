@@ -18,213 +18,247 @@ export const createSessionActions = (
   | 'createSession'
   | 'updateSession'
   | 'deleteSession'
+  | 'deleteSessions'
   | 'startSession'
   | 'pauseSession'
   | 'resumeSession'
   | 'endSession'
-> => ({
-  createSession: (sessionData) => {
-    const now = Date.now();
-    const newSession: HuntSession = {
-      ...sessionData,
-      creature: sessionData.creature || 'Unknown',
-      id: generateId(),
-      pausedAt: undefined,
-      totalPausedMs: 0,
-      loot: [],
-      skills: [],
-      globals: [],
-      kills: [],
-      damageEvents: [],
-      combatEvents: [],
-      healingEvents: [],
-      damageTakenEvents: [],
-      stats: {
-        ...emptySessionStats(),
-      },
-    };
-    const sessionsToPause =
-      newSession.status === 'active' ? get().sessions.filter((s) => s.status === 'active') : [];
+> => {
+  const deleteSessionsFromStore = async (ids: string[]) => {
+    const uniqueIds = Array.from(new Set(ids)).filter(Boolean);
+    if (uniqueIds.length === 0) return;
 
-    set((state) => {
+    const idsToDelete = new Set(uniqueIds);
+    const shouldClearActiveSession = idsToDelete.has(get().activeSessionId ?? '');
+
+    set((state) => ({
+      sessions: state.sessions.filter((s) => !idsToDelete.has(s.id)),
+      activeSessionId: shouldClearActiveSession ? null : state.activeSessionId,
+    }));
+
+    await Promise.all(uniqueIds.map((id) => safeInvoke('db_delete_session', { uuid: id })));
+    if (shouldClearActiveSession) {
+      await saveJsonSetting('activeSessionId', null);
+    }
+  };
+
+  return {
+    createSession: (sessionData) => {
+      const now = Date.now();
+      const selectedLoadout = sessionData.loadoutId
+        ? get().loadouts.find((loadout) => loadout.id === sessionData.loadoutId)
+        : undefined;
+      const newSession: HuntSession = {
+        ...sessionData,
+        creature: sessionData.creature || 'Unknown',
+        weaponEfficiencySnapshot:
+          sessionData.weaponEfficiencySnapshot ?? selectedLoadout?.efficiency,
+        dppSnapshot: sessionData.dppSnapshot ?? selectedLoadout?.dpp,
+        loadoutNameSnapshot: sessionData.loadoutNameSnapshot ?? selectedLoadout?.name,
+        id: generateId(),
+        pausedAt: undefined,
+        totalPausedMs: 0,
+        loot: [],
+        skills: [],
+        globals: [],
+        kills: [],
+        damageEvents: [],
+        combatEvents: [],
+        healingEvents: [],
+        damageTakenEvents: [],
+        stats: {
+          ...emptySessionStats(),
+        },
+      };
+      const sessionsToPause =
+        newSession.status === 'active' ? get().sessions.filter((s) => s.status === 'active') : [];
+
+      set((state) => {
+        if (newSession.status === 'active') {
+          const sessions = state.sessions.map((s) =>
+            s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
+          );
+          return { sessions: [newSession, ...sessions], activeSessionId: newSession.id };
+        }
+
+        return { sessions: [newSession, ...state.sessions] };
+      });
+
+      void persistSessionToDb(newSession);
       if (newSession.status === 'active') {
+        sessionsToPause.forEach((session) => {
+          void updateSessionInDb(session.id, { status: 'paused', pausedAt: now });
+        });
+        void saveJsonSetting('activeSessionId', newSession.id);
+      }
+    },
+
+    updateSession: (id, updates) => {
+      set((state) => ({
+        sessions: state.sessions.map((session) => {
+          if (session.id === id) {
+            const updated = { ...session, ...updates };
+            updated.stats = calculateStats(updated);
+            return updated;
+          }
+          return session;
+        }),
+      }));
+
+      void updateSessionInDb(id, updates);
+    },
+
+    deleteSession: (id) => {
+      void deleteSessionsFromStore([id]);
+    },
+
+    deleteSessions: deleteSessionsFromStore,
+
+    startSession: (id) => {
+      const now = Date.now();
+      const sessionToStart = get().sessions.find((session) => session.id === id);
+      const selectedLoadout = sessionToStart?.loadoutId
+        ? get().loadouts.find((loadout) => loadout.id === sessionToStart.loadoutId)
+        : undefined;
+      const sessionsToPause = get().sessions.filter((s) => s.status === 'active' && s.id !== id);
+      set((state) => {
         const sessions = state.sessions.map((s) =>
           s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
         );
-        return { sessions: [newSession, ...sessions], activeSessionId: newSession.id };
+
+        return {
+          sessions: sessions.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  status: 'active' as const,
+                  startTime: now,
+                  pausedAt: undefined,
+                  totalPausedMs: 0,
+                  weaponEfficiencySnapshot:
+                    s.weaponEfficiencySnapshot ?? selectedLoadout?.efficiency,
+                  dppSnapshot: s.dppSnapshot ?? selectedLoadout?.dpp,
+                  loadoutNameSnapshot: s.loadoutNameSnapshot ?? selectedLoadout?.name,
+                }
+              : s
+          ),
+          activeSessionId: id,
+        };
+      });
+
+      const currentlyActive = get().sessions.find((s) => s.id === id);
+      if (currentlyActive) {
+        void updateSessionInDb(id, {
+          status: 'active',
+          startTime: now,
+          pausedAt: undefined,
+          totalPausedMs: 0,
+          weaponEfficiencySnapshot:
+            currentlyActive.weaponEfficiencySnapshot ?? selectedLoadout?.efficiency,
+          dppSnapshot: currentlyActive.dppSnapshot ?? selectedLoadout?.dpp,
+          loadoutNameSnapshot: currentlyActive.loadoutNameSnapshot ?? selectedLoadout?.name,
+        });
       }
-
-      return { sessions: [newSession, ...state.sessions] };
-    });
-
-    void persistSessionToDb(newSession);
-    if (newSession.status === 'active') {
       sessionsToPause.forEach((session) => {
         void updateSessionInDb(session.id, { status: 'paused', pausedAt: now });
       });
-      void saveJsonSetting('activeSessionId', newSession.id);
-    }
-  },
+      void saveJsonSetting('activeSessionId', id);
+    },
 
-  updateSession: (id, updates) => {
-    set((state) => ({
-      sessions: state.sessions.map((session) => {
-        if (session.id === id) {
-          const updated = { ...session, ...updates };
-          updated.stats = calculateStats(updated);
-          return updated;
-        }
-        return session;
-      }),
-    }));
+    pauseSession: (id) => {
+      const now = Date.now();
+      const session = get().sessions.find((s) => s.id === id);
+      if (session) {
+        get().updateSession(id, { status: 'paused', pausedAt: now });
+        void updateSessionInDb(id, {
+          status: 'paused',
+          pausedAt: now,
+          ammoCost: session.ammoCost,
+          weaponDecay: session.weaponDecay,
+          healingCost: session.healingCost,
+          otherCosts: session.otherCosts,
+        });
+      }
+    },
 
-    void updateSessionInDb(id, updates);
-  },
+    resumeSession: (id) => {
+      const now = Date.now();
+      const sessionsToPause = get().sessions.filter((s) => s.status === 'active' && s.id !== id);
+      set((state) => {
+        const sessions = state.sessions.map((s) =>
+          s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
+        );
 
-  deleteSession: (id) => {
-    set((state) => ({
-      sessions: state.sessions.filter((s) => s.id !== id),
-      activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
-    }));
-
-    void safeInvoke('db_delete_session', { uuid: id });
-    if (get().activeSessionId === null) {
-      void saveJsonSetting('activeSessionId', null);
-    }
-  },
-
-  startSession: (id) => {
-    const now = Date.now();
-    const sessionsToPause = get().sessions.filter((s) => s.status === 'active' && s.id !== id);
-    set((state) => {
-      const sessions = state.sessions.map((s) =>
-        s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
-      );
-
-      return {
-        sessions: sessions.map((s) =>
-          s.id === id
-            ? {
-                ...s,
-                status: 'active' as const,
-                startTime: now,
-                pausedAt: undefined,
-                totalPausedMs: 0,
-              }
-            : s
-        ),
-        activeSessionId: id,
-      };
-    });
-
-    const currentlyActive = get().sessions.find((s) => s.id === id);
-    if (currentlyActive) {
-      void updateSessionInDb(id, {
-        status: 'active',
-        startTime: now,
-        pausedAt: undefined,
-        totalPausedMs: 0,
+        return {
+          sessions: sessions.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  status: 'active' as const,
+                  totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                  pausedAt: undefined,
+                }
+              : s
+          ),
+          activeSessionId: id,
+        };
       });
-    }
-    sessionsToPause.forEach((session) => {
-      void updateSessionInDb(session.id, { status: 'paused', pausedAt: now });
-    });
-    void saveJsonSetting('activeSessionId', id);
-  },
 
-  pauseSession: (id) => {
-    const now = Date.now();
-    const session = get().sessions.find((s) => s.id === id);
-    if (session) {
-      get().updateSession(id, { status: 'paused', pausedAt: now });
-      void updateSessionInDb(id, {
-        status: 'paused',
-        pausedAt: now,
-        ammoCost: session.ammoCost,
-        weaponDecay: session.weaponDecay,
-        healingCost: session.healingCost,
-        otherCosts: session.otherCosts,
+      const resumed = get().sessions.find((s) => s.id === id);
+      if (resumed) {
+        void updateSessionInDb(id, {
+          status: 'active',
+          pausedAt: undefined,
+          totalPausedMs: resumed.totalPausedMs,
+          ammoCost: resumed.ammoCost,
+          weaponDecay: resumed.weaponDecay,
+          healingCost: resumed.healingCost,
+          otherCosts: resumed.otherCosts,
+        });
+      }
+      sessionsToPause.forEach((session) => {
+        void updateSessionInDb(session.id, { status: 'paused', pausedAt: now });
       });
-    }
-  },
+      void saveJsonSetting('activeSessionId', id);
+    },
 
-  resumeSession: (id) => {
-    const now = Date.now();
-    const sessionsToPause = get().sessions.filter((s) => s.status === 'active' && s.id !== id);
-    set((state) => {
-      const sessions = state.sessions.map((s) =>
-        s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
-      );
+    endSession: async (id) => {
+      await get()._finalizePendingKill(id);
 
-      return {
-        sessions: sessions.map((s) =>
-          s.id === id
-            ? {
-                ...s,
-                status: 'active' as const,
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
-            : s
-        ),
-        activeSessionId: id,
-      };
-    });
-
-    const resumed = get().sessions.find((s) => s.id === id);
-    if (resumed) {
-      void updateSessionInDb(id, {
-        status: 'active',
-        pausedAt: undefined,
-        totalPausedMs: resumed.totalPausedMs,
-        ammoCost: resumed.ammoCost,
-        weaponDecay: resumed.weaponDecay,
-        healingCost: resumed.healingCost,
-        otherCosts: resumed.otherCosts,
+      const now = Date.now();
+      set((state) => {
+        return {
+          sessions: state.sessions.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  status: 'completed' as const,
+                  endTime: now,
+                  totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+                  pausedAt: undefined,
+                }
+              : s
+          ),
+          activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
+        };
       });
-    }
-    sessionsToPause.forEach((session) => {
-      void updateSessionInDb(session.id, { status: 'paused', pausedAt: now });
-    });
-    void saveJsonSetting('activeSessionId', id);
-  },
 
-  endSession: async (id) => {
-    await get()._finalizePendingKill(id);
-
-    const now = Date.now();
-    set((state) => {
-      return {
-        sessions: state.sessions.map((s) =>
-          s.id === id
-            ? {
-                ...s,
-                status: 'completed' as const,
-                endTime: now,
-                totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                pausedAt: undefined,
-              }
-            : s
-        ),
-        activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
-      };
-    });
-
-    const ended = get().sessions.find((s) => s.id === id);
-    if (ended) {
-      void updateSessionInDb(id, {
-        status: 'completed',
-        endTime: now,
-        totalPausedMs: ended.totalPausedMs,
-        pausedAt: undefined,
-        ammoCost: ended.ammoCost,
-        weaponDecay: ended.weaponDecay,
-        healingCost: ended.healingCost,
-        otherCosts: ended.otherCosts,
-      });
-    }
-    if (get().activeSessionId === null) {
-      void saveJsonSetting('activeSessionId', null);
-    }
-  },
-});
+      const ended = get().sessions.find((s) => s.id === id);
+      if (ended) {
+        void updateSessionInDb(id, {
+          status: 'completed',
+          endTime: now,
+          totalPausedMs: ended.totalPausedMs,
+          pausedAt: undefined,
+          ammoCost: ended.ammoCost,
+          weaponDecay: ended.weaponDecay,
+          healingCost: ended.healingCost,
+          otherCosts: ended.otherCosts,
+        });
+      }
+      if (get().activeSessionId === null) {
+        void saveJsonSetting('activeSessionId', null);
+      }
+    },
+  };
+};
