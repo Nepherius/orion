@@ -1,4 +1,12 @@
-import { FolderOpen, User, FileText, Palette, Sliders, AlertCircle } from 'lucide-react';
+import {
+  FolderOpen,
+  User,
+  FileText,
+  Palette,
+  Sliders,
+  AlertCircle,
+  ShieldCheck,
+} from 'lucide-react';
 import { useSettingsModel } from '../../hooks/useSettingsModel';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
 import { ConfirmModal } from '../common/ConfirmModal';
@@ -207,6 +215,35 @@ export function Settings() {
               Auto-start sessions when chat log is detected
             </label>
             <InfoTooltip tooltip="Automatically start a new session when activity is detected in the chat log file." />
+          </div>
+        </div>
+      </SettingSection>
+
+      {/* Privacy Section */}
+      <SettingSection icon={ShieldCheck} title="Privacy" description="Anonymous usage analytics">
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="analyticsEnabled"
+            checked={settings.analyticsEnabled ?? false}
+            onChange={(e) =>
+              updateSettings({
+                analyticsEnabled: e.target.checked,
+                analyticsConsentAnswered: true,
+              })
+            }
+            className="mt-1 h-4 w-4"
+          />
+          <div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="analyticsEnabled" className="text-sm text-gray-300">
+                Share anonymous usage analytics
+              </label>
+              <InfoTooltip tooltip="Sends app-open event payloads with Orion version, operating system, build mode, and a generated local install id. Avatar names, chat log paths, sessions, loot, and Entropia data stay local." />
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              Turn this off to stop analytics and clear the local analytics id.
+            </p>
           </div>
         </div>
       </SettingSection>

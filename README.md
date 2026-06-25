@@ -107,6 +107,9 @@ Run the app in development mode:
 npm run tauri:dev
 ```
 
+Optional anonymous usage analytics are sent to PostHog only after the user consents in-app. The
+public PostHog capture token is configured in `public/analytics.config.json`.
+
 Run the full local check suite:
 
 ```bash

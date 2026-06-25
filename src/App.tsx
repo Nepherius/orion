@@ -10,8 +10,10 @@ import packageJson from '../package.json';
 import { useInitialDataLoader } from './hooks/useInitialDataLoader';
 import type { HuntSession } from './types';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { AnalyticsConsentModal } from './components/common/AnalyticsConsentModal';
 import { Panel } from './components/common/Panel';
 import { UpdateModal } from './components/common/UpdateModal';
+import { disablePostHogAnalytics, trackAppOpened } from './services/posthogAnalytics';
 
 // Dynamically imported views and components to minimize bundle size
 const SessionList = lazy(() =>
@@ -86,6 +88,11 @@ function App() {
 
   const avatarName = useHuntStore((state) => state.settings.avatarName);
   const theme = useHuntStore((state) => state.settings.theme);
+  const analyticsEnabled = useHuntStore((state) => state.settings.analyticsEnabled ?? false);
+  const analyticsConsentAnswered = useHuntStore(
+    (state) => state.settings.analyticsConsentAnswered ?? false
+  );
+  const updateSettings = useHuntStore((state) => state.updateSettings);
   const persistenceError = useHuntStore((state) => state.persistenceError);
   const clearPersistenceError = useHuntStore((state) => state.clearPersistenceError);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -106,6 +113,7 @@ function App() {
 
   // Show welcome modal only after data is loaded and avatar name is still empty
   const showWelcome = dataLoaded && !avatarName;
+  const showAnalyticsConsent = dataLoaded && Boolean(avatarName) && !analyticsConsentAnswered;
 
   useEffect(() => {
     // eslint-disable-next-line no-console
@@ -166,6 +174,19 @@ function App() {
       setCurrentView('dashboard');
     }
   }, [dataLoaded, isLiveSessionAvailable]); // Only run once when data loads
+
+  useEffect(() => {
+    if (!dataLoaded) {
+      return;
+    }
+
+    if (!analyticsConsentAnswered || !analyticsEnabled) {
+      disablePostHogAnalytics();
+      return;
+    }
+
+    void trackAppOpened();
+  }, [analyticsConsentAnswered, analyticsEnabled, dataLoaded]);
 
   // Check GitHub Releases after startup. Failures stay non-blocking so an unavailable
   // release endpoint never prevents Orion from opening normally.
@@ -255,6 +276,23 @@ function App() {
   return (
     <div className="min-h-screen text-body bg-background">
       {showWelcome && <WelcomeModal />}
+
+      {showAnalyticsConsent && (
+        <AnalyticsConsentModal
+          onAllow={() =>
+            updateSettings({
+              analyticsEnabled: true,
+              analyticsConsentAnswered: true,
+            })
+          }
+          onDecline={() =>
+            updateSettings({
+              analyticsEnabled: false,
+              analyticsConsentAnswered: true,
+            })
+          }
+        />
+      )}
 
       {availableUpdate && (
         <UpdateModal

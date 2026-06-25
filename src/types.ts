@@ -182,6 +182,8 @@ export interface AppSettings {
   overlayHeight?: number;
   ignoreListItems?: string[]; // Items to ignore in ChatLogMonitor
   enableKillTrackingMaturity?: boolean; // Enable HP-based maturity inference for kills (experimental)
+  analyticsEnabled?: boolean;
+  analyticsConsentAnswered?: boolean;
 }
 
 // Equipment and Loadout types

@@ -77,6 +77,8 @@ export const defaultSettings: AppSettings = {
   overlayHeight: 56,
   ignoreListItems: [],
   enableKillTrackingMaturity: true,
+  analyticsEnabled: false,
+  analyticsConsentAnswered: false,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
