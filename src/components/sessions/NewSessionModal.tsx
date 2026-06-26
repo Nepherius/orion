@@ -7,6 +7,8 @@ import { TagInput } from '../common/TagInput';
 import { X } from 'lucide-react';
 import { HuntSession } from '../../types';
 import { useSessionAutocompleteData } from '../../hooks/useSessionAutocompleteData';
+import { SessionAdvisor } from './SessionAdvisor';
+import { parseOptionalBankroll } from '../../utils/sessionAdvisor';
 
 interface NewSessionModalProps {
   onClose: () => void;
@@ -43,6 +45,8 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
     loadoutId: string;
     location: string;
     creature: string;
+    bankroll: string;
+    expectedMaturities: string[];
     notes: string;
     tags: string[];
   }>({
@@ -50,6 +54,8 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
     loadoutId: primaryLoadout?.id || '',
     location: '',
     creature: '',
+    bankroll: '',
+    expectedMaturities: [],
     notes: '',
     tags: [],
   });
@@ -61,7 +67,8 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
     setFormData((prev) => ({ ...prev, tags }));
   };
 
-  const { creatures, planets } = useSessionAutocompleteData();
+  const { creatures, creatureEntries, planets } = useSessionAutocompleteData();
+  const selectedLoadout = loadouts.find((loadout) => loadout.id === formData.loadoutId);
 
   const finishCreatingSession = (session: NewSessionInit) => {
     createSession(session);
@@ -70,8 +77,6 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
   };
 
   const buildSession = (): NewSessionInit => {
-    const selectedLoadout = loadouts.find((loadout) => loadout.id === formData.loadoutId);
-
     return {
       name: formData.name,
       location: formData.location || 'Unknown',
@@ -81,6 +86,8 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
       creature: formData.creature || '',
       notes: formData.notes,
       tags: formData.tags || [],
+      plannedBankroll: parseOptionalBankroll(formData.bankroll),
+      plannedMaturities: formData.expectedMaturities,
       startTime: Date.now(),
       status: 'active',
       ammoCost: 0,
@@ -108,7 +115,7 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-surface rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-surface rounded-lg p-6 max-h-[90vh] max-w-2xl w-full mx-4 overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">New Hunt Session</h2>
           <button onClick={onClose} className="text-muted hover:text-white">
@@ -157,9 +164,22 @@ export function NewSessionModal({ onClose, onSessionCreated }: NewSessionModalPr
           <AutocompleteInput
             label="Creature"
             value={formData.creature}
-            onChange={(creature) => setFormData({ ...formData, creature })}
+            onChange={(creature) => setFormData({ ...formData, creature, expectedMaturities: [] })}
             options={creatures}
             placeholder="e.g., Atrox Adolescent"
+          />
+
+          <SessionAdvisor
+            loadout={selectedLoadout}
+            creature={formData.creature}
+            creatureEntries={creatureEntries}
+            sessions={allSessions}
+            bankroll={formData.bankroll}
+            onBankrollChange={(bankroll) => setFormData({ ...formData, bankroll })}
+            expectedMaturities={formData.expectedMaturities}
+            onExpectedMaturitiesChange={(expectedMaturities) =>
+              setFormData({ ...formData, expectedMaturities })
+            }
           />
 
           <TagInput

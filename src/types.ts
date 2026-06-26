@@ -82,6 +82,16 @@ export interface DamageTakenEvent {
   isCritical?: boolean;
 }
 
+export interface CreatureEntry {
+  name: string;
+  maturity: string;
+  hp: number;
+  regenInterval?: number | null;
+  regenAmount?: number | null;
+  level?: number | null;
+  attacksPerMinute?: number | null;
+}
+
 export interface SessionStats {
   kills: number;
   lootEvents: number;
@@ -135,6 +145,8 @@ export interface HuntSession {
   weaponEfficiencySnapshot?: number;
   dppSnapshot?: number;
   loadoutNameSnapshot?: string;
+  plannedBankroll?: number | null;
+  plannedMaturities?: string[];
 
   // Costs
   ammoCost: number;
@@ -203,6 +215,7 @@ interface EquipmentDamage {
 interface EquipmentProperties {
   Type?: string;
   Weight?: number;
+  UsesPerMinute?: number;
   Economy?: EquipmentEconomy;
   Damage?: EquipmentDamage;
   Range?: number;

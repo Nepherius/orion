@@ -27,7 +27,10 @@ const mobs = JSON.parse(rawData);
 console.log(`✓ Loaded ${mobs.length} mobs`);
 console.log('');
 
-console.log('Extracting name, maturity, and HP...');
+console.log('Extracting creature combat stats...');
+
+const nullableNumber = (value) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 // Extract simplified creature data
 const creatures = [];
@@ -39,10 +42,17 @@ mobs.forEach((mob) => {
   }
 
   mob.Maturities.forEach((maturity) => {
+    const properties = maturity.Properties || {};
     creatures.push({
       name: mob.Name,
       maturity: maturity.Name,
-      hp: maturity.Properties.Health || 0,
+      hp: properties.Health || 0,
+      regenInterval: nullableNumber(properties.RegenerationInterval),
+      regenAmount: nullableNumber(properties.RegenerationAmount),
+      level: nullableNumber(properties.Level),
+      attacksPerMinute: nullableNumber(
+        properties.AttacksPerMinute ?? mob.Properties?.AttacksPerMinute
+      ),
     });
     totalMaturities++;
   });

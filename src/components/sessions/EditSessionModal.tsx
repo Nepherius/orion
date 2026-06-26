@@ -4,6 +4,8 @@ import { AutocompleteInput } from '../common/AutocompleteInput';
 import { TagInput } from '../common/TagInput';
 import { X } from 'lucide-react';
 import { useSessionAutocompleteData } from '../../hooks/useSessionAutocompleteData';
+import { SessionAdvisor } from './SessionAdvisor';
+import { parseOptionalBankroll } from '../../utils/sessionAdvisor';
 
 interface EditSessionModalProps {
   sessionId: string;
@@ -26,6 +28,11 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
     weapon: session?.weapon || '',
     creature: session?.creature || '',
     location: session?.location || '',
+    bankroll:
+      session?.plannedBankroll !== undefined && session?.plannedBankroll !== null
+        ? String(session.plannedBankroll)
+        : '',
+    expectedMaturities: session?.plannedMaturities || [],
     notes: session?.notes || '',
     tags: session?.tags || [],
   });
@@ -38,7 +45,7 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
     setFormData((prev) => ({ ...prev, tags }));
   };
 
-  const { creatures, planets } = useSessionAutocompleteData();
+  const { creatures, creatureEntries, planets } = useSessionAutocompleteData();
 
   if (!session) {
     return null;
@@ -47,18 +54,23 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const selectedLoadout = loadouts.find((l) => l.id === formData.loadoutId);
+    const { bankroll, expectedMaturities, ...sessionFormData } = formData;
     updateSession(sessionId, {
-      ...formData,
+      ...sessionFormData,
       weapon: selectedLoadout?.weapon?.Name || formData.weapon || 'No Loadout',
       armor: selectedLoadout?.armor ?? session.armor,
+      plannedBankroll: parseOptionalBankroll(bankroll),
+      plannedMaturities: expectedMaturities,
       tags: formData.tags || [],
     });
     onClose();
   };
 
+  const advisorLoadout = loadouts.find((l) => l.id === formData.loadoutId) || sessionLoadout;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-surface rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-surface rounded-lg p-6 max-h-[90vh] max-w-2xl w-full mx-4 overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Edit Hunt Session</h2>
           <button onClick={onClose} className="text-muted hover:text-white">
@@ -98,7 +110,7 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
           <AutocompleteInput
             label="Creature"
             value={formData.creature}
-            onChange={(creature) => setFormData({ ...formData, creature })}
+            onChange={(creature) => setFormData({ ...formData, creature, expectedMaturities: [] })}
             options={creatures}
             placeholder="e.g., Atrox Adolescent"
           />
@@ -109,6 +121,19 @@ export function EditSessionModal({ sessionId, onClose }: EditSessionModalProps) 
             onChange={(location) => setFormData({ ...formData, location })}
             options={planets}
             placeholder="e.g., Planet Calypso"
+          />
+
+          <SessionAdvisor
+            loadout={advisorLoadout}
+            creature={formData.creature}
+            creatureEntries={creatureEntries}
+            sessions={allSessions}
+            bankroll={formData.bankroll}
+            onBankrollChange={(bankroll) => setFormData({ ...formData, bankroll })}
+            expectedMaturities={formData.expectedMaturities}
+            onExpectedMaturitiesChange={(expectedMaturities) =>
+              setFormData({ ...formData, expectedMaturities })
+            }
           />
 
           <TagInput

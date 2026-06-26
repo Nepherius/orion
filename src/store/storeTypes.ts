@@ -10,6 +10,7 @@ import type {
   LootItem,
   SessionStats,
   SkillGain,
+  CreatureEntry,
 } from '../types';
 
 /**
@@ -164,7 +165,7 @@ export interface HuntStore {
   goals: Goal[];
 
   pendingKills: Map<string, PendingKill>;
-  creatureData: Array<{ name: string; maturity: string; hp: number }> | null;
+  creatureData: CreatureEntry[] | null;
 
   analyticsData: {
     performance: AnalyticsPerformanceSqlData | null;

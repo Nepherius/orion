@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EQUIPMENT_ASSET_PATHS, loadAssetJson } from '../services/assetDataLoader';
-import { loadCreatureNames } from '../services/creatureDataLoader';
+import { loadCreatureEntries, loadCreatureNames } from '../services/creatureDataLoader';
+import type { CreatureEntry } from '../types';
 
 interface PlanetData {
   planets?: string[];
@@ -8,6 +9,7 @@ interface PlanetData {
 
 export function useSessionAutocompleteData() {
   const [creatures, setCreatures] = useState<string[]>([]);
+  const [creatureEntries, setCreatureEntries] = useState<CreatureEntry[]>([]);
   const [planets, setPlanets] = useState<string[]>([]);
 
   useEffect(() => {
@@ -15,8 +17,9 @@ export function useSessionAutocompleteData() {
 
     Promise.allSettled([
       loadCreatureNames(),
+      loadCreatureEntries(),
       loadAssetJson<PlanetData>(EQUIPMENT_ASSET_PATHS.planets).then((data) => data.planets || []),
-    ]).then(([creatureResult, planetResult]) => {
+    ]).then(([creatureResult, creatureEntriesResult, planetResult]) => {
       if (!isMounted) {
         return;
       }
@@ -25,6 +28,12 @@ export function useSessionAutocompleteData() {
         setCreatures(creatureResult.value);
       } else {
         console.error('Failed to load creature autocomplete data:', creatureResult.reason);
+      }
+
+      if (creatureEntriesResult.status === 'fulfilled') {
+        setCreatureEntries(creatureEntriesResult.value);
+      } else {
+        console.error('Failed to load creature advisor data:', creatureEntriesResult.reason);
       }
 
       if (planetResult.status === 'fulfilled') {
@@ -39,5 +48,5 @@ export function useSessionAutocompleteData() {
     };
   }, []);
 
-  return { creatures, planets };
+  return { creatures, creatureEntries, planets };
 }

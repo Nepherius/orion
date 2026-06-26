@@ -91,6 +91,8 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
             weapon_efficiency_snapshot REAL,
             dpp_snapshot REAL,
             loadout_name_snapshot TEXT,
+            planned_bankroll REAL,
+            planned_maturities TEXT,
             ammo_cost REAL DEFAULT 0,
             weapon_decay REAL DEFAULT 0,
             healing_cost REAL DEFAULT 0,
@@ -242,6 +244,11 @@ fn ensure_db_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     let _ = conn.execute("ALTER TABLE sessions ADD COLUMN dpp_snapshot REAL", []);
     let _ = conn.execute(
         "ALTER TABLE sessions ADD COLUMN loadout_name_snapshot TEXT",
+        [],
+    );
+    let _ = conn.execute("ALTER TABLE sessions ADD COLUMN planned_bankroll REAL", []);
+    let _ = conn.execute(
+        "ALTER TABLE sessions ADD COLUMN planned_maturities TEXT",
         [],
     );
     let _ = conn.execute("ALTER TABLE loadouts ADD COLUMN armor TEXT", []);

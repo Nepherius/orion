@@ -1,15 +1,48 @@
-import { EQUIPMENT_ASSET_PATHS, loadAssetJson } from './assetDataLoader';
-
-interface CreatureEntry {
-  name: string;
-  maturity: string;
-  hp: number;
-}
+import { EQUIPMENT_ASSET_PATHS, loadAssetJson, loadBundledAssetJson } from './assetDataLoader';
+import type { CreatureEntry } from '../types';
 
 export type { CreatureEntry };
 
 function normalizeCreatureName(name: string): string {
   return name.replace(/\s+/g, ' ').trim();
+}
+
+function optionalFiniteNumber(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function creatureEntryKey(entry: Pick<CreatureEntry, 'name' | 'maturity'>): string {
+  return `${normalizeCreatureName(entry.name).toLowerCase()}::${normalizeCreatureName(entry.maturity).toLowerCase()}`;
+}
+
+function preferKnownField<T>(primary: T | undefined, bundled: T | undefined): T | undefined {
+  return primary === undefined ? bundled : primary;
+}
+
+export function mergeCreatureEntryDetails(
+  primaryEntries: CreatureEntry[],
+  bundledEntries: CreatureEntry[]
+): CreatureEntry[] {
+  if (bundledEntries.length === 0) return primaryEntries;
+
+  const bundledByKey = new Map(
+    bundledEntries.map((entry) => [creatureEntryKey(entry), entry] as const)
+  );
+
+  return primaryEntries.map((entry) => {
+    const bundled = bundledByKey.get(creatureEntryKey(entry));
+    if (!bundled) return entry;
+
+    return {
+      ...entry,
+      regenInterval: preferKnownField(entry.regenInterval, bundled.regenInterval),
+      regenAmount: preferKnownField(entry.regenAmount, bundled.regenAmount),
+      level: preferKnownField(entry.level, bundled.level),
+      attacksPerMinute: preferKnownField(entry.attacksPerMinute, bundled.attacksPerMinute),
+    };
+  });
 }
 
 function toCreatureNames(parsed: unknown): string[] {
@@ -73,9 +106,17 @@ function toCreatureEntries(parsed: unknown): CreatureEntry[] {
 
     if (typeof payload[0] === 'object' && payload[0] !== null) {
       const entries = payload as CreatureEntry[];
-      return entries.filter(
-        (entry) => entry.name && entry.maturity && typeof entry.hp === 'number'
-      );
+      return entries
+        .filter((entry) => entry.name && entry.maturity && typeof entry.hp === 'number')
+        .map((entry) => ({
+          name: entry.name,
+          maturity: entry.maturity,
+          hp: entry.hp,
+          regenInterval: optionalFiniteNumber(entry.regenInterval),
+          regenAmount: optionalFiniteNumber(entry.regenAmount),
+          level: optionalFiniteNumber(entry.level),
+          attacksPerMinute: optionalFiniteNumber(entry.attacksPerMinute),
+        }));
     }
   }
 
@@ -91,8 +132,14 @@ export async function loadCreatureNames(): Promise<string[]> {
 
 export async function loadCreatureEntries(): Promise<CreatureEntry[]> {
   const parsed = await loadAssetJson<unknown>(EQUIPMENT_ASSET_PATHS.creatures);
+  const primaryEntries = toCreatureEntries(parsed);
 
-  return toCreatureEntries(parsed);
+  try {
+    const bundledParsed = await loadBundledAssetJson<unknown>(EQUIPMENT_ASSET_PATHS.creatures);
+    return mergeCreatureEntryDetails(primaryEntries, toCreatureEntries(bundledParsed));
+  } catch {
+    return primaryEntries;
+  }
 }
 
 /**

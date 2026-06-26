@@ -37,6 +37,18 @@ export function unwrapAssetData<T>(parsed: unknown): T {
   return parsed as T;
 }
 
+export async function loadBundledAssetJson<T>(relativePath: string): Promise<T> {
+  const normalizedPath = normalizeAssetPath(relativePath);
+  const response = await fetch(`/assets/${normalizedPath}`);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to load bundled asset ${normalizedPath}: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return unwrapAssetData<T>(await response.json());
+}
+
 export async function loadAssetJson<T>(relativePath: string): Promise<T> {
   const normalizedPath = normalizeAssetPath(relativePath);
   const appDataPath = toAppDataAssetPath(normalizedPath);
@@ -45,13 +57,6 @@ export async function loadAssetJson<T>(relativePath: string): Promise<T> {
     const content = await readTextFile(appDataPath, { baseDir: BaseDirectory.AppData });
     return unwrapAssetData<T>(JSON.parse(content));
   } catch {
-    const response = await fetch(`/assets/${normalizedPath}`);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to load asset ${normalizedPath}: ${response.status} ${response.statusText}`
-      );
-    }
-
-    return unwrapAssetData<T>(await response.json());
+    return loadBundledAssetJson<T>(normalizedPath);
   }
 }

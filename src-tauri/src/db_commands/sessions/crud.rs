@@ -19,6 +19,8 @@ pub struct CreateSessionParams {
     weapon_efficiency_snapshot: Option<f64>,
     dpp_snapshot: Option<f64>,
     loadout_name_snapshot: Option<String>,
+    planned_bankroll: Option<f64>,
+    planned_maturities: Option<Vec<String>>,
     notes: String,
     ammo_cost: f64,
     weapon_decay: f64,
@@ -38,14 +40,19 @@ pub fn db_create_session(
         .tags
         .as_ref()
         .map(|tags| serde_json::to_string(tags).unwrap());
+    let maturities_json = params
+        .planned_maturities
+        .as_ref()
+        .map(|maturities| serde_json::to_string(maturities).unwrap());
     let _result = conn
         .execute(
             "INSERT INTO sessions (
             uuid, name, weapon, armor, location, creature, start_time, status, loadout_id,
-            weapon_efficiency_snapshot, dpp_snapshot, loadout_name_snapshot, notes,
+            weapon_efficiency_snapshot, dpp_snapshot, loadout_name_snapshot, planned_bankroll,
+            planned_maturities, notes,
             ammo_cost, weapon_decay, healing_cost, other_costs, tags
          ) VALUES (
-            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20
          )",
             params![
                 params.uuid,
@@ -60,6 +67,8 @@ pub fn db_create_session(
                 params.weapon_efficiency_snapshot,
                 params.dpp_snapshot,
                 params.loadout_name_snapshot,
+                params.planned_bankroll,
+                maturities_json,
                 params.notes,
                 params.ammo_cost,
                 params.weapon_decay,
@@ -94,6 +103,9 @@ pub struct UpdateSessionParams {
     weapon_efficiency_snapshot: Option<f64>,
     dpp_snapshot: Option<f64>,
     loadout_name_snapshot: Option<String>,
+    planned_bankroll: Option<f64>,
+    clear_planned_bankroll: Option<bool>,
+    planned_maturities: Option<Vec<String>>,
     notes: Option<String>,
     ammo_cost: Option<f64>,
     weapon_decay: Option<f64>,
@@ -171,6 +183,17 @@ pub fn db_update_session(
         updates.push("loadout_name_snapshot = ?");
         values.push(Box::new(v));
     }
+    if params.clear_planned_bankroll.unwrap_or(false) {
+        updates.push("planned_bankroll = NULL");
+    } else if let Some(v) = params.planned_bankroll {
+        updates.push("planned_bankroll = ?");
+        values.push(Box::new(v));
+    }
+    if let Some(maturities) = params.planned_maturities {
+        let maturities_json = serde_json::to_string(&maturities).unwrap();
+        updates.push("planned_maturities = ?");
+        values.push(Box::new(maturities_json));
+    }
     if let Some(v) = params.notes {
         updates.push("notes = ?");
         values.push(Box::new(v));
@@ -231,7 +254,7 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
                 uuid, name, weapon, armor, location, start_time, end_time, status, paused_at,
                 total_paused_ms, loadout_id, notes, ammo_cost, weapon_decay, healing_cost,
                 other_costs, creature, tags, weapon_efficiency_snapshot, dpp_snapshot,
-                loadout_name_snapshot
+                loadout_name_snapshot, planned_bankroll, planned_maturities
              FROM sessions
              ORDER BY start_time DESC",
         )
@@ -241,6 +264,12 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
         .query_map([], |row| {
             let tags_str: Option<String> = row.get(17)?;
             let tags: Vec<String> = if let Some(s) = tags_str {
+                serde_json::from_str(&s).unwrap_or_else(|_| Vec::new())
+            } else {
+                Vec::new()
+            };
+            let maturities_str: Option<String> = row.get(22)?;
+            let planned_maturities: Vec<String> = if let Some(s) = maturities_str {
                 serde_json::from_str(&s).unwrap_or_else(|_| Vec::new())
             } else {
                 Vec::new()
@@ -267,6 +296,8 @@ pub fn db_get_all_sessions(state: State<'_, DbState>) -> Result<JsonValue, Strin
                 "weaponEfficiencySnapshot": row.get::<_, Option<f64>>(18)?,
                 "dppSnapshot": row.get::<_, Option<f64>>(19)?,
                 "loadoutNameSnapshot": row.get::<_, Option<String>>(20)?,
+                "plannedBankroll": row.get::<_, Option<f64>>(21)?,
+                "plannedMaturities": planned_maturities,
             }))
         })
         .map_err(|e| e.to_string())?;

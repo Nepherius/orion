@@ -1,5 +1,67 @@
 import { describe, expect, it } from 'vitest';
-import { inferMaturity, type CreatureEntry } from './creatureDataLoader';
+import type { CreatureEntry } from '../types';
+import { inferMaturity, mergeCreatureEntryDetails } from './creatureDataLoader';
+
+describe('mergeCreatureEntryDetails', () => {
+  it('fills missing regen fields from bundled creature data', () => {
+    const staleAppData: CreatureEntry[] = [
+      {
+        name: 'Exarosaur (Calypso)',
+        maturity: 'Mature',
+        hp: 60,
+      },
+    ];
+    const bundledData: CreatureEntry[] = [
+      {
+        name: 'Exarosaur (Calypso)',
+        maturity: 'Mature',
+        hp: 60,
+        regenInterval: 620,
+        regenAmount: 0.1,
+        level: 3,
+        attacksPerMinute: 20,
+      },
+    ];
+
+    expect(mergeCreatureEntryDetails(staleAppData, bundledData)).toEqual([
+      {
+        name: 'Exarosaur (Calypso)',
+        maturity: 'Mature',
+        hp: 60,
+        regenInterval: 620,
+        regenAmount: 0.1,
+        level: 3,
+        attacksPerMinute: 20,
+      },
+    ]);
+  });
+
+  it('preserves explicit null fields from the primary creature data', () => {
+    const primaryData: CreatureEntry[] = [
+      {
+        name: 'Exarosaur (Calypso)',
+        maturity: 'Highland',
+        hp: 10,
+        regenInterval: null,
+        regenAmount: null,
+      },
+    ];
+    const bundledData: CreatureEntry[] = [
+      {
+        name: 'Exarosaur (Calypso)',
+        maturity: 'Highland',
+        hp: 10,
+        regenInterval: 620,
+        regenAmount: 0.1,
+      },
+    ];
+
+    expect(mergeCreatureEntryDetails(primaryData, bundledData)[0]).toMatchObject({
+      regenInterval: null,
+      regenAmount: null,
+    });
+  });
+});
 
 const exarosaur: CreatureEntry[] = [
   { name: 'Exarosaur (Calypso)', maturity: 'Young', hp: 50 },

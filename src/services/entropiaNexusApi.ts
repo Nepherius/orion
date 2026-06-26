@@ -5,7 +5,7 @@
  */
 
 const API_BASE = 'https://api.entropianexus.com';
-const USER_AGENT = 'Orion/1.1.0';
+const USER_AGENT = 'Orion/1.3.0';
 
 export interface NexusItem {
   Id: number;
@@ -63,6 +63,8 @@ export interface NexusMob {
       Health: number;
       Level?: number;
       AttacksPerMinute?: number | null;
+      RegenerationInterval?: number | null;
+      RegenerationAmount?: number | null;
       [key: string]: unknown;
     };
     [key: string]: unknown;
@@ -86,7 +88,7 @@ async function fetchWithHeaders<T>(endpoint: string): Promise<T> {
         'User-Agent': USER_AGENT,
         Accept: 'application/json',
         'X-Client-Name': 'Orion',
-        'X-Client-Version': '1.1.0',
+        'X-Client-Version': '1.3.0',
       },
     });
 

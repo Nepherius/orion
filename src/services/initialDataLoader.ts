@@ -6,6 +6,7 @@
 import { writeTextFile, readTextFile, BaseDirectory, mkdir } from '@tauri-apps/plugin-fs';
 import { fetchAllEquipmentData, NexusMob } from './entropiaNexusApi';
 import { EQUIPMENT_ASSET_PATHS, toAppDataAssetPath } from './assetDataLoader';
+import type { CreatureEntry } from '../types';
 
 const MONTH_IN_DAYS = 30;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -21,12 +22,6 @@ const REQUIRED_EQUIPMENT_ASSET_PATHS = [
   EQUIPMENT_ASSET_PATHS.items,
   EQUIPMENT_ASSET_PATHS.creatures,
 ] as const;
-
-interface CreatureSummary {
-  name: string;
-  maturity: string;
-  hp: number;
-}
 
 export interface ProgressUpdate {
   fileName: string;
@@ -66,8 +61,12 @@ function hasValidDataPayload(parsed: unknown): boolean {
   return Object.keys(parsed).length > 0;
 }
 
-function extractCreaturesFromMobs(mobs: NexusMob[]): CreatureSummary[] {
-  const creatures: CreatureSummary[] = [];
+function nullableFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function extractCreaturesFromMobs(mobs: NexusMob[]): CreatureEntry[] {
+  const creatures: CreatureEntry[] = [];
 
   for (const mob of mobs) {
     if (!Array.isArray(mob.Maturities) || mob.Maturities.length === 0) {
@@ -75,10 +74,17 @@ function extractCreaturesFromMobs(mobs: NexusMob[]): CreatureSummary[] {
     }
 
     for (const maturity of mob.Maturities) {
+      const maturityProperties = maturity.Properties ?? {};
       creatures.push({
         name: mob.Name,
         maturity: maturity.Name,
-        hp: Number(maturity.Properties?.Health ?? 0),
+        hp: Number(maturityProperties.Health ?? 0),
+        regenInterval: nullableFiniteNumber(maturityProperties.RegenerationInterval),
+        regenAmount: nullableFiniteNumber(maturityProperties.RegenerationAmount),
+        level: nullableFiniteNumber(maturityProperties.Level),
+        attacksPerMinute: nullableFiniteNumber(
+          maturityProperties.AttacksPerMinute ?? mob.Properties?.AttacksPerMinute
+        ),
       });
     }
   }

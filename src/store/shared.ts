@@ -141,6 +141,8 @@ export const persistSessionToDb = async (session: HuntSession) => {
       weapon_efficiency_snapshot: session.weaponEfficiencySnapshot ?? null,
       dpp_snapshot: session.dppSnapshot ?? null,
       loadout_name_snapshot: session.loadoutNameSnapshot ?? null,
+      planned_bankroll: session.plannedBankroll ?? null,
+      planned_maturities: session.plannedMaturities ?? [],
       notes: session.notes,
       ammo_cost: session.ammoCost,
       weapon_decay: session.weaponDecay,
@@ -154,6 +156,9 @@ export const persistSessionToDb = async (session: HuntSession) => {
 export const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
   const shouldClearPausedAt =
     Object.prototype.hasOwnProperty.call(updates, 'pausedAt') && updates.pausedAt === undefined;
+  const shouldClearPlannedBankroll =
+    Object.prototype.hasOwnProperty.call(updates, 'plannedBankroll') &&
+    (updates.plannedBankroll === null || updates.plannedBankroll === undefined);
 
   await safeInvoke('db_update_session', {
     params: {
@@ -173,6 +178,11 @@ export const updateSessionInDb = async (id: string, updates: Partial<HuntSession
       weapon_efficiency_snapshot: updates.weaponEfficiencySnapshot,
       dpp_snapshot: updates.dppSnapshot,
       loadout_name_snapshot: updates.loadoutNameSnapshot,
+      planned_bankroll: updates.plannedBankroll ?? undefined,
+      clear_planned_bankroll: shouldClearPlannedBankroll,
+      ...(updates.plannedMaturities !== undefined
+        ? { planned_maturities: updates.plannedMaturities }
+        : {}),
       notes: updates.notes,
       ammo_cost: updates.ammoCost,
       weapon_decay: updates.weaponDecay,

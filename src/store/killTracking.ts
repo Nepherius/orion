@@ -1,4 +1,4 @@
-import type { AppSettings, HuntSession } from '../types';
+import type { AppSettings, CreatureEntry, HuntSession } from '../types';
 import type { PendingKill } from './storeTypes';
 import { generateId, safeInvoke } from './shared';
 
@@ -11,7 +11,7 @@ export const pendingKillFinalizeTimers = new Map<string, ReturnType<typeof setTi
 export const finalizePendingKillRecord = async (
   session: HuntSession,
   pendingKill: PendingKill,
-  creatures: Array<{ name: string; maturity: string; hp: number }>,
+  creatures: CreatureEntry[],
   settings: AppSettings
 ) => {
   if (!session.creature) {
