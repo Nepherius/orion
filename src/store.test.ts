@@ -3,6 +3,11 @@ import { invoke } from '@tauri-apps/api/core';
 import { useHuntStore } from './store';
 import { Loadout, HuntSession, SessionStats, CombatEvent, ItemTemplate, Goal } from './types';
 import { safeInvoke } from './store/shared';
+import {
+  pendingKillFlag,
+  pendingKillStartTime,
+  pendingKillFinalizeTimers,
+} from './store/killTracking';
 
 // Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
@@ -241,6 +246,101 @@ describe('HuntStore - session lifecycle persistence', () => {
         }),
       })
     );
+  });
+});
+
+describe('HuntStore - special loot kill tracking', () => {
+  const createSession = (overrides: Partial<HuntSession> = {}): HuntSession => ({
+    id: overrides.id ?? 'session-1',
+    name: overrides.name ?? 'Session',
+    startTime: overrides.startTime ?? 1700000000000,
+    status: overrides.status ?? 'active',
+    weapon: overrides.weapon ?? 'Weapon',
+    armor: overrides.armor,
+    location: overrides.location,
+    creature: overrides.creature ?? 'Creature',
+    loot: [],
+    skills: [],
+    globals: [],
+    kills: [],
+    damageEvents: [],
+    combatEvents: [],
+    healingEvents: [],
+    damageTakenEvents: [],
+    notes: '',
+    loadoutId: overrides.loadoutId,
+    ammoCost: 0,
+    weaponDecay: 0,
+    healingCost: 0,
+    otherCosts: 0,
+    stats: {} as SessionStats,
+  });
+
+  beforeEach(() => {
+    vi.mocked(invoke).mockReset();
+    pendingKillFlag.clear();
+    pendingKillStartTime.clear();
+    pendingKillFinalizeTimers.forEach((timer) => clearTimeout(timer));
+    pendingKillFinalizeTimers.clear();
+    useHuntStore.setState({
+      sessions: [createSession()],
+      pendingKills: new Map(),
+      settings: {
+        avatarName: '',
+        defaultMarkup: 100,
+        autoSave: false,
+        theme: 'dark',
+        ignoreListItems: [],
+      },
+      _loadCreatureData: vi.fn().mockResolvedValue(undefined),
+      _finalizePendingKill: vi.fn().mockResolvedValue(undefined),
+    });
+  });
+
+  it('does not attach no-kill loot to pending kills', async () => {
+    pendingKillFlag.set('session-1', true);
+    pendingKillStartTime.set('session-1', 1000);
+
+    await useHuntStore.getState().addLoot(
+      'session-1',
+      {
+        name: 'Vibrant Sweat',
+        quantity: 1,
+        value: 0,
+        markup: 100,
+        totalValue: 0,
+        timestamp: 1100,
+      },
+      { killTrackingMode: 'none' }
+    );
+
+    expect(useHuntStore.getState().pendingKills.get('session-1')).toBeUndefined();
+    expect(pendingKillFinalizeTimers.has('session-1')).toBe(false);
+    expect(useHuntStore.getState().sessions[0].loot).toHaveLength(1);
+  });
+
+  it('attaches special loot without scheduling kill finalization', async () => {
+    pendingKillFlag.set('session-1', true);
+    pendingKillStartTime.set('session-1', 1000);
+
+    await useHuntStore.getState().addLoot(
+      'session-1',
+      {
+        name: 'Shrapnel',
+        quantity: 1,
+        value: 0.4,
+        markup: 100,
+        totalValue: 0.4,
+        timestamp: 1100,
+      },
+      { killTrackingMode: 'attachOnly' }
+    );
+
+    const pendingKill = useHuntStore.getState().pendingKills.get('session-1');
+    expect(pendingKill?.startTimestamp).toBe(1000);
+    expect(pendingKill?.endTimestamp).toBe(1100);
+    expect(pendingKill?.lootItemIds).toHaveLength(1);
+    expect(pendingKillFinalizeTimers.has('session-1')).toBe(false);
   });
 });
 

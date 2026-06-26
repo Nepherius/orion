@@ -13,6 +13,7 @@ fn test_parse_hunting_global() {
     assert_eq!(event.creature, "Reinforced Drill Bot 1001");
     assert_eq!(event.value, 14.0);
     assert!(!event.is_hof);
+    assert_eq!(event.source, "hunting_global");
 }
 
 #[test]
@@ -120,6 +121,26 @@ fn test_parse_system_pickup_no_brackets() {
     assert_eq!(event.creature, "Animal Muscle Oil");
     assert_eq!(event.value, 0.27);
     assert!(!event.is_hof);
+    assert_eq!(event.source, "system_receive");
+}
+
+#[test]
+fn test_parse_enhancer_break_compensation() {
+    let parser = ChatLogParser::new();
+    let line = "2024-04-30 17:36:48 [System] Your enhancer Medical Tool Heal Enhancer 2 on your Omegaton Fast Aid FAP-90 broke. You have 45 enhancers remaining on the item. You received 0.4000 PED Shrapnel.";
+
+    let result = parser.parse_line(line);
+    assert!(
+        result.is_some(),
+        "Parser failed to match enhancer break compensation line"
+    );
+
+    let event = result.unwrap();
+    assert_eq!(event.player, "");
+    assert_eq!(event.creature, "Shrapnel");
+    assert_eq!(event.value, 0.4);
+    assert!(!event.is_hof);
+    assert_eq!(event.source, "enhancer_break");
 }
 
 #[test]

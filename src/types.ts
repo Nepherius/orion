@@ -12,6 +12,8 @@ export interface LootItem {
   killUuid?: string; // Associated kill UUID
 }
 
+export type LootKillTrackingMode = 'normal' | 'none' | 'attachOnly';
+
 export interface Goal {
   id: string;
   name: string;

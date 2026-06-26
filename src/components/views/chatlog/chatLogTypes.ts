@@ -4,6 +4,7 @@ export interface LootEvent {
   creature: string;
   value: number;
   is_hof: boolean;
+  source?: 'rare_item' | 'hunting_global' | 'mining_global' | 'system_receive' | 'enhancer_break';
 }
 
 export interface DamageEvent {

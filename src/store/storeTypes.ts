@@ -6,6 +6,7 @@ import type {
   Goal,
   HuntSession,
   ItemTemplate,
+  LootKillTrackingMode,
   Loadout,
   LootItem,
   SessionStats,
@@ -226,7 +227,8 @@ export interface HuntStore {
 
   addLoot: (
     sessionId: string,
-    loot: Omit<LootItem, 'id' | 'timestamp'> & { timestamp?: number }
+    loot: Omit<LootItem, 'id' | 'timestamp'> & { timestamp?: number },
+    options?: { killTrackingMode?: LootKillTrackingMode }
   ) => Promise<void>;
   updateLoot: (sessionId: string, lootId: string, updates: Partial<LootItem>) => void;
   updateLootByName: (

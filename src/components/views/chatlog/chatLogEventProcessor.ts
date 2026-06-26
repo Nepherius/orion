@@ -6,6 +6,7 @@ import {
   type FapHotClassifierState,
   type HealHotMode,
 } from '../../../utils/fapHotClassifier';
+import { classifyLootEventForTracking } from '../../../utils/lootEventRules';
 import type { ParseResult } from './chatLogTypes';
 
 interface ProcessRecentChatLinesParams {
@@ -160,17 +161,25 @@ export async function processRecentChatLines({
       const isSystemPickup = !evt.player || evt.player.trim() === '';
 
       if (isSystemPickup) {
-        const eventKey = eventKeyFor(`loot:${evt.timestamp}:${evt.creature}:${evt.value}`);
+        const eventKey = eventKeyFor(
+          `loot:${evt.timestamp}:${evt.creature}:${evt.value}:${evt.source || 'unknown'}`
+        );
 
         if (!processedEvents.has(eventKey)) {
-          const ignoreList = storeSettings.ignoreListItems || [];
-          if (ignoreList.includes(evt.creature)) {
+          const lootRule = classifyLootEventForTracking(evt, storeSettings);
+          if (lootRule.action === 'ignore') {
             debugDetail('[ChatLogMonitor] Skipping ignored item:', evt.creature);
             processedEvents.add(eventKey);
             return;
           }
 
-          debugDetail('[ChatLogMonitor] Adding system pickup:', evt.creature, evt.value);
+          debugDetail(
+            '[ChatLogMonitor] Adding system pickup:',
+            evt.creature,
+            evt.value,
+            'rule:',
+            lootRule.reason || lootRule.action
+          );
 
           const customItem = storeState.itemDatabase.find(
             (item) => normalizeLootItemName(item.name) === normalizeLootItemName(evt.creature)
@@ -179,15 +188,21 @@ export async function processRecentChatLines({
           const fixedValue = customItem?.defaultFixedValue || 0;
           const totalValue = fixedValue > 0 ? evt.value + fixedValue : evt.value * (markup / 100);
 
-          void storeActions.addLoot(activeSession.id, {
-            name: evt.creature,
-            quantity: 1,
-            value: evt.value,
-            markup: markup,
-            fixedValue,
-            totalValue,
-            timestamp: parseTimestamp(evt.timestamp),
-          });
+          void storeActions.addLoot(
+            activeSession.id,
+            {
+              name: evt.creature,
+              quantity: 1,
+              value: evt.value,
+              markup: markup,
+              fixedValue,
+              totalValue,
+              timestamp: parseTimestamp(evt.timestamp),
+            },
+            {
+              killTrackingMode: lootRule.killTrackingMode,
+            }
+          );
 
           processedEvents.add(eventKey);
         } else {

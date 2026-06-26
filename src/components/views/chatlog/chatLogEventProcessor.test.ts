@@ -13,6 +13,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 const addHealingEventMock = vi.fn();
 const addDamageEventMock = vi.fn();
 const addCombatEventMock = vi.fn();
+const addLootMock = vi.fn();
 
 const baseState = {
   settings: {
@@ -50,7 +51,7 @@ const baseState = {
   addHealingEvent: addHealingEventMock,
   createSession: vi.fn(),
   startSession: vi.fn(),
-  addLoot: vi.fn(),
+  addLoot: addLootMock,
   addGlobal: vi.fn(),
   addDamageEvent: addDamageEventMock,
   addCombatEvent: addCombatEventMock,
@@ -77,13 +78,15 @@ const initialFapState: FapHotClassifierState = {
   expectingDirectUseHeal: false,
 };
 
-describe('processRecentChatLines healing classification', () => {
+describe('processRecentChatLines', () => {
   beforeEach(() => {
     invokeMock.mockReset();
     addHealingEventMock.mockReset();
     addDamageEventMock.mockReset();
     addCombatEventMock.mockReset();
-    getStateMock.mockClear();
+    addLootMock.mockReset();
+    getStateMock.mockReset();
+    getStateMock.mockImplementation(() => baseState);
   });
 
   it('applies decay once for dense restoration-chip HoT sequence with one EoT marker', async () => {
@@ -255,5 +258,122 @@ describe('processRecentChatLines healing classification', () => {
 
     expect(addDamageEventMock).toHaveBeenCalledTimes(2);
     expect(addCombatEventMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('attaches enhancer-break compensation without finalizing the pending kill', async () => {
+    const parseResult: ParseResult = {
+      loot_events: [
+        {
+          timestamp: '2024-04-30 17:36:48',
+          player: '',
+          creature: 'Shrapnel',
+          value: 0.4,
+          is_hof: false,
+          source: 'enhancer_break',
+        },
+      ],
+      damage_events: [],
+      combat_events: [],
+      damage_taken_events: [],
+      skill_gains: [],
+      healing_events: [],
+    };
+    invokeMock.mockResolvedValue(parseResult);
+
+    await processRecentChatLines({
+      recentLines:
+        '2024-04-30 17:36:48 [System] Your enhancer Medical Tool Heal Enhancer 2 on your Omegaton Fast Aid FAP-90 broke. You have 45 enhancers remaining on the item. You received 0.4000 PED Shrapnel.',
+      processedEvents: new Set<string>(),
+      fapHotState: initialFapState,
+      debugDetail: vi.fn(),
+    });
+
+    expect(addLootMock).toHaveBeenCalledWith(
+      'session-1',
+      expect.objectContaining({
+        name: 'Shrapnel',
+        value: 0.4,
+        totalValue: 0.4,
+      }),
+      { killTrackingMode: 'attachOnly' }
+    );
+  });
+
+  it('tracks Vibrant Sweat without creating or finalizing a kill', async () => {
+    const parseResult: ParseResult = {
+      loot_events: [
+        {
+          timestamp: '2026-03-07 20:39:22',
+          player: '',
+          creature: 'Vibrant Sweat',
+          value: 0,
+          is_hof: false,
+          source: 'system_receive',
+        },
+      ],
+      damage_events: [],
+      combat_events: [],
+      damage_taken_events: [],
+      skill_gains: [],
+      healing_events: [],
+    };
+    invokeMock.mockResolvedValue(parseResult);
+
+    await processRecentChatLines({
+      recentLines:
+        '2026-03-07 20:39:22 [System] [] You received Vibrant Sweat x (10) Value: 0.0000 PED',
+      processedEvents: new Set<string>(),
+      fapHotState: initialFapState,
+      debugDetail: vi.fn(),
+    });
+
+    expect(addLootMock).toHaveBeenCalledWith(
+      'session-1',
+      expect.objectContaining({
+        name: 'Vibrant Sweat',
+        value: 0,
+      }),
+      { killTrackingMode: 'none' }
+    );
+  });
+
+  it('still skips ignored chat-log loot items', async () => {
+    const stateWithIgnore = {
+      ...baseState,
+      settings: {
+        ...baseState.settings,
+        ignoreListItems: ['Metal Residue'],
+      },
+    };
+    getStateMock.mockImplementation(() => stateWithIgnore);
+
+    const parseResult: ParseResult = {
+      loot_events: [
+        {
+          timestamp: '2026-03-07 20:39:22',
+          player: '',
+          creature: 'Metal Residue',
+          value: 0.12,
+          is_hof: false,
+          source: 'system_receive',
+        },
+      ],
+      damage_events: [],
+      combat_events: [],
+      damage_taken_events: [],
+      skill_gains: [],
+      healing_events: [],
+    };
+    invokeMock.mockResolvedValue(parseResult);
+
+    await processRecentChatLines({
+      recentLines:
+        '2026-03-07 20:39:22 [System] [] You received Metal Residue x (12) Value: 0.1200 PED',
+      processedEvents: new Set<string>(),
+      fapHotState: initialFapState,
+      debugDetail: vi.fn(),
+    });
+
+    expect(addLootMock).not.toHaveBeenCalled();
   });
 });

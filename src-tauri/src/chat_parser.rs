@@ -12,6 +12,7 @@ pub struct LootEvent {
     pub creature: String,
     pub value: f64,
     pub is_hof: bool,
+    pub source: String,
 }
 
 /// Skill gain event parsed from chat log
@@ -65,6 +66,7 @@ pub struct ChatLogParser {
     global_regex: Regex,
     mining_regex: Regex,
     rare_item_regex: Regex,
+    enhancer_break_regex: Regex,
     system_receive_regex: Regex,
     system_picked_up_regex: Regex,
     damage_regex: Regex,
@@ -91,6 +93,10 @@ impl ChatLogParser {
             Regex::new(r"You have gained ([\d.]+) experience in your (.+?) skill").unwrap();
         let skill_gain_simple_regex = Regex::new(r"You have gained ([\d.]+) (.+)").unwrap();
         let attribute_improved_regex = Regex::new(r"Your (.+?) has improved by ([\d.]+)").unwrap();
+        let enhancer_break_regex = Regex::new(
+            r"\[System\](?: \[\])? Your enhancer .+? broke\. .*? You received (?P<value>[\d.]+) PED (?P<item>.+?)\.\s*$",
+        )
+        .unwrap();
 
         // Pattern for system "You received" loot lines. Match either
         // `You received [Item] x (N) Value: X PED` or
@@ -107,6 +113,7 @@ impl ChatLogParser {
             global_regex,
             mining_regex,
             rare_item_regex,
+            enhancer_break_regex,
             system_receive_regex,
             system_picked_up_regex,
             damage_regex,
@@ -147,6 +154,7 @@ impl ChatLogParser {
                 creature: format!("Rare: {}", item_name),
                 value,
                 is_hof,
+                source: "rare_item".to_string(),
             });
         }
 
@@ -162,6 +170,7 @@ impl ChatLogParser {
                 creature,
                 value,
                 is_hof,
+                source: "hunting_global".to_string(),
             });
         }
 
@@ -177,6 +186,29 @@ impl ChatLogParser {
                 creature,
                 value,
                 is_hof,
+                source: "mining_global".to_string(),
+            });
+        }
+
+        // Enhancer break compensation appears as a "You received" line without
+        // normal loot quantity/value formatting.
+        if let Some(caps) = self.enhancer_break_regex.captures(line) {
+            let creature = caps
+                .name("item")
+                .map(|m| m.as_str().trim().to_string())
+                .unwrap_or_default();
+            let value: f64 = caps
+                .name("value")
+                .and_then(|m| m.as_str().parse().ok())
+                .unwrap_or(0.0);
+
+            return Some(LootEvent {
+                timestamp,
+                player: String::new(),
+                creature,
+                value,
+                is_hof: false,
+                source: "enhancer_break".to_string(),
             });
         }
 
@@ -199,6 +231,7 @@ impl ChatLogParser {
                 creature,
                 value,
                 is_hof: false,
+                source: "system_receive".to_string(),
             });
         }
 

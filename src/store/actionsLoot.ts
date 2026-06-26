@@ -10,11 +10,12 @@ export const createLootActions = (
   HuntStore,
   'addLoot' | 'updateLoot' | 'updateLootByName' | 'removeLoot' | 'removeLootByName'
 > => ({
-  addLoot: async (sessionId, lootData) => {
+  addLoot: async (sessionId, lootData, options) => {
     const ignoreList = get().settings.ignoreListItems || [];
     if (ignoreList.includes(lootData.name)) {
       return;
     }
+    const killTrackingMode = options?.killTrackingMode ?? 'normal';
 
     await get()._loadCreatureData();
 
@@ -27,9 +28,11 @@ export const createLootActions = (
 
     const state = get();
     const hasPendingFlag = pendingKillFlag.get(sessionId) === true;
+    const shouldAttachToPendingKill = hasPendingFlag && killTrackingMode !== 'none';
+    const shouldFinalizePendingKill = hasPendingFlag && killTrackingMode === 'normal';
     const existingPendingKill = state.pendingKills.get(sessionId);
 
-    if (hasPendingFlag) {
+    if (shouldAttachToPendingKill) {
       const startTimestamp = pendingKillStartTime.get(sessionId) ?? newLoot.timestamp;
       const updatedPendingKill: PendingKill = existingPendingKill
         ? {
@@ -74,7 +77,7 @@ export const createLootActions = (
       },
     });
 
-    if (hasPendingFlag) {
+    if (shouldFinalizePendingKill) {
       // Clear any existing debounce timer so we don't close the window prematurely
       // while more items from the same kill are still being processed.
       const existingTimer = pendingKillFinalizeTimers.get(sessionId);
