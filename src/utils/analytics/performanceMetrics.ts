@@ -1,4 +1,5 @@
 import { HuntSession } from '../../types';
+import { calculateLootAccounting } from '../lootAccounting';
 
 interface RollingVolatilityPoint {
   endIndex: number;
@@ -21,6 +22,7 @@ export interface MarkupDependencyMetrics {
   totalTtLoot: number;
   totalAdjustedLoot: number;
   totalMarkupGain: number;
+  totalFixedGain: number;
   netAtTt: number;
   netWithMarkup: number;
   markupShareOfLoot: number;
@@ -59,7 +61,7 @@ export function calculateProfitableSessionStreaks(sessions: HuntSession[]): {
   let longestStreak = 0;
 
   for (const session of sessions) {
-    const profit = session.stats.totalLoot - session.stats.totalCost;
+    const profit = session.stats.adjustedProfit;
     if (profit >= 0) {
       currentStreak++;
       longestStreak = Math.max(longestStreak, currentStreak);
@@ -78,7 +80,7 @@ export function calculateWinRate(sessions: HuntSession[]): number {
   const completed = sessions.filter((s) => s.status === 'completed');
   if (completed.length === 0) return 0;
 
-  const profitable = completed.filter((s) => s.stats.totalLoot - s.stats.totalCost >= 0).length;
+  const profitable = completed.filter((s) => s.stats.adjustedProfit >= 0).length;
   return (profitable / completed.length) * 100;
 }
 
@@ -191,17 +193,11 @@ export function calculateProjectedLifetimeProfit(
     .slice(0, Math.min(samplesFromRecent, sessions.length));
 
   // Calculate average profit/loss per session
-  const totalProfit = recentSessions.reduce(
-    (sum, s) => sum + (s.stats.totalLoot - s.stats.totalCost),
-    0
-  );
+  const totalProfit = recentSessions.reduce((sum, s) => sum + s.stats.adjustedProfit, 0);
   const avgProfitPerSession = totalProfit / recentSessions.length;
 
   // Get all-time stats
-  const allTimeTotalProfit = sessions.reduce(
-    (sum, s) => sum + (s.stats.totalLoot - s.stats.totalCost),
-    0
-  );
+  const allTimeTotalProfit = sessions.reduce((sum, s) => sum + s.stats.adjustedProfit, 0);
 
   // Projected = current all-time + average trend
   return allTimeTotalProfit + avgProfitPerSession;
@@ -211,10 +207,7 @@ export function calculateProjectedLifetimeProfit(
  * Calculate sessions needed to break even (if currently negative)
  */
 export function calculateSessionsToBreakEven(sessions: HuntSession[]): number | null {
-  const currentProfit = sessions.reduce(
-    (sum, s) => sum + (s.stats.totalLoot - s.stats.totalCost),
-    0
-  );
+  const currentProfit = sessions.reduce((sum, s) => sum + s.stats.adjustedProfit, 0);
 
   if (currentProfit >= 0) return null; // Already profitable
 
@@ -222,8 +215,7 @@ export function calculateSessionsToBreakEven(sessions: HuntSession[]): number | 
     .sort((a, b) => b.startTime - a.startTime)
     .slice(0, Math.min(10, sessions.length));
   const avgProfitPerSession =
-    recentSessions.reduce((sum, s) => sum + (s.stats.totalLoot - s.stats.totalCost), 0) /
-    recentSessions.length;
+    recentSessions.reduce((sum, s) => sum + s.stats.adjustedProfit, 0) / recentSessions.length;
 
   if (avgProfitPerSession <= 0) return null; // Can't break even with negative avg
 
@@ -353,7 +345,7 @@ export function calculateTimeToVarianceMetrics(
     return null;
   }
 
-  const returnRates = completed.map((s) => (s.stats.totalLoot / s.stats.totalCost) * 100);
+  const returnRates = completed.map((s) => s.stats.adjustedReturns);
   const rolling = getRollingVolatility(returnRates, rollingWindow);
   if (rolling.length === 0) {
     return null;
@@ -397,21 +389,28 @@ export function calculateMarkupDependencyMetrics(
   const totals = completed.reduce(
     (acc, session) => {
       acc.totalCost += session.stats.totalCost;
-      for (const item of session.loot) {
-        const baseTt = item.value * item.quantity;
-        acc.totalTtLoot += baseTt;
-        acc.totalAdjustedLoot += item.totalValue;
-      }
+      const lootTotals = calculateLootAccounting(session.loot);
+      acc.totalTtLoot += lootTotals.totalTtLoot;
+      acc.totalAdjustedLoot += lootTotals.totalAdjustedLoot;
+      acc.totalMarkupGain += lootTotals.totalMarkupGain;
+      acc.totalFixedGain += lootTotals.totalFixedGain;
       return acc;
     },
-    { totalCost: 0, totalTtLoot: 0, totalAdjustedLoot: 0 }
+    {
+      totalCost: 0,
+      totalTtLoot: 0,
+      totalAdjustedLoot: 0,
+      totalMarkupGain: 0,
+      totalFixedGain: 0,
+    }
   );
 
-  const totalMarkupGain = totals.totalAdjustedLoot - totals.totalTtLoot;
+  const totalMarkupGain = totals.totalMarkupGain;
+  const totalUplift = totalMarkupGain + totals.totalFixedGain;
   const netAtTt = totals.totalTtLoot - totals.totalCost;
   const netWithMarkup = totals.totalAdjustedLoot - totals.totalCost;
   const markupShareOfLoot =
-    totals.totalAdjustedLoot > 0 ? (totalMarkupGain / totals.totalAdjustedLoot) * 100 : 0;
+    totals.totalAdjustedLoot > 0 ? (totalUplift / totals.totalAdjustedLoot) * 100 : 0;
   const breakEvenMarkupPercent =
     totals.totalTtLoot > 0 ? (totals.totalCost / totals.totalTtLoot) * 100 : null;
 
@@ -421,6 +420,7 @@ export function calculateMarkupDependencyMetrics(
     totalTtLoot: totals.totalTtLoot,
     totalAdjustedLoot: totals.totalAdjustedLoot,
     totalMarkupGain,
+    totalFixedGain: totals.totalFixedGain,
     netAtTt,
     netWithMarkup,
     markupShareOfLoot,

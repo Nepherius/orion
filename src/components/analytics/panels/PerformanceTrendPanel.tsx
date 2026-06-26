@@ -17,7 +17,7 @@ import { chartAxisProps, chartGridProps, chartTooltipProps } from '../chartStyle
 import { AnalyticsEmptyState } from '../AnalyticsEmptyState';
 
 /**
- * Displays a line chart of return rate, profit, and loot for the last 30 sessions
+ * Displays a line chart of adjusted return, profit, and loot for the last 30 sessions
  */
 export default function PerformanceTrendPanel() {
   const recentSessionsRaw = useHuntStore(
@@ -60,7 +60,7 @@ export default function PerformanceTrendPanel() {
             type="monotone"
             dataKey="returnRate"
             stroke="#10B981"
-            name="Return Rate %"
+            name="Adj Return %"
             strokeWidth={2}
           />
           <Line type="monotone" dataKey="loot" stroke="#3B82F6" name="Loot (PED)" strokeWidth={2} />

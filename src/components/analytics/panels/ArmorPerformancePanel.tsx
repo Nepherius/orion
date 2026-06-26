@@ -29,7 +29,7 @@ export default function ArmorPerformancePanel() {
     { key: 'sessions', header: 'Sessions', align: 'right', render: (armor) => armor.sessions },
     {
       key: 'returnRate',
-      header: 'Return %',
+      header: 'Adj Return %',
       align: 'right',
       render: (armor) => (
         <span

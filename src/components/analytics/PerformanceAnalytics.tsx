@@ -23,7 +23,7 @@ interface PerformanceAnalyticsProps {
 }
 
 export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
-  const profit = session.stats.totalLoot - session.stats.totalCost;
+  const profit = session.stats.adjustedProfit;
 
   // Profit/Loss over time
   const plChart = session.loot.map((item, index) => {
@@ -57,12 +57,12 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
   // Performance breakdown
   const performanceMetrics = [
     {
-      label: 'Return Rate',
-      value: `${session.stats.returns.toFixed(1)}%`,
-      good: session.stats.returns >= 100,
+      label: 'Adjusted Return',
+      value: `${session.stats.adjustedReturns.toFixed(1)}%`,
+      good: session.stats.adjustedReturns >= 100,
     },
     {
-      label: 'Profit/Loss',
+      label: 'Adjusted P/L',
       value: `${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`,
       good: profit >= 0,
     },
@@ -77,11 +77,11 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
         <MetricTile
-          label="Return Rate"
-          value={`${session.stats.returns.toFixed(1)}%`}
-          tone={session.stats.returns >= 100 ? 'positive' : 'negative'}
+          label="Adjusted Return"
+          value={`${session.stats.adjustedReturns.toFixed(1)}%`}
+          tone={session.stats.adjustedReturns >= 100 ? 'positive' : 'negative'}
           icon={
-            session.stats.returns >= 100 ? (
+            session.stats.adjustedReturns >= 100 ? (
               <TrendingUp className="h-5 w-5 shrink-0" />
             ) : (
               <TrendingDown className="h-5 w-5 shrink-0" />
@@ -90,7 +90,7 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
           size="lg"
         />
         <MetricTile
-          label="Net Profit/Loss"
+          label="Adjusted P/L"
           value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`}
           tone={profit >= 0 ? 'positive' : 'negative'}
           size="lg"
@@ -121,13 +121,13 @@ export function PerformanceAnalytics({ session }: PerformanceAnalyticsProps) {
 
       {/* Charts Row */}
       <div className="grid grid-cols-2 gap-6">
-        {/* Return Rate Over Time */}
-        <Panel title="Return Rate Over Time">
+        {/* Adjusted and TT Return Over Time */}
+        <Panel title="Adjusted Return Over Time">
           <ReturnRateChart session={session} emptyHeight="h-64" />
         </Panel>
 
         {/* Profit/Loss Over Time */}
-        <Panel title="Profit/Loss Over Time">
+        <Panel title="Adjusted P/L Over Time">
           {plChart.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No loot data yet</div>
           ) : (

@@ -11,13 +11,15 @@ export default function SituationSummaryPanel() {
   const advanced = useHuntStore((state) => state.analyticsData.advanced);
   const performance = useHuntStore((state) => state.analyticsData.performance);
 
-  const lifetimeProfit = lifetimeStats.totalLoot - lifetimeStats.totalCost;
+  const lifetimeProfit = lifetimeStats.totalAdjustedLoot - lifetimeStats.totalCost;
   const lifetimeReturnRate =
-    lifetimeStats.totalCost > 0 ? (lifetimeStats.totalLoot / lifetimeStats.totalCost) * 100 : 0;
+    lifetimeStats.totalCost > 0
+      ? (lifetimeStats.totalAdjustedLoot / lifetimeStats.totalCost) * 100
+      : 0;
 
   const sessionWinRate = advanced?.sessionWinRate ?? 0;
 
-  // Find best weapon by return rate
+  // Find best weapon by adjusted return
   const bestWeapon = useMemo(() => {
     const weaponPerf = performance?.weaponData;
     if (!weaponPerf || weaponPerf.length === 0) return null;
@@ -53,7 +55,7 @@ export default function SituationSummaryPanel() {
           label="Current Direction"
           value={lifetimeProfit >= 0 ? 'Positive' : 'Negative'}
           tone={lifetimeProfit >= 0 ? 'positive' : 'negative'}
-          detail={`${lifetimeProfit.toFixed(2)} PED net`}
+          detail={`${lifetimeProfit.toFixed(2)} PED adjusted net`}
           size="sm"
         />
         <MetricTile

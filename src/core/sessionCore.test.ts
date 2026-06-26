@@ -85,6 +85,123 @@ describe('ensureSingleLoadoutPrimary', () => {
 });
 
 describe('calculateSessionStats', () => {
+  it('keeps existing totalLoot and returns based on markup-adjusted loot', () => {
+    const session = makeSession({
+      loot: [
+        {
+          id: 'loot1',
+          name: 'Oil',
+          quantity: 2,
+          value: 10,
+          markup: 125,
+          totalValue: 25,
+          timestamp: 1,
+        },
+        {
+          id: 'loot2',
+          name: 'Rare Component',
+          quantity: 1,
+          value: 5,
+          markup: 200,
+          fixedValue: 3,
+          totalValue: 8,
+          timestamp: 2,
+        },
+      ],
+      ammoCost: 20,
+      weaponDecay: 5,
+    });
+
+    const stats = calculateSessionStats(session, 5_000);
+    expect(stats.totalLoot).toBe(33);
+    expect(stats.totalCost).toBe(25);
+    expect(stats.returns).toBe(132);
+  });
+
+  it('keeps fixed value as an added PED value instead of applying markup', () => {
+    const session = makeSession({
+      loot: [
+        {
+          id: 'loot1',
+          name: 'Limited Part',
+          quantity: 3,
+          value: 4,
+          markup: 250,
+          fixedValue: 1.5,
+          totalValue: 16.5,
+          timestamp: 1,
+        },
+      ],
+      ammoCost: 10,
+    });
+
+    const stats = calculateSessionStats(session, 5_000);
+    expect(stats.totalLoot).toBe(16.5);
+    expect(stats.returns).toBe(165);
+  });
+
+  it('exposes explicit TT and adjusted accounting for mixed loot', () => {
+    const session = makeSession({
+      loot: [
+        {
+          id: 'loot1',
+          name: 'Animal Oil',
+          quantity: 2,
+          value: 10,
+          markup: 125,
+          totalValue: 25,
+          timestamp: 1,
+        },
+        {
+          id: 'loot2',
+          name: 'Robot Residue',
+          quantity: 4,
+          value: 3,
+          markup: 200,
+          totalValue: 24,
+          timestamp: 2,
+        },
+        {
+          id: 'loot3',
+          name: 'Rare Component',
+          quantity: 1,
+          value: 5,
+          markup: 150,
+          fixedValue: 2,
+          totalValue: 7,
+          timestamp: 3,
+        },
+      ],
+      ammoCost: 40,
+      weaponDecay: 10,
+    });
+
+    const stats = calculateSessionStats(session, 5_000);
+    expect(stats.totalTtLoot).toBe(37);
+    expect(stats.totalAdjustedLoot).toBe(56);
+    expect(stats.totalMarkupGain).toBe(17);
+    expect(stats.totalFixedGain).toBe(2);
+    expect(stats.ttReturns).toBeCloseTo(74, 6);
+    expect(stats.adjustedReturns).toBeCloseTo(112, 6);
+    expect(stats.ttProfit).toBe(-13);
+    expect(stats.adjustedProfit).toBe(6);
+    expect(stats.totalLoot).toBe(stats.totalAdjustedLoot);
+    expect(stats.returns).toBe(stats.adjustedReturns);
+  });
+
+  it('returns zeroed explicit accounting fields for empty stats', () => {
+    expect(emptySessionStats()).toMatchObject({
+      totalTtLoot: 0,
+      totalAdjustedLoot: 0,
+      totalMarkupGain: 0,
+      totalFixedGain: 0,
+      ttReturns: 0,
+      adjustedReturns: 0,
+      ttProfit: 0,
+      adjustedProfit: 0,
+    });
+  });
+
   it('calculates totals and returns correctly', () => {
     const session = makeSession({
       loot: [

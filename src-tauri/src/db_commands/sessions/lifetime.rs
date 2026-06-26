@@ -20,12 +20,28 @@ pub fn db_get_lifetime_stats(state: State<'_, DbState>) -> Result<JsonValue, Str
         )
         .map_err(|e| e.to_string())?;
 
-    // Get total loot across all loot_items
-    let total_loot: f64 = conn
+    // Get total loot accounting across all loot_items
+    let (total_tt_loot, total_adjusted_loot, total_markup_gain, total_fixed_gain): (
+        f64,
+        f64,
+        f64,
+        f64,
+    ) = conn
         .query_row(
-            "SELECT COALESCE(SUM(total_value), 0) FROM loot_items",
+            "SELECT
+                COALESCE(SUM(value * quantity), 0),
+                COALESCE(SUM(total_value), 0),
+                COALESCE(SUM(CASE
+                    WHEN fixed_value IS NOT NULL AND fixed_value > 0 THEN 0
+                    ELSE total_value - (value * quantity)
+                END), 0),
+                COALESCE(SUM(CASE
+                    WHEN fixed_value IS NOT NULL AND fixed_value > 0 THEN fixed_value * quantity
+                    ELSE 0
+                END), 0)
+             FROM loot_items",
             [],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
         )
         .map_err(|e| e.to_string())?;
 
@@ -81,7 +97,11 @@ pub fn db_get_lifetime_stats(state: State<'_, DbState>) -> Result<JsonValue, Str
         .unwrap_or(0);
 
     Ok(json!({
-        "totalLoot": total_loot,
+        "totalLoot": total_adjusted_loot,
+        "totalTtLoot": total_tt_loot,
+        "totalAdjustedLoot": total_adjusted_loot,
+        "totalMarkupGain": total_markup_gain,
+        "totalFixedGain": total_fixed_gain,
         "totalCost": total_cost,
         "totalKills": total_kills,
         "totalGlobals": total_globals,

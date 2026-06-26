@@ -27,12 +27,14 @@ interface EconomyAnalyticsProps {
 }
 
 export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
-  const totalLoot = session.stats.totalLoot;
+  const adjustedLoot = session.stats.totalAdjustedLoot;
+  const ttLoot = session.stats.totalTtLoot;
   const totalSpend = session.stats.totalCost;
-  const netPL = totalLoot - totalSpend;
-  const lootPerPED = totalSpend > 0 ? totalLoot / totalSpend : 0;
+  const adjustedNetPL = session.stats.adjustedProfit;
+  const ttNetPL = session.stats.ttProfit;
+  const adjustedLootPerPED = totalSpend > 0 ? adjustedLoot / totalSpend : 0;
   const costPerKill = session.stats.kills > 0 ? totalSpend / session.stats.kills : 0;
-  const lootPerKill = session.stats.kills > 0 ? totalLoot / session.stats.kills : 0;
+  const lootPerKill = session.stats.kills > 0 ? adjustedLoot / session.stats.kills : 0;
 
   const ammoCostPerKill = calculateAmmoCostPerKill(session);
   const weaponDecayCostPerKill = calculateWeaponDecayCostPerKill(session);
@@ -40,13 +42,17 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
   // Loot vs Spend over time
   const economyChart = useMemo(() => {
     return session.loot.map((item, index) => {
-      const cumulativeLoot = session.loot
+      const cumulativeAdjustedLoot = session.loot
         .slice(0, index + 1)
         .reduce((sum, l) => sum + l.totalValue, 0);
+      const cumulativeTtLoot = session.loot
+        .slice(0, index + 1)
+        .reduce((sum, l) => sum + l.value * l.quantity, 0);
       const cumulativeCost = totalSpend * ((index + 1) / session.loot.length);
       return {
         index: index + 1,
-        loot: cumulativeLoot,
+        adjustedLoot: cumulativeAdjustedLoot,
+        ttLoot: cumulativeTtLoot,
         spend: cumulativeCost,
         time: format(item.timestamp, 'HH:mm'),
       };
@@ -75,9 +81,16 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <MetricTile
-          label="Total Loot"
-          value={`${totalLoot.toFixed(2)} PED`}
+          label="Adjusted Loot"
+          value={`${adjustedLoot.toFixed(2)} PED`}
           tone="positive"
+          icon={<Coins className="h-5 w-5 shrink-0" />}
+          size="lg"
+        />
+        <MetricTile
+          label="TT Loot"
+          value={`${ttLoot.toFixed(2)} PED`}
+          tone="accent"
           icon={<Coins className="h-5 w-5 shrink-0" />}
           size="lg"
         />
@@ -89,19 +102,18 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
           size="lg"
         />
         <MetricTile
-          label="Net P/L"
-          value={`${netPL >= 0 ? '+' : ''}${netPL.toFixed(2)} PED`}
-          tone={netPL >= 0 ? 'positive' : 'negative'}
-          icon={netPL >= 0 ? <TrendingUp className="h-5 w-5 shrink-0" /> : undefined}
+          label="Adjusted P/L"
+          value={`${adjustedNetPL >= 0 ? '+' : ''}${adjustedNetPL.toFixed(2)} PED`}
+          tone={adjustedNetPL >= 0 ? 'positive' : 'negative'}
+          icon={adjustedNetPL >= 0 ? <TrendingUp className="h-5 w-5 shrink-0" /> : undefined}
           size="lg"
         />
-        <MetricTile label="Loot Per PED" value={lootPerPED.toFixed(2)} size="lg" />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-2 gap-6">
         {/* Loot vs Spend */}
-        <Panel title="Loot vs Spend Over Time">
+        <Panel title="TT and Adjusted Loot vs Spend Over Time">
           {economyChart.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-muted">No data yet</div>
           ) : (
@@ -115,7 +127,20 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
                   formatter={(value: number) => `${value.toFixed(2)} PED`}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="loot" stroke="#22C55E" strokeWidth={2} name="Loot" />
+                <Line
+                  type="monotone"
+                  dataKey="adjustedLoot"
+                  stroke="#22C55E"
+                  strokeWidth={2}
+                  name="Adjusted Loot"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="ttLoot"
+                  stroke="#60A5FA"
+                  strokeWidth={2}
+                  name="TT Loot"
+                />
                 <Line
                   type="monotone"
                   dataKey="spend"
@@ -140,7 +165,7 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
                 <YAxis dataKey="name" type="category" width={120} {...chartAxisProps} />
                 <Tooltip
                   {...chartTooltipProps}
-                  formatter={(value: number) => [`${value.toFixed(2)} PED`, 'Value']}
+                  formatter={(value: number) => [`${value.toFixed(2)} PED`, 'Adjusted Value']}
                 />
                 <Bar dataKey="value" fill="#22C55E" />
               </BarChart>
@@ -175,17 +200,18 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
         <Panel title="Economic Metrics">
           <div className="space-y-3">
             <StatCard
-              label="Total Loot"
-              value={`${totalLoot.toFixed(2)} PED`}
+              label="Adjusted Loot"
+              value={`${adjustedLoot.toFixed(2)} PED`}
               color="text-green-400"
             />
+            <StatCard label="TT Loot" value={`${ttLoot.toFixed(2)} PED`} color="text-blue-400" />
             <StatCard
               label="Total Spend"
               value={`${totalSpend.toFixed(2)} PED`}
               color="text-red-400"
             />
             <StatCard label="Cost/Kill" value={`${costPerKill.toFixed(2)} PED`} />
-            <StatCard label="Loot/Kill" value={`${lootPerKill.toFixed(2)} PED`} />
+            <StatCard label="Adj Loot/Kill" value={`${lootPerKill.toFixed(2)} PED`} />
             <StatCard
               label="Ammo Cost/Kill"
               value={ammoCostPerKill.toFixed(2)}
@@ -197,11 +223,16 @@ export function EconomyAnalytics({ session }: EconomyAnalyticsProps) {
               info="Weapon decay cost per kill"
             />
             <StatCard
-              label="Net P/L"
-              value={`${netPL >= 0 ? '+' : ''}${netPL.toFixed(2)} PED`}
-              color={netPL >= 0 ? 'text-green-400' : 'text-red-400'}
+              label="Adjusted P/L"
+              value={`${adjustedNetPL >= 0 ? '+' : ''}${adjustedNetPL.toFixed(2)} PED`}
+              color={adjustedNetPL >= 0 ? 'text-green-400' : 'text-red-400'}
             />
-            <StatCard label="Loot/PED" value={lootPerPED.toFixed(2)} />
+            <StatCard
+              label="TT P/L"
+              value={`${ttNetPL >= 0 ? '+' : ''}${ttNetPL.toFixed(2)} PED`}
+              color={ttNetPL >= 0 ? 'text-green-400' : 'text-red-400'}
+            />
+            <StatCard label="Adj Loot/PED" value={adjustedLootPerPED.toFixed(2)} />
           </div>
         </Panel>
       </div>

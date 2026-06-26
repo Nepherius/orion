@@ -87,7 +87,7 @@ export function SessionDetails({
 
   const profit = useMemo(() => {
     if (!session) return 0;
-    return session.stats.totalLoot - session.stats.totalCost;
+    return session.stats.adjustedProfit;
   }, [session]);
 
   const groupedSkills = useMemo(() => {
@@ -329,57 +329,106 @@ export function SessionDetails({
             <div className="font-medium text-gray-300">{session.creature || '-'}</div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricTile
-              label="Total Loot"
-              value={`${session.stats.totalLoot.toFixed(2)} PED`}
-              valueClassName="text-green-400"
-            />
-            <MetricTile
-              label="Total Cost"
-              value={`${session.stats.totalCost.toFixed(2)} PED`}
-              valueClassName="text-red-400"
-            />
-            <MetricTile
-              label="Profit/Loss"
-              value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`}
-              valueClassName={profit >= 0 ? 'text-green-400' : 'text-red-400'}
-            />
-            <MetricTile
-              label="Returns"
-              value={`${session.stats.returns.toFixed(1)}%`}
-              icon={
-                session.stats.returns >= 100 ? (
-                  <TrendingUp className="h-5 w-5" />
-                ) : (
-                  <TrendingDown className="h-5 w-5" />
-                )
-              }
-              valueClassName={session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}
-            />
-          </div>
+          <div className="mt-6 space-y-5">
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                Cost and TT
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricTile
+                  label="Total Cost"
+                  value={`${session.stats.totalCost.toFixed(2)} PED`}
+                  valueClassName="text-red-400"
+                  size="sm"
+                />
+                <MetricTile
+                  label="TT Loot"
+                  value={`${session.stats.totalTtLoot.toFixed(2)} PED`}
+                  valueClassName="text-blue-400"
+                  size="sm"
+                />
+                <MetricTile
+                  label="TT Return"
+                  value={`${session.stats.ttReturns.toFixed(1)}%`}
+                  valueClassName={
+                    session.stats.ttReturns >= 100 ? 'text-green-400' : 'text-red-400'
+                  }
+                  size="sm"
+                />
+                <MetricTile
+                  label="TT P/L"
+                  value={`${session.stats.ttProfit >= 0 ? '+' : ''}${session.stats.ttProfit.toFixed(2)} PED`}
+                  valueClassName={session.stats.ttProfit >= 0 ? 'text-green-400' : 'text-red-400'}
+                  size="sm"
+                />
+              </div>
+            </section>
 
-          {/* Additional Stats */}
-          <div className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricTile label="Loot Events" value={session.stats.lootEvents} size="sm" />
-            <MetricTile
-              label="Globals"
-              value={session.stats.globals}
-              valueClassName="text-yellow-400"
-              size="sm"
-            />
-            <MetricTile
-              label="HoFs"
-              value={session.stats.hofs}
-              valueClassName="text-purple-400"
-              size="sm"
-            />
-            <MetricTile
-              label="Duration"
-              value={`${Math.floor(session.stats.duration / 3600)}h ${Math.floor((session.stats.duration % 3600) / 60)}m`}
-              size="sm"
-            />
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                Adjusted Result
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricTile
+                  label="MU/Fixed Uplift"
+                  value={`+${(session.stats.totalMarkupGain + session.stats.totalFixedGain).toFixed(2)} PED`}
+                  detail={`MU ${session.stats.totalMarkupGain.toFixed(2)} · fixed ${session.stats.totalFixedGain.toFixed(2)}`}
+                  valueClassName="text-green-400"
+                  size="sm"
+                />
+                <MetricTile
+                  label="Adjusted Loot"
+                  value={`${session.stats.totalAdjustedLoot.toFixed(2)} PED`}
+                  valueClassName="text-green-400"
+                />
+                <MetricTile
+                  label="Adjusted Return"
+                  value={`${session.stats.adjustedReturns.toFixed(1)}%`}
+                  icon={
+                    session.stats.adjustedReturns >= 100 ? (
+                      <TrendingUp className="h-5 w-5 shrink-0" />
+                    ) : (
+                      <TrendingDown className="h-5 w-5 shrink-0" />
+                    )
+                  }
+                  valueClassName={
+                    session.stats.adjustedReturns >= 100 ? 'text-green-400' : 'text-red-400'
+                  }
+                />
+                <MetricTile
+                  label="Adjusted P/L"
+                  value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`}
+                  valueClassName={profit >= 0 ? 'text-green-400' : 'text-red-400'}
+                />
+              </div>
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                Activity
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <MetricTile label="Kills" value={session.stats.kills} size="sm" />
+                <MetricTile label="Loot Events" value={session.stats.lootEvents} size="sm" />
+                <MetricTile
+                  label="Globals"
+                  value={session.stats.globals}
+                  valueClassName="text-yellow-400"
+                  size="sm"
+                />
+                <MetricTile
+                  label="HoFs"
+                  value={session.stats.hofs}
+                  valueClassName="text-purple-400"
+                  size="sm"
+                />
+                <MetricTile
+                  label="Duration"
+                  value={`${Math.floor(session.stats.duration / 3600)}h ${Math.floor((session.stats.duration % 3600) / 60)}m`}
+                  size="sm"
+                />
+              </div>
+            </section>
           </div>
         </Panel>
       )}

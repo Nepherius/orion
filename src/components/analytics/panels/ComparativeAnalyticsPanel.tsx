@@ -41,26 +41,34 @@ export default function ComparativeAnalyticsPanel() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <MetricTile
           label="Best Weapon"
-          tooltip="Highest return rate weapon with existing data"
+          tooltip="Highest adjusted return weapon with existing data"
           value={bestWeapon?.weapon || 'N/A'}
           valueClassName="text-blue-400"
-          detail={bestWeapon ? `${bestWeapon.returnRate.toFixed(1)}% return` : 'Not enough data'}
+          detail={
+            bestWeapon ? `${bestWeapon.returnRate.toFixed(1)}% adjusted return` : 'Not enough data'
+          }
         />
         <MetricTile
           label="Best Location"
-          tooltip="Highest return location with at least 2 sessions"
+          tooltip="Highest adjusted return location with at least 2 sessions"
           value={bestLocation?.location || 'N/A'}
           valueClassName="text-green-400"
           detail={
-            bestLocation ? `${bestLocation.returnRate.toFixed(1)}% return` : 'Need 2+ sessions'
+            bestLocation
+              ? `${bestLocation.returnRate.toFixed(1)}% adjusted return`
+              : 'Need 2+ sessions'
           }
         />
         <MetricTile
           label="Best Loadout"
-          tooltip="Highest return loadout with at least 2 sessions"
+          tooltip="Highest adjusted return loadout with at least 2 sessions"
           value={bestLoadout?.name || 'N/A'}
           valueClassName="text-purple-400"
-          detail={bestLoadout ? `${bestLoadout.returnRate.toFixed(1)}% return` : 'Need 2+ sessions'}
+          detail={
+            bestLoadout
+              ? `${bestLoadout.returnRate.toFixed(1)}% adjusted return`
+              : 'Need 2+ sessions'
+          }
         />
       </div>
     </Panel>

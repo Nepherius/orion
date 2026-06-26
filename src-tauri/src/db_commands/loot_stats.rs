@@ -145,7 +145,7 @@ pub fn db_get_session_loot_grouped(
 ) -> Result<JsonValue, String> {
     let conn = state.db.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT name, SUM(quantity) as quantity, SUM(value) as value, AVG(markup) as markup, SUM(total_value) as total_value, COUNT(*) as count FROM loot_items WHERE session_uuid = ?1 GROUP BY name ORDER BY SUM(total_value) DESC")
+        .prepare("SELECT name, SUM(quantity) as quantity, SUM(value * quantity) as value, AVG(markup) as markup, SUM(total_value) as total_value, COUNT(*) as count FROM loot_items WHERE session_uuid = ?1 GROUP BY name ORDER BY SUM(total_value) DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -208,13 +208,30 @@ pub fn db_get_session_stats(
         .map_err(|e| e.to_string())?;
 
     // Calculate totals and counts from aggregations
-    let total_loot: f64 = conn
+    let (total_tt_loot, total_adjusted_loot, total_markup_gain, total_fixed_gain): (
+        f64,
+        f64,
+        f64,
+        f64,
+    ) = conn
         .query_row(
-            "SELECT COALESCE(SUM(total_value), 0) FROM loot_items WHERE session_uuid = ?1",
+            "SELECT
+                COALESCE(SUM(value * quantity), 0),
+                COALESCE(SUM(total_value), 0),
+                COALESCE(SUM(CASE
+                    WHEN fixed_value IS NOT NULL AND fixed_value > 0 THEN 0
+                    ELSE total_value - (value * quantity)
+                END), 0),
+                COALESCE(SUM(CASE
+                    WHEN fixed_value IS NOT NULL AND fixed_value > 0 THEN fixed_value * quantity
+                    ELSE 0
+                END), 0)
+             FROM loot_items
+             WHERE session_uuid = ?1",
             [&session_uuid],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
         )
-        .unwrap_or(0.0);
+        .unwrap_or((0.0, 0.0, 0.0, 0.0));
 
     let loot_events: i64 = conn
         .query_row(
@@ -331,7 +348,12 @@ pub fn db_get_session_stats(
         + session_info.healing_cost
         + session_info.other_costs;
     let returns = if total_cost > 0.0 {
-        (total_loot / total_cost) * 100.0
+        (total_adjusted_loot / total_cost) * 100.0
+    } else {
+        0.0
+    };
+    let tt_returns = if total_cost > 0.0 {
+        (total_tt_loot / total_cost) * 100.0
     } else {
         0.0
     };
@@ -341,9 +363,17 @@ pub fn db_get_session_stats(
         "lootEvents": loot_events,
         "globals": globals,
         "hofs": hofs,
-        "totalLoot": total_loot,
+        "totalLoot": total_adjusted_loot,
+        "totalTtLoot": total_tt_loot,
+        "totalAdjustedLoot": total_adjusted_loot,
+        "totalMarkupGain": total_markup_gain,
+        "totalFixedGain": total_fixed_gain,
         "totalCost": total_cost,
         "returns": returns,
+        "ttReturns": tt_returns,
+        "adjustedReturns": returns,
+        "ttProfit": total_tt_loot - total_cost,
+        "adjustedProfit": total_adjusted_loot - total_cost,
         "duration": duration_seconds,
         "shotsFired": hits + critical_hits + misses + enemy_dodges + enemy_evades,
         "damageDealt": damage_dealt,

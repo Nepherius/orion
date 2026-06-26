@@ -40,7 +40,7 @@ export default function SessionLengthScatterPanel() {
     return filtered.map(
       (s): ScatterPoint => ({
         durationHours: parseFloat((s.stats.duration / 3600).toFixed(2)),
-        returnRate: parseFloat(((s.stats.totalLoot / s.stats.totalCost) * 100).toFixed(1)),
+        returnRate: parseFloat(s.stats.adjustedReturns.toFixed(1)),
         name: s.name,
       })
     );
@@ -58,7 +58,7 @@ export default function SessionLengthScatterPanel() {
   return (
     <Panel
       title="Session Length vs Profitability"
-      tooltip="Each dot is a completed session. X-axis is duration in hours, Y-axis is return rate %. The green line marks 100% (break-even)."
+      tooltip="Each dot is a completed session. X-axis is duration in hours, Y-axis is adjusted return %. The green line marks 100% (break-even)."
     >
       <ResponsiveContainer width="100%" height={320}>
         <ScatterChart>
@@ -80,11 +80,11 @@ export default function SessionLengthScatterPanel() {
           <YAxis
             dataKey="returnRate"
             type="number"
-            name="Return Rate"
+            name="Adj Return"
             unit="%"
             {...chartAxisProps}
             label={{
-              value: 'Return %',
+              value: 'Adj Return %',
               angle: -90,
               position: 'insideLeft',
               fill: '#10B981',
@@ -94,7 +94,7 @@ export default function SessionLengthScatterPanel() {
           <Tooltip
             {...chartTooltipProps}
             formatter={(value: number, name: string) => {
-              if (name === 'Return Rate') return `${value.toFixed(1)}%`;
+              if (name === 'Adj Return') return `${value.toFixed(1)}%`;
               if (name === 'Duration') return `${value.toFixed(2)}h`;
               return value;
             }}

@@ -24,7 +24,7 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
   if (!isOpen) return null;
 
   const stats = session.stats;
-  const profit = stats.totalLoot - stats.totalCost;
+  const profit = stats.adjustedProfit;
   const isProfitable = profit >= 0;
   const hitRate =
     stats.hits + stats.criticalHits + stats.misses > 0
@@ -34,7 +34,7 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
     stats.hits + stats.criticalHits > 0
       ? (stats.criticalHits / (stats.hits + stats.criticalHits)) * 100
       : 0;
-  const avgLootPerKill = stats.kills > 0 ? stats.totalLoot / stats.kills : 0;
+  const avgLootPerKill = stats.kills > 0 ? stats.totalAdjustedLoot / stats.kills : 0;
   const avgCostPerKill = stats.kills > 0 ? stats.totalCost / stats.kills : 0;
   const dps = stats.duration > 0 ? stats.damageDealt / stats.duration : 0;
   const killsPerHour = stats.duration > 0 ? (stats.kills / stats.duration) * 3600 : 0;
@@ -94,7 +94,9 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
                 <TrendingDown className="w-8 h-8 text-red-400" />
               )}
               <div>
-                <div className="text-xs text-muted uppercase tracking-wide">Net Profit</div>
+                <div className="text-xs text-muted uppercase tracking-wide">
+                  Adjusted Net Profit
+                </div>
                 <div
                   className={`text-2xl font-bold ${isProfitable ? 'text-green-400' : 'text-red-400'}`}
                 >
@@ -104,11 +106,33 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-muted uppercase tracking-wide">Return</div>
+              <div className="text-xs text-muted uppercase tracking-wide">Adjusted Return</div>
               <div
-                className={`text-2xl font-bold ${stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
+                className={`text-2xl font-bold ${stats.adjustedReturns >= 100 ? 'text-green-400' : 'text-red-400'}`}
               >
-                {stats.returns.toFixed(1)}%
+                {stats.adjustedReturns.toFixed(1)}%
+              </div>
+              <div className="text-xs text-muted">TT {stats.ttReturns.toFixed(1)}%</div>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
+            <div>
+              <div className="text-muted uppercase tracking-wide">TT Loot</div>
+              <div className="font-semibold text-blue-300">{stats.totalTtLoot.toFixed(2)} PED</div>
+            </div>
+            <div>
+              <div className="text-muted uppercase tracking-wide">MU/Fixed</div>
+              <div className="font-semibold text-yellow-300">
+                +{(stats.totalMarkupGain + stats.totalFixedGain).toFixed(2)} PED
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-muted uppercase tracking-wide">TT Profit</div>
+              <div
+                className={`font-semibold ${stats.ttProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}
+              >
+                {stats.ttProfit >= 0 ? '+' : ''}
+                {stats.ttProfit.toFixed(2)} PED
               </div>
             </div>
           </div>
@@ -120,8 +144,8 @@ export function SessionSummaryModal({ isOpen, onClose, session }: SessionSummary
           <div className="grid grid-cols-3 gap-3">
             <StatCard
               icon={<DollarSign className="w-4 h-4 text-green-400" />}
-              label="Total Loot"
-              value={`${stats.totalLoot.toFixed(2)} PED`}
+              label="Adjusted Loot"
+              value={`${stats.totalAdjustedLoot.toFixed(2)} PED`}
             />
             <StatCard
               icon={<DollarSign className="w-4 h-4 text-red-400" />}

@@ -114,6 +114,10 @@ export const createSettingsActions = (
       analyticsSelectedTags: [],
       analyticsLifetimeStats: {
         totalLoot: 0,
+        totalTtLoot: 0,
+        totalAdjustedLoot: 0,
+        totalMarkupGain: 0,
+        totalFixedGain: 0,
         totalCost: 0,
         totalKills: 0,
         totalGlobals: 0,

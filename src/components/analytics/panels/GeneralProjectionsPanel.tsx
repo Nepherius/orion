@@ -8,7 +8,8 @@ export default function GeneralProjectionsPanel() {
   const timeRange = useHuntStore((state) => state.analyticsTimeRange);
   const selectedTags = useHuntStore((state) => state.analyticsSelectedTags);
 
-  const projectedLifetimeProfit = advanced?.projectedLifetimeProfit ?? 0;
+  const projectedNextSessionLifetimeProfit =
+    advanced?.projectedNextSessionLifetimeProfit ?? advanced?.projectedLifetimeProfit ?? 0;
   const sessionsToBreakEven = advanced?.sessionsToBreakEven ?? null;
 
   const totalSessions = useMemo(() => {
@@ -28,10 +29,12 @@ export default function GeneralProjectionsPanel() {
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <MetricTile
-          label="Projected Lifetime Profit"
-          tooltip="Projection = all-time total + average recent trend"
-          value={`${projectedLifetimeProfit >= 0 ? '+' : ''}${projectedLifetimeProfit.toFixed(2)} PED`}
-          valueClassName={projectedLifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'}
+          label="After Next Similar Session"
+          tooltip="Current total plus the average profit from the last 10 sessions"
+          value={`${projectedNextSessionLifetimeProfit >= 0 ? '+' : ''}${projectedNextSessionLifetimeProfit.toFixed(2)} PED`}
+          valueClassName={
+            projectedNextSessionLifetimeProfit >= 0 ? 'text-green-400' : 'text-red-400'
+          }
         />
         {sessionsToBreakEven !== null && (
           <MetricTile

@@ -46,7 +46,7 @@ export default function LoadoutPerformancePanel() {
     { key: 'sessions', header: 'Sessions', align: 'right', render: (loadout) => loadout.sessions },
     {
       key: 'returnRate',
-      header: 'Return %',
+      header: 'Adj Return %',
       align: 'right',
       render: (loadout) => (
         <span

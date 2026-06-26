@@ -48,8 +48,16 @@ function createSession(
       globals: 0,
       hofs: 0,
       totalLoot: 0,
+      totalTtLoot: 0,
+      totalAdjustedLoot: 0,
+      totalMarkupGain: 0,
+      totalFixedGain: 0,
       totalCost: 0,
       returns: 0,
+      ttReturns: 0,
+      adjustedReturns: 0,
+      ttProfit: 0,
+      adjustedProfit: 0,
       duration: 0,
       shotsFired: 0,
       damageDealt: 0,
@@ -67,12 +75,31 @@ function createSession(
     },
   };
 
+  const stats = {
+    ...base.stats,
+    ...(overrides.stats || {}),
+  };
+  const totalAdjustedLoot = overrides.stats?.totalAdjustedLoot ?? stats.totalLoot;
+  const totalTtLoot = overrides.stats?.totalTtLoot ?? totalAdjustedLoot;
+  const adjustedReturns =
+    overrides.stats?.adjustedReturns ??
+    (stats.totalCost > 0 ? (totalAdjustedLoot / stats.totalCost) * 100 : 0);
+  const ttReturns =
+    overrides.stats?.ttReturns ?? (stats.totalCost > 0 ? (totalTtLoot / stats.totalCost) * 100 : 0);
+
   return {
     ...base,
     ...overrides,
     stats: {
-      ...base.stats,
-      ...(overrides.stats || {}),
+      ...stats,
+      totalLoot: totalAdjustedLoot,
+      totalTtLoot,
+      totalAdjustedLoot,
+      returns: overrides.stats?.returns ?? adjustedReturns,
+      ttReturns,
+      adjustedReturns,
+      ttProfit: overrides.stats?.ttProfit ?? totalTtLoot - stats.totalCost,
+      adjustedProfit: overrides.stats?.adjustedProfit ?? totalAdjustedLoot - stats.totalCost,
     },
   };
 }
@@ -289,8 +316,46 @@ describe('analytics calculations', () => {
     expect(metrics?.totalTtLoot).toBeCloseTo(5, 8);
     expect(metrics?.totalAdjustedLoot).toBeCloseTo(5.8, 8);
     expect(metrics?.totalMarkupGain).toBeCloseTo(0.8, 8);
+    expect(metrics?.totalFixedGain).toBeCloseTo(0, 8);
     expect(metrics?.netAtTt).toBeCloseTo(-3, 8);
     expect(metrics?.netWithMarkup).toBeCloseTo(-2.2, 8);
     expect(metrics?.breakEvenMarkupPercent).toBeCloseTo(160, 8);
+  });
+
+  it('keeps fixed PED uplift separate from percent markup uplift', () => {
+    const session = createSession({
+      id: 'fixed-mu-1',
+      status: 'completed',
+      stats: { totalCost: 10 },
+      loot: [
+        {
+          id: 'l1',
+          name: 'Enhancer Component',
+          quantity: 1,
+          value: 5,
+          markup: 200,
+          fixedValue: 2,
+          totalValue: 7,
+          timestamp: 1,
+        },
+        {
+          id: 'l2',
+          name: 'Oil',
+          quantity: 1,
+          value: 4,
+          markup: 150,
+          totalValue: 6,
+          timestamp: 2,
+        },
+      ],
+    });
+
+    const metrics = calculateMarkupDependencyMetrics([session]);
+    expect(metrics?.totalTtLoot).toBeCloseTo(9, 8);
+    expect(metrics?.totalAdjustedLoot).toBeCloseTo(13, 8);
+    expect(metrics?.totalMarkupGain).toBeCloseTo(2, 8);
+    expect(metrics?.totalFixedGain).toBeCloseTo(2, 8);
+    expect(metrics?.netAtTt).toBeCloseTo(-1, 8);
+    expect(metrics?.netWithMarkup).toBeCloseTo(3, 8);
   });
 });

@@ -76,8 +76,11 @@ export function MetricTile({
   tooltip,
   size = 'md',
   valueClassName = '',
-  truncateValue = true,
+  truncateValue = false,
 }: MetricTileProps) {
+  const valueTitle =
+    typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
+
   return (
     <div className="rounded-lg border border-border bg-white/[0.03] p-4">
       <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted">
@@ -88,9 +91,18 @@ export function MetricTile({
         className={`flex min-w-0 items-center gap-2 font-semibold ${sizeClass[size]} ${valueClassName || toneClass[tone]}`}
       >
         {icon}
-        <span className={truncateValue ? 'truncate' : 'min-w-0 whitespace-normal'}>{value}</span>
+        <span
+          title={valueTitle}
+          className={
+            truncateValue
+              ? 'min-w-0 truncate'
+              : 'min-w-0 max-w-full whitespace-normal break-words leading-tight [overflow-wrap:anywhere]'
+          }
+        >
+          {value}
+        </span>
       </div>
-      {detail && <div className="mt-1 truncate text-xs text-muted">{detail}</div>}
+      {detail && <div className="mt-1 break-words text-xs leading-snug text-muted">{detail}</div>}
     </div>
   );
 }

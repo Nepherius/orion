@@ -114,11 +114,16 @@ export interface AnalyticsAdvancedSqlData {
   skillValuePerCost: number;
   totalSkillGains: number;
   projectedLifetimeProfit: number;
+  projectedNextSessionLifetimeProfit?: number;
   sessionsToBreakEven: number | null;
 }
 
 export interface AnalyticsLifetimeStats {
   totalLoot: number;
+  totalTtLoot: number;
+  totalAdjustedLoot: number;
+  totalMarkupGain: number;
+  totalFixedGain: number;
   totalCost: number;
   totalKills: number;
   totalGlobals: number;

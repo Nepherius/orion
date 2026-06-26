@@ -94,9 +94,16 @@ export function ActiveSessionPanel({
           <div className="h-8 w-px bg-gray-600" />
 
           <div>
-            <div className="text-xs text-muted">Loot Value</div>
+            <div className="text-xs text-muted">Adj Loot</div>
             <div className="font-semibold text-green-400">
-              {session.stats.totalLoot.toFixed(2)} PED
+              {session.stats.totalAdjustedLoot.toFixed(2)} PED
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs text-muted">TT Loot</div>
+            <div className="font-semibold text-blue-400">
+              {session.stats.totalTtLoot.toFixed(2)} PED
             </div>
           </div>
 
@@ -108,11 +115,14 @@ export function ActiveSessionPanel({
           </div>
 
           <div>
-            <div className="text-xs text-muted">Returns</div>
+            <div className="text-xs text-muted">Adj Return</div>
             <div
-              className={`font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
+              className={`font-semibold ${session.stats.adjustedReturns >= 100 ? 'text-green-400' : 'text-red-400'}`}
             >
-              {session.stats.returns.toFixed(1)}%
+              {session.stats.adjustedReturns.toFixed(1)}%
+              <span className="ml-1 text-xs text-muted">
+                TT {session.stats.ttReturns.toFixed(1)}%
+              </span>
             </div>
           </div>
 

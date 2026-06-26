@@ -99,9 +99,17 @@ export interface SessionStats {
   lootEvents: number;
   globals: number;
   hofs: number;
-  totalLoot: number;
+  totalLoot: number; // Backward-compatible alias for totalAdjustedLoot
+  totalTtLoot: number;
+  totalAdjustedLoot: number;
+  totalMarkupGain: number;
+  totalFixedGain: number;
   totalCost: number;
-  returns: number; // percentage
+  returns: number; // Backward-compatible alias for adjustedReturns
+  ttReturns: number;
+  adjustedReturns: number;
+  ttProfit: number;
+  adjustedProfit: number;
   duration: number; // in seconds
   shotsFired: number;
   damageDealt: number;

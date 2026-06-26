@@ -76,12 +76,12 @@ export default function KillEfficiencyScatterPanel() {
           <YAxis
             dataKey="avgLootPerKill"
             type="number"
-            name="Avg Loot/Kill"
+            name="Avg Adj Loot/Kill"
             unit=" PED"
             {...chartAxisProps}
             domain={[0, axisMax]}
             label={{
-              value: 'Avg Loot/Kill (PED)',
+              value: 'Avg Adj Loot/Kill (PED)',
               angle: -90,
               position: 'insideLeft',
               fill: '#22C55E',
@@ -97,14 +97,14 @@ export default function KillEfficiencyScatterPanel() {
             {...chartTooltipProps}
             formatter={(value: number, name: string) => {
               if (name === 'Avg Cost/Kill') return `${value.toFixed(3)} PED`;
-              if (name === 'Avg Loot/Kill') return `${value.toFixed(3)} PED`;
+              if (name === 'Avg Adj Loot/Kill') return `${value.toFixed(3)} PED`;
               if (name === 'Kills') return value;
               return value;
             }}
             labelFormatter={(_label: string, payload: Array<{ payload?: ScatterPoint }>) => {
               const point = payload?.[0]?.payload;
               if (!point) return '';
-              return `${point.creature} (${point.returnRate}% return)`;
+              return `${point.creature} (${point.returnRate}% adjusted return)`;
             }}
           />
           {/* Break-even diagonal line — y = x */}

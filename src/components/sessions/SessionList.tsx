@@ -47,9 +47,9 @@ export function SessionList({
       case 'oldest':
         return a.startTime - b.startTime;
       case 'profit':
-        return b.stats.totalLoot - b.stats.totalCost - (a.stats.totalLoot - a.stats.totalCost);
+        return b.stats.adjustedProfit - a.stats.adjustedProfit;
       case 'returns':
-        return b.stats.returns - a.stats.returns;
+        return b.stats.adjustedReturns - a.stats.adjustedReturns;
       default:
         return 0;
     }
@@ -136,7 +136,7 @@ export function SessionList({
           <option value="newest">Newest First</option>
           <option value="oldest">Oldest First</option>
           <option value="profit">Highest Profit</option>
-          <option value="returns">Best Returns</option>
+          <option value="returns">Best Adj Return</option>
         </select>
       </div>
 
@@ -163,7 +163,7 @@ export function SessionList({
           </p>
         ) : (
           filteredSessions.map((session) => {
-            const profit = session.stats.totalLoot - session.stats.totalCost;
+            const profit = session.stats.adjustedProfit;
             const duration = session.endTime
               ? session.endTime - session.startTime
               : Date.now() - session.startTime;
@@ -209,11 +209,13 @@ export function SessionList({
                   </span>
                   <div className="text-right">
                     <div
-                      className={`text-sm font-semibold ${session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}`}
+                      className={`text-sm font-semibold ${session.stats.adjustedReturns >= 100 ? 'text-green-400' : 'text-red-400'}`}
                     >
-                      {session.stats.returns.toFixed(2)}%
+                      {session.stats.adjustedReturns.toFixed(2)}%
                     </div>
-                    <div className="text-xs text-muted">TT%</div>
+                    <div className="text-xs text-muted">
+                      ADJ% · TT {session.stats.ttReturns.toFixed(1)}%
+                    </div>
                   </div>
                 </div>
               </button>

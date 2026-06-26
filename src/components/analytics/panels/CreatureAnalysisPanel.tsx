@@ -33,7 +33,7 @@ export default function CreatureAnalysisPanel() {
     { key: 'sessions', header: 'Sessions', align: 'right', render: (creature) => creature.count },
     {
       key: 'returnRate',
-      header: 'Return %',
+      header: 'Adj Return %',
       align: 'right',
       render: (creature) => (
         <span className={creature.returnRate >= 100 ? 'text-green-400' : 'text-red-400'}>

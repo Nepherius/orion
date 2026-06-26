@@ -63,7 +63,7 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
     );
   }
 
-  const profit = session.stats.totalLoot - session.stats.totalCost;
+  const profit = session.stats.adjustedProfit;
   const now = Date.now();
   const duration = getSessionActiveDurationMs(session, now);
   const durationMinutes = duration / 1000 / 60;
@@ -87,7 +87,8 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
   const totalEvents = session.stats.lootEvents;
 
   // Economy metrics
-  const totalLoot = session.stats.totalLoot;
+  const totalLoot = session.stats.totalAdjustedLoot;
+  const totalTtLoot = session.stats.totalTtLoot;
   const totalSpend = session.stats.totalCost;
   const costPerKill = session.stats.kills > 0 ? totalSpend / session.stats.kills : 0;
   const lootPerKill = session.stats.kills > 0 ? totalLoot / session.stats.kills : 0;
@@ -140,11 +141,11 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <MetricTile
-              label="Return Rate"
-              value={`${session.stats.returns.toFixed(1)}%`}
-              tone={session.stats.returns >= 100 ? 'positive' : 'negative'}
+              label="Adjusted Return"
+              value={`${session.stats.adjustedReturns.toFixed(1)}%`}
+              tone={session.stats.adjustedReturns >= 100 ? 'positive' : 'negative'}
               icon={
-                session.stats.returns >= 100 ? (
+                session.stats.adjustedReturns >= 100 ? (
                   <TrendingUp className="h-5 w-5 shrink-0" />
                 ) : (
                   <TrendingDown className="h-5 w-5 shrink-0" />
@@ -153,7 +154,7 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
               size="lg"
             />
             <MetricTile
-              label="Profit/Loss"
+              label="Adjusted P/L"
               value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`}
               tone={profit >= 0 ? 'positive' : 'negative'}
               size="lg"
@@ -161,8 +162,8 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
             <MetricTile label="Total Kills" value={session.stats.kills} size="lg" />
           </div>
 
-          {/* Return Rate Chart */}
-          <Panel title="Return Rate Over Time">
+          {/* Adjusted and TT Return Chart */}
+          <Panel title="Adjusted Return Over Time">
             <ReturnRateChart session={session} emptyHeight="h-48" />
           </Panel>
 
@@ -181,12 +182,12 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
               </div>
               <div className="space-y-3">
                 <StatCard
-                  label="Return Rate"
-                  value={`${session.stats.returns.toFixed(1)}%`}
-                  color={session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}
+                  label="Adjusted Return"
+                  value={`${session.stats.adjustedReturns.toFixed(1)}%`}
+                  color={session.stats.adjustedReturns >= 100 ? 'text-green-400' : 'text-red-400'}
                 />
                 <StatCard
-                  label="Profit/Loss"
+                  label="Adjusted P/L"
                   value={`${profit >= 0 ? '+' : ''}${profit.toFixed(2)} PED`}
                   color={profit >= 0 ? 'text-green-400' : 'text-red-400'}
                 />
@@ -218,9 +219,14 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
               </div>
               <div className="space-y-3">
                 <StatCard
-                  label="Total Loot"
+                  label="Adjusted Loot"
                   value={`${totalLoot.toFixed(2)} PED`}
                   color="text-green-400"
+                />
+                <StatCard
+                  label="TT Loot"
+                  value={`${totalTtLoot.toFixed(2)} PED`}
+                  color="text-blue-400"
                 />
                 <StatCard
                   label="Total Spend"
@@ -228,13 +234,13 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
                   color="text-red-400"
                 />
                 <StatCard label="Cost/Kill" value={`${costPerKill.toFixed(2)} PED`} />
-                <StatCard label="Loot/Kill" value={`${lootPerKill.toFixed(2)} PED`} />
+                <StatCard label="Adj Loot/Kill" value={`${lootPerKill.toFixed(2)} PED`} />
                 <StatCard
-                  label="Net P/L"
+                  label="Adjusted P/L"
                   value={`${netPL >= 0 ? '+' : ''}${netPL.toFixed(2)} PED`}
                   color={netPL >= 0 ? 'text-green-400' : 'text-red-400'}
                 />
-                <StatCard label="Loot/PED" value={lootPerPED.toFixed(3)} />
+                <StatCard label="Adj Loot/PED" value={lootPerPED.toFixed(3)} />
               </div>
             </div>
 
@@ -376,7 +382,7 @@ export function Dashboard({ sessionId, showSidebar = true }: DashboardProps = {}
                 <span className="text-blue-400 text-xl">›</span>
               </div>
               <div className="space-y-3">
-                <StatCard label="Loot/Hour" value={`${formatSmallNumber(lootPerHour)} PED`} />
+                <StatCard label="Adj Loot/Hour" value={`${formatSmallNumber(lootPerHour)} PED`} />
                 <StatCard label="Spend/Hour" value={`${formatSmallNumber(spendPerHour)} PED`} />
                 <StatCard label="Skills/Hour" value={formatSmallNumber(skillsPerHour)} />
                 <StatCard label="Kills/Hour" value={killsPerHour.toFixed(1)} />

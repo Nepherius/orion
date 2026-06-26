@@ -20,7 +20,7 @@ export default function MaturityReturnPanel() {
   if (!maturityStats || maturityStats.length === 0) {
     return (
       <AnalyticsEmptyState
-        title="Return Rate by Maturity"
+        title="Adjusted Return by Maturity"
         message="Track at least 3 kills for a creature and maturity combination to show this comparison."
       />
     );
@@ -37,8 +37,8 @@ export default function MaturityReturnPanel() {
 
   return (
     <Panel
-      title="Return Rate by Maturity"
-      tooltip="Shows return rate for each creature + maturity combination. Only combos with ≥3 kills are shown. The green line marks 100% (break-even)."
+      title="Adjusted Return by Maturity"
+      tooltip="Shows adjusted return for each creature + maturity combination. Only combos with at least 3 kills are shown. The green line marks 100% (break-even)."
     >
       <ResponsiveContainer width="100%" height={Math.max(320, chartData.length * 28)}>
         <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
@@ -47,7 +47,7 @@ export default function MaturityReturnPanel() {
             type="number"
             {...chartAxisProps}
             label={{
-              value: 'Return %',
+              value: 'Adj Return %',
               position: 'insideBottom',
               offset: -5,
               fill: 'var(--color-text-muted)',
@@ -58,7 +58,7 @@ export default function MaturityReturnPanel() {
           <Tooltip
             {...chartTooltipProps}
             formatter={(value: number, name: string) => {
-              if (name === 'Return %') return `${value.toFixed(1)}%`;
+              if (name === 'Adj Return %') return `${value.toFixed(1)}%`;
               return value;
             }}
             labelFormatter={(
@@ -71,7 +71,7 @@ export default function MaturityReturnPanel() {
             }}
           />
           <ReferenceLine x={100} stroke="#10B981" strokeDasharray="6 4" strokeWidth={1.5} />
-          <Bar dataKey="returnRate" name="Return %" barSize={18}>
+          <Bar dataKey="returnRate" name="Adj Return %" barSize={18}>
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}

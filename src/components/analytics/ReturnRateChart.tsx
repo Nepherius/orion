@@ -23,17 +23,23 @@ export function ReturnRateChart({
   emptyHeight = 'h-64',
   margin = { top: 5, right: 30, left: 0, bottom: 5 },
 }: ReturnRateChartProps) {
-  // Estimated return rate over loot events. Costs are interpolated across loot events because
+  // Estimated adjusted and TT return over loot events. Costs are interpolated because
   // individual cost events are not persisted with per-event PED deltas.
   const returnRateChart = session.loot.map((item, index) => {
-    const cumulativeLoot = session.loot
+    const cumulativeAdjustedLoot = session.loot
       .slice(0, index + 1)
       .reduce((sum, l) => sum + l.totalValue, 0);
+    const cumulativeTtLoot = session.loot
+      .slice(0, index + 1)
+      .reduce((sum, l) => sum + l.value * l.quantity, 0);
     const cumulativeCost = session.stats.totalCost * ((index + 1) / session.loot.length);
-    const returnRate = cumulativeCost > 0 ? (cumulativeLoot / cumulativeCost) * 100 : 0;
+    const adjustedReturnRate =
+      cumulativeCost > 0 ? (cumulativeAdjustedLoot / cumulativeCost) * 100 : 0;
+    const ttReturnRate = cumulativeCost > 0 ? (cumulativeTtLoot / cumulativeCost) * 100 : 0;
     return {
       index: index + 1,
-      returnRate: Math.round(returnRate * 10) / 10,
+      adjustedReturnRate: Math.round(adjustedReturnRate * 10) / 10,
+      ttReturnRate: Math.round(ttReturnRate * 10) / 10,
       time: format(item.timestamp, 'HH:mm:ss'),
     };
   });
@@ -59,14 +65,28 @@ export function ReturnRateChart({
           <YAxis {...chartAxisProps} />
           <Tooltip
             {...chartTooltipProps}
-            formatter={(value: number) => [`${value}%`, 'Estimated Return Rate']}
+            formatter={(value: number, name: string) => {
+              if (name === 'adjustedReturnRate') return [`${value}%`, 'Adjusted Return'];
+              if (name === 'ttReturnRate') return [`${value}%`, 'TT Return'];
+              return [`${value}%`, name];
+            }}
             labelFormatter={(label) => `Loot Event #${label}`}
           />
           <Area
             type="monotone"
-            dataKey="returnRate"
-            stroke={session.stats.returns >= 100 ? '#22C55E' : '#EF4444'}
-            fill={session.stats.returns >= 100 ? '#22C55E33' : '#EF444433'}
+            dataKey="adjustedReturnRate"
+            stroke={session.stats.adjustedReturns >= 100 ? '#22C55E' : '#EF4444'}
+            fill={session.stats.adjustedReturns >= 100 ? '#22C55E33' : '#EF444433'}
+            name="Adjusted Return"
+            strokeWidth={2}
+          />
+          <Area
+            type="monotone"
+            dataKey="ttReturnRate"
+            stroke="#60A5FA"
+            fill="#60A5FA00"
+            fillOpacity={0}
+            name="TT Return"
             strokeWidth={2}
           />
         </AreaChart>

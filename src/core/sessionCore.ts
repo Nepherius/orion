@@ -1,4 +1,5 @@
 import { HuntSession, Loadout, SessionStats } from '../types';
+import { calculateSessionAccounting } from '../utils/lootAccounting';
 
 export function emptySessionStats(): SessionStats {
   return {
@@ -7,8 +8,16 @@ export function emptySessionStats(): SessionStats {
     globals: 0,
     hofs: 0,
     totalLoot: 0,
+    totalTtLoot: 0,
+    totalAdjustedLoot: 0,
+    totalMarkupGain: 0,
+    totalFixedGain: 0,
     totalCost: 0,
     returns: 0,
+    ttReturns: 0,
+    adjustedReturns: 0,
+    ttProfit: 0,
+    adjustedProfit: 0,
     duration: 0,
     shotsFired: 0,
     damageDealt: 0,
@@ -43,10 +52,11 @@ export function calculateSessionStats(
   session: HuntSession,
   now: number = Date.now()
 ): SessionStats {
-  const totalLoot = session.loot.reduce((sum, item) => sum + item.totalValue, 0);
   const totalCost =
     session.ammoCost + session.weaponDecay + session.healingCost + session.otherCosts;
-  const returns = totalCost > 0 ? (totalLoot / totalCost) * 100 : 0;
+  const accounting = calculateSessionAccounting(session.loot, totalCost);
+  const totalLoot = accounting.totalAdjustedLoot;
+  const returns = accounting.adjustedReturns;
 
   const basePausedMs = session.totalPausedMs || 0;
   const activePauseMs =
@@ -78,8 +88,16 @@ export function calculateSessionStats(
     globals: session.globals.filter((g) => !g.isHoF).length,
     hofs: session.globals.filter((g) => g.isHoF).length,
     totalLoot,
+    totalTtLoot: accounting.totalTtLoot,
+    totalAdjustedLoot: accounting.totalAdjustedLoot,
+    totalMarkupGain: accounting.totalMarkupGain,
+    totalFixedGain: accounting.totalFixedGain,
     totalCost,
     returns,
+    ttReturns: accounting.ttReturns,
+    adjustedReturns: accounting.adjustedReturns,
+    ttProfit: accounting.ttProfit,
+    adjustedProfit: accounting.adjustedProfit,
     duration: Math.floor(duration / 1000),
     shotsFired: shotsFiredCount,
     damageDealt: session.damageEvents?.reduce((sum, evt) => sum + evt.damage, 0) || 0,

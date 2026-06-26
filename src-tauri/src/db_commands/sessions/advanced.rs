@@ -33,6 +33,46 @@ fn query_all_skill_names(
     Ok(all_skill_names)
 }
 
+fn profitable_streaks_newest_first(session_profits_desc: &[(i64, f64)]) -> (i64, i64) {
+    let current_streak = session_profits_desc
+        .iter()
+        .take_while(|(_, profit)| *profit >= 0.0)
+        .count() as i64;
+
+    let mut running_streak = 0i64;
+    let mut longest_streak = 0i64;
+    for (_, profit) in session_profits_desc {
+        if *profit >= 0.0 {
+            running_streak += 1;
+            longest_streak = longest_streak.max(running_streak);
+        } else {
+            running_streak = 0;
+        }
+    }
+
+    (current_streak, longest_streak)
+}
+
+fn sample_variance(values: &[f64]) -> f64 {
+    if values.len() < 2 {
+        return 0.0;
+    }
+
+    let mean = values.iter().sum::<f64>() / values.len() as f64;
+    values
+        .iter()
+        .map(|value| {
+            let delta = *value - mean;
+            delta * delta
+        })
+        .sum::<f64>()
+        / (values.len() as f64 - 1.0)
+}
+
+fn projected_profit_after_next_similar_session(total_profit: f64, avg_recent_profit: f64) -> f64 {
+    total_profit + avg_recent_profit
+}
+
 #[tauri::command]
 pub fn db_get_analytics_advanced_data(
     params: AnalyticsStatsRangeParams,
@@ -142,18 +182,7 @@ pub fn db_get_analytics_advanced_data(
         0.0
     };
 
-    let mut current_streak = 0i64;
-    let mut longest_streak = 0i64;
-    for (_, profit) in &session_profits_desc {
-        if *profit >= 0.0 {
-            current_streak += 1;
-            if current_streak > longest_streak {
-                longest_streak = current_streak;
-            }
-        } else {
-            current_streak = 0;
-        }
-    }
+    let (current_streak, longest_streak) = profitable_streaks_newest_first(&session_profits_desc);
 
     let mut best_hour = -1i64;
     let mut best_hour_return_rate = 0.0f64;
@@ -201,7 +230,8 @@ pub fn db_get_analytics_advanced_data(
     } else {
         0.0
     };
-    let projected_lifetime_profit = total_profit + avg_recent_profit;
+    let projected_next_session_lifetime_profit =
+        projected_profit_after_next_similar_session(total_profit, avg_recent_profit);
     let sessions_to_break_even = if total_profit >= 0.0 || avg_recent_profit <= 0.0 {
         JsonValue::Null
     } else {
@@ -348,23 +378,7 @@ pub fn db_get_analytics_advanced_data(
         skill_totals.push(row.map_err(|e| e.to_string())?);
     }
     let total_skill_gains: f64 = skill_totals.iter().sum();
-    let skill_mean = if skill_totals.is_empty() {
-        0.0
-    } else {
-        total_skill_gains / skill_totals.len() as f64
-    };
-    let skill_gain_variance = if skill_totals.len() < 2 {
-        0.0
-    } else {
-        skill_totals
-            .iter()
-            .map(|v| {
-                let d = *v - skill_mean;
-                d * d
-            })
-            .sum::<f64>()
-            / skill_totals.len() as f64
-    };
+    let skill_gain_variance = sample_variance(&skill_totals);
 
     let total_cost: f64 = conn
         .query_row(
@@ -442,7 +456,8 @@ pub fn db_get_analytics_advanced_data(
         "skillGainVariance": skill_gain_variance,
         "skillValuePerCost": skill_value_per_cost,
         "totalSkillGains": total_skill_gains,
-        "projectedLifetimeProfit": projected_lifetime_profit,
+        "projectedLifetimeProfit": projected_next_session_lifetime_profit,
+        "projectedNextSessionLifetimeProfit": projected_next_session_lifetime_profit,
         "sessionsToBreakEven": sessions_to_break_even
     }))
 }
@@ -519,5 +534,31 @@ mod tests {
 
         let ranged = query_all_skill_names(&conn, Some(1500), None, "[]").expect("range query");
         assert_eq!(ranged, vec!["Pistol"]);
+    }
+
+    #[test]
+    fn profitable_streaks_use_most_recent_run_for_current_streak() {
+        let session_profits_desc =
+            vec![(6, 5.0), (5, 1.0), (4, -1.0), (3, 2.0), (2, 3.0), (1, 4.0)];
+
+        let (current, longest) = profitable_streaks_newest_first(&session_profits_desc);
+
+        assert_eq!(current, 2);
+        assert_eq!(longest, 3);
+    }
+
+    #[test]
+    fn skill_gain_variance_uses_sample_variance() {
+        let values = vec![1.0, 3.0, 5.0];
+
+        assert_eq!(sample_variance(&values), 4.0);
+    }
+
+    #[test]
+    fn projected_profit_after_next_similar_session_adds_one_recent_average() {
+        assert_eq!(
+            projected_profit_after_next_similar_session(-25.0, 10.0),
+            -15.0
+        );
     }
 }

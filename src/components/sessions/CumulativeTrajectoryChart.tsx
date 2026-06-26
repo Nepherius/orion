@@ -66,7 +66,8 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
       return [];
     }
 
-    let cumulativeLoot = 0;
+    let cumulativeAdjustedLoot = 0;
+    let cumulativeTtLoot = 0;
     const dataPoints = [];
 
     // Add starting point (0 cost, 0 loot)
@@ -74,8 +75,10 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
       time: startTime,
       formattedTime: format(startTime, 'HH:mm'),
       cumulativeLoot: 0,
+      cumulativeTtLoot: 0,
       cumulativeCost: 0,
       returnPercent: 0,
+      ttReturnPercent: 0,
     });
 
     // We calculate a data point for every single loot event.
@@ -93,22 +96,27 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
         dataPoints.push({
           time: lootEvent.timestamp - 1,
           formattedTime: format(lootEvent.timestamp, 'HH:mm'),
-          cumulativeLoot,
+          cumulativeLoot: cumulativeAdjustedLoot,
+          cumulativeTtLoot,
           cumulativeCost: approximatedCost,
-          returnPercent: (cumulativeLoot / safeCost) * 100,
+          returnPercent: (cumulativeAdjustedLoot / safeCost) * 100,
+          ttReturnPercent: (cumulativeTtLoot / safeCost) * 100,
         });
       }
 
       // Record the new loot
-      cumulativeLoot += lootEvent.totalValue;
+      cumulativeAdjustedLoot += lootEvent.totalValue;
+      cumulativeTtLoot += lootEvent.value * lootEvent.quantity;
 
       // Add the point immediately after to capture the jump
       dataPoints.push({
         time: lootEvent.timestamp,
         formattedTime: format(lootEvent.timestamp, 'HH:mm'),
-        cumulativeLoot,
+        cumulativeLoot: cumulativeAdjustedLoot,
+        cumulativeTtLoot,
         cumulativeCost: approximatedCost,
-        returnPercent: (cumulativeLoot / safeCost) * 100,
+        returnPercent: (cumulativeAdjustedLoot / safeCost) * 100,
+        ttReturnPercent: (cumulativeTtLoot / safeCost) * 100,
       });
     }
 
@@ -116,9 +124,11 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
     dataPoints.push({
       time: endTime,
       formattedTime: format(endTime, 'HH:mm'),
-      cumulativeLoot: session.stats.totalLoot,
+      cumulativeLoot: session.stats.totalAdjustedLoot,
+      cumulativeTtLoot: session.stats.totalTtLoot,
       cumulativeCost: totalCost,
-      returnPercent: session.stats.returns,
+      returnPercent: session.stats.adjustedReturns,
+      ttReturnPercent: session.stats.ttReturns,
     });
 
     return dataPoints;
@@ -150,7 +160,8 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
     <Panel className="mt-6" title="Cumulative Trajectory">
       <div className="mb-4">
         <p className="text-sm text-muted">
-          Return percentage mapped across the session timeline. (Cost is linearly approximated).
+          Adjusted and TT return percentages mapped across the session timeline. Cost is linearly
+          approximated.
         </p>
       </div>
 
@@ -167,8 +178,10 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
             <Tooltip
               {...chartTooltipProps}
               formatter={(value: number, name: string) => {
-                if (name === 'returnPercent') return [`${value.toFixed(1)}%`, 'Return Rate'];
-                if (name === 'cumulativeLoot') return [`${value.toFixed(2)} PED`, 'Total Loot'];
+                if (name === 'returnPercent') return [`${value.toFixed(1)}%`, 'Adjusted Return'];
+                if (name === 'ttReturnPercent') return [`${value.toFixed(1)}%`, 'TT Return'];
+                if (name === 'cumulativeLoot') return [`${value.toFixed(2)} PED`, 'Adjusted Loot'];
+                if (name === 'cumulativeTtLoot') return [`${value.toFixed(2)} PED`, 'TT Loot'];
                 if (name === 'cumulativeCost') return [`${value.toFixed(2)} PED`, 'Est. Cost'];
                 return [value, name];
               }}
@@ -188,6 +201,14 @@ export function CumulativeTrajectoryChart({ session }: CumulativeTrajectoryChart
               strokeWidth={3}
               dot={false}
               activeDot={{ r: 6, fill: '#60a5fa', stroke: 'var(--color-surface)' }}
+            />
+            <Line
+              type="monotone"
+              dataKey="ttReturnPercent"
+              stroke="#22c55e"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 5, fill: '#22c55e', stroke: 'var(--color-surface)' }}
             />
           </LineChart>
         </ResponsiveContainer>

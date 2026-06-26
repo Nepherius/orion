@@ -41,7 +41,29 @@ describe('calculateLoadoutStats', () => {
     expect(stats.dpp).toBeCloseTo(1250, 3);
     expect(stats.range).toBe(55);
     expect(stats.efficiency).toBe(65);
-    expect(stats.totalUses).toBe(33333);
+    expect(stats.totalUses).toBe(50000);
+  });
+
+  it('calculates weapon total uses from weapon decay only', () => {
+    const weapon = makeWeapon();
+    const amplifier: EquipmentItem = {
+      Id: 2,
+      ItemId: 2,
+      Name: 'High Decay Amp',
+      Properties: { Economy: { Decay: 48 } },
+    };
+
+    const stats = calculateLoadoutStats(
+      weapon,
+      amplifier,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+
+    expect(stats.decay).toBe(50);
+    expect(stats.totalUses).toBe(50000);
   });
 
   it('includes every weapon and amplifier damage type in DPP', () => {

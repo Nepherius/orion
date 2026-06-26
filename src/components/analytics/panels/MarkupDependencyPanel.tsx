@@ -50,10 +50,10 @@ export default function MarkupDependencyPanel() {
           valueClassName={markup.netAtTt >= 0 ? 'text-green-400' : 'text-red-400'}
         />
         <MetricTile
-          label="Markup Uplift"
-          value={`${markup.totalMarkupGain.toFixed(2)} PED`}
+          label="MU/Fixed Uplift"
+          value={`${(markup.totalMarkupGain + markup.totalFixedGain).toFixed(2)} PED`}
           valueClassName="text-yellow-400"
-          detail={`${markup.markupShareOfLoot.toFixed(1)}% of loot`}
+          detail={`MU ${markup.totalMarkupGain.toFixed(2)} · fixed ${markup.totalFixedGain.toFixed(2)}`}
         />
         <MetricTile
           label="Break-even Markup"

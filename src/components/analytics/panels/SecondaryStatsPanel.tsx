@@ -37,10 +37,10 @@ export default function SecondaryStatsPanel() {
       <MetricTile label="Hall of Fame" value={lifetimeStats.totalHofs} tone="accent" />
       <MetricTile label="Hit Rate" value={`${lifetimeHitRate.toFixed(2)}%`} tone="accent" />
       <MetricTile
-        label="Avg Kill Value"
+        label="Avg Adj Kill Value"
         value={`${
           lifetimeStats.totalKills > 0
-            ? (lifetimeStats.totalLoot / lifetimeStats.totalKills).toFixed(2)
+            ? (lifetimeStats.totalAdjustedLoot / lifetimeStats.totalKills).toFixed(2)
             : '0.00'
         } PED`}
       />

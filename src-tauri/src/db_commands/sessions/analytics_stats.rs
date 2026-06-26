@@ -55,10 +55,25 @@ pub fn db_get_analytics_stats(
         )
         .map_err(|e| e.to_string())?;
 
-    // Get total loot for sessions in range.
-    let total_loot: f64 = conn
+    // Get total loot accounting for sessions in range.
+    let (total_tt_loot, total_adjusted_loot, total_markup_gain, total_fixed_gain): (
+        f64,
+        f64,
+        f64,
+        f64,
+    ) = conn
         .query_row(
-            "SELECT COALESCE(SUM(li.total_value), 0)
+            "SELECT
+                COALESCE(SUM(li.value * li.quantity), 0),
+                COALESCE(SUM(li.total_value), 0),
+                COALESCE(SUM(CASE
+                    WHEN li.fixed_value IS NOT NULL AND li.fixed_value > 0 THEN 0
+                    ELSE li.total_value - (li.value * li.quantity)
+                END), 0),
+                COALESCE(SUM(CASE
+                    WHEN li.fixed_value IS NOT NULL AND li.fixed_value > 0 THEN li.fixed_value * li.quantity
+                    ELSE 0
+                END), 0)
              FROM loot_items li
              JOIN sessions s ON s.uuid = li.session_uuid
              WHERE (?1 IS NULL OR s.start_time >= ?1)
@@ -71,7 +86,7 @@ pub fn db_get_analytics_stats(
                ) = 0
              )",
             params![start_time, end_time, tags_json],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
         )
         .map_err(|e| e.to_string())?;
 
@@ -175,7 +190,11 @@ pub fn db_get_analytics_stats(
         .map_err(|e| e.to_string())?;
 
     Ok(json!({
-        "totalLoot": total_loot,
+        "totalLoot": total_adjusted_loot,
+        "totalTtLoot": total_tt_loot,
+        "totalAdjustedLoot": total_adjusted_loot,
+        "totalMarkupGain": total_markup_gain,
+        "totalFixedGain": total_fixed_gain,
         "totalCost": total_cost,
         "totalKills": total_kills,
         "totalGlobals": total_globals,

@@ -67,7 +67,7 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
       creature: c.creature,
       kills: c.totalKills,
       profit: c.totalProfit,
-      returnRate: c.totalLoot > 0 ? (c.totalProfit / c.totalLoot) * 100 : 0,
+      returnRate: c.totalCost > 0 ? (c.totalLoot / c.totalCost) * 100 : 0,
     }));
   }, [killStats]);
 
@@ -166,7 +166,8 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
         kills: c.totalKills,
         costPerKill: c.averageCostPerKill,
         lootPerKill: c.averageLootPerKill,
-        returnRate: c.totalLoot > 0 ? (c.averageLootPerKill / c.averageCostPerKill) * 100 : 0,
+        returnRate:
+          c.averageCostPerKill > 0 ? (c.averageLootPerKill / c.averageCostPerKill) * 100 : 0,
       }))
       .sort((a, b) => b.kills - a.kills)
       .slice(0, 10);
@@ -189,7 +190,7 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
     },
     {
       key: 'lootPerKill',
-      header: 'Loot/Kill',
+      header: 'Adj Loot/Kill',
       align: 'right',
       render: (creature) => (
         <span className="text-green-400">{creature.lootPerKill.toFixed(2)}</span>
@@ -197,7 +198,7 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
     },
     {
       key: 'returnRate',
-      header: 'Return Rate',
+      header: 'Adj Return',
       align: 'right',
       render: (creature) => (
         <span
@@ -232,13 +233,13 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
           size="lg"
         />
         <MetricTile
-          label="Total Kill Profit"
+          label="Adj Kill Profit"
           value={`${totalKillProfit >= 0 ? '+' : ''}${totalKillProfit.toFixed(2)} PED`}
           tone={totalKillProfit >= 0 ? 'positive' : 'negative'}
           size="lg"
         />
         <MetricTile
-          label="Avg Profit Per Kill"
+          label="Avg Adj P/L Per Kill"
           value={`${totalKills > 0 ? (totalKillProfit / totalKills).toFixed(1) : 0} PED`}
           tone="warning"
           size="lg"
@@ -271,7 +272,7 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                label={{ value: 'Profit (PED)', angle: 90, position: 'insideRight' }}
+                label={{ value: 'Adjusted P/L (PED)', angle: 90, position: 'insideRight' }}
                 {...chartAxisProps}
               />
               <Tooltip
@@ -280,15 +281,15 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
               />
               <Legend />
               <Bar yAxisId="left" dataKey="kills" fill="#3b82f6" name="Kills" />
-              <Bar yAxisId="right" dataKey="profit" fill="#10b981" name="Profit (PED)" />
+              <Bar yAxisId="right" dataKey="profit" fill="#10b981" name="Adjusted P/L (PED)" />
             </BarChart>
           </ResponsiveContainer>
         )}
       </Panel>
 
-      {/* Profit per kill vs cost per kill */}
+      {/* Adjusted profit per kill vs cost per kill */}
       <Panel
-        title="Cost vs Profit Per Kill"
+        title="Cost vs Adjusted P/L Per Kill"
         tooltip="Compares average cost and loot per kill for top creatures"
       >
         {profitPerKillChart.length === 0 ? (
@@ -314,7 +315,7 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
               />
               <Legend />
               <Bar dataKey="costPerKill" fill="#ef4444" name="Cost/Kill" />
-              <Bar dataKey="profitPerKill" fill="#10b981" name="Profit/Kill" />
+              <Bar dataKey="profitPerKill" fill="#10b981" name="Adjusted P/L/Kill" />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -407,7 +408,7 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
 
       {/* HP dealt vs profit scatter */}
       <Panel
-        title="Average HP vs Profit Per Kill"
+        title="Average HP vs Adjusted P/L Per Kill"
         tooltip="Visualizes the relationship between creature HP and profitability"
       >
         {hpVsProfitChart.length === 0 ? (
@@ -422,7 +423,7 @@ export function KillTrackingAnalytics({ sessions }: KillTrackingAnalyticsProps) 
                 {...chartAxisProps}
               />
               <YAxis
-                label={{ value: 'Profit/Kill (PED)', angle: -90, position: 'insideLeft' }}
+                label={{ value: 'Adjusted P/L/Kill (PED)', angle: -90, position: 'insideLeft' }}
                 {...chartAxisProps}
               />
               <Tooltip

@@ -31,8 +31,16 @@ const session = (overrides: Partial<HuntSession>): HuntSession =>
       globals: 0,
       hofs: 0,
       totalLoot: 0,
+      totalTtLoot: 0,
+      totalAdjustedLoot: 0,
+      totalMarkupGain: 0,
+      totalFixedGain: 0,
       totalCost: 0,
       returns: 0,
+      ttReturns: 0,
+      adjustedReturns: 0,
+      ttProfit: 0,
+      adjustedProfit: 0,
       duration: 0,
       shotsFired: 0,
       damageDealt: 0,
@@ -55,9 +63,17 @@ describe('analyzeSessionDataQuality', () => {
   it('reports issues that can skew analytics', () => {
     expect(
       analyzeSessionDataQuality([
-        session({ stats: { ...session({}).stats, totalLoot: 10, totalCost: 0 } }),
         session({
-          stats: { ...session({}).stats, totalLoot: 10, totalCost: 5, duration: 0 },
+          stats: { ...session({}).stats, totalLoot: 10, totalAdjustedLoot: 10, totalCost: 0 },
+        }),
+        session({
+          stats: {
+            ...session({}).stats,
+            totalLoot: 10,
+            totalAdjustedLoot: 10,
+            totalCost: 5,
+            duration: 0,
+          },
           loot: [
             {
               id: 'l',
@@ -86,7 +102,7 @@ describe('analyzeSessionDataQuality', () => {
     });
     const badLootSession = session({
       id: 'bad-loot',
-      stats: { ...session({}).stats, totalLoot: 10, duration: 0 },
+      stats: { ...session({}).stats, totalLoot: 10, totalAdjustedLoot: 10, duration: 0 },
     });
 
     expect(
@@ -99,7 +115,13 @@ describe('analyzeSessionDataQuality', () => {
         }),
         session({
           id: 'valid-duration',
-          stats: { ...session({}).stats, totalCost: 5, totalLoot: 4, duration: 60 },
+          stats: {
+            ...session({}).stats,
+            totalCost: 5,
+            totalLoot: 4,
+            totalAdjustedLoot: 4,
+            duration: 60,
+          },
         }),
         session({
           id: 'active-zero-duration',

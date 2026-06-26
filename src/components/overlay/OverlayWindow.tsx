@@ -307,9 +307,9 @@ export function OverlayWindow() {
     );
   }
 
-  const profit = activeSession.stats.totalLoot - activeSession.stats.totalCost;
+  const profit = activeSession.stats.adjustedProfit;
   const isProfitable = profit >= 0;
-  const returns = activeSession.stats.returns;
+  const returns = activeSession.stats.adjustedReturns;
   const returnsPositive = returns >= 100;
 
   // Find loadout name
@@ -378,7 +378,7 @@ export function OverlayWindow() {
 
         {/* Profit */}
         <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-muted text-[10px] text-center whitespace-nowrap">Profit</span>
+          <span className="text-muted text-[10px] text-center whitespace-nowrap">Adj P/L</span>
           <span
             className={`font-bold text-xs whitespace-nowrap ${isProfitable ? 'text-green-400' : 'text-red-400'}`}
           >
@@ -391,7 +391,7 @@ export function OverlayWindow() {
 
         {/* Returns */}
         <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-muted text-[10px] text-center whitespace-nowrap">Returns</span>
+          <span className="text-muted text-[10px] text-center whitespace-nowrap">Adj Ret</span>
           <div className="flex items-center gap-1 whitespace-nowrap">
             <span
               className={`font-bold text-xs ${returnsPositive ? 'text-green-400' : 'text-red-400'}`}
@@ -399,7 +399,9 @@ export function OverlayWindow() {
               {returnsPositive ? '+' : ''}
               {(returns - 100).toFixed(1)}%
             </span>
-            <span className="text-muted text-[10px]">({returns.toFixed(1)}%)</span>
+            <span className="text-muted text-[10px]">
+              (TT {activeSession.stats.ttReturns.toFixed(1)}%)
+            </span>
           </div>
         </div>
 

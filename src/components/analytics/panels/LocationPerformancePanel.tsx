@@ -33,7 +33,7 @@ export default function LocationPerformancePanel() {
     },
     {
       key: 'returnRate',
-      header: 'Return %',
+      header: 'Adj Return %',
       align: 'right',
       render: (location) => (
         <span

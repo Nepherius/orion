@@ -56,7 +56,7 @@ export function CorrelationAnalytics() {
 
     const lootEvents = validSessions.map((s) => s.stats.kills);
     const costPed = validSessions.map((s) => s.stats.totalCost);
-    const lootPed = validSessions.map((s) => s.stats.totalLoot);
+    const lootPed = validSessions.map((s) => s.stats.totalAdjustedLoot);
 
     const worker = new Worker(new URL('../../workers/analytics.worker.ts', import.meta.url), {
       type: 'module',

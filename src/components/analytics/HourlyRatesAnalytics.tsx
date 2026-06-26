@@ -29,10 +29,11 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
   const durationMinutes = duration / 1000 / 60;
   const durationHours = durationMinutes / 60;
 
-  const lootPerHour = durationHours > 0 ? session.stats.totalLoot / durationHours : 0;
+  const adjustedLootPerHour =
+    durationHours > 0 ? session.stats.totalAdjustedLoot / durationHours : 0;
+  const ttLootPerHour = durationHours > 0 ? session.stats.totalTtLoot / durationHours : 0;
   const spendPerHour = durationHours > 0 ? session.stats.totalCost / durationHours : 0;
-  const profitPerHour =
-    durationHours > 0 ? (session.stats.totalLoot - session.stats.totalCost) / durationHours : 0;
+  const profitPerHour = durationHours > 0 ? session.stats.adjustedProfit / durationHours : 0;
   const killsPerHour = durationHours > 0 ? session.stats.kills / durationHours : 0;
   const dmgPerHour = durationHours > 0 ? session.stats.damageDealt / durationHours : 0;
   const skillsPerHour =
@@ -43,7 +44,8 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
 
   // Hourly metrics comparison
   const hourlyMetrics = [
-    { name: 'Loot', value: lootPerHour, color: '#22C55E' },
+    { name: 'Adj Loot', value: adjustedLootPerHour, color: '#22C55E' },
+    { name: 'TT Loot', value: ttLootPerHour, color: '#60A5FA' },
     { name: 'Spend', value: spendPerHour, color: '#EF4444' },
     {
       name: 'Profit',
@@ -61,12 +63,13 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
   ];
 
   // Per-minute rates
-  const lootPerMin = durationMinutes > 0 ? session.stats.totalLoot / durationMinutes : 0;
+  const adjustedLootPerMin =
+    durationMinutes > 0 ? session.stats.totalAdjustedLoot / durationMinutes : 0;
+  const ttLootPerMin = durationMinutes > 0 ? session.stats.totalTtLoot / durationMinutes : 0;
   const spendPerMin = durationMinutes > 0 ? session.stats.totalCost / durationMinutes : 0;
   const killsPerMin = durationMinutes > 0 ? session.stats.kills / durationMinutes : 0;
   const eventsPerMin = durationMinutes > 0 ? session.stats.lootEvents / durationMinutes : 0;
-  const profitPerMin =
-    durationMinutes > 0 ? (session.stats.totalLoot - session.stats.totalCost) / durationMinutes : 0;
+  const profitPerMin = durationMinutes > 0 ? session.stats.adjustedProfit / durationMinutes : 0;
   const totalSkillGains = session.skills.reduce((sum, s) => sum + s.gainAmount, 0);
   const skillsPerMin = durationMinutes > 0 ? totalSkillGains / durationMinutes : 0;
 
@@ -80,11 +83,18 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
 
   const hourlyRateRows: HourlyRateRow[] = [
     {
-      metric: 'Loot',
-      perHour: `${formatSmallNumber(lootPerHour)} PED`,
-      perMinute: `${formatSmallNumber(lootPerMin)} PED`,
-      total: `${session.stats.totalLoot.toFixed(2)} PED`,
+      metric: 'Adjusted Loot',
+      perHour: `${formatSmallNumber(adjustedLootPerHour)} PED`,
+      perMinute: `${formatSmallNumber(adjustedLootPerMin)} PED`,
+      total: `${session.stats.totalAdjustedLoot.toFixed(2)} PED`,
       perHourClassName: 'text-green-400',
+    },
+    {
+      metric: 'TT Loot',
+      perHour: `${formatSmallNumber(ttLootPerHour)} PED`,
+      perMinute: `${formatSmallNumber(ttLootPerMin)} PED`,
+      total: `${session.stats.totalTtLoot.toFixed(2)} PED`,
+      perHourClassName: 'text-blue-400',
     },
     {
       metric: 'Spend',
@@ -94,10 +104,10 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
       perHourClassName: 'text-red-400',
     },
     {
-      metric: 'Profit/Loss',
+      metric: 'Adjusted P/L',
       perHour: `${profitPerHour >= 0 ? '+' : ''}${formatSmallNumber(profitPerHour)} PED`,
       perMinute: `${formatSmallNumber(profitPerMin)} PED`,
-      total: `${(session.stats.totalLoot - session.stats.totalCost).toFixed(2)} PED`,
+      total: `${session.stats.adjustedProfit.toFixed(2)} PED`,
       perHourClassName: profitPerHour >= 0 ? 'text-blue-400' : 'text-orange-400',
     },
     {
@@ -147,8 +157,8 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <MetricTile
-          label="Loot/Hour"
-          value={formatSmallNumber(lootPerHour)}
+          label="Adj Loot/Hour"
+          value={formatSmallNumber(adjustedLootPerHour)}
           tone="positive"
           icon={<DollarSign className="h-5 w-5 shrink-0" />}
           detail="PED"
@@ -163,7 +173,7 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
           size="lg"
         />
         <MetricTile
-          label="Profit/Hour"
+          label="Adj P/L/Hour"
           value={`${profitPerHour >= 0 ? '+' : ''}${formatSmallNumber(profitPerHour)}`}
           tone={profitPerHour >= 0 ? 'accent' : 'warning'}
           icon={<TrendingUp className="h-5 w-5 shrink-0" />}
@@ -239,14 +249,19 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
         <Panel title="ROI Metrics">
           <div className="space-y-3">
             <StatCard
-              label="Return Rate"
-              value={`${session.stats.returns.toFixed(1)}%`}
-              color={session.stats.returns >= 100 ? 'text-green-400' : 'text-red-400'}
+              label="Adjusted Return"
+              value={`${session.stats.adjustedReturns.toFixed(1)}%`}
+              color={session.stats.adjustedReturns >= 100 ? 'text-green-400' : 'text-red-400'}
             />
             <StatCard
-              label="Loot/Spend"
+              label="TT Return"
+              value={`${session.stats.ttReturns.toFixed(1)}%`}
+              color={session.stats.ttReturns >= 100 ? 'text-green-400' : 'text-red-400'}
+            />
+            <StatCard
+              label="Adj Loot/Spend"
               value={(session.stats.totalCost > 0
-                ? session.stats.totalLoot / session.stats.totalCost
+                ? session.stats.totalAdjustedLoot / session.stats.totalCost
                 : 0
               ).toFixed(2)}
             />
@@ -262,12 +277,12 @@ export function HourlyRatesAnalytics({ session }: HourlyRatesAnalyticsProps) {
           <div className="space-y-3">
             <StatCard
               label="Best Hour Est."
-              value={`${formatSmallNumber(lootPerHour * 1.2)} PED`}
+              value={`${formatSmallNumber(adjustedLootPerHour * 1.2)} PED`}
               color="text-green-400"
             />
             <StatCard
               label="Efficiency"
-              value={`${(session.stats.returns >= 100 ? 100 : session.stats.returns).toFixed(0)}%`}
+              value={`${(session.stats.adjustedReturns >= 100 ? 100 : session.stats.adjustedReturns).toFixed(0)}%`}
             />
             <StatCard label="Pace" value={`${eventsPerHour.toFixed(1)} events/hr`} />
           </div>

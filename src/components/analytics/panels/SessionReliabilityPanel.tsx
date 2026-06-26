@@ -34,8 +34,7 @@ export default function SessionReliabilityPanel() {
     });
 
     filtered.forEach((session) => {
-      const rate =
-        session.stats.totalCost > 0 ? (session.stats.totalLoot / session.stats.totalCost) * 100 : 0;
+      const rate = session.stats.adjustedReturns;
 
       if (rate < 80) under80++;
       else if (rate < 90) b80_90++;
@@ -104,8 +103,8 @@ export default function SessionReliabilityPanel() {
         <div className="rounded-lg border border-border bg-white/[0.03] p-4">
           <div className="flex items-center justify-between gap-3 text-sm text-muted mb-4">
             <div className="flex items-center gap-1">
-              Return Rate Volatility Histogram
-              <InfoTooltip tooltip="Distribution of session returns across brackets" />
+              Adjusted Return Volatility Histogram
+              <InfoTooltip tooltip="Distribution of adjusted session returns across brackets" />
             </div>
             <span className="text-xs whitespace-nowrap">
               {histogram.totalSessions} session{histogram.totalSessions !== 1 ? 's' : ''}

@@ -46,7 +46,7 @@ export default function WeaponPerformancePanel() {
           <YAxis {...chartAxisProps} />
           <Tooltip {...chartTooltipProps} formatter={(value: number) => value.toFixed(2)} />
           <Legend />
-          <Bar dataKey="returnRate" fill="#10B981" name="Return Rate %" />
+          <Bar dataKey="returnRate" fill="#10B981" name="Adj Return %" />
           <Bar dataKey="costPer1kDamage" fill="#F59E0B" name="Cost / 1k Dmg (PED)" />
           <Bar dataKey="sessions" fill="#3B82F6" name="Sessions" />
         </BarChart>

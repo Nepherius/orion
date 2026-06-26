@@ -55,7 +55,7 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
           : 0,
       max: 100,
     },
-    { category: 'Return Rate', value: session.stats.returns, max: 150 },
+    { category: 'Adj Return', value: session.stats.adjustedReturns, max: 150 },
     { category: 'Dmg/Shot', value: avgDmgPerHit * 2, max: 100 },
     { category: 'Kills/Hour', value: Math.min(killsPerHour * 10, 100), max: 100 },
   ];
@@ -67,7 +67,10 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
       name: 'Damage/Hour',
       value: durationHours > 0 ? session.stats.damageDealt / durationHours : 0,
     },
-    { name: 'Loot/Hour', value: durationHours > 0 ? session.stats.totalLoot / durationHours : 0 },
+    {
+      name: 'Adj Loot/Hour',
+      value: durationHours > 0 ? session.stats.totalAdjustedLoot / durationHours : 0,
+    },
     {
       name: 'Events/Hour',
       value: durationHours > 0 ? session.stats.lootEvents / durationHours : 0,
@@ -145,9 +148,9 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
             <StatCard label="DPS" value={dps.toFixed(2)} />
             <StatCard label="Kills/PED" value={killsPerPED.toFixed(2)} />
             <StatCard
-              label="Loot/PED"
+              label="Adj Loot/PED"
               value={(session.stats.totalCost > 0
-                ? session.stats.totalLoot / session.stats.totalCost
+                ? session.stats.totalAdjustedLoot / session.stats.totalCost
                 : 0
               ).toFixed(2)}
             />
@@ -176,8 +179,8 @@ export function EfficiencyAnalytics({ session }: EfficiencyAnalyticsProps) {
           <div className="space-y-3">
             <StatCard label="Kills/Hour" value={killsPerHour.toFixed(1)} />
             <StatCard
-              label="Loot/Hour"
-              value={`${(durationHours > 0 ? session.stats.totalLoot / durationHours : 0).toFixed(2)} PED`}
+              label="Adj Loot/Hour"
+              value={`${(durationHours > 0 ? session.stats.totalAdjustedLoot / durationHours : 0).toFixed(2)} PED`}
             />
             <StatCard
               label="Spend/Hour"

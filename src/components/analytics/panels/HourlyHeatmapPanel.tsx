@@ -60,7 +60,7 @@ export default function HourlyHeatmapPanel() {
   return (
     <Panel
       title="Time-of-Day Heatmap"
-      tooltip="Average return rate by day of week and hour. Greener = higher return, redder = lower return. Based on completed sessions within the selected time range."
+      tooltip="Average adjusted return by day of week and hour. Greener = higher return, redder = lower return. Based on completed sessions within the selected time range."
     >
       <div className="overflow-x-auto">
         <div

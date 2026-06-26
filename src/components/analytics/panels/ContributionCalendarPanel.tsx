@@ -52,7 +52,7 @@ export default function ContributionCalendarPanel() {
       if (dayMap.has(dStr)) {
         const bucket = dayMap.get(dStr);
         bucket.count += 1;
-        bucket.profit += session.stats.totalLoot - session.stats.totalCost;
+        bucket.profit += session.stats.adjustedProfit;
       }
     });
 

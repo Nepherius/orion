@@ -124,7 +124,7 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
     },
     {
       key: 'returnRate',
-      header: 'Return %',
+      header: 'Adj Return %',
       align: 'right',
       render: (creature) => (
         <span
@@ -170,7 +170,7 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
     { key: 'kills', header: 'Kills', align: 'right', render: (creature) => creature.totalKills },
     {
       key: 'returnRate',
-      header: 'Return %',
+      header: 'Adj Return %',
       align: 'right',
       render: (creature) => (
         <span
@@ -341,10 +341,10 @@ export function CreatureAnalytics({ sessions }: CreatureAnalyticsProps) {
         </Panel>
       </div>
 
-      {/* Creature Return Rate Ranking */}
+      {/* Creature Adjusted Return Ranking */}
       <Panel
-        title="Best Return Rate by Creature"
-        tooltip="Creatures ranked by return rate (loot/cost percentage)"
+        title="Best Adjusted Return by Creature"
+        tooltip="Creatures ranked by adjusted return (loot including markup and fixed values divided by cost)"
       >
         {creatureDifficulty.length === 0 ? (
           <div className="flex items-center justify-center text-muted h-64">No data yet</div>

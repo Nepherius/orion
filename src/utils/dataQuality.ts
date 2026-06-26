@@ -10,7 +10,7 @@ export function isCompletedSessionWithCostOrLootAndNoDuration(session: HuntSessi
   return (
     session.status === 'completed' &&
     session.stats.duration <= 0 &&
-    (session.stats.totalCost > 0 || session.stats.totalLoot > 0)
+    (session.stats.totalCost > 0 || session.stats.totalAdjustedLoot > 0)
   );
 }
 
@@ -24,7 +24,7 @@ export function analyzeSessionDataQuality(sessions: HuntSession[]): DataQualityI
   const completedWithNoDuration = getCompletedSessionsWithCostOrLootAndNoDuration(sessions).length;
 
   const lootWithoutCost = sessions.filter(
-    (session) => session.stats.totalLoot > 0 && session.stats.totalCost <= 0
+    (session) => session.stats.totalAdjustedLoot > 0 && session.stats.totalCost <= 0
   ).length;
 
   const lootWithoutTimestamp = sessions.reduce(

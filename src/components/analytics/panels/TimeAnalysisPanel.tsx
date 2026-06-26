@@ -58,9 +58,8 @@ export default function TimeAnalysisPanel() {
       const tsMs =
         session.startTime < 1_000_000_000_000 ? session.startTime * 1000 : session.startTime;
       const hour = new Date(tsMs).getHours();
-      const returnRate =
-        session.stats.totalCost > 0 ? (session.stats.totalLoot / session.stats.totalCost) * 100 : 0;
-      const profit = session.stats.totalLoot - session.stats.totalCost;
+      const returnRate = session.stats.adjustedReturns;
+      const profit = session.stats.adjustedProfit;
 
       buckets[hour].count += 1;
       buckets[hour].totalReturnRate += returnRate;
@@ -93,7 +92,7 @@ export default function TimeAnalysisPanel() {
   return (
     <Panel
       title="Time-of-Day Analysis"
-      tooltip="Shows session frequency, average return rate, and globals by hour of day. Based on completed sessions within the selected time range."
+      tooltip="Shows session frequency, average adjusted return, and globals by hour of day. Based on completed sessions within the selected time range."
     >
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={hourlyData}>
@@ -115,7 +114,7 @@ export default function TimeAnalysisPanel() {
             orientation="right"
             {...chartAxisProps}
             label={{
-              value: 'Return %',
+              value: 'Adj Return %',
               angle: 90,
               position: 'insideRight',
               fill: 'var(--color-text-muted)',
@@ -125,7 +124,7 @@ export default function TimeAnalysisPanel() {
           <Tooltip
             {...chartTooltipProps}
             formatter={(value: number, name: string) => {
-              if (name === 'Avg Return %') return `${value.toFixed(1)}%`;
+              if (name === 'Avg Adj Return %') return `${value.toFixed(1)}%`;
               if (name === 'Avg Profit') return `${value.toFixed(2)} PED`;
               return value;
             }}
@@ -140,7 +139,7 @@ export default function TimeAnalysisPanel() {
             stroke="#10B981"
             strokeWidth={2}
             dot={{ r: 3, fill: '#10B981' }}
-            name="Avg Return %"
+            name="Avg Adj Return %"
           />
         </ComposedChart>
       </ResponsiveContainer>

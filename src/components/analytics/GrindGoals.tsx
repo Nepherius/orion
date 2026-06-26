@@ -12,10 +12,7 @@ export function GrindGoals() {
 
   // Auto-amount can be the lifetime profit
   const sessions = useHuntStore((state) => state.sessions);
-  const lifetimeProfit = sessions.reduce(
-    (acc, s) => acc + (s.stats.totalLoot - s.stats.totalCost),
-    0
-  );
+  const lifetimeProfit = sessions.reduce((acc, s) => acc + s.stats.adjustedProfit, 0);
 
   const handleAdd = () => {
     if (newGoalName && newGoalTarget) {

@@ -99,7 +99,11 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
         });
         const fallback = filtered.reduce(
           (acc, session) => {
-            acc.totalLoot += session.stats.totalLoot;
+            acc.totalLoot += session.stats.totalAdjustedLoot;
+            acc.totalTtLoot += session.stats.totalTtLoot;
+            acc.totalAdjustedLoot += session.stats.totalAdjustedLoot;
+            acc.totalMarkupGain += session.stats.totalMarkupGain;
+            acc.totalFixedGain += session.stats.totalFixedGain;
             acc.totalCost += session.stats.totalCost;
             acc.totalKills += session.stats.kills;
             acc.totalGlobals += session.stats.globals;
@@ -112,6 +116,10 @@ export function createAnalyticsActions(set: StoreSetState, _get: StoreGetState) 
           },
           {
             totalLoot: 0,
+            totalTtLoot: 0,
+            totalAdjustedLoot: 0,
+            totalMarkupGain: 0,
+            totalFixedGain: 0,
             totalCost: 0,
             totalKills: 0,
             totalGlobals: 0,

@@ -26,10 +26,10 @@ export default function TemporalAnalyticsPanel() {
         />
         <MetricTile
           label="Peak Performance Window"
-          tooltip="Start-hour window with highest average return rate"
+          tooltip="Start-hour window with highest average adjusted return"
           value={temporalInsights.bestHourLabel}
           valueClassName="text-green-400"
-          detail={`${temporalInsights.bestHourReturnRate.toFixed(1)}% avg return`}
+          detail={`${temporalInsights.bestHourReturnRate.toFixed(1)}% avg adjusted return`}
         />
         <MetricTile
           label="Avg Cooldown Gap"
