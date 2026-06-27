@@ -17,8 +17,8 @@ export function AnalyticsConsentModal({ onAllow, onDecline }: AnalyticsConsentMo
 
         <div className="rounded border border-border bg-surface-dark p-4 text-sm text-muted">
           The event payload contains Orion version, operating system, build mode, and a generated
-          local install id. Avatar names, chat logs, sessions, loot, and Entropia data
-          are not recorded.
+          local install id. Avatar names, chat logs, sessions, loot, and Entropia data are not
+          recorded.
         </div>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">

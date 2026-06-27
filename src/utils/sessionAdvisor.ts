@@ -349,7 +349,8 @@ function estimateHistoricalCostPerKill(
 } | null {
   const matchingCreatureKills = sessions
     .filter(
-      (session) => session.status === 'completed' && matchesCreatureName(session.creature, creatureName)
+      (session) =>
+        session.status === 'completed' && matchesCreatureName(session.creature, creatureName)
     )
     .flatMap((session) =>
       session.kills.filter(
@@ -557,8 +558,13 @@ function scoreKillPace(metrics: SessionAdvisorMetrics): SessionAdvisorFactor {
 }
 
 function scoreDamageToHpFit(metrics: SessionAdvisorMetrics): SessionAdvisorFactor {
-  const { maxDamagePerShot, planningDamagePerShot, overkillRatio, overkillMaturity, creatureEntry } =
-    metrics;
+  const {
+    maxDamagePerShot,
+    planningDamagePerShot,
+    overkillRatio,
+    overkillMaturity,
+    creatureEntry,
+  } = metrics;
 
   if (!maxDamagePerShot || !planningDamagePerShot || !creatureEntry?.hp || !overkillRatio) {
     return {
@@ -618,14 +624,17 @@ function scoreAmplifierFit(loadout: Loadout, metrics: SessionAdvisorMetrics): Se
       id: 'amplifier-fit',
       label: 'Amplifier fit',
       points: 1,
-      detail: 'Amplifier damage is present but weapon damage is missing, so Orion cannot verify the amp fit.',
+      detail:
+        'Amplifier damage is present but weapon damage is missing, so Orion cannot verify the amp fit.',
       formula: `1 / ${AMPLIFIER_POINTS}`,
     };
   }
 
   const cap = weaponMaxDamage * 0.5;
   const wastedRatio =
-    wastedAmplifierDamage && amplifierMaxDamage > 0 ? wastedAmplifierDamage / amplifierMaxDamage : 0;
+    wastedAmplifierDamage && amplifierMaxDamage > 0
+      ? wastedAmplifierDamage / amplifierMaxDamage
+      : 0;
 
   if (wastedAmplifierDamage && wastedAmplifierDamage > 0) {
     let points = 2;
@@ -760,7 +769,8 @@ function scorePersonalHistory(
         id: 'history',
         label: 'Personal history',
         points: 2,
-        detail: 'No completed Orion sessions for this creature yet, so Orion applies a mostly neutral history score.',
+        detail:
+          'No completed Orion sessions for this creature yet, so Orion applies a mostly neutral history score.',
         formula: `no creature history: 2 / ${PERSONAL_HISTORY_POINTS}`,
       },
       metrics: { personalSessions: 0 },
@@ -843,7 +853,8 @@ function scoreSameLoadoutHistory(
         id: 'same-loadout-history',
         label: 'Same loadout history',
         points: 1,
-        detail: 'No completed sessions found for this creature with this exact loadout, so Orion applies a neutral loadout-history score.',
+        detail:
+          'No completed sessions found for this creature with this exact loadout, so Orion applies a neutral loadout-history score.',
         formula: `no exact loadout history: 1 / ${SAME_LOADOUT_HISTORY_POINTS}`,
       },
       metrics: { sameLoadoutSessions: 0 },
@@ -1013,8 +1024,7 @@ function advisorGate(
   ) {
     label = 'Kill pace gate';
     maxScore = 64;
-    detail =
-      'Huntability gate: kill pace is slow enough that the plan cannot rate as a good fit.';
+    detail = 'Huntability gate: kill pace is slow enough that the plan cannot rate as a good fit.';
     formula = '20s+ or 20+ shots per kill caps score at 64';
   } else if (metrics.bankrollKills !== undefined && metrics.bankrollKills < 50) {
     label = 'Bankroll gate';
@@ -1071,7 +1081,11 @@ export function calculateSessionAdvisor({
   const selectedMatches = filterEntriesByMaturity(matches, plannedMaturities);
   const entriesForScoring = selectedMatches.length > 0 ? selectedMatches : matches;
   const maturitySelectionMode = selectedMatches.length > 0 ? 'selected' : 'fallback';
-  const { selected, hpRange, aggregationMode: maturityAggregationMode } = chooseRepresentativeEntry(
+  const {
+    selected,
+    hpRange,
+    aggregationMode: maturityAggregationMode,
+  } = chooseRepresentativeEntry(
     entriesForScoring,
     maturitySelectionMode === 'selected' ? 'risk-weighted' : 'median'
   );
@@ -1084,8 +1098,7 @@ export function calculateSessionAdvisor({
   const effectiveDps =
     effectiveDamage && usesPerMinute ? (effectiveDamage * usesPerMinute) / 60 : undefined;
   const regenDps = selected ? calculateDamageNeededToBeatRegen(selected) : 0;
-  const entriesForRisk =
-    selectedMatches.length > 0 ? selectedMatches : selected ? [selected] : [];
+  const entriesForRisk = selectedMatches.length > 0 ? selectedMatches : selected ? [selected] : [];
   const riskEntriesWithHp = entriesForRisk
     .filter((entry) => entry.hp > 0)
     .sort((a, b) => a.hp - b.hp);
@@ -1127,8 +1140,7 @@ export function calculateSessionAdvisor({
     .filter((entry) => typeof entry.regenRatio === 'number')
     .sort(
       (a, b) =>
-        (a.regenRatio ?? Number.POSITIVE_INFINITY) -
-        (b.regenRatio ?? Number.POSITIVE_INFINITY)
+        (a.regenRatio ?? Number.POSITIVE_INFINITY) - (b.regenRatio ?? Number.POSITIVE_INFINITY)
     )[0];
   const overkillEntry =
     combatDamage.maxDamagePerShot && riskEntriesWithHp.length > 0
@@ -1149,15 +1161,11 @@ export function calculateSessionAdvisor({
           ? regenDps <= 0 || effectiveDps > regenDps
           : undefined;
   const dpsForKillEstimate =
-    canBeatRegen === false
-      ? undefined
-      : regenRisk === 'known'
-        ? netDps
-        : effectiveDps;
+    canBeatRegen === false ? undefined : regenRisk === 'known' ? netDps : effectiveDps;
   const estimatedKillSeconds =
     selected && dpsForKillEstimate !== undefined && dpsForKillEstimate > 0
       ? selected.hp / dpsForKillEstimate
-        : undefined;
+      : undefined;
   const estimatedShotsToKill =
     selected && effectiveDamage && canBeatRegen !== false
       ? estimatedKillSeconds && usesPerMinute
@@ -1174,7 +1182,8 @@ export function calculateSessionAdvisor({
     maturityBreakdown
   );
   const estimatedCostPerKill =
-    historicalCostEstimate?.costPerKill && historicalCostEstimate.samples >= MIN_HISTORY_KILLS_FOR_COST
+    historicalCostEstimate?.costPerKill &&
+    historicalCostEstimate.samples >= MIN_HISTORY_KILLS_FOR_COST
       ? historicalCostEstimate.costPerKill
       : theoreticalCostPerKill;
 

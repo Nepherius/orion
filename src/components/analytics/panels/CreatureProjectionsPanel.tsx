@@ -142,8 +142,8 @@ export default function CreatureProjectionsPanel({
               <TrendingUp className="w-6 h-6 text-blue-400" />
               Creature Analytics
             </h2>
-            <p className="text-sm text-muted mt-1">w
-              Advanced statistical modeling based on your{' '}
+            <p className="text-sm text-muted mt-1">
+              w Advanced statistical modeling based on your{' '}
               <span className="font-semibold text-primary-400">selected filtered </span> data.
             </p>
           </div>

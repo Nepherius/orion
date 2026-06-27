@@ -117,8 +117,8 @@ function AdvisorDetailsDialog({
               Score {formatNumber(result.score ?? undefined, 0)} / 100
             </p>
             <p className="mt-1 max-w-xl text-xs text-muted">
-              Weighted rubric: huntability 35, kill pace and weapon size 30, bankroll 20,
-              setup friction 10, history 5. Hard gates can cap the final score.
+              Weighted rubric: huntability 35, kill pace and weapon size 30, bankroll 20, setup
+              friction 10, history 5. Hard gates can cap the final score.
             </p>
           </div>
           <button type="button" onClick={onClose} className="text-muted hover:text-white">
@@ -412,7 +412,8 @@ export function SessionAdvisor({
               key={factor.id}
               className={`rounded border border-border px-2 py-1 text-xs ${pointTone(factor.points)}`}
             >
-              {factor.label} {Number.isInteger(factor.points) ? factor.points : factor.points.toFixed(1)}
+              {factor.label}{' '}
+              {Number.isInteger(factor.points) ? factor.points : factor.points.toFixed(1)}
             </span>
           ))}
         </div>
