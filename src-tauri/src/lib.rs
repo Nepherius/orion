@@ -19,6 +19,40 @@ use tauri::{Manager, State};
 use rusqlite::Connection;
 use std::path::PathBuf;
 
+fn has_env_value(name: &str) -> bool {
+    std::env::var(name)
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false)
+}
+
+fn env_backend_choice(name: &str) -> Option<String> {
+    let value = std::env::var(name).ok()?.trim().to_lowercase();
+    if value.is_empty() {
+        return None;
+    }
+
+    value
+        .split(',')
+        .map(str::trim)
+        .find(|backend| *backend == "x11" || *backend == "wayland")
+        .map(ToString::to_string)
+}
+
+#[cfg(target_os = "linux")]
+fn prefer_x11_backend_for_positioned_windows() {
+    if !has_env_value("WAYLAND_DISPLAY") || !has_env_value("DISPLAY") {
+        return;
+    }
+
+    if !has_env_value("WINIT_UNIX_BACKEND") {
+        std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+    }
+
+    if !has_env_value("GDK_BACKEND") {
+        std::env::set_var("GDK_BACKEND", "x11");
+    }
+}
+
 /// Struct holding all parsed results from a chat log
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ParseResult {
@@ -613,17 +647,19 @@ fn get_linux_display_server() -> Option<String> {
         return None;
     }
 
-    if std::env::var("WAYLAND_DISPLAY")
-        .map(|value| !value.is_empty())
-        .unwrap_or(false)
-    {
+    if let Some(backend) = env_backend_choice("WINIT_UNIX_BACKEND") {
+        return Some(backend);
+    }
+
+    if let Some(backend) = env_backend_choice("GDK_BACKEND") {
+        return Some(backend);
+    }
+
+    if has_env_value("WAYLAND_DISPLAY") {
         return Some("wayland".to_string());
     }
 
-    if std::env::var("DISPLAY")
-        .map(|value| !value.is_empty())
-        .unwrap_or(false)
-    {
+    if has_env_value("DISPLAY") {
         return Some("x11".to_string());
     }
 
@@ -635,6 +671,9 @@ fn get_linux_display_server() -> Option<String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    prefer_x11_backend_for_positioned_windows();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())

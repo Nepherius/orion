@@ -3,17 +3,45 @@ import { LiveTimer } from '../layout/LiveTimer';
 import { Play, Pause, GripVertical, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { emit, listen } from '@tauri-apps/api/event';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
-import { HuntSession, Loadout } from '../../types';
+import type { AppSettings, HuntSession, Loadout, OverlayStatId } from '../../types';
+import { getSessionActiveDurationMs } from '../../utils/sessionTiming';
+import { normalizeOverlayStatIds } from '../../utils/overlayStats';
 
 interface StoreSyncPayload {
   sourceId: string;
   sessions: HuntSession[];
   activeSessionId: string | null;
   loadouts: Loadout[];
+  settings: AppSettings;
 }
+
+type OverlayMetricTone = 'neutral' | 'positive' | 'negative' | 'warning' | 'accent' | 'muted';
+
+interface OverlayMetric {
+  id: OverlayStatId;
+  label: string;
+  value: ReactNode;
+  title?: string;
+  tone?: OverlayMetricTone;
+  width?: 'normal' | 'wide';
+}
+
+const metricToneClass: Record<OverlayMetricTone, string> = {
+  neutral: 'text-gray-200',
+  positive: 'text-green-400',
+  negative: 'text-red-400',
+  warning: 'text-yellow-400',
+  accent: 'text-blue-400',
+  muted: 'text-muted',
+};
+
+const formatPed = (value: number, options: { showSign?: boolean } = {}) =>
+  `${options.showSign && value >= 0 ? '+' : ''}${value.toFixed(2)} PED`;
+
+const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
 export function OverlayWindow() {
   const isVisible = usePageVisibility();
@@ -21,7 +49,12 @@ export function OverlayWindow() {
     (state) => state.sessions.find((s) => s.id === state.activeSessionId) || null
   );
   const loadouts = useHuntStore((state) => state.loadouts);
+  const settings = useHuntStore((state) => state.settings);
   const syncSetupRef = useRef(false);
+  const hasReceivedSettingsSyncRef = useRef(false);
+  const canSaveGeometryRef = useRef(false);
+  const geometryReadyTimerRef = useRef<number | undefined>(undefined);
+  const [now, setNow] = useState(() => Date.now());
 
   // Remove splash screen on mount
   useEffect(() => {
@@ -35,6 +68,54 @@ export function OverlayWindow() {
     initializeStoreFromDb().catch(() => {
       // Silently fail; cross-window sync will still populate state
     });
+  }, []);
+
+  // Make the overlay document behave like a tiny window instead of inheriting the main app shell sizing.
+  useEffect(() => {
+    const root = document.getElementById('root');
+    const previousBodyStyles = {
+      backgroundColor: document.body.style.backgroundColor,
+      display: document.body.style.display,
+      minWidth: document.body.style.minWidth,
+      minHeight: document.body.style.minHeight,
+      overflow: document.body.style.overflow,
+      placeItems: document.body.style.placeItems,
+    };
+    const previousRootStyles = root
+      ? {
+          height: root.style.height,
+          minHeight: root.style.minHeight,
+          minWidth: root.style.minWidth,
+        }
+      : null;
+
+    document.body.style.backgroundColor = 'transparent';
+    document.body.style.display = 'block';
+    document.body.style.minWidth = '0';
+    document.body.style.minHeight = '100vh';
+    document.body.style.overflow = 'hidden';
+    document.body.style.placeItems = 'normal';
+
+    if (root) {
+      root.style.height = '100vh';
+      root.style.minHeight = '100vh';
+      root.style.minWidth = '0';
+    }
+
+    return () => {
+      document.body.style.backgroundColor = previousBodyStyles.backgroundColor;
+      document.body.style.display = previousBodyStyles.display;
+      document.body.style.minWidth = previousBodyStyles.minWidth;
+      document.body.style.minHeight = previousBodyStyles.minHeight;
+      document.body.style.overflow = previousBodyStyles.overflow;
+      document.body.style.placeItems = previousBodyStyles.placeItems;
+
+      if (root && previousRootStyles) {
+        root.style.height = previousRootStyles.height;
+        root.style.minHeight = previousRootStyles.minHeight;
+        root.style.minWidth = previousRootStyles.minWidth;
+      }
+    };
   }, []);
 
   // Setup overlay to ONLY listen for state from main window
@@ -60,12 +141,21 @@ export function OverlayWindow() {
             return;
           }
 
+          hasReceivedSettingsSyncRef.current = true;
+          if (geometryReadyTimerRef.current === undefined) {
+            geometryReadyTimerRef.current = window.setTimeout(() => {
+              canSaveGeometryRef.current = true;
+              geometryReadyTimerRef.current = undefined;
+            }, 750);
+          }
+
           // Apply state from main window without triggering broadcast
           useHuntStore.setState((prevState) => ({
             ...prevState,
             sessions: payload.sessions,
             activeSessionId: payload.activeSessionId,
             loadouts: payload.loadouts,
+            settings: { ...prevState.settings, ...payload.settings },
           }));
         });
       } catch {
@@ -96,8 +186,20 @@ export function OverlayWindow() {
       if (requestInterval) {
         clearInterval(requestInterval);
       }
+      if (geometryReadyTimerRef.current !== undefined) {
+        window.clearTimeout(geometryReadyTimerRef.current);
+        geometryReadyTimerRef.current = undefined;
+      }
+      syncSetupRef.current = false;
+      hasReceivedSettingsSyncRef.current = false;
+      canSaveGeometryRef.current = false;
     };
   }, [isVisible]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     const pinTopmost = async () => {
@@ -142,13 +244,23 @@ export function OverlayWindow() {
 
     const saveGeometry = async () => {
       try {
+        if (!hasReceivedSettingsSyncRef.current || !canSaveGeometryRef.current) {
+          return;
+        }
+
+        const currentWindow = getCurrentWindow();
+        const isVisible = await currentWindow.isVisible();
+        if (!isVisible) {
+          return;
+        }
+
         const geometry = await invoke<{
-          x: number;
-          y: number;
+          x: number | null;
+          y: number | null;
           width: number;
           height: number;
         } | null>('get_overlay_geometry');
-        if (geometry) {
+        if (geometry && geometry.width > 0 && geometry.height > 0) {
           // Tell the main window to update and persist the settings
           // We don't call updateSettings here directly because the overlay store doesn't sync upwards to the main window.
           emit('overlay-geometry-changed', geometry).catch(console.error);
@@ -164,9 +276,9 @@ export function OverlayWindow() {
     };
 
     const setupListeners = async () => {
-      const window = getCurrentWindow();
-      const unlistenMove = await window.onMoved(debouncedSave);
-      const unlistenResize = await window.onResized(debouncedSave);
+      const currentWindow = getCurrentWindow();
+      const unlistenMove = await currentWindow.onMoved(debouncedSave);
+      const unlistenResize = await currentWindow.onResized(debouncedSave);
 
       return () => {
         unlistenMove();
@@ -179,6 +291,11 @@ export function OverlayWindow() {
 
     return () => {
       cleanup.then((fn) => fn());
+      if (geometryReadyTimerRef.current !== undefined) {
+        window.clearTimeout(geometryReadyTimerRef.current);
+        geometryReadyTimerRef.current = undefined;
+      }
+      canSaveGeometryRef.current = false;
     };
   }, []);
 
@@ -311,20 +428,187 @@ export function OverlayWindow() {
   const isProfitable = profit >= 0;
   const returns = activeSession.stats.adjustedReturns;
   const returnsPositive = returns >= 100;
+  const ttReturnsPositive = activeSession.stats.ttReturns >= 100;
+  const markupGain = activeSession.stats.totalMarkupGain + activeSession.stats.totalFixedGain;
 
   // Find loadout name
   const loadout = activeSession.loadoutId
     ? loadouts.find((l) => l.id === activeSession.loadoutId)
     : loadouts.find((l) => l.name === activeSession.weapon);
   const loadoutName = loadout?.name || activeSession.weapon || 'No Loadout';
+  const activeDurationSeconds = Math.max(1, getSessionActiveDurationMs(activeSession, now) / 1000);
+  const avgDps = activeSession.stats.damageDealt / activeDurationSeconds;
+  const shotsFired = activeSession.stats.shotsFired;
+  const landedHits = activeSession.stats.hits + activeSession.stats.criticalHits;
+  const critRate = shotsFired > 0 ? (activeSession.stats.criticalHits / shotsFired) * 100 : 0;
+  const hitRate = shotsFired > 0 ? (landedHits / shotsFired) * 100 : 0;
+  const missRate = shotsFired > 0 ? (activeSession.stats.misses / shotsFired) * 100 : 0;
+  const skillGains = activeSession.skills.reduce((sum, skill) => sum + skill.gainAmount, 0);
+  const weaponDpp = loadout?.dpp ?? activeSession.dppSnapshot ?? 0;
+
+  const overlayMetricsById: Record<OverlayStatId, OverlayMetric> = {
+    time: {
+      id: 'time',
+      label: 'Time',
+      value: (
+        <LiveTimer
+          startTime={activeSession.startTime}
+          isRunning={activeSession.status === 'active'}
+          pausedAt={activeSession.pausedAt}
+          pausedDurationMs={activeSession.totalPausedMs || 0}
+          className="font-mono text-xs font-bold"
+        />
+      ),
+    },
+    loadout: {
+      id: 'loadout',
+      label: 'Loadout',
+      value: loadoutName,
+      title: `${loadoutName} (Ctrl+Left/Right, Ctrl+1..9 to switch)`,
+      width: 'wide',
+    },
+    creature: {
+      id: 'creature',
+      label: 'Creature',
+      value: activeSession.creature || 'Unknown',
+      title: activeSession.creature || 'Unknown',
+      width: 'wide',
+    },
+    totalCost: {
+      id: 'totalCost',
+      label: 'Cost',
+      value: formatPed(activeSession.stats.totalCost),
+      tone: 'negative',
+    },
+    ttLoot: {
+      id: 'ttLoot',
+      label: 'TT Loot',
+      value: formatPed(activeSession.stats.totalTtLoot),
+      tone: 'accent',
+    },
+    adjustedLoot: {
+      id: 'adjustedLoot',
+      label: 'Adj Loot',
+      value: formatPed(activeSession.stats.totalAdjustedLoot),
+      tone: 'positive',
+    },
+    adjustedProfit: {
+      id: 'adjustedProfit',
+      label: 'Adj P/L',
+      value: formatPed(profit, { showSign: true }),
+      tone: isProfitable ? 'positive' : 'negative',
+    },
+    adjustedReturn: {
+      id: 'adjustedReturn',
+      label: 'Adj Ret',
+      value: formatPercent(returns),
+      tone: returnsPositive ? 'positive' : 'negative',
+    },
+    ttReturn: {
+      id: 'ttReturn',
+      label: 'TT Ret',
+      value: formatPercent(activeSession.stats.ttReturns),
+      tone: ttReturnsPositive ? 'positive' : 'negative',
+    },
+    markupGain: {
+      id: 'markupGain',
+      label: 'MU/Fixed',
+      value: formatPed(markupGain, { showSign: true }),
+      tone: markupGain >= 0 ? 'positive' : 'negative',
+    },
+    kills: {
+      id: 'kills',
+      label: 'Kills',
+      value: activeSession.stats.kills,
+      tone: 'warning',
+    },
+    lootEvents: {
+      id: 'lootEvents',
+      label: 'Loots',
+      value: activeSession.stats.lootEvents,
+    },
+    globals: {
+      id: 'globals',
+      label: 'Globals',
+      value:
+        activeSession.stats.hofs > 0
+          ? `${activeSession.stats.globals}/${activeSession.stats.hofs}`
+          : activeSession.stats.globals,
+      title: 'Globals / HoFs',
+      tone: activeSession.stats.hofs > 0 ? 'warning' : 'neutral',
+    },
+    avgDps: {
+      id: 'avgDps',
+      label: 'Avg DPS',
+      value: avgDps.toFixed(1),
+      tone: 'accent',
+    },
+    weaponDpp: {
+      id: 'weaponDpp',
+      label: 'DPP',
+      value: weaponDpp > 0 ? weaponDpp.toFixed(2) : 'N/A',
+      tone: weaponDpp > 0 ? 'accent' : 'muted',
+    },
+    critRate: {
+      id: 'critRate',
+      label: 'Crit',
+      value: formatPercent(critRate),
+      tone: critRate > 0 ? 'warning' : 'neutral',
+    },
+    hitRate: {
+      id: 'hitRate',
+      label: 'Hit',
+      value: formatPercent(hitRate),
+      tone: hitRate >= 80 ? 'positive' : 'warning',
+    },
+    missRate: {
+      id: 'missRate',
+      label: 'Miss',
+      value: formatPercent(missRate),
+      tone: missRate > 10 ? 'warning' : 'neutral',
+    },
+    ammoCost: {
+      id: 'ammoCost',
+      label: 'Ammo',
+      value: formatPed(activeSession.ammoCost),
+      tone: 'negative',
+    },
+    weaponDecay: {
+      id: 'weaponDecay',
+      label: 'Decay',
+      value: formatPed(activeSession.weaponDecay),
+      tone: 'negative',
+    },
+    healingCost: {
+      id: 'healingCost',
+      label: 'Heal/FAP',
+      value: formatPed(activeSession.healingCost),
+      tone: activeSession.healingCost > 0 ? 'negative' : 'neutral',
+    },
+    otherCosts: {
+      id: 'otherCosts',
+      label: 'Other',
+      value: formatPed(activeSession.otherCosts),
+      tone: activeSession.otherCosts > 0 ? 'negative' : 'neutral',
+    },
+    skillGains: {
+      id: 'skillGains',
+      label: 'Skills',
+      value: skillGains.toFixed(4),
+      tone: skillGains > 0 ? 'positive' : 'neutral',
+    },
+  };
+  const selectedOverlayMetrics = normalizeOverlayStatIds(settings.overlayStatIds).map(
+    (id) => overlayMetricsById[id]
+  );
 
   return (
     <div
-      className="h-screen w-full backdrop-blur-sm border border-border rounded-2xl overflow-hidden select-none"
+      className="box-border h-screen w-full overflow-hidden rounded-2xl border border-border backdrop-blur-sm select-none"
       style={{ backgroundColor: 'rgba(6, 6, 7, 0.95)' }}
     >
       {/* Main Content - Horizontal Layout */}
-      <div className="h-full flex items-center px-2 gap-2 text-sm">
+      <div className="flex h-full min-w-0 items-center gap-2 overflow-hidden px-2 text-sm">
         {/* Drag Handle - This makes the window draggable */}
         <div
           data-tauri-drag-region
@@ -339,81 +623,30 @@ export function OverlayWindow() {
 
         <div className="h-6 w-px bg-surface shrink-0"></div>
 
-        {/* Timer */}
-        <div className="flex flex-col items-center leading-none flex-[0.7]">
-          <span className="text-muted text-[10px]">Time</span>
-          <LiveTimer
-            startTime={activeSession.startTime}
-            isRunning={activeSession.status === 'active'}
-            pausedAt={activeSession.pausedAt}
-            pausedDurationMs={activeSession.totalPausedMs || 0}
-            className="font-mono text-xs font-bold"
-          />
-        </div>
-
-        <div className="h-6 w-px bg-surface shrink-0"></div>
-
-        {/* Loadout - Double size */}
-        <div className="flex flex-col items-center leading-none flex-[1.4] min-w-0">
-          <span className="text-muted text-[10px] whitespace-nowrap text-center">Loadout</span>
-          <span
-            className="font-medium text-xs truncate text-center w-full"
-            title={`${loadoutName} (Ctrl+Left/Right, Ctrl+1..9 to switch)`}
-          >
-            {loadoutName}
-          </span>
-        </div>
-
-        <div className="h-6 w-px bg-surface shrink-0"></div>
-
-        {/* Cost Value */}
-        <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-muted text-[10px] text-center whitespace-nowrap">Cost</span>
-          <span className="font-bold text-red-400 text-xs whitespace-nowrap">
-            {activeSession.stats.totalCost.toFixed(2)} PED
-          </span>
-        </div>
-
-        <div className="h-6 w-px bg-surface shrink-0"></div>
-
-        {/* Profit */}
-        <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-muted text-[10px] text-center whitespace-nowrap">Adj P/L</span>
-          <span
-            className={`font-bold text-xs whitespace-nowrap ${isProfitable ? 'text-green-400' : 'text-red-400'}`}
-          >
-            {isProfitable ? '+' : ''}
-            {profit.toFixed(2)} PED
-          </span>
-        </div>
-
-        <div className="h-6 w-px bg-surface shrink-0"></div>
-
-        {/* Returns */}
-        <div className="flex flex-col items-center leading-none flex-1">
-          <span className="text-muted text-[10px] text-center whitespace-nowrap">Adj Ret</span>
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <span
-              className={`font-bold text-xs ${returnsPositive ? 'text-green-400' : 'text-red-400'}`}
+        {selectedOverlayMetrics.map((metric, index) => (
+          <div key={metric.id} className="contents">
+            {index > 0 && <div className="h-6 w-px bg-surface shrink-0"></div>}
+            <div
+              className={`flex min-w-0 flex-col items-center leading-none ${
+                metric.width === 'wide'
+                  ? 'basis-[96px] flex-[1.45_1_0]'
+                  : 'basis-[56px] flex-[1_1_0]'
+              }`}
             >
-              {returnsPositive ? '+' : ''}
-              {(returns - 100).toFixed(1)}%
-            </span>
-            <span className="text-muted text-[10px]">
-              (TT {activeSession.stats.ttReturns.toFixed(1)}%)
-            </span>
+              <span className="text-muted text-[10px] text-center whitespace-nowrap">
+                {metric.label}
+              </span>
+              <span
+                className={`w-full truncate text-center text-xs font-bold whitespace-nowrap ${metricToneClass[metric.tone || 'neutral']}`}
+                title={
+                  metric.title || (typeof metric.value === 'string' ? metric.value : undefined)
+                }
+              >
+                {metric.value}
+              </span>
+            </div>
           </div>
-        </div>
-
-        <div className="h-6 w-px bg-surface shrink-0"></div>
-
-        {/* Kills */}
-        <div className="flex flex-col items-center leading-none px-2 min-w-[40px]">
-          <span className="text-muted text-[10px] text-center whitespace-nowrap">Kills</span>
-          <span className="font-bold text-xs whitespace-nowrap text-red-400">
-            {activeSession.stats.kills}
-          </span>
-        </div>
+        ))}
 
         <div className="h-6 w-px bg-surface shrink-0"></div>
 

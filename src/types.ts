@@ -202,11 +202,37 @@ export interface AppSettings {
   overlayY?: number;
   overlayWidth?: number;
   overlayHeight?: number;
+  overlayStatIds?: OverlayStatId[];
   ignoreListItems?: string[]; // Items to ignore in ChatLogMonitor
   enableKillTrackingMaturity?: boolean; // Enable HP-based maturity inference for kills (experimental)
   analyticsEnabled?: boolean;
   analyticsConsentAnswered?: boolean;
 }
+
+export type OverlayStatId =
+  | 'time'
+  | 'loadout'
+  | 'creature'
+  | 'totalCost'
+  | 'ttLoot'
+  | 'adjustedLoot'
+  | 'adjustedProfit'
+  | 'adjustedReturn'
+  | 'ttReturn'
+  | 'markupGain'
+  | 'kills'
+  | 'lootEvents'
+  | 'globals'
+  | 'avgDps'
+  | 'weaponDpp'
+  | 'critRate'
+  | 'hitRate'
+  | 'missRate'
+  | 'ammoCost'
+  | 'weaponDecay'
+  | 'healingCost'
+  | 'otherCosts'
+  | 'skillGains';
 
 // Equipment and Loadout types
 interface EquipmentEconomy {

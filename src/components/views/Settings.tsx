@@ -6,6 +6,8 @@ import {
   Sliders,
   AlertCircle,
   ShieldCheck,
+  Monitor,
+  RotateCcw,
 } from 'lucide-react';
 import { useSettingsModel } from '../../hooks/useSettingsModel';
 import { usePageVisibility } from '../../hooks/usePageVisibility';
@@ -14,6 +16,13 @@ import { AlertModal } from '../common/AlertModal';
 import { InfoTooltip } from '../common/InfoTooltip';
 import { Panel } from '../common/Panel';
 import { open } from '@tauri-apps/plugin-shell';
+import type { OverlayStatId } from '../../types';
+import {
+  normalizeOverlayStatIds,
+  overlayProfiles,
+  overlayStatDefinitions,
+} from '../../utils/overlayStats';
+import { defaultSettings } from '../../store/shared';
 
 interface SettingSectionProps {
   icon: React.ElementType;
@@ -51,6 +60,24 @@ export function Settings() {
     clearDataError,
     setClearDataError,
   } = useSettingsModel();
+  const selectedOverlayStatIds = normalizeOverlayStatIds(settings.overlayStatIds);
+  const selectedOverlayStatSet = new Set(selectedOverlayStatIds);
+  const overlayStatGroups = ['Core', 'Returns', 'Combat', 'Costs', 'Progress'].map((group) => ({
+    group,
+    stats: overlayStatDefinitions.filter((stat) => stat.group === group),
+  }));
+
+  const updateOverlayStatIds = (ids: OverlayStatId[]) => {
+    updateSettings({ overlayStatIds: ids.length > 0 ? ids : selectedOverlayStatIds });
+  };
+
+  const toggleOverlayStat = (id: OverlayStatId) => {
+    const next = selectedOverlayStatSet.has(id)
+      ? selectedOverlayStatIds.filter((statId) => statId !== id)
+      : [...selectedOverlayStatIds, id];
+
+    updateOverlayStatIds(next);
+  };
 
   if (!isPageVisible) {
     return (
@@ -151,6 +178,76 @@ export function Settings() {
             <option value="next-island">Next Island</option>
             <option value="toulan">Toulan</option>
           </select>
+        </div>
+      </SettingSection>
+
+      <SettingSection
+        icon={Monitor}
+        title="Overlay"
+        description="Choose which live session stats appear in the overlay bar"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {overlayProfiles.map((profile) => (
+              <button
+                key={profile.id}
+                type="button"
+                onClick={() => updateOverlayStatIds([...profile.statIds])}
+                className="btn-secondary text-sm"
+                title={profile.description}
+              >
+                {profile.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              updateSettings({
+                overlayX: defaultSettings.overlayX,
+                overlayY: defaultSettings.overlayY,
+                overlayWidth: defaultSettings.overlayWidth,
+                overlayHeight: defaultSettings.overlayHeight,
+              })
+            }
+            className="btn-secondary flex items-center gap-2 text-sm"
+            title="Reset overlay size and position"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset Size/Position
+          </button>
+        </div>
+
+        <div className="space-y-4 border-t border-border pt-4">
+          {overlayStatGroups.map(({ group, stats }) => (
+            <div key={group}>
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                {group}
+              </h4>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {stats.map((stat) => (
+                  <label
+                    key={stat.id}
+                    htmlFor={`overlay-stat-${stat.id}`}
+                    className="flex cursor-pointer items-start gap-3 rounded border border-border bg-white/[0.03] px-3 py-2 hover:bg-surface-hover"
+                  >
+                    <input
+                      id={`overlay-stat-${stat.id}`}
+                      type="checkbox"
+                      checked={selectedOverlayStatSet.has(stat.id)}
+                      onChange={() => toggleOverlayStat(stat.id)}
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-gray-300">{stat.label}</span>
+                      <span className="block text-xs text-muted">{stat.description}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </SettingSection>
 

@@ -21,6 +21,24 @@ const storeSyncSourceId = `store-${Math.random().toString(36).slice(2)}`;
 
 type HuntStoreHook = UseBoundStore<StoreApi<HuntStore>>;
 
+function stripSessionsForSync(
+  sessions: HuntSession[],
+  activeSessionId: string | null
+): HuntSession[] {
+  return sessions.map((session) => ({
+    ...session,
+    loot: [],
+    skills: session.id === activeSessionId ? session.skills : [],
+    globals: [],
+    kills: [],
+    damageEvents: [],
+    combatEvents: [],
+    healingEvents: [],
+    damageTakenEvents: [],
+    notes: '',
+  }));
+}
+
 export async function initializeStoreFromDb(useHuntStore: HuntStoreHook) {
   const currentState = useHuntStore.getState();
   if (dbStoreInitialized && currentState.settings.avatarName) {
@@ -150,23 +168,13 @@ export async function setupStoreSync(useHuntStore: HuntStoreHook, delayBroadcast
       return;
     }
 
-    const strippedSessions = state.sessions.map((s) => ({
-      ...s,
-      loot: [],
-      skills: [],
-      globals: [],
-      kills: [],
-      damageEvents: [],
-      combatEvents: [],
-      healingEvents: [],
-      damageTakenEvents: [],
-      notes: '',
-    }));
+    const strippedSessions = stripSessionsForSync(state.sessions, state.activeSessionId);
 
     const snapshot = {
       sessions: strippedSessions,
       activeSessionId: state.activeSessionId,
       loadouts: state.loadouts,
+      settings: state.settings,
     };
     const serialized = JSON.stringify(snapshot);
 
@@ -199,6 +207,7 @@ export async function setupStoreSync(useHuntStore: HuntStoreHook, delayBroadcast
       sessions: payload.sessions,
       activeSessionId: payload.activeSessionId,
       loadouts: normalizedLoadouts,
+      settings: { ...defaultSettings, ...payload.settings },
     }));
     isApplyingRemoteSync = false;
   }).catch(() => {
@@ -208,24 +217,14 @@ export async function setupStoreSync(useHuntStore: HuntStoreHook, delayBroadcast
   const unlistenSyncRequest = await listen('store-sync-request', () => {
     const state = useHuntStore.getState();
 
-    const strippedSessions = state.sessions.map((s) => ({
-      ...s,
-      loot: [],
-      skills: [],
-      globals: [],
-      kills: [],
-      damageEvents: [],
-      combatEvents: [],
-      healingEvents: [],
-      damageTakenEvents: [],
-      notes: '',
-    }));
+    const strippedSessions = stripSessionsForSync(state.sessions, state.activeSessionId);
 
     const payload: StoreSyncPayload = {
       sourceId: storeSyncSourceId,
       sessions: strippedSessions,
       activeSessionId: state.activeSessionId,
       loadouts: state.loadouts,
+      settings: state.settings,
     };
     emit('store-sync', payload).catch(() => {
       // Ignore emit failures in non-Tauri contexts.

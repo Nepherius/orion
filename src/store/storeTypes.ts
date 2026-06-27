@@ -313,6 +313,7 @@ export type StoreSyncPayload = {
   sessions: HuntSession[];
   activeSessionId: string | null;
   loadouts: Loadout[];
+  settings: AppSettings;
 };
 
 export type OverlaySessionCommandPayload = {

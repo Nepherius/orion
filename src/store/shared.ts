@@ -17,6 +17,7 @@ import {
   calculateSessionStats as calculateSessionStatsCore,
   emptySessionStats,
 } from '../core/sessionCore';
+import { defaultOverlayStatIds } from '../utils/overlayStats';
 import type { PersistenceError } from './storeTypes';
 
 type PersistenceErrorReporter = (error: PersistenceError) => void;
@@ -75,6 +76,7 @@ export const defaultSettings: AppSettings = {
   overlayY: 20,
   overlayWidth: 750,
   overlayHeight: 56,
+  overlayStatIds: [...defaultOverlayStatIds],
   ignoreListItems: [],
   enableKillTrackingMaturity: true,
   analyticsEnabled: false,

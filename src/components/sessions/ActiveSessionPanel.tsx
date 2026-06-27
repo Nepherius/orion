@@ -1,9 +1,9 @@
 import { HuntSession } from '../../types';
 import { useHuntStore } from '../../store';
 import { Play, Pause, StopCircle, Maximize2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { invoke } from '@tauri-apps/api/core';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getSessionActiveDurationMs } from '../../utils/sessionTiming';
 
 interface ActiveSessionPanelProps {
   session: HuntSession;
@@ -18,7 +18,23 @@ export function ActiveSessionPanel({
 }: ActiveSessionPanelProps) {
   const { pauseSession, resumeSession, endSession, settings } = useHuntStore();
   const [showOverlayWaylandWarning, setShowOverlayWaylandWarning] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
+  useEffect(() => {
+    if (session.status !== 'active' && session.status !== 'paused') return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [session.status]);
+
+  const formatActiveDuration = (ms: number): string => {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+  };
   const handleShowOverlay = async () => {
     try {
       const displayServer = await invoke<string | null>('get_linux_display_server');
@@ -129,7 +145,7 @@ export function ActiveSessionPanel({
           <div>
             <div className="text-xs text-muted">Duration</div>
             <div className="font-semibold">
-              {formatDistanceToNow(session.startTime, { addSuffix: false })}
+              {formatActiveDuration(getSessionActiveDurationMs(session, now))}
             </div>
           </div>
         </div>
