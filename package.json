@@ -46,7 +46,7 @@
     "check:all": "npm run test:all && npm run lint:all && npm run format:all",
     "fix:all": "npm run lint:fix",
     "tauri": "tauri",
-    "tauri:dev": "npm run test:all && ./scripts/tauri-dev-linux-safe.sh",
+    "tauri:dev": "node scripts/tauri-dev-current.cjs",
     "tauri:build": "node scripts/tauri-build-current.cjs",
     "build:appimg": "npm run test:all && APPIMAGELAUNCHER_DISABLE=1 APPIMAGE_EXTRACT_AND_RUN=1 NO_STRIP=true tauri build --bundles appimage",
     "tauri:build:linux": "npm run test:all && APPIMAGELAUNCHER_DISABLE=1 APPIMAGE_EXTRACT_AND_RUN=1 NO_STRIP=true tauri build --bundles deb,rpm,appimage",
