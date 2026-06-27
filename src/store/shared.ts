@@ -156,6 +156,8 @@ export const persistSessionToDb = async (session: HuntSession) => {
 };
 
 export const updateSessionInDb = async (id: string, updates: Partial<HuntSession>) => {
+  const shouldClearEndTime =
+    Object.prototype.hasOwnProperty.call(updates, 'endTime') && updates.endTime === undefined;
   const shouldClearPausedAt =
     Object.prototype.hasOwnProperty.call(updates, 'pausedAt') && updates.pausedAt === undefined;
   const shouldClearPlannedBankroll =
@@ -172,6 +174,7 @@ export const updateSessionInDb = async (id: string, updates: Partial<HuntSession
       creature: updates.creature,
       start_time: updates.startTime,
       end_time: updates.endTime,
+      clear_end_time: shouldClearEndTime,
       status: updates.status,
       paused_at: updates.pausedAt,
       clear_paused_at: shouldClearPausedAt,

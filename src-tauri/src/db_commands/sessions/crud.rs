@@ -95,6 +95,7 @@ pub struct UpdateSessionParams {
     creature: Option<String>,
     start_time: Option<i64>,
     end_time: Option<i64>,
+    clear_end_time: Option<bool>,
     status: Option<String>,
     paused_at: Option<i64>,
     clear_paused_at: Option<bool>,
@@ -149,7 +150,9 @@ pub fn db_update_session(
         updates.push("start_time = ?");
         values.push(Box::new(v));
     }
-    if let Some(v) = params.end_time {
+    if params.clear_end_time.unwrap_or(false) {
+        updates.push("end_time = NULL");
+    } else if let Some(v) = params.end_time {
         updates.push("end_time = ?");
         values.push(Box::new(v));
     }

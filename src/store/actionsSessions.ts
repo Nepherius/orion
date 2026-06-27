@@ -184,22 +184,49 @@ export const createSessionActions = (
     resumeSession: (id) => {
       const now = Date.now();
       const sessionsToPause = get().sessions.filter((s) => s.status === 'active' && s.id !== id);
+
+      const pausedGapForResume = (session: HuntSession): number => {
+        if (session.pausedAt) {
+          return Math.max(0, now - session.pausedAt);
+        }
+
+        if (session.status === 'completed') {
+          if (session.endTime) {
+            return Math.max(0, now - session.endTime);
+          }
+
+          if (session.stats.duration > 0) {
+            const targetPausedMs = now - session.startTime - session.stats.duration * 1000;
+            return Math.max(0, targetPausedMs - (session.totalPausedMs || 0));
+          }
+        }
+
+        return 0;
+      };
+
       set((state) => {
         const sessions = state.sessions.map((s) =>
           s.status === 'active' ? { ...s, status: 'paused' as const, pausedAt: now } : s
         );
 
         return {
-          sessions: sessions.map((s) =>
-            s.id === id
-              ? {
-                  ...s,
-                  status: 'active' as const,
-                  totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                  pausedAt: undefined,
-                }
-              : s
-          ),
+          sessions: sessions.map((s) => {
+            if (s.id !== id) {
+              return s;
+            }
+
+            const resumed = {
+              ...s,
+              status: 'active' as const,
+              endTime: undefined,
+              totalPausedMs: (s.totalPausedMs || 0) + pausedGapForResume(s),
+              pausedAt: undefined,
+            };
+            return {
+              ...resumed,
+              stats: calculateStats(resumed),
+            };
+          }),
           activeSessionId: id,
         };
       });
@@ -208,6 +235,7 @@ export const createSessionActions = (
       if (resumed) {
         void updateSessionInDb(id, {
           status: 'active',
+          endTime: undefined,
           pausedAt: undefined,
           totalPausedMs: resumed.totalPausedMs,
           ammoCost: resumed.ammoCost,

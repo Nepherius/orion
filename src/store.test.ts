@@ -116,6 +116,7 @@ describe('HuntStore - session lifecycle persistence', () => {
     id: overrides.id ?? 'session-1',
     name: overrides.name ?? 'Session',
     startTime: overrides.startTime ?? 1699999990000,
+    endTime: overrides.endTime,
     status: overrides.status ?? 'active',
     pausedAt: overrides.pausedAt,
     totalPausedMs: overrides.totalPausedMs ?? 0,
@@ -137,7 +138,7 @@ describe('HuntStore - session lifecycle persistence', () => {
     weaponDecay: overrides.weaponDecay ?? 0,
     healingCost: overrides.healingCost ?? 0,
     otherCosts: overrides.otherCosts ?? 0,
-    stats: {} as SessionStats,
+    stats: overrides.stats ?? ({} as SessionStats),
   });
 
   it('persists displaced active sessions as paused when creating a new active session', () => {
@@ -243,6 +244,50 @@ describe('HuntStore - session lifecycle persistence', () => {
           uuid: 'old-active',
           status: 'paused',
           paused_at: 1700000000000,
+        }),
+      })
+    );
+  });
+
+  it('resumes a completed session without counting time since completion as active time', () => {
+    const oneHourMs = 60 * 60 * 1000;
+    const startTime = 1700000000000 - 50 * oneHourMs;
+    const endTime = startTime + oneHourMs;
+
+    useHuntStore.setState({
+      sessions: [
+        createSession({
+          id: 'completed-session',
+          status: 'completed',
+          startTime,
+          endTime,
+          totalPausedMs: 0,
+          stats: { duration: 3600 } as SessionStats,
+        }),
+      ],
+      activeSessionId: null,
+    });
+
+    useHuntStore.getState().resumeSession('completed-session');
+
+    const resumed = useHuntStore
+      .getState()
+      .sessions.find((session) => session.id === 'completed-session');
+    expect(resumed?.status).toBe('active');
+    expect(resumed?.endTime).toBeUndefined();
+    expect(resumed?.pausedAt).toBeUndefined();
+    expect(resumed?.totalPausedMs).toBe(1700000000000 - endTime);
+    expect(resumed?.stats.duration).toBe(3600);
+    expect(useHuntStore.getState().activeSessionId).toBe('completed-session');
+    expect(invoke).toHaveBeenCalledWith(
+      'db_update_session',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          uuid: 'completed-session',
+          status: 'active',
+          clear_end_time: true,
+          clear_paused_at: true,
+          total_paused_ms: 1700000000000 - endTime,
         }),
       })
     );
