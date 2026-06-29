@@ -143,7 +143,7 @@ export default function CreatureProjectionsPanel({
               Creature Analytics
             </h2>
             <p className="text-sm text-muted mt-1">
-              w Advanced statistical modeling based on your{' '}
+              Advanced statistical modeling based on your{' '}
               <span className="font-semibold text-primary-400">selected filtered </span> data.
             </p>
           </div>
