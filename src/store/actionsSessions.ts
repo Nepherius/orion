@@ -1,4 +1,4 @@
-import { emptySessionStats } from '../core/sessionCore';
+import { calculateSessionStats, emptySessionStats } from '../core/sessionCore';
 import type { HuntSession } from '../types';
 import type { HuntStore, StoreGetState, StoreSetState } from './storeTypes';
 import {
@@ -256,17 +256,24 @@ export const createSessionActions = (
       const now = Date.now();
       set((state) => {
         return {
-          sessions: state.sessions.map((s) =>
-            s.id === id
-              ? {
-                  ...s,
-                  status: 'completed' as const,
-                  endTime: now,
-                  totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
-                  pausedAt: undefined,
-                }
-              : s
-          ),
+          sessions: state.sessions.map((s) => {
+            if (s.id !== id) {
+              return s;
+            }
+
+            const completed = {
+              ...s,
+              status: 'completed' as const,
+              endTime: now,
+              totalPausedMs: (s.totalPausedMs || 0) + (s.pausedAt ? now - s.pausedAt : 0),
+              pausedAt: undefined,
+            };
+
+            return {
+              ...completed,
+              stats: calculateSessionStats(completed, now),
+            };
+          }),
           activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
         };
       });

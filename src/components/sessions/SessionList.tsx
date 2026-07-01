@@ -5,6 +5,7 @@ import { NewSessionModal } from './NewSessionModal';
 import { AlertModal } from '../common/AlertModal';
 import { format } from 'date-fns';
 import { formatCompactDurationMs } from '../../utils/formatters';
+import { getSessionActiveDurationMs } from '../../utils/sessionTiming';
 
 interface SessionListProps {
   selectedSessionId: string | null;
@@ -164,9 +165,7 @@ export function SessionList({
         ) : (
           filteredSessions.map((session) => {
             const profit = session.stats.adjustedProfit;
-            const duration = session.endTime
-              ? session.endTime - session.startTime
-              : Date.now() - session.startTime;
+            const duration = getSessionActiveDurationMs(session);
 
             return (
               <button

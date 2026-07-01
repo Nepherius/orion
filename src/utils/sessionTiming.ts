@@ -17,15 +17,22 @@ export function getSessionPausedMs(session: HuntSession, now: number = Date.now(
 }
 
 export function getSessionActiveDurationMs(session: HuntSession, now: number = Date.now()): number {
-  if (session.status === 'completed' && session.stats.duration > 0) {
-    return Math.max(0, session.stats.duration * 1000);
-  }
-
+  const statsDurationMs = Math.max(0, (session.stats?.duration || 0) * 1000);
   const startTimeMs = normalizeTimestampMs(session.startTime) ?? now;
   const endTimeMs = normalizeTimestampMs(session.endTime);
+
+  if (session.status === 'completed' && !endTimeMs && statsDurationMs > 0) {
+    return statsDurationMs;
+  }
+
   const elapsedReference = session.status === 'completed' && endTimeMs ? endTimeMs : now;
 
-  return Math.max(0, elapsedReference - startTimeMs - getSessionPausedMs(session, now));
+  const duration = Math.max(0, elapsedReference - startTimeMs - getSessionPausedMs(session, now));
+  if (session.status === 'completed' && duration === 0 && statsDurationMs > 0) {
+    return statsDurationMs;
+  }
+
+  return duration;
 }
 
 export function getSessionActiveDurationHours(

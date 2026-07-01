@@ -292,6 +292,54 @@ describe('HuntStore - session lifecycle persistence', () => {
       })
     );
   });
+
+  it('completes a resumed completed session without adding the old completion gap', async () => {
+    const oneHourMs = 60 * 60 * 1000;
+    const startTime = 1700000000000 - 50 * oneHourMs;
+    const originalEndTime = startTime + oneHourMs;
+    const resumeTime = 1700000000000;
+    const secondEndTime = resumeTime + 30 * 60 * 1000;
+
+    useHuntStore.setState({
+      sessions: [
+        createSession({
+          id: 'resumed-completed-session',
+          status: 'completed',
+          startTime,
+          endTime: originalEndTime,
+          totalPausedMs: 0,
+          stats: { duration: 3600 } as SessionStats,
+        }),
+      ],
+      activeSessionId: null,
+    });
+
+    useHuntStore.getState().resumeSession('resumed-completed-session');
+    vi.mocked(Date.now).mockReturnValue(secondEndTime);
+
+    await useHuntStore.getState().endSession('resumed-completed-session');
+
+    const ended = useHuntStore
+      .getState()
+      .sessions.find((session) => session.id === 'resumed-completed-session');
+    expect(ended?.status).toBe('completed');
+    expect(ended?.endTime).toBe(secondEndTime);
+    expect(ended?.totalPausedMs).toBe(resumeTime - originalEndTime);
+    expect(ended?.stats.duration).toBe(90 * 60);
+    expect(useHuntStore.getState().activeSessionId).toBeNull();
+    expect(invoke).toHaveBeenCalledWith(
+      'db_update_session',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          uuid: 'resumed-completed-session',
+          status: 'completed',
+          end_time: secondEndTime,
+          clear_paused_at: true,
+          total_paused_ms: resumeTime - originalEndTime,
+        }),
+      })
+    );
+  });
 });
 
 describe('HuntStore - special loot kill tracking', () => {

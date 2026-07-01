@@ -32,28 +32,27 @@ describe('sessionTiming', () => {
     expect(getSessionPausedMs(session, 1_700_000_008_000)).toBe(5_000);
   });
 
-  it('uses persisted completed duration when available', () => {
+  it('uses completed timestamps and paused duration before stored stats', () => {
     const session = makeSession({
       status: 'completed',
       startTime: 1_700_000_001_000,
       endTime: 1_700_000_020_000,
+      totalPausedMs: 5_000,
+      stats: { duration: 99 } as HuntSession['stats'],
+    });
+
+    expect(getSessionActiveDurationMs(session, 30_000)).toBe(14_000);
+    expect(getSessionActiveDurationHours(session, 30_000)).toBeCloseTo(14 / 3600, 8);
+  });
+
+  it('falls back to completed stats duration when end time is missing', () => {
+    const session = makeSession({
+      status: 'completed',
+      startTime: 1_700_000_001_000,
       totalPausedMs: 5_000,
       stats: { duration: 12 } as HuntSession['stats'],
     });
 
     expect(getSessionActiveDurationMs(session, 30_000)).toBe(12_000);
-    expect(getSessionActiveDurationHours(session, 30_000)).toBeCloseTo(12 / 3600, 8);
-  });
-
-  it('falls back to timestamps when completed stats duration is missing', () => {
-    const session = makeSession({
-      status: 'completed',
-      startTime: 1_700_000_001_000,
-      endTime: 1_700_000_020_000,
-      totalPausedMs: 5_000,
-      stats: { duration: 0 } as HuntSession['stats'],
-    });
-
-    expect(getSessionActiveDurationMs(session, 30_000)).toBe(14_000);
   });
 });
