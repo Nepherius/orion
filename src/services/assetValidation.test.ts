@@ -29,8 +29,26 @@ describe('asset validation', () => {
     ]);
   });
 
-  it('drops malformed armor and medical entries', () => {
+  it('normalizes legacy and current armor responses', () => {
     expect(validateArmorItems({ armor: ['Pixie', '', 42] } as never)).toEqual(['Pixie']);
+    expect(
+      validateArmorItems({
+        armor: [
+          { Name: 'Angel Harness', Set: { Name: 'Angel' } },
+          { Name: 'Angel Gloves', Set: { Name: 'Angel' } },
+          { Name: 'Ghost Harness', Set: { Name: 'Ghost' } },
+          { Name: 'Armor without a set' },
+          { Set: { Name: '' } },
+          null,
+        ],
+      } as never)
+    ).toEqual(['Angel', 'Armor without a set', 'Ghost']);
+    expect(
+      validateArmorItems([{ Name: 'Pixie' }, { Name: 'Goblin' }, { Name: 'Pixie' }] as never)
+    ).toEqual(['Goblin', 'Pixie']);
+  });
+
+  it('drops malformed medical entries', () => {
     expect(
       validateMedicalTools({
         medicalTools: [

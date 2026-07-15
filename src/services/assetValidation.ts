@@ -69,7 +69,29 @@ export function validateArmorItems(response: LoadEquipmentData): string[] {
       ? response.armor
       : [];
 
-  return rawItems.filter((item): item is string => typeof item === 'string' && item.length > 0);
+  const armorNames = rawItems.flatMap((item): string[] => {
+    if (typeof item === 'string') {
+      const name = item.trim();
+      return name ? [name] : [];
+    }
+
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    // Individual armor pieces contain their set under `Set`, while armor-set
+    // responses expose the set name directly as `Name`.
+    const armorSet = isRecord(item.Set) ? item.Set : undefined;
+    const name = typeof armorSet?.Name === 'string' ? armorSet.Name : item.Name;
+
+    if (typeof name !== 'string' || !name.trim()) {
+      return [];
+    }
+
+    return [name.trim()];
+  });
+
+  return [...new Set(armorNames)].sort((a, b) => a.localeCompare(b));
 }
 
 export function validateMedicalTools(response: LoadEquipmentData): MedicalToolEntry[] {

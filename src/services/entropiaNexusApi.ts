@@ -4,6 +4,8 @@
  * Used only on fresh installs to populate item databases
  */
 
+import { validateArmorItems } from './assetValidation';
+
 const API_BASE = 'https://api.entropianexus.com';
 const USER_AGENT = 'Orion/1.3.0';
 
@@ -143,7 +145,8 @@ export async function fetchAbsorbers(): Promise<NexusItem[]> {
 export async function fetchArmor(): Promise<string[]> {
   // eslint-disable-next-line no-console
   console.log('[EntropiaNexus] Fetching armor...');
-  return fetchWithHeaders<string[]>('/armors');
+  const armorSets = await fetchWithHeaders<unknown[]>('/armorsets');
+  return validateArmorItems(armorSets);
 }
 
 export async function fetchAllItems(): Promise<NexusItem[]> {
